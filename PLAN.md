@@ -2,14 +2,14 @@
 document_id: PLAN-V2
 document_type: plan
 title: DexGrasp — thư viện dexterous grasp theo kiến trúc Ultralytics
-version: 2.1.0
+version: 2.2.0
 status: active
 date: 2026-08-21
 approved_date: 2026-08-21
 revises: LEGACY-PLAN-PRE-V2
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
+latest_revision_record: docs/revisions/REV-20260822-004-plan-internal-only-scope.md
 revision_reason: Kế hoạch cũ không còn đáp ứng yêu cầu nguồn chuẩn, CPU/GPU, kiến trúc YAML mới và kiểm soát giấy phép.
 necessity: N3
 impact: Thay đổi nguồn phụ thuộc, mô hình lõi, chiến lược đóng gói, điều kiện phát hành và toàn bộ lộ trình triển khai; chưa có code triển khai bị thay đổi.
@@ -41,8 +41,6 @@ lại quyết định hoặc kết quả của phiên trước.
 - `scripts/check_references.py` khóa content của manifest; khi `.references/`
   có mặt, feature/release gate xác minh origin, exact HEAD, clean worktree và
   artifact/license-evidence hashes của mọi checkout bắt buộc.
-- Việc sao chép, sửa hoặc phân phối code Ultralytics và DGN2 chỉ bắt đầu sau khi
-  có văn bản cấp phép thương mại bao phủ đúng hành vi đó. Đây là release gate.
 - Core model bắt buộc chạy CPU FP32 và NVIDIA CUDA FP32/AMP. MuJoCo là evaluator
   CPU chính; Isaac Gym chỉ là bộ đối chiếu GPU tùy chọn.
 - CPU phải hoàn tất đúng và không OOM; latency được đo và công bố nhưng chưa là
@@ -200,8 +198,6 @@ raw XYZ 40k / depth + intrinsics
 
 ### M0 — Nguồn, license và baseline (1–2 tuần)
 
-- Nhận license thương mại, clone/pin bốn upstream, lập provenance và baseline
-  manifest.
 - Đo lại checkpoint DGN2: params, schemas, outputs, scene/view hashes và
   benchmark canonical.
 - Khóa corpus 30 scene × 256 view, depth source, camera frame, robot profile và
