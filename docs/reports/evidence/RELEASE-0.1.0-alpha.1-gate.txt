@@ -1,0 +1,25 @@
+release_id: RELEASE-0.1.0-ALPHA.1
+version: 0.1.0-alpha.1
+branch: release/0.1.0-alpha.1
+source_develop_commit: c0cae5bef523f67bb4123f537d939b62296c2fcb
+candidate_commit: 070f271256b20771a13de4aa536a171c546d16ba
+executed_date: 2026-08-21
+timezone: Asia/Bangkok
+
+command: scripts/release_gate.sh 0.1.0-alpha.1
+exit_code: 0
+result: PASS
+
+release_gate_checks:
+  - working tree clean
+  - current branch equals release/0.1.0-alpha.1
+  - VERSION equals 0.1.0-alpha.1
+  - CHANGELOG contains ## [0.1.0-alpha.1]
+  - develop is an ancestor of candidate HEAD
+  - git diff --check passes
+  - documentation validator passes 26 managed files
+  - unittest discovery passes 4 tests
+
+limitations:
+  - no model/runtime/license/benchmark checks exist in this prerelease
+  - no external or human review was performed
