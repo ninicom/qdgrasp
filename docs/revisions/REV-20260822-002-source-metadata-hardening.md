@@ -37,7 +37,8 @@ supersedes: REV-20260822-001
   `dfb454f1d0fb5af3252a423ff3a563d57131a2a6`.
 - Finding source: `TPR-20260822-002`, F-005/F-010/F-011.
 - Revision trước: REV-001 invalidated và giữ nguyên.
-- Revision sau ở working tree:
+- Revision sau tại commit `62111ed4b0c31e85e47da02c33831f2cf5a32894`,
+  tree `a52d4782654d8b5c5b2228392965beff1b4da817`:
   - checker `99b1b8dde330e011cf0e9e3fb0693ac25aa7c6fd672e69249b72baa1c78a2f29`;
   - tests `76f3480f483963b6d318fbb60ce72e25aa98123259867ecc3b8900e3e3c8fdd9`;
   - Markdown `6911f367e8d068200ecaa4de4410922712614805a3f83971c7c98c88de841b17`.
@@ -83,10 +84,14 @@ không đầy đủ dù nội dung inventory hiện tại đúng.
 | V-001 | assume-unchanged/skip-worktree probes | Cả hai reject | status rỗng nhưng helper reject h/S | pass | unit suite |
 | V-002 | Front-matter combined probes | Missing/extra/wrong/pointer fail | 7 adversarial groups pass | pass | unit suite |
 | V-003 | Positive project gate | Zero failure | refs/registry/docs/35 tests/shell/diff pass | pass | console; replay sau commit |
-| V-004 | Independent delta review | Pass/NONE | Chưa chạy | not_run | Chờ commit |
+| V-004 | Independent delta review | Pass/NONE | Chưa chạy | not_run | Chờ final snapshot |
+
+Replay evidence: `docs/reports/evidence/TRAIN-ARGS-20260822-source-metadata-hardening.txt`,
+5.540 byte, SHA-256
+`15b540f7dbf4a1be3b173882d02488e93b7638915ceba82cf4e58f67ecd1de17`.
 
 - Regression đã chạy lại: 35/35 và full positive gate.
-- Kiểm tra chưa chạy: exact committed replay và independent review.
+- Kiểm tra chưa chạy: independent review trên final snapshot chứa replay log.
 - Rollback: không merge; failed snapshots chỉ giữ làm audit evidence.
 
 ## Ảnh hưởng tới báo cáo và quyết định cũ
