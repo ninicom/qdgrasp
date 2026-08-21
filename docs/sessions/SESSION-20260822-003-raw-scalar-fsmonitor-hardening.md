@@ -43,6 +43,11 @@ khi exact committed snapshot nhận independent verdict `pass/NONE`.
 | E-04 | checker | `scripts/check_train_args.py` | `975edb8ea49577a8ef4f7f9369de18059706622ac4bfa44a6008c16bc2ecd62a` |
 | E-05 | tests | `scripts/tests/test_check_train_args.py` | `c3005835daae23357e2921a903150e3ca0ce633ff773baaa49fe6866bb7aa685` |
 | E-06 | Markdown | `docs/configuration/TRAIN_ARGUMENTS.md` | `3baf998fdc21c9c8d7a718fe08432d01a7edfa4458d146f401d9e0be48777356` |
+| E-07 | replay log | `docs/reports/evidence/TRAIN-ARGS-20260822-raw-scalar-fsmonitor-hardening.txt` | 5.865 byte; `02fed6bc22d73f5f3935e1df94c79e69ea37c5fe1b63155f5cc93263d1b01ed7` |
+
+Implementation commit: `7ff06e83b3a6042c8efa3c0470402b9d96271e9c`, tree
+`f7ff0f55289e7290d0607e268ac880db6659619d`, committed at
+`2026-08-22T04:09:46+07:00`.
 
 ## Kiểm tra đã chạy
 
@@ -59,8 +64,7 @@ khi exact committed snapshot nhận independent verdict `pass/NONE`.
 
 ## Việc chưa hoàn tất
 
-- Commit implementation, khóa exact tree/replay evidence rồi independent delta
-  review lần bốn.
+- Independent delta review lần bốn trên final feature snapshot chứa evidence.
 - Model/runtime/CPU-CUDA smoke vẫn ngoài claim và chưa được implement.
 
 ## Sửa đổi phiên trước
@@ -71,5 +75,5 @@ của snapshot thất bại; không sửa lại kết luận cũ.
 
 ## Bàn giao
 
-Local implementation/gates đã pass. Commit clean snapshot, tạo immutable replay
-evidence và giao reviewer; chỉ complete/merge sau verdict `pass/NONE`.
+Implementation/replay evidence đã khóa. Giao final snapshot cho reviewer; chỉ
+complete/merge sau verdict `pass/NONE` và zero open finding.

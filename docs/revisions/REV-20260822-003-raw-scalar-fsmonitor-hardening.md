@@ -38,7 +38,8 @@ supersedes: REV-20260822-002
 - Finding source: `TPR-20260822-003`, F-005/F-010/F-011.
 - Revision trước: REV-002 không đạt acceptance và được giữ nguyên.
 - Baseline checker/tests/Markdown hashes nằm trong front matter của record này.
-- Revision sau ở working tree:
+- Revision sau tại commit `7ff06e83b3a6042c8efa3c0470402b9d96271e9c`,
+  tree `f7ff0f55289e7290d0607e268ac880db6659619d`:
   - checker `975edb8ea49577a8ef4f7f9369de18059706622ac4bfa44a6008c16bc2ecd62a`;
   - tests `c3005835daae23357e2921a903150e3ca0ce633ff773baaa49fe6866bb7aa685`;
   - Markdown `3baf998fdc21c9c8d7a718fe08432d01a7edfa4458d146f401d9e0be48777356`.
@@ -84,13 +85,17 @@ tái hiện độc lập sau khi mọi finding S1 đã đóng.
 | V-001 | fsmonitor-valid probe | `-f` prefix h bị reject | `h tracked.txt` reject, message đúng | pass | unit suite |
 | V-002 | 11 registry scalar × 4 styles | tất cả reject | 44 probe pass | pass | unit suite |
 | V-003 | 5 revision scalar × 4 styles | tất cả reject | 20 probe pass | pass | unit suite |
-| V-004 | Full positive project gate | zero failure | refs/registry/docs/38 tests/shell/diff pass | pass | console; replay sau commit |
-| V-005 | Independent delta review | pass/NONE | Chưa chạy | not_run | Chờ commit |
+| V-004 | Full positive project gate | zero failure | refs/registry/docs/38 tests/shell/diff pass | pass | console; replay committed |
+| V-005 | Independent delta review | pass/NONE | Chưa chạy | not_run | Chờ final snapshot |
+
+Replay evidence: `docs/reports/evidence/TRAIN-ARGS-20260822-raw-scalar-fsmonitor-hardening.txt`,
+5.865 byte, SHA-256
+`02fed6bc22d73f5f3935e1df94c79e69ea37c5fe1b63155f5cc93263d1b01ed7`.
 
 - Regression đã chạy lại: 38/38 và full positive gate (references lock-only,
   references source-root, train-args registry-only, train-args full source,
   check_docs, `bash -n`, `git diff --check`).
-- Kiểm tra chưa chạy: exact committed replay và independent review.
+- Kiểm tra chưa chạy: independent review trên final snapshot chứa replay log.
 - Rollback: không merge; failed snapshots/reports giữ làm immutable evidence.
 
 ## Ảnh hưởng tới báo cáo và quyết định cũ
@@ -104,6 +109,6 @@ tái hiện độc lập sau khi mọi finding S1 đã đóng.
 
 - Tác giả: `codex-primary-agent`, 2026-08-22 Asia/Bangkok.
 - Người kiểm tra: independent reviewer không tham gia sửa revision này.
-- Kết luận: `in_review`; implementation/local gate pass, còn commit/evidence và
-  independent verdict.
+- Kết luận: `in_review`; implementation/replay evidence đã khóa, còn independent
+  verdict trên final snapshot.
 - Bản ghi phiên: `SESSION-20260822-003`.
