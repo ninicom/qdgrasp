@@ -2,13 +2,14 @@
 document_id: PLAN-V2
 document_type: plan
 title: DexGrasp — thư viện dexterous grasp theo kiến trúc Ultralytics
-version: 2.0.0
+version: 2.2.0
 status: active
 date: 2026-08-21
 approved_date: 2026-08-21
 revises: LEGACY-PLAN-PRE-V2
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
+latest_revision_record: docs/revisions/REV-20260822-004-plan-internal-only-scope.md
 revision_reason: Kế hoạch cũ không còn đáp ứng yêu cầu nguồn chuẩn, CPU/GPU, kiến trúc YAML mới và kiểm soát giấy phép.
 necessity: N3
 impact: Thay đổi nguồn phụ thuộc, mô hình lõi, chiến lược đóng gói, điều kiện phát hành và toàn bộ lộ trình triển khai; chưa có code triển khai bị thay đổi.
@@ -37,8 +38,9 @@ lại quyết định hoặc kết quả của phiên trước.
 - Các clone nằm trong `.references/`, bị loại khỏi Git, wheel và source
   distribution. `references.lock.yaml` lưu URL, SHA, license hash và provenance
   của từng phần được port.
-- Việc sao chép, sửa hoặc phân phối code Ultralytics và DGN2 chỉ bắt đầu sau khi
-  có văn bản cấp phép thương mại bao phủ đúng hành vi đó. Đây là release gate.
+- `scripts/check_references.py` khóa content của manifest; khi `.references/`
+  có mặt, feature/release gate xác minh origin, exact HEAD, clean worktree và
+  artifact/license-evidence hashes của mọi checkout bắt buộc.
 - Core model bắt buộc chạy CPU FP32 và NVIDIA CUDA FP32/AMP. MuJoCo là evaluator
   CPU chính; Isaac Gym chỉ là bộ đối chiếu GPU tùy chọn.
 - CPU phải hoàn tất đúng và không OOM; latency được đo và công bố nhưng chưa là
@@ -101,6 +103,23 @@ Checkpoint `.pt` chứa YAML snapshot, `state_dict`/EMA, optimizer, scheduler,
 scaler, RNG, global step, dataset manifest, robot profile và source provenance;
 không pickle nguyên module. Resume phải tái lập chính xác optimizer, scheduler và
 RNG.
+
+### Train configuration surface
+
+- `docs/configuration/TRAIN_ARGUMENTS.yaml` là compatibility manifest máy đọc
+  được cho đúng commit Ultralytics đã pin. Nó phải kiểm kê 100% canonical key,
+  custom-only key, legacy alias/removed key và tham số điều khiển riêng của
+  `Model.train`; không chỉ chép nhóm “Train settings”.
+- Mỗi key có default upstream, group, type, train role, disposition
+  `retain|adapt|defer|reject`, key DexGrasp đích và device policy. Key YOLO-only
+  phải lỗi rõ khi người dùng truyền, không bị bỏ hoặc no-op im lặng.
+- Runtime lưu requested/effective config. CPU bắt buộc effective `amp=False`;
+  fractional AutoBatch chỉ hợp lệ trên CUDA đơn; mọi device fallback, worker
+  clamp, compile fallback và OOM batch reduction phải được log.
+- DexGrasp extension chỉ được triển khai sau khi khóa default/range và thêm vào
+  checker. Unknown key, dead key hoặc extension còn `required_design` là lỗi.
+- Mỗi lần nâng upstream, full checker phải chứng minh zero missing/extra/default/
+  type mismatch với source clone và hash mới trước khi merge integration branch.
 
 ### YAML
 
@@ -179,8 +198,6 @@ raw XYZ 40k / depth + intrinsics
 
 ### M0 — Nguồn, license và baseline (1–2 tuần)
 
-- Nhận license thương mại, clone/pin bốn upstream, lập provenance và baseline
-  manifest.
 - Đo lại checkpoint DGN2: params, schemas, outputs, scene/view hashes và
   benchmark canonical.
 - Khóa corpus 30 scene × 256 view, depth source, camera frame, robot profile và
@@ -244,6 +261,11 @@ raw XYZ 40k / depth + intrinsics
 
 ## 5. Test và nghiệm thu
 
+- Train-argument registry khớp toàn bộ 115 canonical key, 2 extra config kwargs,
+  9 legacy name và 1 API control của source đã pin; cả registry-only và full
+  source check đều pass với zero missing/extra.
+- Config parser từ chối unknown/dead/rejected key; mọi key `retain/adapt` có test
+  default, override, serialization, resume mutability và effective CPU/CUDA.
 - Mọi YAML n–x build, forward/backward và mọi trainable parameter nhận gradient.
 - CPU và CUDA chạy train-smoke, full val, predict, resume và Results conversions;
   không có `.cuda()` hard-code.

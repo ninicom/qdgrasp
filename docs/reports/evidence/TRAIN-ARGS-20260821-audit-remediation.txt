@@ -1,0 +1,92 @@
+RUN_ID=TRAIN-ARGS-20260821-002
+CREATED_AT=2026-08-21T23:56:35+07:00
+BRANCH=feature/train-argument-registry
+REMEDIATION_COMMIT=5d86a426ff7f250bc7a77e80e241610d10a9958a
+REMEDIATION_TREE=9020e17aae346d71233f501db658314c28b3a065
+REMEDIATION_COMMIT_TIME=2026-08-21T23:56:27+07:00
+FINDING_SOURCE=TPR-20260821-003
+
+$ git status --porcelain
+EXIT=0
+OUTPUT=<empty>
+
+$ git show -s --format='%H%n%T%n%cI%n%s' HEAD
+5d86a426ff7f250bc7a77e80e241610d10a9958a
+9020e17aae346d71233f501db658314c28b3a065
+2026-08-21T23:56:27+07:00
+fix(config): harden train argument audit contract
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_references.py --lock-only
+Reference source check passed: immutable lock; lock-only; clean pinned HEAD/hash/origin.
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_references.py --source-root .references
+Reference source check passed: immutable lock; 2 required checkouts + optional-present checkouts; clean pinned HEAD/hash/origin.
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py --registry-only
+Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; exact semantic and Markdown manifest; zero missing/extra (registry-only).
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py --source .references/ultralytics
+Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; exact semantic and Markdown manifest; zero missing/extra (source=329682a29d27).
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs.py --root .
+Documentation check passed: 33 file đã kiểm tra.
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+test_complete_review_allows_no_open_severity ... ok
+test_completed_session_with_concrete_metadata_passes ... ok
+test_completed_template_with_placeholders_is_rejected ... ok
+test_managed_index_without_revises_is_rejected ... ok
+test_revision_schema_two_requires_all_template_sections ... ok
+test_current_lock_is_immutable_and_valid ... ok
+test_modified_lock_is_rejected ... ok
+test_required_local_checkouts_match_lock ... ok
+test_current_registry_has_complete_pinned_surface ... ok
+test_docs_checker_discovers_configuration_registry ... ok
+test_full_check_reports_unpinned_source_and_hashes ... ok
+test_full_cli_passes_against_pinned_clone ... ok
+test_invalid_yaml_like_unknown_metadata_is_rejected ... ok
+test_markdown_default_and_disposition_drift_is_rejected ... ok
+test_missing_canonical_entry_is_rejected ... ok
+test_missing_disposition_is_rejected ... ok
+test_nullable_special_types_are_explicit ... ok
+test_registry_only_rejects_default_and_group_corruption ... ok
+test_registry_only_rejects_extension_removal ... ok
+test_registry_only_rejects_extra_api_and_untyped_type_corruption ... ok
+test_registry_only_rejects_legacy_semantic_corruption ... ok
+test_registry_only_rejects_resume_and_merge_corruption ... ok
+test_registry_only_rejects_source_identity_corruption ... ok
+test_source_set_comparison_names_omitted_key ... ok
+Ran 24 tests in 2.037s
+OK
+EXIT=0
+
+$ bash -n .githooks/* scripts/git/*.sh scripts/release_gate.sh
+EXIT=0
+OUTPUT=<empty>
+
+$ git diff --check 7fb01a7 5d86a42
+EXIT=0
+OUTPUT=<empty>
+
+$ git -C .references/ultralytics status --porcelain
+EXIT=0
+OUTPUT=<empty>
+
+$ git -C .references/dexgraspnet2 status --porcelain
+EXIT=0
+OUTPUT=<empty>
+
+$ sha256sum references.lock.yaml .references/dexgraspnet2/README.md docs/configuration/TRAIN_ARGUMENTS.yaml docs/configuration/TRAIN_ARGUMENTS.md scripts/check_train_args.py scripts/check_references.py
+921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7  references.lock.yaml
+4919074edb0af357cb180cf4c4c7806273accc5bffd6919fbfe8cfb3afd1ef7f  .references/dexgraspnet2/README.md
+b584afaccfb749450aac3a3954ce2b03e1a675b1fc76e3b6a0ed17a560223805  docs/configuration/TRAIN_ARGUMENTS.yaml
+3444e2738eefbf82a7cef4da60525d00799d4898084b0bc3647844cb3cd4dd8d  docs/configuration/TRAIN_ARGUMENTS.md
+34d8b1593a0c5fcfbea4117a746ab5da44acf2ee7b28be488932a401fabd85ad  scripts/check_train_args.py
+4024e38ad5f96b424056e87e9ad5c7af99e9e52923d441f504eb03f2ce8113d3  scripts/check_references.py
+EXIT=0

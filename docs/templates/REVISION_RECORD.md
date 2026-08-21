@@ -1,6 +1,7 @@
 ---
 document_id: REV-YYYYMMDD-NNN
 document_type: revision_record
+revision_schema: 2
 title: Hồ sơ sửa kết quả của phiên trước
 status: draft
 date: YYYY-MM-DD

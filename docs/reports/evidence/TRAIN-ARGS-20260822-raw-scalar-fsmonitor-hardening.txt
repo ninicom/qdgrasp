@@ -1,0 +1,116 @@
+run_id: TRAIN-ARGS-20260822-005
+created_at: 2026-08-22T04:10:15+07:00
+timezone: Asia/Bangkok
+branch: feature/train-argument-registry
+commit: 7ff06e83b3a6042c8efa3c0470402b9d96271e9c
+tree: f7ff0f55289e7290d0607e268ac880db6659619d
+commit_time: 2026-08-22T04:09:46+07:00
+subject: fix(audit): harden fsmonitor index view and front-matter scalar checks
+worktree_before: clean
+worktree_after: clean
+result: PASS
+
+artifact_sha256:
+  TRAIN_ARGUMENTS.yaml: 5fe682f1d84351564edf858c36bd1f6ac07005295234ad9b23f97d3081c48626
+  TRAIN_ARGUMENTS.md: 3baf998fdc21c9c8d7a718fe08432d01a7edfa4458d146f401d9e0be48777356
+  check_train_args.py: 975edb8ea49577a8ef4f7f9369de18059706622ac4bfa44a6008c16bc2ecd62a
+  test_check_train_args.py: c3005835daae23357e2921a903150e3ca0ce633ff773baaa49fe6866bb7aa685
+  references.lock.yaml: 921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7
+semantic_manifest_fingerprint: a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10
+normative_markdown_body_sha256: b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae
+markdown_front_matter_version: 1.4.0
+markdown_revision_pointer: docs/revisions/REV-20260822-003-raw-scalar-fsmonitor-hardening.md
+
+command: python3 scripts/check_references.py --lock-only
+exit_code: 0
+output: Reference source check passed: immutable lock; lock-only; clean pinned HEAD/hash/origin.
+
+command: python3 scripts/check_references.py --source-root .references
+exit_code: 0
+output: Reference source check passed: immutable lock; 2 required checkouts + optional-present checkouts; clean pinned HEAD/hash/origin.
+
+command: python3 scripts/check_train_args.py --registry-only
+exit_code: 0
+output: Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; exact semantic and Markdown manifest; zero missing/extra (registry-only).
+
+command: python3 scripts/check_train_args.py --source .references/ultralytics
+exit_code: 0
+output: Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; exact semantic and Markdown manifest; zero missing/extra (source=329682a29d27).
+
+command: python3 scripts/check_docs.py --root .
+exit_code: 0
+output: Documentation check passed: 42 file đã kiểm tra.
+
+command: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+exit_code: 0
+test_count: 38
+output:
+  test_complete_review_allows_no_open_severity ... ok
+  test_completed_session_with_concrete_metadata_passes ... ok
+  test_completed_template_with_placeholders_is_rejected ... ok
+  test_managed_index_without_revises_is_rejected ... ok
+  test_revision_schema_two_requires_all_template_sections ... ok
+  test_current_lock_is_immutable_and_valid ... ok
+  test_modified_lock_is_rejected ... ok
+  test_required_local_checkouts_match_lock ... ok
+  test_current_registry_has_complete_pinned_surface ... ok
+  test_docs_checker_discovers_configuration_registry ... ok
+  test_full_check_reports_unpinned_source_and_hashes ... ok
+  test_full_cli_passes_against_pinned_clone ... ok
+  test_full_mode_rejects_quoted_default ... ok
+  test_invalid_yaml_like_unknown_metadata_is_rejected ... ok
+  test_manifest_fingerprint_v2_excludes_only_its_self_reference ... ok
+  test_markdown_default_and_disposition_drift_is_rejected ... ok
+  test_markdown_front_matter_duplicate_and_malformed_fields_are_rejected ... ok
+  test_markdown_front_matter_tpr_002_mutations_are_rejected ... ok
+  test_markdown_front_matter_values_use_exact_raw_lexemes ... ok
+  test_markdown_normative_type_behavior_and_prose_drift_is_rejected ... ok
+  test_markdown_revision_pointer_identity_uses_exact_raw_lexemes ... ok
+  test_markdown_revision_pointer_requires_current_record_identity ... ok
+  test_markdown_revision_pointer_requires_existing_target ... ok
+  test_missing_canonical_entry_is_rejected ... ok
+  test_missing_disposition_is_rejected ... ok
+  test_nullable_special_types_are_explicit ... ok
+  test_registry_dialect_rejects_type_erasure_and_invalid_spacing ... ok
+  test_registry_only_rejects_default_and_group_corruption ... ok
+  test_registry_only_rejects_extension_removal ... ok
+  test_registry_only_rejects_extra_api_and_untyped_type_corruption ... ok
+  test_registry_only_rejects_legacy_semantic_corruption ... ok
+  test_registry_only_rejects_resume_and_merge_corruption ... ok
+  test_registry_only_rejects_source_identity_corruption ... ok
+  test_scalar_signatures_preserve_kind_and_lexeme ... ok
+  test_source_checkout_helper_rejects_concealed_index_changes ... ok
+  test_source_checkout_helper_rejects_fsmonitor_valid ... ok
+  test_source_checkout_helper_rejects_tracked_and_untracked_changes ... ok
+  test_source_set_comparison_names_omitted_key ... ok
+  Ran 38 tests in 2.908s
+  OK
+
+command: bash -n .githooks/* scripts/git/*.sh scripts/release_gate.sh
+exit_code: 0
+output: no output; PASS
+
+command: git diff --check
+exit_code: 0
+output: no output; PASS
+
+new_negative_contracts:
+  - git ls-files -f fsmonitor-clean prefix h rejected while ls-files -v stays H
+  - Markdown front matter 11-field values compared as exact raw scalar lexeme,
+    not stripped/unquoted text (quoted, leading-pad, trailing-pad, tab-separator
+    all rejected)
+  - Revision-record 5-field identity (document_id/record_id/document_type/
+    session_id/status) compared as exact raw scalar lexeme with the same
+    mutation styles
+
+acceptance_scope:
+  - source/config provenance and exhaustive 127-name train-argument registry
+  - schema-v2 typed manifest, normative Markdown and governance metadata contract
+  - full source origin/HEAD/index flags (assume-unchanged, skip-worktree,
+    fsmonitor-valid)/status/artifact checks
+
+not_claimed:
+  - model/runtime implementation or CPU/CUDA train smoke
+  - checkpoint/export/simulator/dataset benchmark
+  - DGN2 redistribution permission
+  - independent delta review verdict for this commit (pending, see REV-20260822-003 V-005)

@@ -1,0 +1,99 @@
+run_id: TRAIN-ARGS-20260822-003
+created_at: 2026-08-22T00:25:23+07:00
+timezone: Asia/Bangkok
+branch: feature/train-argument-registry
+commit: 8dc0e2e0a122e46df95f2f4f7a3cfbfee9dec58c
+tree: 60794bd3930713bde84a8707325517b05bce2ea2
+commit_time: 2026-08-22T00:25:08+07:00
+subject: fix(config): enforce typed train argument contract
+worktree_before: clean
+worktree_after: clean
+result: PASS
+
+artifact_sha256:
+  TRAIN_ARGUMENTS.yaml: 5fe682f1d84351564edf858c36bd1f6ac07005295234ad9b23f97d3081c48626
+  TRAIN_ARGUMENTS.md: a77ab9466ddf44fecca5d8d59410ab315b7423652f7ef5f42e4f07b55dad5480
+  check_train_args.py: a77e57e26b277b777585dddb99aea7e0f8bb5b7b8764cb744ca440c85bf73c8d
+  test_check_train_args.py: 71c6ede6799c7e6011a342ffc6747820d28d07f0714317afbc402ce824321b4d
+  references.lock.yaml: 921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7
+semantic_manifest_fingerprint: a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10
+normative_markdown_body_sha256: b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae
+
+command: python3 scripts/check_references.py --lock-only
+exit_code: 0
+output: Reference source check passed: immutable lock; lock-only; clean pinned HEAD/hash/origin.
+
+command: python3 scripts/check_references.py --source-root .references
+exit_code: 0
+output: Reference source check passed: immutable lock; 2 required checkouts + optional-present checkouts; clean pinned HEAD/hash/origin.
+
+command: python3 scripts/check_train_args.py --registry-only
+exit_code: 0
+output: Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; exact semantic and Markdown manifest; zero missing/extra (registry-only).
+
+command: python3 scripts/check_train_args.py --source .references/ultralytics
+exit_code: 0
+output: Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; exact semantic and Markdown manifest; zero missing/extra (source=329682a29d27).
+
+command: python3 scripts/check_docs.py --root .
+exit_code: 0
+output: Documentation check passed: 36 file đã kiểm tra.
+
+command: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+exit_code: 0
+test_count: 30
+output:
+  test_complete_review_allows_no_open_severity ... ok
+  test_completed_session_with_concrete_metadata_passes ... ok
+  test_completed_template_with_placeholders_is_rejected ... ok
+  test_managed_index_without_revises_is_rejected ... ok
+  test_revision_schema_two_requires_all_template_sections ... ok
+  test_current_lock_is_immutable_and_valid ... ok
+  test_modified_lock_is_rejected ... ok
+  test_required_local_checkouts_match_lock ... ok
+  test_current_registry_has_complete_pinned_surface ... ok
+  test_docs_checker_discovers_configuration_registry ... ok
+  test_full_check_reports_unpinned_source_and_hashes ... ok
+  test_full_cli_passes_against_pinned_clone ... ok
+  test_full_mode_rejects_quoted_default ... ok
+  test_invalid_yaml_like_unknown_metadata_is_rejected ... ok
+  test_manifest_fingerprint_v2_excludes_only_its_self_reference ... ok
+  test_markdown_default_and_disposition_drift_is_rejected ... ok
+  test_markdown_normative_type_behavior_and_prose_drift_is_rejected ... ok
+  test_missing_canonical_entry_is_rejected ... ok
+  test_missing_disposition_is_rejected ... ok
+  test_nullable_special_types_are_explicit ... ok
+  test_registry_dialect_rejects_type_erasure_and_invalid_spacing ... ok
+  test_registry_only_rejects_default_and_group_corruption ... ok
+  test_registry_only_rejects_extension_removal ... ok
+  test_registry_only_rejects_extra_api_and_untyped_type_corruption ... ok
+  test_registry_only_rejects_legacy_semantic_corruption ... ok
+  test_registry_only_rejects_resume_and_merge_corruption ... ok
+  test_registry_only_rejects_source_identity_corruption ... ok
+  test_scalar_signatures_preserve_kind_and_lexeme ... ok
+  test_source_checkout_helper_rejects_tracked_and_untracked_changes ... ok
+  test_source_set_comparison_names_omitted_key ... ok
+  Ran 30 tests in 2.860s
+  OK
+
+command: bash -n .githooks/* scripts/git/*.sh scripts/release_gate.sh
+exit_code: 0
+output: no output; PASS
+
+command: git diff --check
+exit_code: 0
+output: no output; PASS
+
+acceptance_scope:
+  - exact inventory: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names
+  - strict schema-v2 registry dialect and typed fingerprint
+  - normative Markdown body pin and type-row comparison
+  - quantize canonical alias mapping
+  - standalone full-source origin/HEAD/clean checkout
+  - immutable reference lock and two pinned clean clones
+
+not_claimed:
+  - DexGrasp model/runtime implementation
+  - CPU or CUDA train smoke
+  - checkpoint, export, simulator or dataset benchmark
+  - release or distribution permission for DGN2 code/data

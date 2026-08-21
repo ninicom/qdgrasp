@@ -170,6 +170,56 @@ date: 2026-08-21
             self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
             self.assertIn("revises", result.stdout)
 
+    def test_revision_schema_two_requires_all_template_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            revisions = root / "docs" / "revisions"
+            revisions.mkdir(parents=True)
+            (revisions / "REV-20260821-999-incomplete.md").write_text(
+                """---
+document_id: REV-20260821-999
+document_type: revision_record
+revision_schema: 2
+title: Revision schema two fixture
+status: complete
+date: 2026-08-21
+record_id: REV-20260821-999
+session_id: SESSION-20260821-999
+created_at: 2026-08-21T23:00:00+07:00
+author: validator-test
+revises: SESSION-20260821-998
+reason: Fixture kiểm tra section bắt buộc.
+necessity: N2
+impact: Chỉ ảnh hưởng fixture.
+---
+
+# Revision fixture
+
+## Lý do chỉnh sửa
+
+Fixture.
+
+## Mức độ cần thiết
+
+N2.
+
+## Phạm vi và tác động
+
+Fixture.
+
+## Xác minh
+
+Fixture.
+""",
+                encoding="utf-8",
+            )
+
+            result = run_checker(root)
+
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("Liên kết truy vết", result.stdout)
+            self.assertIn("Xác nhận đóng hồ sơ", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

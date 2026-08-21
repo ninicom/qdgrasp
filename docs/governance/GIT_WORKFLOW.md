@@ -2,10 +2,12 @@
 document_id: GOV-GIT-001
 document_type: policy
 title: Quy trình Git theo feature, develop và release
+version: 1.1.0
 status: active
 date: 2026-08-21
 owner: project-maintainer
 revises: none
+latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
 # Quy trình Git theo feature, develop và release
@@ -74,9 +76,17 @@ Một feature chỉ được merge khi:
 - branch bắt nguồn từ `develop` và working tree sạch;
 - mọi commit hoàn tất có session/evidence tương ứng;
 - `git diff --check` pass;
+- `python3 scripts/check_references.py --lock-only` pass;
+- `python3 scripts/check_train_args.py --registry-only` pass;
 - `python3 scripts/check_docs.py --root .` pass;
 - `python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v` pass;
 - finding S0/S1 không còn mở; finding còn lại có disposition rõ.
+
+Khi `.references/` có mặt, hook và `run_project_checks()` bắt buộc chạy cả
+`scripts/check_references.py --source-root .references` và full argument audit
+với `--source .references/ultralytics`. Nếu clone bị loại khỏi source archive,
+lock-only/registry-only vẫn chạy; CI release có source checkout phải cung cấp
+hai clone bắt buộc. Session/release evidence phải lưu output full check.
 
 Merge bắt buộc `--no-ff` để giữ ranh giới feature. Nếu gate sau merge thất bại,
 không tạo release branch; sửa bằng feature/fix branch mới, không rewrite lịch sử

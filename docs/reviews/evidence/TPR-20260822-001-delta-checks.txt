@@ -1,0 +1,79 @@
+review_id: TPR-20260822-001
+reviewer: codex-agent-third-party-train-args
+reviewer_organization: codex-multi-agent-internal-review
+independence: internal_independent
+reviewed_commit: fdb60eb51e4793ee5764b272acc3a40960608846
+reviewed_tree: 2b26aed81b7f8647e85d2bc64b2a6ecf2da979f5
+reviewed_parent: 5d86a426ff7f250bc7a77e80e241610d10a9958a
+completed_at: 2026-08-22T00:14:10+07:00
+timezone: Asia/Bangkok
+result: FAIL
+max_open_severity: S1
+files_edited_by_reviewer: none
+
+baseline_observed:
+  registry_only: PASS
+  full_source: PASS
+  train_argument_tests: 16/16 PASS
+  entire_suite: 24/24 PASS
+  documentation_checker: 33 PASS
+  outer_worktree: clean
+
+adversarial_observations:
+  - mutation: 'epochs.default 100 -> "100"'
+    registry_only: PASS (unexpected)
+    full_source: PASS (unexpected)
+    semantic_change: YAML integer -> YAML string
+  - mutation: 'save.default True -> "True"'
+    registry_only: PASS (unexpected)
+    semantic_change: YAML boolean -> YAML string
+  - mutation: 'model.default null -> "null"'
+    registry_only: PASS (unexpected)
+    semantic_change: YAML null -> YAML string
+  - mutation: 'schema_version 1 -> " 1 "'
+    registry_only: PASS (unexpected)
+    semantic_change: YAML integer -> whitespace-bearing YAML string
+  - mutation: 'default: 100 -> default:100'
+    registry_only: PASS (unexpected)
+    semantic_change: safe YAML treats default:100 as a mapping key, not default plus value
+  - mutation: 'default: 100 -> default:<TAB>100'
+    registry_only: PASS (unexpected)
+    semantic_change: safe YAML parser raises ScannerError
+  - mutation: 'Markdown epochs type integer -> banana/string'
+    documentation_validation: PASS (unexpected)
+  - mutation: 'Markdown quantize type precision/null -> boolean'
+    documentation_validation: PASS (unexpected)
+  - mutation: 'Markdown legacy half behavior quantize=16 -> show_boxes'
+    documentation_validation: PASS (unexpected)
+  - mutation: 'Markdown scale constraint/range prose corrupted'
+    documentation_validation: PASS (unexpected)
+  - mutation: 'Markdown cfg merge-order prose corrupted'
+    documentation_validation: PASS (unexpected)
+  - mutation: 'dirty tracked ultralytics/data/augment.py at pinned HEAD'
+    full_source: PASS (unexpected when check_train_args.py is invoked alone)
+    note: combined project gate is mitigated by check_references.py cleanliness check
+
+per_original_finding:
+  F-001: open S1
+  F-002: open S1
+  F-003: resolved
+  F-004: partial/open S2
+  F-005: partial/open S2
+  F-006: resolved
+  F-007: resolved
+  F-008: resolved
+  F-009: resolved for combined automated gate
+
+new_finding:
+  F-010: S2 standalone full-source checker does not require a clean checkout
+
+required_closure:
+  - strict registry dialect that rejects quotes, tabs and missing separators
+  - typed semantic fingerprint retaining scalar kind and lexeme
+  - normative Markdown body pin or complete field/prose comparison
+  - explicit quantize canonical alias mapping
+  - standalone full-source cleanliness check
+  - negative tests for every passing corruption above
+
+final_verdict: FAIL
+final_max_severity: S1
