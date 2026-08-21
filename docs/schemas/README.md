@@ -22,11 +22,25 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
   -s scripts/tests -p 'test_*.py' -v
 ```
 
+Kiểm registry tham số train mà không cần source clone:
+
+```bash
+python3 scripts/check_train_args.py --registry-only
+```
+
+Đối chiếu registry với đúng clone Ultralytics đã pin:
+
+```bash
+python3 scripts/check_train_args.py --source .references/ultralytics
+```
+
 Validator chỉ dùng Python standard library. Phạm vi tài liệu được quản lý gồm:
 
 - `PLAN.md`, `docs/README.md`, `docs/governance/*.md`,
-  `docs/decisions/*.md` và `docs/schemas/README.md`;
-- index `README.md` của `archive`, `reports`, `reviews`, `revisions`, `sessions`;
+  `docs/decisions/*.md`, `docs/configuration/*.md` và
+  `docs/schemas/README.md`;
+- index `README.md` của `archive`, `configuration`, `reports`, `reviews`,
+  `revisions`, `sessions`;
 - record Markdown trong `docs/reports/`, `docs/sessions/`, `docs/reviews/`,
   `docs/revisions/`, `docs/metrics/`.
 
@@ -57,6 +71,9 @@ phiên/số liệu/review/revision không được dùng `active`.
 - Báo cáo Markdown khác trong `docs/reports/` phải có front matter tối thiểu và
   các mục “Tóm tắt”, “Bằng chứng”, “Kết luận”; `release_report` dùng thêm mẫu
   `docs/templates/RELEASE_REPORT.md`.
+- Markdown ngoài README trong `docs/configuration/` phải có
+  `document_type: registry`. `TRAIN_ARGUMENTS.yaml` được checker riêng xác minh
+  số lượng, field bắt buộc, disposition, type-set và source provenance.
 
 Heading có thể có tiền tố số (`## 3. Bằng chứng`); validator bỏ tiền tố này khi
 đối chiếu. Front matter chỉ cần scalar ở cấp cao nhất và list lồng dưới
@@ -84,3 +101,11 @@ một bản ghi mới có liên kết ngược tới phiên/artifact/revision c�
 Vocabulary record là `draft`, `in_review`, `complete`, `accepted`, `superseded`
 và `invalidated`. Tài liệu quy phạm dùng thêm `active`. Không dùng `completed`
 hoặc `final`.
+
+## Hợp đồng train-argument registry
+
+`scripts/check_train_args.py --registry-only` khóa 115 canonical key, hai extra
+config kwargs, chín legacy name và một API control. Chế độ full còn kiểm exact
+Git HEAD, SHA-256 của `default.yaml`, config validator, model API, trainer, toàn
+bộ default/group, type/range membership và chữ ký `Model.train`. Exit code `1`
+là mismatch nội dung; `2` là invocation/source path không hợp lệ.

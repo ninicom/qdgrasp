@@ -1,0 +1,54 @@
+schema_version: 1
+generated_at: 2026-08-21
+policy: read_only_reference_sources
+
+sources:
+  ultralytics:
+    repository: https://github.com/ultralytics/ultralytics.git
+    ref: v8.4.125
+    commit: 329682a29d27203582ba30e519340f95abccc6a6
+    checkout: .references/ultralytics
+    status: pinned
+    default_config:
+      path: ultralytics/cfg/default.yaml
+      sha256: eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839
+    config_validator:
+      path: ultralytics/cfg/__init__.py
+      sha256: ea9a98b498686f44561e9ce9892aa0e7de52226429496b08a20475ebbfa4eed8
+    model_api:
+      path: ultralytics/engine/model.py
+      sha256: 69cb4c9c6f572c50bd35328e5154e6b596ed50dc10d218584da8aed3f7c9b32a
+    trainer:
+      path: ultralytics/engine/trainer.py
+      sha256: d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d6c57a32e6
+    license:
+      path: LICENSE
+      sha256: 0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0
+      observed_identifier: AGPL-3.0
+      distribution_status: blocked_pending_commercial_license
+
+  dexgraspnet2:
+    repository: https://github.com/PKU-EPIC/DexGraspNet2.git
+    ref: 26ecd76121e3c8218ad53db9840cf34f6b81b076
+    commit: 26ecd76121e3c8218ad53db9840cf34f6b81b076
+    checkout: .references/dexgraspnet2
+    status: pinned
+    license:
+      path: null
+      sha256: null
+      observed_identifier: unresolved_no_license_file_at_pinned_root
+      distribution_status: blocked_pending_license_evidence
+
+  graspgenx:
+    repository: https://github.com/NVlabs/GraspGenX.git
+    ref: b9429097728cb1c430dd78b92edf17ba318aad03
+    commit: b9429097728cb1c430dd78b92edf17ba318aad03
+    checkout: .references/graspgenx
+    status: pending
+
+  rectified_flow:
+    repository: https://github.com/lqiang67/rectified-flow.git
+    ref: 14b4925ad90abdadaca1f7b5caba5555b84e810a
+    commit: 14b4925ad90abdadaca1f7b5caba5555b84e810a
+    checkout: .references/rectified-flow
+    status: pending

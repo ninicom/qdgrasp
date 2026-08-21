@@ -74,9 +74,16 @@ Một feature chỉ được merge khi:
 - branch bắt nguồn từ `develop` và working tree sạch;
 - mọi commit hoàn tất có session/evidence tương ứng;
 - `git diff --check` pass;
+- `python3 scripts/check_train_args.py --registry-only` pass;
 - `python3 scripts/check_docs.py --root .` pass;
 - `python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v` pass;
 - finding S0/S1 không còn mở; finding còn lại có disposition rõ.
+
+Khi `.references/ultralytics` có mặt, feature thay config/framework còn phải chạy
+full source audit bằng `python3 scripts/check_train_args.py --source
+.references/ultralytics` và lưu output/hash trong session hoặc release evidence.
+Registry-only không thay thế phép đối chiếu source này; nó chỉ cho phép hook/CI
+bootstrap chạy khi các clone read-only bị loại khỏi Git.
 
 Merge bắt buộc `--no-ff` để giữ ranh giới feature. Nếu gate sau merge thất bại,
 không tạo release branch; sửa bằng feature/fix branch mới, không rewrite lịch sử

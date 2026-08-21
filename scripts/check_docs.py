@@ -3,8 +3,8 @@
 
 The checker intentionally uses only the Python standard library.  It validates
 published records under ``docs/reports``, ``docs/sessions``, ``docs/reviews``,
-``docs/revisions`` and ``docs/metrics`` while leaving templates and README
-files alone.
+``docs/revisions`` and ``docs/metrics`` plus normative configuration registries,
+while leaving templates alone.
 """
 
 from __future__ import annotations
@@ -19,13 +19,28 @@ from typing import Iterable, Sequence
 
 
 RECORD_DIRECTORIES = ("reports", "sessions", "reviews", "revisions", "metrics")
-MANAGED_INDEX_DIRECTORIES = ("archive", "reports", "reviews", "revisions", "sessions")
-NORMATIVE_CATEGORIES = {"plan", "governance", "decision", "schema", "index"}
+MANAGED_INDEX_DIRECTORIES = (
+    "archive",
+    "configuration",
+    "reports",
+    "reviews",
+    "revisions",
+    "sessions",
+)
+NORMATIVE_CATEGORIES = {
+    "plan",
+    "governance",
+    "decision",
+    "schema",
+    "configuration",
+    "index",
+}
 EXPECTED_NORMATIVE_TYPES = {
     "plan": "plan",
     "governance": "policy",
     "decision": "decision",
     "schema": "policy",
+    "configuration": "registry",
     "index": "index",
 }
 
@@ -631,6 +646,9 @@ def discover_documents(root: Path) -> list[tuple[Path, str]]:
         add(path, "governance")
     for path in sorted((docs_root / "decisions").glob("*.md")):
         add(path, "decision")
+    for path in sorted((docs_root / "configuration").glob("*.md")):
+        if path.name.casefold() != "readme.md":
+            add(path, "configuration")
     for directory in MANAGED_INDEX_DIRECTORIES:
         add(docs_root / directory / "README.md", "index")
 

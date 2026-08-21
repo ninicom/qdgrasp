@@ -102,6 +102,23 @@ scaler, RNG, global step, dataset manifest, robot profile và source provenance;
 không pickle nguyên module. Resume phải tái lập chính xác optimizer, scheduler và
 RNG.
 
+### Train configuration surface
+
+- `docs/configuration/TRAIN_ARGUMENTS.yaml` là compatibility manifest máy đọc
+  được cho đúng commit Ultralytics đã pin. Nó phải kiểm kê 100% canonical key,
+  custom-only key, legacy alias/removed key và tham số điều khiển riêng của
+  `Model.train`; không chỉ chép nhóm “Train settings”.
+- Mỗi key có default upstream, group, type, train role, disposition
+  `retain|adapt|defer|reject`, key DexGrasp đích và device policy. Key YOLO-only
+  phải lỗi rõ khi người dùng truyền, không bị bỏ hoặc no-op im lặng.
+- Runtime lưu requested/effective config. CPU bắt buộc effective `amp=False`;
+  fractional AutoBatch chỉ hợp lệ trên CUDA đơn; mọi device fallback, worker
+  clamp, compile fallback và OOM batch reduction phải được log.
+- DexGrasp extension chỉ được triển khai sau khi khóa default/range và thêm vào
+  checker. Unknown key, dead key hoặc extension còn `required_design` là lỗi.
+- Mỗi lần nâng upstream, full checker phải chứng minh zero missing/extra/default/
+  type mismatch với source clone và hash mới trước khi merge integration branch.
+
 ### YAML
 
 Giữ grammar Ultralytics `- [from, repeats, module, args]`. Parser flatten
@@ -244,6 +261,11 @@ raw XYZ 40k / depth + intrinsics
 
 ## 5. Test và nghiệm thu
 
+- Train-argument registry khớp toàn bộ 115 canonical key, 2 extra config kwargs,
+  9 legacy name và 1 API control của source đã pin; cả registry-only và full
+  source check đều pass với zero missing/extra.
+- Config parser từ chối unknown/dead/rejected key; mọi key `retain/adapt` có test
+  default, override, serialization, resume mutability và effective CPU/CUDA.
 - Mọi YAML n–x build, forward/backward và mọi trainable parameter nhận gradient.
 - CPU và CUDA chạy train-smoke, full val, predict, resume và Results conversions;
   không có `.cuda()` hard-code.
