@@ -1,0 +1,92 @@
+TPR-20260821-002 delta-review checks
+Reviewer: codex-agent-audit-v2-fast
+Date: 2026-08-21
+Scope: documentation-only closure verification for F-001 through F-004
+
+CHK-001 — Manifest identity
+Command:
+  sha256sum docs/reviews/evidence/TPR-20260821-002-scope.sha256
+Exit: 0
+Output:
+  a0c61e2fa7d991468207d48b45721c9fb5c5b86f731917093b0da45b50c94b4e  docs/reviews/evidence/TPR-20260821-002-scope.sha256
+
+CHK-002 — Subject integrity
+Command:
+  sha256sum -c docs/reviews/evidence/TPR-20260821-002-scope.sha256
+Exit: 0
+Output:
+  PLAN.md: OK
+  scripts/check_docs.py: OK
+  scripts/tests/test_check_docs.py: OK
+  docs/README.md: OK
+  docs/archive/PLAN.pre-v2.md: OK
+  docs/archive/README.md: OK
+  docs/decisions/0001-documentation-and-traceability.md: OK
+  docs/governance/DOCUMENTATION_POLICY.md: OK
+  docs/governance/SESSION_RULES.md: OK
+  docs/governance/THIRD_PARTY_REVIEW.md: OK
+  docs/metrics/METRICS_REGISTRY.md: OK
+  docs/reports/README.md: OK
+  docs/reviews/README.md: OK
+  docs/revisions/README.md: OK
+  docs/revisions/REV-20260821-001-plan-v2.md: OK
+  docs/schemas/README.md: OK
+  docs/sessions/README.md: OK
+  docs/sessions/SESSION-20260821-001-documentation-bootstrap.md: OK
+  docs/templates/METRICS_REPORT.md: OK
+  docs/templates/REVISION_RECORD.md: OK
+  docs/templates/SESSION_REPORT.md: OK
+  docs/templates/THIRD_PARTY_REVIEW_REPORT.md: OK
+
+CHK-003 — Documentation validator before report creation
+Command:
+  python3 scripts/check_docs.py
+Exit: 0
+Output:
+  Documentation check passed: 16 file đã kiểm tra.
+
+CHK-004 — Validator unit tests
+Command:
+  python3 -m unittest discover -s scripts/tests
+Exit: 0
+Output:
+  ...
+  ----------------------------------------------------------------------
+  Ran 3 tests in 0.232s
+
+  OK
+
+CHK-005 — F-001 closure: reviewed session is frozen in the manifest
+Observed manifest entry:
+  03a91de7dd4289ae5c583cb8c2e92534ed016320a3f67c9eaa9d31fbb5e158ff  docs/sessions/SESSION-20260821-001-documentation-bootstrap.md
+Result: PASS. The reviewed session is part of the hashed revision.
+
+CHK-006 — F-002 closure: normative status, revises, and schema contract
+Observed:
+  - docs/governance/DOCUMENTATION_POLICY.md declares status: active and revises: none.
+  - The policy permits active for normative plan/policy/registry/schema/index documents.
+  - docs/schemas/README.md has managed front matter with status: active and revises: none.
+  - scripts/check_docs.py defines normative categories/statuses and includes docs/schemas/README.md.
+  - CHK-003 and CHK-004 pass.
+Result: PASS. Policy, subjects, schema coverage, and validator use one contract.
+
+CHK-007 — F-003 closure: completed template placeholders are rejected
+Observed:
+  - docs/templates/SESSION_REPORT.md defaults to status: draft.
+  - scripts/tests/test_check_docs.py contains test_completed_template_with_placeholders_is_rejected.
+  - The negative test promotes the untouched template to complete and requires a nonzero exit plus a placeholder diagnostic.
+  - CHK-004 passes all three tests, including the negative and concrete positive session cases.
+Result: PASS.
+
+CHK-008 — F-004 closure: immutable archive sidecar
+Observed docs/archive/README.md entry:
+  docs/archive/PLAN.pre-v2.md | LEGACY-PLAN-PRE-V2 | superseded | PLAN-V2 (PLAN.md) | docs/revisions/REV-20260821-001-plan-v2.md | d4d8b1d51723c830bab041575388cd58984e60b77e06013844ca02f03220d36d
+Observed policy rule:
+  immutable raw archives use docs/archive/README.md as their lifecycle sidecar instead of editing raw bytes.
+Result: PASS. The sidecar supplies status, replacement, revision pointer, and matching raw hash.
+
+Scope limitation
+This check is an internal independent documentation delta review. It is not an
+external or human review. Runtime, clean clone, license, dataset, checkpoint,
+model behavior, performance, and technical correctness are outside scope and
+were not verified.

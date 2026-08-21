@@ -1,0 +1,394 @@
+TPR-20260821-001 — independent documentation audit checks
+============================================================
+
+report_id: TPR-20260821-001
+reviewer: codex-agent-third-party-audit
+reviewer_organization: Codex internal agent team
+independence: internal_independent
+workspace: /media/quyen/Data/Dexgraspnet_custom
+scope_manifest: docs/reviews/evidence/TPR-20260821-001-scope.sha256
+scope_manifest_sha256: 6f845d453287ea332958c7b343cc2b55c92c324b6d3e4eed8c27a9b9d1b1abeb
+environment_capture_local: 2026-08-21T22:17:32+07:00
+environment_capture_utc: 2026-08-21T15:17:32+00:00
+audit_window: 2026-08-21 22:13–22:20 Asia/Bangkok
+
+Scope and limitations
+---------------------
+
+- The 19 paths named by the scope manifest were audited read-only. No subject
+  file and no scope manifest was edited by the reviewer.
+- The referenced session report was read only as a dependency/path target. It
+  is not a member of the frozen 19-file scope, which is recorded as finding
+  F-001 rather than silently treating it as immutable evidence.
+- No clean clone was supplied or created. The workspace is not a Git working
+  tree. Upstream commits/URLs, licenses, external source clones, model or
+  dataset artifacts, runtime behavior, CPU/GPU behavior, and model benchmarks
+  were not verified. No Internet fact-check was performed.
+- Python bytecode for the compile check was directed to /tmp; no bytecode was
+  created by this audit inside the workspace.
+- Manual review distinguished normative plan targets from completed runtime
+  claims. The legacy archive contains historical technical assertions that
+  were not fact-checked in this documentation-only review.
+
+CHK-001 — frozen-scope integrity (initial and final pre-report rerun)
+-------------------------------------------------------------------
+
+Exact command:
+
+    sha256sum -c docs/reviews/evidence/TPR-20260821-001-scope.sha256
+
+Working directory:
+
+    /media/quyen/Data/Dexgraspnet_custom
+
+Exit code: 0 on both executions.
+
+Output summary (both executions): all 19 entries returned OK:
+
+    PLAN.md: OK
+    scripts/check_docs.py: OK
+    docs/README.md: OK
+    docs/archive/PLAN.pre-v2.md: OK
+    docs/decisions/0001-documentation-and-traceability.md: OK
+    docs/governance/DOCUMENTATION_POLICY.md: OK
+    docs/governance/SESSION_RULES.md: OK
+    docs/governance/THIRD_PARTY_REVIEW.md: OK
+    docs/metrics/METRICS_REGISTRY.md: OK
+    docs/reports/README.md: OK
+    docs/reviews/README.md: OK
+    docs/revisions/README.md: OK
+    docs/revisions/REV-20260821-001-plan-v2.md: OK
+    docs/schemas/README.md: OK
+    docs/sessions/README.md: OK
+    docs/templates/METRICS_REPORT.md: OK
+    docs/templates/REVISION_RECORD.md: OK
+    docs/templates/SESSION_REPORT.md: OK
+    docs/templates/THIRD_PARTY_REVIEW_REPORT.md: OK
+
+Interpretation: PASS for byte integrity of the paths actually listed. This
+does not cover the referenced session report because that path is absent from
+the manifest.
+
+CHK-002 — repository documentation validator before review report
+-----------------------------------------------------------------
+
+Exact command:
+
+    python3 scripts/check_docs.py --root .
+
+Exit code: 0.
+
+Exact output:
+
+    Documentation check passed: 3 file đã kiểm tra.
+
+Interpretation: PASS for the three records discovered at that time (metrics
+registry, revision record, and session report). This is not evidence that all
+19 scope entries were schema-validated; README files and several directories
+are deliberately excluded by the validator.
+
+CHK-003 — Python compilation without subject mutation
+-----------------------------------------------------
+
+Exact command:
+
+    python3 -c "import py_compile; py_compile.compile('scripts/check_docs.py', cfile='/tmp/TPR-20260821-001-check_docs.pyc', doraise=True)"
+
+Exit code: 0.
+
+Output: no stdout/stderr.
+
+Interpretation: PASS. The compiled output target was outside the workspace.
+
+CHK-004 — internal Markdown-link targets in frozen subjects
+-----------------------------------------------------------
+
+Exact command:
+
+    python3 - <<'PY'
+    from pathlib import Path
+    import re
+    root = Path('.').resolve()
+    manifest = root / 'docs/reviews/evidence/TPR-20260821-001-scope.sha256'
+    subjects = [root / line.split('  ', 1)[1] for line in manifest.read_text(encoding='utf-8').splitlines() if line.strip()]
+    pat = re.compile(r'(?<!!)\[[^\]]*\]\(([^)]+)\)')
+    checked = 0
+    missing = []
+    for path in subjects:
+        for raw in pat.findall(path.read_text(encoding='utf-8')):
+            target = raw.strip().split()[0].strip('<>')
+            if re.match(r'^[a-z][a-z0-9+.-]*:', target, re.I) or target.startswith('#'):
+                continue
+            target_path = target.split('#', 1)[0]
+            if not target_path or any(token in target_path for token in ('{', '}', '<', '>')):
+                continue
+            checked += 1
+            resolved = (path.parent / target_path).resolve()
+            if not resolved.exists():
+                missing.append((path.relative_to(root).as_posix(), target, resolved.relative_to(root).as_posix() if resolved.is_relative_to(root) else str(resolved)))
+    print(f'subjects={len(subjects)} internal_markdown_links_checked={checked} missing={len(missing)}')
+    for item in missing:
+        print('MISSING', *item, sep=' | ')
+    PY
+
+Exit code: 0.
+
+Exact output:
+
+    subjects=19 internal_markdown_links_checked=1 missing=0
+
+Interpretation: PASS for actual relative Markdown links. External HTTP links
+were excluded, consistent with the stated no-Internet scope.
+
+CHK-005 — path-like code references to existing documentation
+-------------------------------------------------------------
+
+Exact command:
+
+    python3 - <<'PY'
+    from pathlib import Path
+    import re
+    root = Path('.').resolve()
+    manifest = root / 'docs/reviews/evidence/TPR-20260821-001-scope.sha256'
+    subjects = [root / line.split('  ', 1)[1] for line in manifest.read_text(encoding='utf-8').splitlines() if line.strip()]
+    refs = []
+    for path in subjects:
+        text = path.read_text(encoding='utf-8')
+        for line_no, line in enumerate(text.splitlines(), 1):
+            for token in re.findall(r'`([^`\n]+)`', line):
+                candidate = token.strip().rstrip('.,;:')
+                if candidate == 'PLAN.md' or candidate.startswith(('docs/', 'scripts/')):
+                    candidate = candidate.split('#', 1)[0]
+                    if not any(ch in candidate for ch in '*{}<>') and ' ' not in candidate and not candidate.endswith('/'):
+                        refs.append((path.relative_to(root).as_posix(), line_no, candidate, (root / candidate).exists()))
+    for source, line_no, candidate, exists in refs:
+        print(f'{source}:{line_no} | {candidate} | exists={str(exists).lower()}')
+    print(f'references={len(refs)} missing={sum(not x[3] for x in refs)}')
+    PY
+
+Exit code: 0.
+
+Output summary: 26 path-like references were enumerated; 25 resolved. The sole
+non-resolving token was the documented example placeholder
+`docs/revisions/REV-...md` in SESSION_RULES.md, not a claimed artifact. The
+concrete session, plan, archive, governance, template, and revision paths
+resolved.
+
+Interpretation: PASS with the explicit placeholder exclusion above. Planned
+future code/data paths in PLAN.md were not treated as claims that files already
+exist.
+
+CHK-006 — manifest, metadata, revision, and N0–N3 consistency
+------------------------------------------------------------
+
+Exact command:
+
+    PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+    from pathlib import Path
+    import hashlib, re
+    root = Path('.').resolve()
+    manifest = root / 'docs/reviews/evidence/TPR-20260821-001-scope.sha256'
+    lines = [line for line in manifest.read_text(encoding='utf-8').splitlines() if line.strip()]
+    entries = [(line.split('  ', 1)[0], line.split('  ', 1)[1]) for line in lines]
+    paths = [p for _, p in entries]
+    print(f'manifest_entries={len(entries)} unique_paths={len(set(paths))}')
+    print(f'manifest_contains_session={"docs/sessions/SESSION-20260821-001-documentation-bootstrap.md" in paths}')
+    session = root / 'docs/sessions/SESSION-20260821-001-documentation-bootstrap.md'
+    print(f'referenced_session_exists={session.is_file()} session_sha256={hashlib.sha256(session.read_bytes()).hexdigest() if session.is_file() else "N/A"}')
+    archive = root / 'docs/archive/PLAN.pre-v2.md'
+    plan = root / 'PLAN.md'
+    revision = (root / 'docs/revisions/REV-20260821-001-plan-v2.md').read_text(encoding='utf-8')
+    archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+    plan_hash = hashlib.sha256(plan.read_bytes()).hexdigest()
+    print(f'archive_hash={archive_hash} referenced_in_revision={archive_hash in revision}')
+    print(f'plan_hash={plan_hash} referenced_in_revision={plan_hash in revision}')
+    allowed = {'draft','in_review','accepted','complete','superseded','invalidated'}
+    front_matter_docs = 0
+    ids = []
+    missing_revises = []
+    status_outside_policy = []
+    no_front_matter = []
+    for rel in paths:
+        path = root / rel
+        if path.suffix != '.md':
+            continue
+        text = path.read_text(encoding='utf-8')
+        if not text.startswith('---\n'):
+            no_front_matter.append(rel)
+            continue
+        front_matter_docs += 1
+        fm = text.split('---\n', 2)[1]
+        meta = {}
+        for line in fm.splitlines():
+            m = re.match(r'^([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$', line)
+            if m:
+                meta.setdefault(m.group(1).casefold(), m.group(2).strip().strip('"\''))
+        if meta.get('document_id'):
+            ids.append((meta['document_id'], rel))
+        if 'revises' not in meta:
+            missing_revises.append(rel)
+        status = meta.get('status','').casefold()
+        if status and status not in allowed:
+            status_outside_policy.append((rel, status))
+    print(f'front_matter_docs={front_matter_docs} document_ids={len(ids)} unique_document_ids={len({x[0] for x in ids})}')
+    print('no_front_matter=' + (','.join(no_front_matter) or 'none'))
+    print('missing_revises=' + (','.join(missing_revises) or 'none'))
+    for rel, status in status_outside_policy:
+        print(f'status_outside_declared_policy={rel}:{status}')
+    print(f'status_outside_declared_policy_count={len(status_outside_policy)}')
+    for level in ('N0','N1','N2','N3'):
+        print(f'{level}_present_policy={level in (root / "docs/governance/DOCUMENTATION_POLICY.md").read_text(encoding="utf-8")} review={level in (root / "docs/governance/THIRD_PARTY_REVIEW.md").read_text(encoding="utf-8")} revision_template={level in (root / "docs/templates/REVISION_RECORD.md").read_text(encoding="utf-8")}')
+    print(f'n3_plan_revision_session_consistent={all("necessity: N3" in p.read_text(encoding="utf-8") for p in [plan, root / "docs/revisions/REV-20260821-001-plan-v2.md", session])}')
+    PY
+
+Exit code: 0.
+
+Exact output:
+
+    manifest_entries=19 unique_paths=19
+    manifest_contains_session=False
+    referenced_session_exists=True session_sha256=ba6cea9ddfd6ed7b2f034c84c00dc494b1cd80164948b6104a3973996d4e20ed
+    archive_hash=d4d8b1d51723c830bab041575388cd58984e60b77e06013844ca02f03220d36d referenced_in_revision=True
+    plan_hash=797c3b9ae17f8eb5975f6018b377e3b30c8bc5419920000502055271cf38384d referenced_in_revision=True
+    front_matter_docs=16 document_ids=16 unique_document_ids=16
+    no_front_matter=docs/archive/PLAN.pre-v2.md,docs/schemas/README.md
+    missing_revises=docs/governance/DOCUMENTATION_POLICY.md,docs/reports/README.md,docs/reviews/README.md,docs/revisions/README.md,docs/sessions/README.md
+    status_outside_declared_policy=PLAN.md:active
+    status_outside_declared_policy=docs/README.md:active
+    status_outside_declared_policy=docs/governance/DOCUMENTATION_POLICY.md:active
+    status_outside_declared_policy=docs/governance/SESSION_RULES.md:active
+    status_outside_declared_policy=docs/governance/THIRD_PARTY_REVIEW.md:active
+    status_outside_declared_policy=docs/metrics/METRICS_REGISTRY.md:active
+    status_outside_declared_policy=docs/reports/README.md:active
+    status_outside_declared_policy=docs/reviews/README.md:active
+    status_outside_declared_policy=docs/revisions/README.md:active
+    status_outside_declared_policy=docs/sessions/README.md:active
+    status_outside_declared_policy_count=10
+    N0_present_policy=True review=True revision_template=True
+    N1_present_policy=True review=True revision_template=True
+    N2_present_policy=True review=True revision_template=True
+    N3_present_policy=True review=True revision_template=True
+    n3_plan_revision_session_consistent=True
+
+Interpretation: archive and new-plan hashes match the complete revision record;
+N0–N3 are present across the relevant policy/template and the concrete N3
+classification is aligned. Findings remain for the omitted session snapshot,
+metadata/status inconsistencies, and the unmarked immutable legacy archive.
+
+CHK-007 — negative test: untouched session template copied as a final record
+---------------------------------------------------------------------------
+
+Exact command:
+
+    tmp_root=/tmp/TPR-20260821-001-negative-session; mkdir -p "$tmp_root/docs/sessions"; cp docs/templates/SESSION_REPORT.md "$tmp_root/docs/sessions/SESSION-20260821-999-template-copy.md"; python3 scripts/check_docs.py --root "$tmp_root"
+
+Exit code: 0.
+
+Exact output:
+
+    Documentation check passed: 1 file đã kiểm tra.
+
+Interpretation: FAIL for the intended governance gate. The template defaults to
+`status: complete` and retains placeholder IDs, author, paths, hash, commands,
+and completion text, yet the validator accepts the copied file. This is the
+reproduction for F-003. All files created by this command are under /tmp, not
+inside the workspace.
+
+CHK-008 — execution environment
+-------------------------------
+
+Exact command:
+
+    date --iso-8601=seconds; date -u --iso-8601=seconds; uname -a; python3 --version; awk -F: '/^model name/{gsub(/^[ \t]+/,"",$2); print $2; exit}' /proc/cpuinfo; awk '/^MemTotal:/{print $2, $3}' /proc/meminfo; nproc; locale | sed -n '1,3p'
+
+Exit code: 0.
+
+Exact output:
+
+    2026-08-21T22:17:32+07:00
+    2026-08-21T15:17:32+00:00
+    Linux quyen 7.0.0-30-generic #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026 x86_64 GNU/Linux
+    Python 3.14.4
+    Intel(R) Core(TM) i5-8365U CPU @ 1.60GHz
+    15651776 kB
+    8
+    LANG=en_US.UTF-8
+    LANGUAGE=
+    LC_CTYPE="C.UTF-8"
+
+GPU/driver/CUDA were not used or inspected. No project dependency lock,
+dataset/model manifest, seed, simulator, or benchmark runtime was required for
+these documentation-only checks.
+
+CHK-009 — clean-clone/Git provenance availability
+-------------------------------------------------
+
+Exact command:
+
+    git status --short --untracked-files=all
+
+Exit code: 128.
+
+Exact output:
+
+    fatal: not a git repository (or any parent up to mount point /media/quyen)
+    Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+
+Interpretation: NOT RUN / unavailable for commit-level provenance. The audit is
+bound to the content checksum manifest, not to a Git commit or clean clone.
+
+CHK-010 — manual content and requirements review
+------------------------------------------------
+
+Method: line-by-line review of the 19 frozen subjects plus read-only inspection
+of the referenced session report. Compared DOCUMENTATION_POLICY, SESSION_RULES,
+THIRD_PARTY_REVIEW, METRICS_REGISTRY, all four templates, the revision record,
+the active plan, indexes/schema README, and the preserved legacy plan.
+
+Results:
+
+- PASS: manifest entries are unique; current plan and legacy archive hashes
+  match the hashes recorded by REV-20260821-001; concrete paths resolve; the
+  N3 reason/necessity/impact narrative is consistent across plan, revision, and
+  the currently observed session report.
+- PASS: session, metrics, revision, and review documents/templates cover the
+  principal required sections, including commands/exit codes, protocol,
+  environment, sample size, CI, raw artifacts/hashes, findings/severity,
+  independence, conditions, and verdict.
+- CONDITIONAL: the referenced session is not frozen by the reviewed revision
+  (F-001); metadata/status rules disagree with the files using them (F-002);
+  the validator accepts a final placeholder session (F-003); and the immutable
+  legacy archive has no local superseded/invalidated marker or revision pointer
+  despite the stated history policy (F-004).
+- Scope limitation: PLAN-V2 was read as a prospective/normative plan, not as
+  proof that implementation, clone, licensing, CPU/GPU, export, simulator, or
+  benchmark results exist. The session itself expressly says those areas are
+  unfinished. Those claims were not independently verified.
+
+Reviewer conclusion recorded for the report
+-------------------------------------------
+
+verdict: conditional_pass
+max_open_severity: S2
+open_findings: F-001 (S2), F-002 (S2), F-003 (S2), F-004 (S3)
+
+This internal-independent audit must not be described publicly as an external
+third-party review. A revised immutable scope and delta review are required to
+close the conditions and raise the verdict.
+
+CHK-011 — validator acceptance of the new complete report
+---------------------------------------------------------
+
+Exact command:
+
+    python3 scripts/check_docs.py --root .
+
+Exit code: 0.
+
+Exact output:
+
+    Documentation check passed: 4 file đã kiểm tra.
+
+Interpretation: PASS. This execution occurred after the complete review report
+was created. The only subsequent report edit binds the final SHA-256 of this
+log; an identical validator rerun is required before handoff.
