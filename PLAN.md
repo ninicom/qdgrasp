@@ -2,14 +2,14 @@
 document_id: PLAN-V2
 document_type: plan
 title: DexGrasp — thư viện dexterous grasp theo kiến trúc Ultralytics
-version: 2.2.0
+version: 2.3.0
 status: active
 date: 2026-08-21
 approved_date: 2026-08-21
 revises: LEGACY-PLAN-PRE-V2
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260822-004-plan-internal-only-scope.md
+latest_revision_record: docs/revisions/REV-20260822-005-agpl-public-release-basis.md
 revision_reason: Kế hoạch cũ không còn đáp ứng yêu cầu nguồn chuẩn, CPU/GPU, kiến trúc YAML mới và kiểm soát giấy phép.
 necessity: N3
 impact: Thay đổi nguồn phụ thuộc, mô hình lõi, chiến lược đóng gói, điều kiện phát hành và toàn bộ lộ trình triển khai; chưa có code triển khai bị thay đổi.
@@ -41,6 +41,18 @@ lại quyết định hoặc kết quả của phiên trước.
 - `scripts/check_references.py` khóa content của manifest; khi `.references/`
   có mặt, feature/release gate xác minh origin, exact HEAD, clean worktree và
   artifact/license-evidence hashes của mọi checkout bắt buộc.
+- `dexgrasp` sẽ được public toàn bộ source code cho cộng đồng dưới `AGPL-3.0`
+  (không phải nội bộ, không phải sản phẩm thương mại độc quyền). Đây là điều
+  kiện copyleft mà Ultralytics AGPL-3.0 tự cho phép: phân phối lại bản dẫn xuất
+  hợp pháp mà KHÔNG cần văn bản cấp phép thương mại riêng, miễn toàn bộ
+  `dexgrasp` (không chỉ phần vay mượn) giữ AGPL-3.0 và source luôn sẵn có, kể cả
+  khi chạy như dịch vụ mạng (§13 Affero). Không được đóng gói lại bất kỳ phần
+  nào dưới license permissive/độc quyền/dual-license trừ khi có văn bản cấp
+  phép thương mại thật từ Ultralytics.
+- DexGraspNet2 (`CC-BY-NC-4.0`) KHÔNG được giải quyết bởi quyết định AGPL-3.0
+  trên — non-commercial là trục độc lập với lựa chọn license phát hành. Việc
+  port code/dữ liệu DGN2 vào `dexgrasp` vẫn là release gate riêng, chờ đánh giá
+  pháp lý cụ thể trước khi public.
 - Core model bắt buộc chạy CPU FP32 và NVIDIA CUDA FP32/AMP. MuJoCo là evaluator
   CPU chính; Isaac Gym chỉ là bộ đối chiếu GPU tùy chọn.
 - CPU phải hoàn tất đúng và không OOM; latency được đo và công bố nhưng chưa là
@@ -198,6 +210,10 @@ raw XYZ 40k / depth + intrinsics
 
 ### M0 — Nguồn, license và baseline (1–2 tuần)
 
+- Chốt `dexgrasp` public dưới `AGPL-3.0`, clone/pin bốn upstream, lập
+  provenance và baseline manifest.
+- Đánh giá pháp lý riêng cho DexGraspNet2 (`CC-BY-NC-4.0`) trước khi port bất
+  kỳ code/dữ liệu nào vào `dexgrasp`.
 - Đo lại checkpoint DGN2: params, schemas, outputs, scene/view hashes và
   benchmark canonical.
 - Khóa corpus 30 scene × 256 view, depth source, camera frame, robot profile và
