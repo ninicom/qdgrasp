@@ -2,7 +2,7 @@
 document_id: RELEASE-0.1.0-ALPHA.1
 document_type: release_report
 title: Báo cáo prerelease bootstrap 0.1.0-alpha.1
-status: in_review
+status: complete
 date: 2026-08-21
 author: codex-primary-agent
 revises: none
@@ -35,6 +35,7 @@ license upstream, CPU/GPU runtime hoặc chất lượng grasp.
 | E-02 | `python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v` | 4/4 pass |
 | E-03 | `bash -n .githooks/* scripts/git/*.sh scripts/release_gate.sh` | pass |
 | E-04 | Git graph | Hai feature có commit riêng và merge `--no-ff` vào develop |
+| E-05 | `docs/reports/evidence/RELEASE-0.1.0-alpha.1-gate.txt` | SHA-256 `caa88d6fa62ef9ec703d3f4bab3575b58383dba346d8843f2bca7cca31808ee2` |
 
 ## Release gates
 
@@ -44,7 +45,7 @@ license upstream, CPU/GPU runtime hoặc chất lượng grasp.
 | Validator regression tests | PASS | E-02 |
 | Shell syntax | PASS | E-03 |
 | Feature/develop topology | PASS | E-04 |
-| `scripts/release_gate.sh 0.1.0-alpha.1` trên release commit | PENDING | Chạy sau commit chuẩn bị release |
+| `scripts/release_gate.sh 0.1.0-alpha.1` trên release commit | PASS | E-05; candidate `070f271256b20771a13de4aa536a171c546d16ba` |
 | Metrics/model/runtime | N/A | Chưa triển khai; ngoài claim release |
 | External/human review | N/A | Chưa có; không được tuyên bố external |
 
@@ -65,5 +66,6 @@ license upstream, CPU/GPU runtime hoặc chất lượng grasp.
 
 ## Kết luận
 
-Trạng thái hiện tại: `release_candidate`. Chỉ chuyển thành `release` sau khi
-release gate chạy trên commit sạch và report/session được cập nhật bằng evidence.
+Kết luận: `release` cho phạm vi bootstrap tài liệu/quy trình. Candidate đã vượt
+release gate trên commit sạch; được phép merge/tag bằng workflow. Kết luận này
+không mở rộng sang model/runtime hoặc các mục M0–M6 chưa triển khai.
