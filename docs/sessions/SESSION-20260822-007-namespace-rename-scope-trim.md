@@ -8,6 +8,9 @@ session_id: SESSION-20260822-007
 author: codex-primary-agent
 revises:
   - SESSION-20260822-006
+revision_reason: SESSION-20260822-006 tuyên bố vendor manifest 365 file "byte-for-byte identical, nothing stripped" nhưng .gitignore không anchor đã âm thầm loại 51 file cfg/datasets/ khỏi commit, khiến số liệu evidence sai thực tế đã commit (314 file).
+necessity: N2
+impact: Sửa số liệu evidence sai của SESSION-006 (E-03); không đổi kết luận vendor import hợp lệ vì phần thiếu vốn nằm trong danh sách dự kiến xóa; sửa .gitignore để ngăn tái diễn.
 related_plan: PLAN-V2
 ---
 
