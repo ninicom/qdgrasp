@@ -2,7 +2,7 @@
 document_id: SESSION-20260822-001
 document_type: session_report
 title: Sửa S1 bằng train-argument registry dialect v2
-status: in_review
+status: complete
 date: 2026-08-22
 session_id: SESSION-20260822-001
 author: codex-primary-agent
@@ -13,6 +13,7 @@ revision_reason: TPR-20260822-001 chứng minh remediation fdb60eb vẫn nhận 
 necessity: N2
 impact: Thay contract parser/fingerprint/evidence gate sang schema v2; giữ nguyên 127 tên và upstream revision.
 related_plan: PLAN-V2
+review_outcome: TPR-20260822-002
 ---
 
 # SESSION-20260822-001 — Registry dialect v2
@@ -33,6 +34,7 @@ sạch trong standalone full mode. Không merge trước independent delta revie
 | W-04 | Ghi structured canonical mapping cho `quantize` | YAML + Markdown | registry-only pass |
 | W-05 | Full mode tự kiểm origin/HEAD/clean tracked+untracked | source checker | clean/dirty tests pass |
 | W-06 | Mở rộng regression suite từ 24 lên 30 | unit suite | 30/30 pass |
+| W-07 | Gửi final snapshot cho independent delta review | `363a671` | `fail/S2` |
 
 ## Bằng chứng
 
@@ -49,6 +51,10 @@ Implementation commit: `8dc0e2e0a122e46df95f2f4f7a3cfbfee9dec58c`, tree
 `60794bd3930713bde84a8707325517b05bce2ea2`, committed at
 `2026-08-22T00:25:08+07:00`.
 
+Delta review evidence: `docs/reviews/evidence/TPR-20260822-002-delta-checks.txt`,
+4.172 byte, SHA-256
+`adc4a5ac12f605be121a1f0e30cbb3ce7ff3ac0b397bbd318d39f0622fc2bcb3`.
+
 ## Kiểm tra đã chạy
 
 | Test ID | Lệnh | Exit code | Kết quả |
@@ -63,7 +69,8 @@ Implementation commit: `8dc0e2e0a122e46df95f2f4f7a3cfbfee9dec58c`, tree
 
 ## Việc chưa hoàn tất
 
-- Independent delta review lần hai trên clean exact commit.
+- F-010 còn index-flag bypass; F-011 còn exact front-matter/pointer gap.
+- Candidate `363a671` không được merge/release.
 - Model/runtime/CPU-CUDA smoke ngoài claim và vẫn chưa được implement.
 
 ## Sửa đổi phiên trước
@@ -73,5 +80,6 @@ tác động. SESSION-007/REV-006/TPR-001 đã đóng và không bị sửa lạ
 
 ## Bàn giao
 
-Implementation commit và replay evidence đã khóa. Giao final feature snapshot
-chứa evidence này cho reviewer không tham gia sửa code; chỉ merge sau pass/NONE.
+Phiên kết thúc với audit `fail/S2`, dù mọi S1 và technical mutation gốc đã đóng.
+Giữ nguyên hồ sơ này; mở session/revision N2 mới chỉ sửa F-010/F-011, rồi review
+lại trước merge.

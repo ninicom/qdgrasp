@@ -3,7 +3,7 @@ document_id: REV-20260822-001
 document_type: revision_record
 revision_schema: 2
 title: Thay train-argument registry parser contract bằng dialect v2
-status: in_review
+status: invalidated
 date: 2026-08-22
 record_id: REV-20260822-001
 session_id: SESSION-20260822-001
@@ -28,7 +28,8 @@ revises:
 reason: Independent delta audit TPR-20260822-001 reproduced typed scalar, invalid YAML-like syntax, normative Markdown and dirty-source false-negatives at fdb60eb.
 necessity: N2
 impact: Parser/fingerprint/document pin/source checkout guarantees change materially; inventory names/defaults and upstream commit do not change.
-supersedes: REV-20260821-006
+supersedes: none
+invalidated_by: TPR-20260822-002
 ---
 
 # REV-20260822-001 — Registry dialect v2
@@ -88,28 +89,28 @@ chứng và kết luận kỹ thuật, không phải biên tập.
 | V-001 | Reviewer mutation suite | Mọi corruption fail | 7 dialect + 5 Markdown probes pass | pass | 30-test suite |
 | V-002 | Full project gate | Zero failure | reference/registry/docs/30 tests/shell/diff pass | pass | console; replay sau commit |
 | V-003 | PyYAML semantic spot check | int/bool/null đúng kiểu | pass | pass | local diagnostic |
-| V-004 | Delta review | Pass/NONE | Chưa chạy | not_run | Chờ exact commit |
+| V-004 | Delta review | Pass/NONE | fail/S2 | fail | TPR-20260822-002 |
 
 Replay evidence: `docs/reports/evidence/TRAIN-ARGS-20260822-dialect-v2.txt`,
 4.725 byte, SHA-256
 `49b29aa755890422863cc2821a293abed612a4981e93d384ac112edc480cdda1`.
 
 - Regression đã chạy lại: 30/30 cùng full source/reference/docs/shell/diff.
-- Kiểm tra chưa chạy: independent review trên final feature snapshot chứa
-  immutable replay evidence của implementation commit.
+- Kiểm tra chưa chạy: không có; required review đã chạy và fail.
 - Rollback: không merge; giữ commit thất bại chỉ làm audit evidence.
 
 ## Ảnh hưởng tới báo cáo và quyết định cũ
 
-- `TPR-20260822-001` vẫn đúng cho `fdb60eb` và không bị sửa.
-- Verdict cũ không có hiệu lực cho revision mới; bắt buộc delta review.
+- `TPR-20260822-001` vẫn đúng cho `fdb60eb`; `TPR-20260822-002` fail revision
+  này tại `363a671` và không bị sửa.
+- Revision này không supersede REV-006; cần revision N2 kế tiếp.
 - Không có metric/model cần đính chính.
 - Không có ngoại lệ/risk acceptance.
 
 ## Xác nhận đóng hồ sơ
 
 - Tác giả: `codex-primary-agent`, 2026-08-22 Asia/Bangkok.
-- Người kiểm tra: sẽ là independent delta reviewer, không tham gia implementation.
-- Kết luận: `in_review`; implementation/local gates pass, còn exact
-  commit/evidence và independent verdict.
+- Người kiểm tra: `codex-agent-third-party-train-args`, TPR-20260822-002.
+- Kết luận: `invalidated`; technical S1 đã đóng nhưng F-010/F-011 S2 còn mở,
+  nên không merge/release.
 - Bản ghi phiên: `SESSION-20260822-001`.
