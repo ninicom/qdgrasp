@@ -45,8 +45,13 @@ thêm negative tests và chuẩn bị exact commit cho delta review.
   `2a7d96fbf6140b196b9e5deae364e4ac34f2fc04ea66bdf7b62a143ec843febc`.
 - Reference lock SHA-256:
   `921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7`.
-- Exact remediation commit và replay log được thêm sau khi snapshot sạch được
-  commit; session chưa chuyển `complete` trước bước đó.
+- Exact remediation commit:
+  `5d86a426ff7f250bc7a77e80e241610d10a9958a`, tree
+  `9020e17aae346d71233f501db658314c28b3a065`, committed at
+  `2026-08-21T23:56:27+07:00`.
+- Replay log: `docs/reports/evidence/TRAIN-ARGS-20260821-audit-remediation.txt`,
+  4.178 byte, SHA-256
+  `fd7888018bfa8e691dd8a6e236ffbca9fbfb6e864f483ed97522abec0ced037f`.
 
 ## Kiểm tra đã chạy
 
@@ -56,14 +61,14 @@ thêm negative tests và chuẩn bị exact commit cho delta review.
 | T-02 | `python3 scripts/check_references.py --source-root .references` | 0 | 2 required clones clean/pinned |
 | T-03 | `python3 scripts/check_train_args.py --registry-only` | 0 | Exact semantic + Markdown manifest |
 | T-04 | `python3 scripts/check_train_args.py --source .references/ultralytics` | 0 | Full source pass |
-| T-05 | `python3 scripts/check_docs.py --root .` | 0 | 30 docs trước hồ sơ remediation |
+| T-05 | `python3 scripts/check_docs.py --root .` | 0 | 33 tài liệu pass tại remediation commit |
 | T-06 | `python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v` | 0 | 24/24 pass |
 
 ## Việc chưa hoàn tất
 
-- Khóa remediation commit và tạo replayable evidence pin đúng commit/time.
-- Chuyển SESSION/REV sang complete sau gate sạch.
-- Delta review độc lập; không merge nếu S0/S1 còn mở.
+- Delta review độc lập trên exact remediation commit; không merge nếu còn
+  finding mở.
+- Chuyển SESSION/REV sang `complete` sau verdict pass.
 - Model/runtime/CPU-CUDA smoke vẫn chưa được implement và không thuộc claim.
 
 ## Sửa đổi phiên trước
@@ -74,5 +79,5 @@ không đổi, nhưng guarantee checker/evidence/governance được sửa đán
 
 ## Bàn giao
 
-Commit remediation, chạy lại toàn gate trên clean snapshot, thêm evidence không
-sửa raw log cũ, rồi giao exact commit cuối cho reviewer TPR-004.
+Giao commit `5d86a42` cùng raw evidence bất biến cho reviewer TPR-004; chỉ đóng
+SESSION/REV và merge khi delta review xác nhận F-001–F-009 đã được xử lý.

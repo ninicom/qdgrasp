@@ -3,7 +3,7 @@ document_id: REV-20260821-006
 document_type: revision_record
 revision_schema: 2
 title: Sửa false-negative và evidence gaps của train-argument registry
-status: draft
+status: in_review
 date: 2026-08-21
 record_id: REV-20260821-006
 session_id: SESSION-20260821-007
@@ -48,7 +48,8 @@ supersedes: REV-20260821-005
 - Snapshot bị sửa: commit `7fb01a702deebaf9f2b03ae97bd67ad88e837c43`.
 - Independent finding source: `TPR-20260821-003`, F-001–F-009.
 - Revision trước: `REV-20260821-005`; record cũ được giữ nguyên.
-- Revision sau: remediation feature commit được khóa trước delta review.
+- Revision sau: commit `5d86a426ff7f250bc7a77e80e241610d10a9958a`,
+  tree `9020e17aae346d71233f501db658314c28b3a065`.
 
 ## Lý do chỉnh sửa
 
@@ -92,7 +93,11 @@ sót/source drift” của SESSION-006 chưa đủ dù inventory hiện tại đ
 | V-001 | Registry-only mutations | Tất cả corruption fail | Pass test | pass | unit suite |
 | V-002 | Full source/reference checks | Exact clean HEAD/hash | Pass | pass | console; log sau commit |
 | V-003 | Docs validator | Schema 2 đủ tám mục | Pass | pass | unit suite |
-| V-004 | Full regression | Zero failure | 21/21 | pass | console; log sau commit |
+| V-004 | Full regression | Zero failure | 24/24 | pass | replay log |
+
+Replay log bất biến: `docs/reports/evidence/TRAIN-ARGS-20260821-audit-remediation.txt`,
+4.178 byte, SHA-256
+`fd7888018bfa8e691dd8a6e236ffbca9fbfb6e864f483ed97522abec0ced037f`.
 
 - Kiểm tra chưa chạy: delta review trên remediation commit.
 - Rollback: không merge; quay về immutable commit `7fb01a7` chỉ để audit, không
@@ -110,6 +115,6 @@ sót/source drift” của SESSION-006 chưa đủ dù inventory hiện tại đ
 
 - Tác giả: `codex-primary-agent`, 2026-08-21 Asia/Bangkok.
 - Người kiểm tra dự kiến: independent delta reviewer, phạm vi F-001–F-009.
-- Kết luận hiện tại: draft; implementation/tests đã pass, còn commit/evidence và
-  delta review.
+- Kết luận hiện tại: `in_review`; implementation, commit và replay evidence đã
+  khóa, còn delta review độc lập.
 - Bản ghi phiên: `SESSION-20260821-007`.
