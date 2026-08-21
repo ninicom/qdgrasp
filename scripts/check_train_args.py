@@ -22,12 +22,18 @@ from pathlib import Path
 from typing import Sequence
 
 
+PINNED_REPOSITORY = "https://github.com/ultralytics/ultralytics.git"
 PINNED_COMMIT = "329682a29d27203582ba30e519340f95abccc6a6"
 PINNED_DEFAULT_SHA256 = "eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839"
 PINNED_CFG_SHA256 = "ea9a98b498686f44561e9ce9892aa0e7de52226429496b08a20475ebbfa4eed8"
 PINNED_MODEL_API_SHA256 = "69cb4c9c6f572c50bd35328e5154e6b596ed50dc10d218584da8aed3f7c9b32a"
 PINNED_TRAINER_SHA256 = "d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d6c57a32e6"
-PINNED_MANIFEST_FINGERPRINT = "2a7d96fbf6140b196b9e5deae364e4ac34f2fc04ea66bdf7b62a143ec843febc"
+# These two values are updated together after the schema-v2 registry and
+# normative Markdown body have reached their final reviewed form.  Keeping the
+# checker-side pins prevents a coordinated registry/document edit from silently
+# redefining the accepted contract.
+PINNED_MANIFEST_FINGERPRINT = "a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10"
+PINNED_MARKDOWN_BODY_SHA256 = "b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae"
 PINNED_COUNTS = {
     "canonical_key_count": 115,
     "extra_config_key_count": 2,
@@ -74,10 +80,11 @@ EXPECTED_UPSTREAM_FIELDS = {
     "total_public_names",
     "canonical_disposition_counts",
     "public_disposition_counts",
+    "documentation_body_sha256",
     "manifest_fingerprint",
 }
 PINNED_UPSTREAM_VALUES = {
-    "repository": "https://github.com/ultralytics/ultralytics.git",
+    "repository": PINNED_REPOSITORY,
     "tag": "v8.4.125",
     "commit": PINNED_COMMIT,
     "default_config_path": "ultralytics/cfg/default.yaml",
@@ -90,6 +97,7 @@ PINNED_UPSTREAM_VALUES = {
     "trainer_sha256": PINNED_TRAINER_SHA256,
     "canonical_disposition_counts": "retain=31,adapt=27,defer=8,reject=49",
     "public_disposition_counts": "retain=32,adapt=34,defer=8,reject=53",
+    "documentation_body_sha256": PINNED_MARKDOWN_BODY_SHA256,
 }
 EXPECTED_EXTRA_CONTRACTS = {
     "augmentations": {
@@ -167,6 +175,7 @@ EXPECTED_CONSTRAINTS = {
     "scale": "scalar_closed_0_1_or_exactly_two_numbers_pair_range_unchecked",
     "compile": "boolean_or_string_mode_not_centrally_enumerated",
     "quantize": "null_or_8_16_32_int8_fp16_fp32_w8a8_w16a16_w32a32_w8a16_w8a32",
+    "quantize_aliases": "8=8,16=16,32=32,int8=8,fp16=16,fp32=32,w8a8=8,w16a16=16,w32a32=32,w8a16=w8a16,w8a32=w8a32",
     "auto_augment": "string_or_null_downstream_randaugment_augmix_autoaugment",
     "copy_paste_mode": "downstream_flip_or_mixup",
     "optimizer": "downstream_SGD_MuSGD_Adam_Adamax_AdamW_NAdam_RAdam_RMSProp_auto",
@@ -277,17 +286,61 @@ SPECIAL_TYPES = {
     "compile": "boolean_or_string",
     "quantize": "precision_or_null",
 }
-KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-TOP_LEVEL_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):(?:[ \t]*(.*))?$")
-ENTRY_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*):[ \t]*(\{.*\})[ \t]*$")
-NESTED_SCALAR_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*):[ \t]*(.*)$")
+MARKDOWN_TYPE_LABELS = {
+    "boolean": "boolean",
+    "boolean_or_enum": "bool/enum",
+    "boolean_or_null": "bool/null",
+    "boolean_or_path": "bool/path",
+    "boolean_or_string": "bool/string",
+    "device_selector": "selector",
+    "enum": "enum",
+    "fraction_or_null": "`[0,1]`/null",
+    "integer_or_list": "int/list",
+    "integer_or_list_or_null": "int/list/null",
+    "integer_or_null": "int/null",
+    "list_or_null": "list/null",
+    "number": "number",
+    "number_or_null": "number/null",
+    "number_or_pair": "number/pair",
+    "path_or_null": "path/null",
+    "path_or_string": "path/string",
+    "precision_or_null": "precision/null",
+    "source_or_null": "source/null",
+    "string": "string",
+    "string_or_null": "string/null",
+}
+# TRAIN_ARGUMENTS.yaml deliberately uses a much smaller language than general
+# YAML.  Exact separators make the parser agree with YAML mapping semantics
+# without implementing YAML's quoted strings, escapes, implicit tags or flow
+# collection corner cases.  Source default.yaml and Markdown front matter keep
+# separate, intentionally flexible parsers below.
+REGISTRY_TOP_SECTION_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):$")
+REGISTRY_TOP_SCALAR_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*): (.+)$")
+REGISTRY_ENTRY_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*): (\{.*\})$")
+REGISTRY_NESTED_SCALAR_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*): (.+)$")
+REGISTRY_INLINE_FIELD_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*): (.+)$")
+SOURCE_TOP_LEVEL_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):(?:[ \t]*(.*))?$")
+MARKDOWN_METADATA_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):(?:[ \t]*(.*))?$")
 SCALAR_TOKEN_RE = re.compile(r"^[A-Za-z0-9~-][A-Za-z0-9._:/=,+|()~-]*$")
+INTEGER_SCALAR_RE = re.compile(r"^-?(?:0|[1-9][0-9]*)$")
+FLOAT_SCALAR_RE = re.compile(
+    r"^-?(?:(?:0|[1-9][0-9]*)\.[0-9]+(?:[eE][+-]?[0-9]+)?|"
+    r"(?:0|[1-9][0-9]*)[eE][+-]?[0-9]+)$"
+)
 
 
 @dataclass(frozen=True)
 class Problem:
     message: str
     line: int = 1
+
+
+@dataclass(frozen=True)
+class ScalarSignature:
+    """YAML-relevant scalar kind plus its exact source lexeme."""
+
+    kind: str
+    lexeme: str
 
 
 @dataclass
@@ -307,11 +360,29 @@ class SourceArgument:
     line: int
 
 
-def clean_scalar(value: str) -> str:
+def clean_markdown_scalar(value: str) -> str:
+    """Normalize Markdown front-matter scalars, never registry semantics."""
+
     value = value.strip()
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         return value[1:-1].strip()
     return value
+
+
+def scalar_signature(value: str) -> ScalarSignature:
+    """Classify a strict plain scalar without converting away its lexeme."""
+
+    if value == "null":
+        kind = "null"
+    elif value in {"True", "False"}:
+        kind = "boolean"
+    elif INTEGER_SCALAR_RE.fullmatch(value):
+        kind = "integer"
+    elif FLOAT_SCALAR_RE.fullmatch(value):
+        kind = "float"
+    else:
+        kind = "string"
+    return ScalarSignature(kind=kind, lexeme=value)
 
 
 def scalar_problem(value: str, context: str, line: int) -> Problem | None:
@@ -319,6 +390,13 @@ def scalar_problem(value: str, context: str, line: int) -> Problem | None:
 
     if not value:
         return Problem(f"{context} không được rỗng", line)
+    if value != value.strip():
+        return Problem(f"{context} có whitespace bao quanh scalar", line)
+    if value.startswith(("'", '"')) or value.endswith(("'", '"')):
+        return Problem(
+            f"{context} không được dùng quoted scalar vì dấu nháy đổi kiểu YAML: {value!r}",
+            line,
+        )
     if not SCALAR_TOKEN_RE.fullmatch(value):
         return Problem(
             f"{context} không thuộc YAML scalar subset an toàn: {value!r}", line
@@ -338,23 +416,27 @@ def parse_inline_mapping(raw: str, line: int) -> tuple[dict[str, str], list[Prob
     problems: list[Problem] = []
     if not raw.startswith("{") or not raw.endswith("}"):
         return {}, [Problem("entry phải là inline mapping {...}", line)]
-    body = raw[1:-1].strip()
+    body = raw[1:-1]
     if not body:
         return {}, [Problem("inline mapping không được rỗng", line)]
+    if body != body.strip():
+        return {}, [Problem("inline mapping không được có whitespace sát dấu ngoặc", line)]
 
     values: dict[str, str] = {}
-    for item in body.split(","):
-        if ":" not in item:
-            problems.append(Problem(f"field không có dấu ':': {item.strip()}", line))
+    for item in body.split(", "):
+        match = REGISTRY_INLINE_FIELD_RE.fullmatch(item)
+        if not match:
+            problems.append(
+                Problem(
+                    "field inline phải dùng chính xác 'key: value' và phân cách ', ': "
+                    f"{item!r}",
+                    line,
+                )
+            )
             continue
-        key, value = item.split(":", 1)
-        key, value = key.strip(), clean_scalar(value)
-        if not KEY_RE.fullmatch(key):
-            problems.append(Problem(f"tên field không hợp lệ: {key}", line))
-        elif key in values:
+        key, value = match.groups()
+        if key in values:
             problems.append(Problem(f"field trùng trong entry: {key}", line))
-        elif not value:
-            problems.append(Problem(f"field '{key}' không được rỗng", line))
         else:
             values[key] = value
             if problem := scalar_problem(value, f"field '{key}'", line):
@@ -374,28 +456,40 @@ def parse_registry(path: Path) -> Registry:
         return registry
 
     for line_number, raw_line in enumerate(lines, start=1):
-        if not raw_line.strip() or raw_line.lstrip().startswith("#"):
+        if "\t" in raw_line:
+            registry.problems.append(
+                Problem("registry dialect không cho phép tab", line_number)
+            )
+            continue
+        if raw_line != raw_line.rstrip(" "):
+            registry.problems.append(
+                Problem("registry dialect không cho phép whitespace cuối dòng", line_number)
+            )
+            continue
+        if not raw_line or raw_line.lstrip(" ").startswith("#"):
             continue
 
-        top_match = TOP_LEVEL_RE.match(raw_line)
+        section_match = REGISTRY_TOP_SECTION_RE.fullmatch(raw_line)
+        if section_match:
+            key = section_match.group(1)
+            if key in seen_sections:
+                registry.problems.append(Problem(f"section trùng: {key}", line_number))
+            seen_sections.add(key)
+            current_section = key
+            if key in STRUCTURED_SECTIONS:
+                registry.entries.setdefault(key, {})
+            elif key in SCALAR_SECTIONS:
+                registry.scalars.setdefault(key, {})
+            else:
+                registry.problems.append(Problem(f"section không được hỗ trợ: {key}", line_number))
+            continue
+
+        top_match = REGISTRY_TOP_SCALAR_RE.fullmatch(raw_line)
         if top_match:
-            key, raw_value = top_match.group(1), (top_match.group(2) or "").strip()
-            if not raw_value:
-                if key in seen_sections:
-                    registry.problems.append(Problem(f"section trùng: {key}", line_number))
-                seen_sections.add(key)
-                current_section = key
-                if key in STRUCTURED_SECTIONS:
-                    registry.entries.setdefault(key, {})
-                elif key in SCALAR_SECTIONS:
-                    registry.scalars.setdefault(key, {})
-                else:
-                    registry.problems.append(Problem(f"section không được hỗ trợ: {key}", line_number))
-                continue
+            key, value = top_match.groups()
             if key in registry.top:
                 registry.problems.append(Problem(f"metadata trùng: {key}", line_number))
             else:
-                value = clean_scalar(raw_value)
                 registry.top[key] = value
                 if problem := scalar_problem(value, f"metadata '{key}'", line_number):
                     registry.problems.append(problem)
@@ -403,7 +497,7 @@ def parse_registry(path: Path) -> Registry:
             continue
 
         if current_section in STRUCTURED_SECTIONS:
-            entry_match = ENTRY_RE.match(raw_line)
+            entry_match = REGISTRY_ENTRY_RE.fullmatch(raw_line)
             if not entry_match:
                 registry.problems.append(
                     Problem(f"dòng entry không hợp lệ trong {current_section}", line_number)
@@ -423,13 +517,13 @@ def parse_registry(path: Path) -> Registry:
             continue
 
         if current_section in SCALAR_SECTIONS:
-            scalar_match = NESTED_SCALAR_RE.match(raw_line)
+            scalar_match = REGISTRY_NESTED_SCALAR_RE.fullmatch(raw_line)
             if not scalar_match:
                 registry.problems.append(
                     Problem(f"dòng scalar không hợp lệ trong {current_section}", line_number)
                 )
                 continue
-            key, value = scalar_match.group(1), clean_scalar(scalar_match.group(2))
+            key, value = scalar_match.groups()
             section_values = registry.scalars[current_section]
             if key in section_values:
                 registry.problems.append(
@@ -453,18 +547,37 @@ def parse_registry(path: Path) -> Registry:
 
 
 def manifest_fingerprint(registry: Registry) -> str:
-    """Hash every semantic field whose registry-only meaning must not drift."""
+    """Hash all registry semantics with explicit scalar kinds (schema v2)."""
 
+    def typed_fields(values: dict[str, str]) -> dict[str, dict[str, str]]:
+        return {
+            key: {
+                "kind": scalar_signature(value).kind,
+                "lexeme": scalar_signature(value).lexeme,
+            }
+            for key, value in sorted(values.items())
+        }
+
+    upstream = {
+        key: value
+        for key, value in registry.scalars.get("upstream", {}).items()
+        if key != "manifest_fingerprint"
+    }
     payload = {
+        "fingerprint_schema": 2,
+        "top": typed_fields(registry.top),
         "entries": {
-            section: registry.entries.get(section, {})
+            section: {
+                key: typed_fields(fields)
+                for key, fields in sorted(registry.entries.get(section, {}).items())
+            }
             for section in sorted(STRUCTURED_SECTIONS)
         },
         "scalars": {
-            section: registry.scalars.get(section, {})
-            for section in sorted(
-                {"upstream_validation", "upstream_merge_contract", "upstream_constraints"}
+            section: typed_fields(
+                upstream if section == "upstream" else registry.scalars.get(section, {})
             )
+            for section in sorted(SCALAR_SECTIONS)
         },
     }
     encoded = json.dumps(
@@ -483,10 +596,57 @@ def parse_markdown_metadata(text: str) -> dict[str, str]:
         return {}
     metadata: dict[str, str] = {}
     for line in lines[1:closing]:
-        match = TOP_LEVEL_RE.match(line)
+        match = MARKDOWN_METADATA_RE.match(line)
         if match and match.group(2):
-            metadata[match.group(1)] = clean_scalar(match.group(2))
+            metadata[match.group(1)] = clean_markdown_scalar(match.group(2))
     return metadata
+
+
+def normalized_markdown_body(text: str) -> str | None:
+    """Return a platform-stable but otherwise exact body after front matter."""
+
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    try:
+        closing = next(
+            index for index, line in enumerate(lines[1:], 1) if line.strip() == "---"
+        )
+    except StopIteration:
+        return None
+    body_lines = lines[closing + 1 :]
+    while body_lines and body_lines[0] == "":
+        body_lines.pop(0)
+    while body_lines and body_lines[-1] == "":
+        body_lines.pop()
+    return "\n".join(body_lines) + "\n"
+
+
+def markdown_body_sha256(text: str) -> str | None:
+    body = normalized_markdown_body(text)
+    if body is None:
+        return None
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()
+
+
+def expected_markdown_type(
+    key: str, fields: dict[str, str], registry: Registry
+) -> str | None:
+    """Derive the exact human-table type label from the machine contract."""
+
+    type_name = fields.get("type")
+    if type_name == "fraction":
+        return "`(0,1]`" if key == "fraction" else "`[0,1]`"
+    if type_name == "integer":
+        try:
+            minimums = key_value_map(
+                registry.scalars.get("upstream_validation", {}).get("cfg_int_min", "")
+            )
+        except (TypeError, ValueError):
+            minimums = {}
+        minimum = minimums.get(key)
+        return f"integer ≥{minimum}" if minimum is not None else "integer"
+    return MARKDOWN_TYPE_LABELS.get(type_name or "")
 
 
 def validate_documentation(registry: Registry, path: Path) -> tuple[list[Problem], bool]:
@@ -504,6 +664,7 @@ def validate_documentation(registry: Registry, path: Path) -> tuple[list[Problem
     expected_metadata = {
         "document_id": "TRAIN-ARGS-ULTRALYTICS-8.4.125",
         "document_type": "registry",
+        "version": "1.2.0",
         "status": "active",
         "related_plan": "PLAN-V2",
         "source_commit": PINNED_COMMIT,
@@ -515,16 +676,48 @@ def validate_documentation(registry: Registry, path: Path) -> tuple[list[Problem
                 Problem(f"Markdown metadata '{key}' phải là {expected!r}")
             )
 
-    canonical_rows: dict[str, tuple[str, str]] = {}
+    computed_body_hash = markdown_body_sha256(text)
+    recorded_body_hash = registry.scalars.get("upstream", {}).get(
+        "documentation_body_sha256"
+    )
+    if computed_body_hash is None:
+        problems.append(Problem("Markdown không có front matter hoàn chỉnh để hash body"))
+    elif computed_body_hash != PINNED_MARKDOWN_BODY_SHA256:
+        problems.append(
+            Problem(
+                "Markdown normative body SHA-256 sai: "
+                f"expected={PINNED_MARKDOWN_BODY_SHA256}, actual={computed_body_hash}"
+            )
+        )
+    if recorded_body_hash != PINNED_MARKDOWN_BODY_SHA256:
+        problems.append(
+            Problem(
+                "upstream.documentation_body_sha256 không khớp checker pin: "
+                f"expected={PINNED_MARKDOWN_BODY_SHA256}, actual={recorded_body_hash}"
+            )
+        )
+    if (
+        computed_body_hash is not None
+        and recorded_body_hash is not None
+        and computed_body_hash != recorded_body_hash
+    ):
+        problems.append(
+            Problem(
+                "Markdown normative body không khớp hash ghi trong registry: "
+                f"registry={recorded_body_hash}, actual={computed_body_hash}"
+            )
+        )
+
+    canonical_rows: dict[str, tuple[str, str, str]] = {}
     row_pattern = re.compile(
-        r"^\| `([A-Za-z_][A-Za-z0-9_]*)` \| `([^`]*)` \| [^|]* \| ([RADX]) \|",
+        r"^\| `([A-Za-z_][A-Za-z0-9_]*)` \| `([^`]*)` \| ([^|]*?) \| ([RADX]) \|",
         re.MULTILINE,
     )
     duplicates: set[str] = set()
-    for key, default, disposition in row_pattern.findall(text):
+    for key, default, type_label, disposition in row_pattern.findall(text):
         if key in canonical_rows:
             duplicates.add(key)
-        canonical_rows[key] = (default, disposition)
+        canonical_rows[key] = (default, type_label.strip(), disposition)
     canonical = registry.entries.get("canonical_arguments", {})
     if duplicates:
         problems.append(Problem(f"Markdown canonical rows trùng: {sorted(duplicates)}"))
@@ -537,12 +730,25 @@ def validate_documentation(registry: Registry, path: Path) -> tuple[list[Problem
             )
         )
     for key in sorted(set(canonical_rows) & set(canonical)):
-        documented_default, documented_disposition = canonical_rows[key]
+        documented_default, documented_type, documented_disposition = canonical_rows[key]
         fields = canonical[key]
         if documented_default != fields.get("default"):
             problems.append(
                 Problem(
                     f"Markdown default '{key}' sai: {documented_default!r} != {fields.get('default')!r}"
+                )
+            )
+        expected_type = expected_markdown_type(key, fields, registry)
+        if expected_type is None:
+            problems.append(
+                Problem(
+                    f"Markdown type '{key}' không có mapping cho {fields.get('type')!r}"
+                )
+            )
+        elif documented_type != expected_type:
+            problems.append(
+                Problem(
+                    f"Markdown type '{key}' sai: {documented_type!r} != {expected_type!r}"
                 )
             )
         expected_letter = DISPOSITION_LETTERS.get(fields.get("disposition", ""))
@@ -633,10 +839,10 @@ def integer_field(values: dict[str, str], key: str, problems: list[Problem]) -> 
 def validate_registry(registry: Registry) -> list[Problem]:
     problems = list(registry.problems)
     required_top = {
-        "schema_version": "1",
+        "schema_version": "2",
         "registry_id": "DEXGRASP-TRAIN-ARGS-ULTRALYTICS-8.4.125",
         "status": "active",
-        "generated_at": "2026-08-21",
+        "generated_at": "2026-08-22",
         "related_plan": "PLAN-V2",
     }
     for key, expected in required_top.items():
@@ -921,7 +1127,7 @@ def parse_default_yaml(path: Path) -> tuple[dict[str, SourceArgument], list[Prob
             if heading in SOURCE_GROUPS:
                 group = SOURCE_GROUPS[heading]
             continue
-        match = TOP_LEVEL_RE.match(raw_line)
+        match = SOURCE_TOP_LEVEL_RE.match(raw_line)
         if not match:
             continue
         key = match.group(1)
@@ -1070,10 +1276,10 @@ def compare_canonical(
     return problems
 
 
-def git_head(source_root: Path) -> tuple[str | None, str | None]:
+def git_value(source_root: Path, *args: str) -> tuple[str | None, str | None]:
     try:
         result = subprocess.run(
-            ["git", "-C", str(source_root), "rev-parse", "HEAD"],
+            ["git", "-C", str(source_root), *args],
             check=False,
             capture_output=True,
             text=True,
@@ -1083,6 +1289,36 @@ def git_head(source_root: Path) -> tuple[str | None, str | None]:
     if result.returncode:
         return None, result.stderr.strip() or result.stdout.strip()
     return result.stdout.strip(), None
+
+
+def validate_source_checkout(source_root: Path) -> list[Problem]:
+    """Pin standalone full mode to the exact clean upstream checkout."""
+
+    problems: list[Problem] = []
+    head, error = git_value(source_root, "rev-parse", "HEAD")
+    if error:
+        problems.append(Problem(f"không đọc được Git HEAD của source: {error}"))
+    elif head != PINNED_COMMIT:
+        problems.append(Problem(f"source HEAD sai: expected={PINNED_COMMIT}, actual={head}"))
+
+    origin, error = git_value(source_root, "remote", "get-url", "origin")
+    if error:
+        problems.append(Problem(f"không đọc được Git origin của source: {error}"))
+    elif origin != PINNED_REPOSITORY:
+        problems.append(
+            Problem(f"source origin sai: expected={PINNED_REPOSITORY}, actual={origin}")
+        )
+
+    status, error = git_value(
+        source_root, "status", "--porcelain", "--untracked-files=all"
+    )
+    if error:
+        problems.append(Problem(f"không đọc được Git status của source: {error}"))
+    elif status:
+        problems.append(
+            Problem(f"source checkout không sạch (tracked/untracked): {status!r}")
+        )
+    return problems
 
 
 def validate_source(registry: Registry, source_root: Path) -> tuple[list[Problem], bool]:
@@ -1110,12 +1346,7 @@ def validate_source(registry: Registry, source_root: Path) -> tuple[list[Problem
     if missing_files:
         return [Problem(message) for message in missing_files], True
 
-    problems: list[Problem] = []
-    head, head_error = git_head(source_root)
-    if head_error:
-        problems.append(Problem(f"không đọc được Git HEAD của source: {head_error}"))
-    elif head != PINNED_COMMIT:
-        problems.append(Problem(f"source HEAD sai: expected={PINNED_COMMIT}, actual={head}"))
+    problems = validate_source_checkout(source_root)
 
     for field_name, expected_hash in required_paths.items():
         actual_hash = sha256(paths[field_name])

@@ -2,14 +2,14 @@
 document_id: TRAIN-ARGS-ULTRALYTICS-8.4.125
 document_type: registry
 title: Registry đầy đủ tham số train tương thích Ultralytics v8.4.125
-version: 1.1.0
+version: 1.2.0
 status: active
-date: 2026-08-21
+date: 2026-08-22
 revises: none
 related_plan: PLAN-V2
 source_commit: 329682a29d27203582ba30e519340f95abccc6a6
 source_sha256: eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839
-latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
+latest_revision_record: docs/revisions/REV-20260822-001-registry-dialect-v2.md
 ---
 
 # Registry tham số train Ultralytics → DexGrasp
@@ -137,7 +137,7 @@ scheduler hoặc dataset manifest phải bị từ chối trước khi load stat
 | `conf` | `null` | `[0,1]`/null | A | Ngưỡng score grasp cho val/predict; không đổi loss. |
 | `iou` | `0.7` | `[0,1]` | X | Box NMS IoU; dùng extension `radius` cho seed suppression. |
 | `max_det` | `300` | integer ≥1 | A | Số grasp tối đa mỗi sample trước/sau validation postprocess được ghi rõ. |
-| `quantize` | `null` | precision/null | A | Nhận `8/16/32`, alias precision và hai mixed schemes đã khóa trong YAML; không điều khiển train AMP. CPU mặc định FP32. |
+| `quantize` | `null` | precision/null | A | Canonical hóa `8/int8/w8a8→8`, `16/fp16/w16a16→16`, `32/fp32/w32a32→32`; giữ nguyên `w8a16`, `w8a32`. Không điều khiển train AMP; CPU mặc định FP32. |
 | `dnn` | `False` | boolean | X | OpenCV DNN không thuộc backend v1. |
 | `plots` | `True` | boolean | A | Plot loss/metric và grasp diagnostic có schema. |
 | `end2end` | `null` | bool/null | X | YOLO end-to-end detection head không áp dụng. |
@@ -272,6 +272,16 @@ revision record và independent review trước khi chuyển sang `implemented`.
 
 ## 11. Kiểm tra chống bỏ sót
 
+Registry máy dùng dialect schema v2 có chủ ý hẹp: cấm tab và quoted scalar,
+giữ nguyên lexeme, bắt buộc đúng `key: value` và dấu phân cách `, `. Fingerprint
+ghi cả kind (`null/boolean/integer/float/string`) lẫn lexeme, nên `100`, `"100"`
+và cú pháp `default:100` không thể bị chuẩn hóa thành cùng một nghĩa. Nếu nguồn
+tương lai thật sự cần quoted scalar, schema/parser phải được revision tường minh.
+
+Toàn bộ phần thân Markdown sau front matter là contract quy phạm và được khóa
+bằng SHA-256 trong YAML lẫn checker. Vì vậy thay type, alias behavior, constraint,
+merge-order hoặc CPU/CUDA prose đều làm gate fail, không chỉ thay tên/default.
+
 Không cần clone (hook/CI bootstrap):
 
 ```bash
@@ -284,7 +294,9 @@ python3 scripts/check_train_args.py --registry-only
 python3 scripts/check_train_args.py --source .references/ultralytics
 ```
 
-Full check fail khi HEAD/hash sai, canonical key/default/group sai, membership
-type/range sai, thiếu/thừa custom hoặc legacy key, hay chữ ký `Model.train` đổi.
+Full check tự xác minh origin, pinned HEAD và toàn checkout sạch trước khi đọc
+source; sau đó fail khi artifact hash sai, canonical key/default/group sai,
+membership type/range sai, thiếu/thừa custom hoặc legacy key, hay chữ ký
+`Model.train` đổi. Combined project gate vẫn chạy thêm immutable reference lock.
 Nâng Ultralytics phải cập nhật clone và registry trong integration feature; không
 được sửa count/hash chỉ để làm checker xanh.

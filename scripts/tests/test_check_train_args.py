@@ -13,6 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CHECKER = PROJECT_ROOT / "scripts" / "check_train_args.py"
 DOCS_CHECKER = PROJECT_ROOT / "scripts" / "check_docs.py"
 REGISTRY = PROJECT_ROOT / "docs" / "configuration" / "TRAIN_ARGUMENTS.yaml"
+DOCUMENTATION = PROJECT_ROOT / "docs" / "configuration" / "TRAIN_ARGUMENTS.md"
 
 
 def load_checker_module():
@@ -46,6 +47,26 @@ def run_registry_checker(registry: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def run_full_checker(registry: Path) -> subprocess.CompletedProcess[str]:
+    environment = os.environ.copy()
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    return subprocess.run(
+        [
+            sys.executable,
+            str(CHECKER),
+            "--registry",
+            str(registry),
+            "--source",
+            str(PROJECT_ROOT / ".references" / "ultralytics"),
+        ],
+        cwd=PROJECT_ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+
+
 def run_mutation(old: str, new: str) -> subprocess.CompletedProcess[str]:
     with tempfile.TemporaryDirectory() as temporary_directory:
         target = Path(temporary_directory) / "TRAIN_ARGUMENTS.yaml"
@@ -54,6 +75,22 @@ def run_mutation(old: str, new: str) -> subprocess.CompletedProcess[str]:
             raise AssertionError(f"Mutation source không tồn tại: {old}")
         target.write_text(source.replace(old, new, 1), encoding="utf-8")
         return run_registry_checker(target)
+
+
+def validate_markdown_mutation(old: str, new: str) -> str:
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        target = Path(temporary_directory) / "TRAIN_ARGUMENTS.md"
+        source = DOCUMENTATION.read_text(encoding="utf-8")
+        if old not in source:
+            raise AssertionError(f"Markdown mutation source không tồn tại: {old}")
+        target.write_text(source.replace(old, new, 1), encoding="utf-8")
+        registry = CHECKER_MODULE.parse_registry(REGISTRY)
+        problems, invocation_error = CHECKER_MODULE.validate_documentation(
+            registry, target
+        )
+        if invocation_error:
+            raise AssertionError("Markdown mutation unexpectedly caused invocation error")
+        return "\n".join(problem.message for problem in problems)
 
 
 class TrainArgumentRegistryTests(unittest.TestCase):
@@ -121,6 +158,89 @@ class TrainArgumentRegistryTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("YAML scalar subset an toàn", result.stdout)
         self.assertIn("top-level metadata sai schema", result.stdout)
+
+    def test_registry_dialect_rejects_type_erasure_and_invalid_spacing(self) -> None:
+        cases = (
+            (
+                "epochs: {default: 100, group: train",
+                'epochs: {default: "100", group: train',
+                "quoted scalar",
+            ),
+            (
+                "save: {default: True, group: train",
+                'save: {default: "True", group: train',
+                "quoted scalar",
+            ),
+            (
+                "model: {default: null, group: train",
+                'model: {default: "null", group: train',
+                "quoted scalar",
+            ),
+            ("schema_version: 2", 'schema_version: " 2 "', "quoted scalar"),
+            (
+                "epochs: {default: 100, group: train",
+                "epochs: {default:100, group: train",
+                "chính xác 'key: value'",
+            ),
+            (
+                "epochs: {default: 100, group: train",
+                "epochs: {default:\t100, group: train",
+                "không cho phép tab",
+            ),
+            ("schema_version: 2\n", "schema_version: 2 \n", "whitespace cuối dòng"),
+        )
+        for old, new, expected_message in cases:
+            with self.subTest(mutation=new):
+                result = run_mutation(old, new)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(expected_message, result.stdout)
+
+    def test_scalar_signatures_preserve_kind_and_lexeme(self) -> None:
+        expected = {
+            "null": ("null", "null"),
+            "True": ("boolean", "True"),
+            "False": ("boolean", "False"),
+            "100": ("integer", "100"),
+            "-1": ("integer", "-1"),
+            "1.0": ("float", "1.0"),
+            "1.00": ("float", "1.00"),
+            "auto": ("string", "auto"),
+        }
+        for lexeme, (kind, preserved) in expected.items():
+            with self.subTest(lexeme=lexeme):
+                signature = CHECKER_MODULE.scalar_signature(lexeme)
+                self.assertEqual(signature.kind, kind)
+                self.assertEqual(signature.lexeme, preserved)
+
+    def test_manifest_fingerprint_v2_excludes_only_its_self_reference(self) -> None:
+        registry = CHECKER_MODULE.parse_registry(REGISTRY)
+        baseline = CHECKER_MODULE.manifest_fingerprint(registry)
+
+        registry.scalars["upstream"]["manifest_fingerprint"] = "self-reference-change"
+        self.assertEqual(CHECKER_MODULE.manifest_fingerprint(registry), baseline)
+
+        registry.top["status"] = "changed"
+        self.assertNotEqual(CHECKER_MODULE.manifest_fingerprint(registry), baseline)
+
+    @unittest.skipUnless(
+        (PROJECT_ROOT / ".references" / "ultralytics").is_dir(),
+        "full source clone không có trong source archive",
+    )
+    def test_full_mode_rejects_quoted_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            target = Path(temporary_directory) / "TRAIN_ARGUMENTS.yaml"
+            target.write_text(
+                REGISTRY.read_text(encoding="utf-8").replace(
+                    "epochs: {default: 100, group: train",
+                    'epochs: {default: "100", group: train',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            result = run_full_checker(target)
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("quoted scalar", result.stdout)
 
     def test_registry_only_rejects_default_and_group_corruption(self) -> None:
         default_result = run_mutation(
@@ -208,15 +328,13 @@ class TrainArgumentRegistryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             default_doc = Path(temporary_directory) / "default.md"
             default_doc.write_text(
-                (PROJECT_ROOT / "docs" / "configuration" / "TRAIN_ARGUMENTS.md")
-                .read_text(encoding="utf-8")
+                DOCUMENTATION.read_text(encoding="utf-8")
                 .replace("| `epochs` | `100`", "| `epochs` | `999`", 1),
                 encoding="utf-8",
             )
             disposition_doc = Path(temporary_directory) / "disposition.md"
             disposition_doc.write_text(
-                (PROJECT_ROOT / "docs" / "configuration" / "TRAIN_ARGUMENTS.md")
-                .read_text(encoding="utf-8")
+                DOCUMENTATION.read_text(encoding="utf-8")
                 .replace("| `epochs` | `100` | integer | R |", "| `epochs` | `100` | integer | X |", 1),
                 encoding="utf-8",
             )
@@ -234,6 +352,39 @@ class TrainArgumentRegistryTests(unittest.TestCase):
             "Markdown disposition 'epochs' sai",
             "\n".join(problem.message for problem in disposition_problems),
         )
+
+    def test_markdown_normative_type_behavior_and_prose_drift_is_rejected(self) -> None:
+        cases = (
+            (
+                "| `epochs` | `100` | integer | R |",
+                "| `epochs` | `100` | banana/string | R |",
+                "Markdown type 'epochs' sai",
+            ),
+            (
+                "| `quantize` | `null` | precision/null | A |",
+                "| `quantize` | `null` | boolean | A |",
+                "Markdown type 'quantize' sai",
+            ),
+            (
+                "| `half` | Alias → `quantize=16` |",
+                "| `half` | Alias → `show_boxes` |",
+                "Markdown normative body SHA-256 sai",
+            ),
+            (
+                "Scalar upstream bị chặn `[0,1]`; pair cần đúng hai số",
+                "Scalar upstream không có range; pair nhận mọi độ dài",
+                "Markdown normative body SHA-256 sai",
+            ),
+            (
+                "loaded cfg thay self.overrides",
+                "self.overrides rồi loaded cfg",
+                "Markdown normative body SHA-256 sai",
+            ),
+        )
+        for old, new, expected_message in cases:
+            with self.subTest(mutation=new):
+                messages = validate_markdown_mutation(old, new)
+                self.assertIn(expected_message, messages)
 
     def test_nullable_special_types_are_explicit(self) -> None:
         registry = CHECKER_MODULE.parse_registry(REGISTRY)
@@ -287,6 +438,60 @@ class TrainArgumentRegistryTests(unittest.TestCase):
             self.assertFalse(invocation_error)
             self.assertIn("Git HEAD", messages)
             self.assertIn("SHA-256", messages)
+
+    def test_source_checkout_helper_rejects_tracked_and_untracked_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "source"
+            subprocess.run(
+                ["git", "init", "--quiet", str(source)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            for key, value in (("user.name", "Test"), ("user.email", "test@example.invalid")):
+                subprocess.run(
+                    ["git", "-C", str(source), "config", key, value],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            tracked = source / "tracked.txt"
+            tracked.write_text("clean\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "-C", str(source), "add", "tracked.txt"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(source), "commit", "--quiet", "-m", "fixture"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(source),
+                    "remote",
+                    "add",
+                    "origin",
+                    CHECKER_MODULE.PINNED_REPOSITORY,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            tracked.write_text("dirty\n", encoding="utf-8")
+            (source / "untracked.txt").write_text("untracked\n", encoding="utf-8")
+
+            problems = CHECKER_MODULE.validate_source_checkout(source)
+            messages = "\n".join(problem.message for problem in problems)
+
+        self.assertIn("source checkout không sạch (tracked/untracked)", messages)
+        self.assertIn("tracked.txt", messages)
+        self.assertIn("untracked.txt", messages)
 
     def test_docs_checker_discovers_configuration_registry(self) -> None:
         environment = os.environ.copy()

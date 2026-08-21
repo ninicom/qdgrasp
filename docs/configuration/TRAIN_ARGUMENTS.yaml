@@ -1,7 +1,7 @@
-schema_version: 1
+schema_version: 2
 registry_id: DEXGRASP-TRAIN-ARGS-ULTRALYTICS-8.4.125
 status: active
-generated_at: 2026-08-21
+generated_at: 2026-08-22
 related_plan: PLAN-V2
 
 upstream:
@@ -23,7 +23,8 @@ upstream:
   total_public_names: 127
   canonical_disposition_counts: retain=31,adapt=27,defer=8,reject=49
   public_disposition_counts: retain=32,adapt=34,defer=8,reject=53
-  manifest_fingerprint: 2a7d96fbf6140b196b9e5deae364e4ac34f2fc04ea66bdf7b62a143ec843febc
+  documentation_body_sha256: b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae
+  manifest_fingerprint: a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10
 
 upstream_validation:
   cfg_float_keys: angle,batch,box,cls,degrees,dfl,dgrad,dis,dlog,kobj,pose,rle,shear,time,warmup_epochs,workspace
@@ -56,6 +57,7 @@ upstream_constraints:
   scale: scalar_closed_0_1_or_exactly_two_numbers_pair_range_unchecked
   compile: boolean_or_string_mode_not_centrally_enumerated
   quantize: null_or_8_16_32_int8_fp16_fp32_w8a8_w16a16_w32a32_w8a16_w8a32
+  quantize_aliases: 8=8,16=16,32=32,int8=8,fp16=16,fp32=32,w8a8=8,w16a16=16,w32a32=32,w8a16=w8a16,w8a32=w8a32
   auto_augment: string_or_null_downstream_randaugment_augmix_autoaugment
   copy_paste_mode: downstream_flip_or_mixup
   optimizer: downstream_SGD_MuSGD_Adam_Adamax_AdamW_NAdam_RAdam_RMSProp_auto
