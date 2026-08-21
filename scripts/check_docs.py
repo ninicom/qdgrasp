@@ -96,6 +96,16 @@ REVISION_RECORD_SECTIONS = (
     "Phạm vi và tác động",
     "Xác minh",
 )
+REVISION_RECORD_V2_SECTIONS = (
+    "Liên kết truy vết",
+    "Lý do chỉnh sửa",
+    "Mức độ cần thiết",
+    "Phạm vi và tác động",
+    "Nội dung thay đổi đã hoàn tất trong phiên này",
+    "Xác minh",
+    "Ảnh hưởng tới báo cáo và quyết định cũ",
+    "Xác nhận đóng hồ sơ",
+)
 
 GENERIC_REPORT_FIELDS = (
     ("author",),
@@ -502,7 +512,20 @@ def validate_third_party_review(document: MarkdownDocument, issues: list[Issue])
 
 def validate_revision_record(document: MarkdownDocument, issues: list[Issue]) -> None:
     require_metadata(document, REVISION_RECORD_FIELDS, issues)
-    require_sections(document, REVISION_RECORD_SECTIONS, issues)
+    revision_schema = clean_scalar(document.metadata.get("revision_schema", "1"))
+    if revision_schema not in {"1", "2"}:
+        issues.append(
+            Issue(
+                document.path,
+                document.metadata_lines.get("revision_schema", 1),
+                "revision_schema phải là '1' hoặc '2'",
+            )
+        )
+    require_sections(
+        document,
+        REVISION_RECORD_V2_SECTIONS if revision_schema == "2" else REVISION_RECORD_SECTIONS,
+        issues,
+    )
     if "revises" in document.metadata and not has_revision(document.metadata["revises"]):
         issues.append(
             Issue(

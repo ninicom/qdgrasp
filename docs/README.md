@@ -2,9 +2,11 @@
 document_id: DOCS-INDEX
 document_type: index
 title: Chỉ mục tài liệu DexGrasp
+version: 1.1.0
 status: active
 date: 2026-08-21
 revises: none
+latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
 # Bộ tài liệu kiểm chứng DexGrasp
@@ -35,6 +37,8 @@ PLAN.md
   surface Ultralytics đã pin, disposition và quy tắc CPU/CUDA.
 - `configuration/TRAIN_ARGUMENTS.yaml`: registry máy đọc được; checker từ chối
   thiếu/thừa key, sai default/type/hash/commit.
+- `references.lock.yaml`: URL/commit/hash/license evidence của source read-only;
+  `scripts/check_references.py` khóa file và xác minh checkout sạch.
 - `metrics/METRICS_REGISTRY.md`: định nghĩa metric và điều kiện so sánh.
 - `templates/`: mẫu bắt buộc cho session, metrics, review, revision và release.
 - `sessions/`: báo cáo từng phiên làm việc.
@@ -50,10 +54,12 @@ PLAN.md
 Chạy trước khi kết thúc phiên hoặc gửi review:
 
 ```bash
+python3 scripts/check_references.py --lock-only
 python3 scripts/check_train_args.py --registry-only
 python3 scripts/check_docs.py --root .
 ```
 
-Khi có clone chuẩn, chạy thêm `python3 scripts/check_train_args.py --source
+Khi có clone chuẩn, chạy thêm `python3 scripts/check_references.py --source-root
+.references` và `python3 scripts/check_train_args.py --source
 .references/ultralytics`. Các validator không thay thế review nội dung hoặc xác
 nhận số liệu.

@@ -36,8 +36,11 @@ sources:
     license:
       path: null
       sha256: null
-      observed_identifier: unresolved_no_license_file_at_pinned_root
-      distribution_status: blocked_pending_license_evidence
+      observed_identifier: no_standalone_license_file_at_pinned_root
+      readme_evidence_path: README.md
+      readme_evidence_sha256: 4919074edb0af357cb180cf4c4c7806273accc5bffd6919fbfe8cfb3afd1ef7f
+      readme_observed_statement: CC-BY-NC-4.0-for-work-and-dataset
+      distribution_status: blocked_noncommercial_terms_and_pending_legal_review
 
   graspgenx:
     repository: https://github.com/NVlabs/GraspGenX.git

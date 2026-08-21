@@ -2,13 +2,14 @@
 document_id: PLAN-V2
 document_type: plan
 title: DexGrasp — thư viện dexterous grasp theo kiến trúc Ultralytics
-version: 2.0.0
+version: 2.1.0
 status: active
 date: 2026-08-21
 approved_date: 2026-08-21
 revises: LEGACY-PLAN-PRE-V2
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
+latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 revision_reason: Kế hoạch cũ không còn đáp ứng yêu cầu nguồn chuẩn, CPU/GPU, kiến trúc YAML mới và kiểm soát giấy phép.
 necessity: N3
 impact: Thay đổi nguồn phụ thuộc, mô hình lõi, chiến lược đóng gói, điều kiện phát hành và toàn bộ lộ trình triển khai; chưa có code triển khai bị thay đổi.
@@ -37,6 +38,9 @@ lại quyết định hoặc kết quả của phiên trước.
 - Các clone nằm trong `.references/`, bị loại khỏi Git, wheel và source
   distribution. `references.lock.yaml` lưu URL, SHA, license hash và provenance
   của từng phần được port.
+- `scripts/check_references.py` khóa content của manifest; khi `.references/`
+  có mặt, feature/release gate xác minh origin, exact HEAD, clean worktree và
+  artifact/license-evidence hashes của mọi checkout bắt buộc.
 - Việc sao chép, sửa hoặc phân phối code Ultralytics và DGN2 chỉ bắt đầu sau khi
   có văn bản cấp phép thương mại bao phủ đúng hành vi đó. Đây là release gate.
 - Core model bắt buộc chạy CPU FP32 và NVIDIA CUDA FP32/AMP. MuJoCo là evaluator

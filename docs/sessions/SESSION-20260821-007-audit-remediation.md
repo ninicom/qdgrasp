@@ -1,0 +1,78 @@
+---
+document_id: SESSION-20260821-007
+document_type: session_report
+title: Sửa findings audit train-argument registry
+status: in_review
+date: 2026-08-21
+session_id: SESSION-20260821-007
+author: codex-primary-agent
+revises:
+  - SESSION-20260821-006
+  - REV-20260821-005
+revision_reason: TPR-20260821-003 chứng minh checker và evidence của snapshot 7fb01a7 có false-negative S1 và các contract/governance gap S2/S3.
+necessity: N2
+impact: Siết exact schema/semantic/source/reference gates và sửa documentation contract; không thay đổi danh sách 127 tên hay tuyên bố model runtime.
+related_plan: PLAN-V2
+---
+
+# SESSION-20260821-007 — Audit remediation
+
+## Mục tiêu phiên
+
+Đóng F-001–F-009 của `TPR-20260821-003` mà không rewrite snapshot `7fb01a7`,
+thêm negative tests và chuẩn bị exact commit cho delta review.
+
+## Việc đã hoàn tất
+
+| ID | Việc đã triển khai | Bằng chứng hiện tại |
+|---|---|---|
+| W-01 | Exact top-level/section/field schema và safe scalar subset | Invalid YAML-like mutation bị reject |
+| W-02 | Semantic fingerprint khóa canonical/custom/legacy/API/extensions | Default/group/target/resume/merge mutations bị reject |
+| W-03 | Đồng bộ Markdown rows/default/disposition với YAML | Checker chạy trong cả hai mode |
+| W-04 | Ghi đúng hai nhánh merge `cfg=` và special constraints | Registry + Markdown |
+| W-05 | Thêm immutable reference lock checker | Lock-only và hai checkout full pass |
+| W-06 | Ghi DGN2 README CC BY-NC evidence, giữ distribution block | README SHA-256 đã pin |
+| W-07 | Conditional full source checks trong hook/Git gates | `.references/` hiện diện thì full bắt buộc |
+| W-08 | Quy định Git-versioned active living contracts | Policy + version/latest revision pointers |
+| W-09 | Revision schema 2 đủ tám mục | Template, validator và regression test |
+| W-10 | Mở rộng regression suite | 24/24 pass trước khi thêm hồ sơ này |
+
+## Bằng chứng
+
+- Finding source: `TPR-20260821-003`, verdict fail/S1.
+- Failed snapshot được giữ ở commit `7fb01a7`, tree `8a6b6cc1`.
+- Semantic fingerprint mới:
+  `2a7d96fbf6140b196b9e5deae364e4ac34f2fc04ea66bdf7b62a143ec843febc`.
+- Reference lock SHA-256:
+  `921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7`.
+- Exact remediation commit và replay log được thêm sau khi snapshot sạch được
+  commit; session chưa chuyển `complete` trước bước đó.
+
+## Kiểm tra đã chạy
+
+| Test ID | Lệnh | Exit | Kết quả |
+|---|---|---:|---|
+| T-01 | `python3 scripts/check_references.py --lock-only` | 0 | Immutable lock pass |
+| T-02 | `python3 scripts/check_references.py --source-root .references` | 0 | 2 required clones clean/pinned |
+| T-03 | `python3 scripts/check_train_args.py --registry-only` | 0 | Exact semantic + Markdown manifest |
+| T-04 | `python3 scripts/check_train_args.py --source .references/ultralytics` | 0 | Full source pass |
+| T-05 | `python3 scripts/check_docs.py --root .` | 0 | 30 docs trước hồ sơ remediation |
+| T-06 | `python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v` | 0 | 24/24 pass |
+
+## Việc chưa hoàn tất
+
+- Khóa remediation commit và tạo replayable evidence pin đúng commit/time.
+- Chuyển SESSION/REV sang complete sau gate sạch.
+- Delta review độc lập; không merge nếu S0/S1 còn mở.
+- Model/runtime/CPU-CUDA smoke vẫn chưa được implement và không thuộc claim.
+
+## Sửa đổi phiên trước
+
+Có, mức `N2`. `REV-20260821-006` ghi chi tiết artifact/hash và thay thế mức độ
+đầy đủ của REV-005; TPR-003 giữ nguyên làm bằng chứng failure. Danh sách 127 tên
+không đổi, nhưng guarantee checker/evidence/governance được sửa đáng kể.
+
+## Bàn giao
+
+Commit remediation, chạy lại toàn gate trên clean snapshot, thêm evidence không
+sửa raw log cũ, rồi giao exact commit cuối cho reviewer TPR-004.

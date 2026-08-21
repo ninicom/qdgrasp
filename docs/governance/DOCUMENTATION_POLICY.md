@@ -2,10 +2,12 @@
 document_id: GOV-DOC-001
 document_type: policy
 title: Chính sách tài liệu và truy xuất bằng chứng
+version: 1.1.0
 status: active
 date: 2026-08-21
 owner: project-maintainer
 revises: none
+latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
 # Chính sách tài liệu và truy xuất bằng chứng
@@ -69,13 +71,30 @@ cao hơn cho tới khi reviewer xác nhận.
 
 ## 4. Quy trình sửa lịch sử
 
-1. Không chỉnh nội dung accepted/complete cũ trước khi tạo `REV-...`.
+Có hai vòng đời khác nhau:
+
+- Record đã đóng (`complete/accepted`) là bất biến. Sai sót được sửa bằng record
+  kế tiếp có ID mới; record cũ không bị rewrite.
+- Tài liệu quy phạm `active` là living contract. Nó được phép giữ stable
+  `document_id` và path khi Git giữ nguyên blob/commit trước sửa, revision record
+  ghi SHA-256 trước/sau, front matter trỏ `latest_revision_record`, và thay đổi
+  `N2/N3` qua feature commit cùng independent review. `version` phải tăng khi
+  API/schema/config hoặc kết luận quy phạm đổi.
+
+Quy tắc này áp dụng từ `REV-20260821-006`; các thay đổi active document cũ được
+truy theo Git và revision records đã có. Nó không cho phép sửa im lặng hoặc
+rewrite lịch sử Git.
+
+1. Không chỉnh nội dung record `accepted/complete` cũ; tạo `REV-...`/successor
+   trước khi công bố correction. Với active document, tạo revision record trong
+   cùng feature và giữ immutable base commit/hash.
 2. Revision record chụp lại claim cũ, claim mới, nguyên nhân gốc, `necessity`,
    ảnh hưởng trực tiếp/lan truyền và artifact chứng minh.
-3. Đổi tài liệu cũ sang `superseded` hoặc `invalidated`, thêm liên kết đến
-   revision. Nếu là raw archive cần giữ nguyên byte, ghi cùng thông tin trong
-   sidecar `docs/archive/README.md` thay vì sửa file.
-4. Tạo phiên bản mới; tuyệt đối không tái sử dụng document ID.
+3. Với closed record, successor ghi record cũ là `superseded` hoặc `invalidated`
+   mà không sửa byte record cũ. Nếu là raw archive, ghi trong sidecar
+   `docs/archive/README.md`.
+4. Closed record luôn dùng document ID mới. Active living contract giữ stable
+   ID/path nhưng tăng version/pointer theo quy tắc trên.
 5. Chạy lại các metric phụ thuộc nếu sửa thuộc `N2` hoặc `N3`.
 6. Third-party reviewer xác nhận phạm vi sửa và verdict mới.
 

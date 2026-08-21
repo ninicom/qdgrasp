@@ -2,12 +2,14 @@
 document_id: TRAIN-ARGS-ULTRALYTICS-8.4.125
 document_type: registry
 title: Registry đầy đủ tham số train tương thích Ultralytics v8.4.125
+version: 1.1.0
 status: active
 date: 2026-08-21
 revises: none
 related_plan: PLAN-V2
 source_commit: 329682a29d27203582ba30e519340f95abccc6a6
 source_sha256: eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839
+latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
 # Registry tham số train Ultralytics → DexGrasp
@@ -45,8 +47,10 @@ Disposition:
 - `X` (`reject`): key đã biết nhưng không có nghĩa đúng cho grasp; truyền tường
   minh phải lỗi kèm hướng dẫn key thay thế nếu có.
 
-Tổng hiện tại: 31 `R`, 27 `A`, 8 `D`, 49 `X`. Đây là quyết định thiết kế có thể
-được sửa qua revision record; không phải 49 key bị quên.
+Riêng 115 canonical key: 31 `R`, 27 `A`, 8 `D`, 49 `X`. Tính cả 12 tên
+extra/legacy/API ở mục 8, toàn bộ 127 public names là 32 `R`, 34 `A`, 8 `D`,
+53 `X`. Đây là quyết định thiết kế có thể được sửa qua revision record; các key
+`X/D` không phải key bị quên.
 
 ## 2. Thứ tự merge, validation và resume
 
@@ -54,8 +58,16 @@ Thứ tự upstream được giữ làm contract tham chiếu:
 
 ```text
 get_cfg: default config → overrides
-Model.train: model overrides → method defaults → kwargs → mode=train bắt buộc
+Model.train không có cfg:
+  self.overrides → method defaults(data/model/task) → kwargs → mode=train
+Model.train có cfg:
+  loaded cfg thay self.overrides → method defaults(data/model/task)
+  → kwargs → mode=train
 ```
+
+Ở nhánh `cfg=`, `data` trong loaded YAML trở thành method default trừ khi kwargs
+đặt `data`; `model` và `task` luôn theo model instance hiện tại, không theo giá
+trị trong file cfg.
 
 Unknown key phải lỗi và gợi ý tên gần nhất. Không cho phép dead key/no-op. Trong
 115 key, upstream kiểm kiểu tập trung cho 93 key: 16 số, 26 fraction, 11 integer,
@@ -125,7 +137,7 @@ scheduler hoặc dataset manifest phải bị từ chối trước khi load stat
 | `conf` | `null` | `[0,1]`/null | A | Ngưỡng score grasp cho val/predict; không đổi loss. |
 | `iou` | `0.7` | `[0,1]` | X | Box NMS IoU; dùng extension `radius` cho seed suppression. |
 | `max_det` | `300` | integer ≥1 | A | Số grasp tối đa mỗi sample trước/sau validation postprocess được ghi rõ. |
-| `quantize` | `null` | precision/null | A | Val/export precision; không điều khiển train AMP. CPU mặc định FP32. |
+| `quantize` | `null` | precision/null | A | Nhận `8/16/32`, alias precision và hai mixed schemes đã khóa trong YAML; không điều khiển train AMP. CPU mặc định FP32. |
 | `dnn` | `False` | boolean | X | OpenCV DNN không thuộc backend v1. |
 | `plots` | `True` | boolean | A | Plot loss/metric và grasp diagnostic có schema. |
 | `end2end` | `null` | bool/null | X | YOLO end-to-end detection head không áp dụng. |
@@ -200,7 +212,7 @@ Các key này nằm trong config chung nhưng không điều khiển optimizer/t
 | `hsv_v` | `0.4` | `[0,1]` | X | Như trên. |
 | `degrees` | `0.0` | number | X | Rotation ảnh 2D; dùng `rotation_aug_deg` với frame/SE(3). |
 | `translate` | `0.1` | `[0,1]` | X | Fraction ảnh 2D; dùng `translation_aug_m`. |
-| `scale` | `0.5` | number/pair | X | Scale ảnh không được áp vào robot geometry. |
+| `scale` | `0.5` | number/pair | X | Scalar upstream bị chặn `[0,1]`; pair cần đúng hai số nhưng upstream không range-check pair. Không áp vào robot geometry. |
 | `shear` | `0.0` | number | X | Shear ảnh không bảo toàn rigid geometry. |
 | `perspective` | `0.0` | `[0,1]` | X | Perspective warp không thay depth projection có calibration. |
 | `flipud` | `0.0` | `[0,1]` | X | Flip có thể đổi handedness/frame; không dùng im lặng. |
@@ -211,7 +223,7 @@ Các key này nằm trong config chung nhưng không điều khiển optimizer/t
 | `cutmix` | `0.0` | `[0,1]` | X | Không cắt-dán rigid scene bằng rule ảnh. |
 | `copy_paste` | `0.0` | `[0,1]` | X | Cần scene composition/simulation riêng. |
 | `copy_paste_mode` | `flip` | string | X | Strategy segmentation không áp dụng. |
-| `auto_augment` | `randaugment` | string | X | Policy classification ảnh không áp dụng. |
+| `auto_augment` | `randaugment` | string/null | X | Central validator cho phép `None`; downstream upstream chỉ nhận ba policy ảnh. DexGrasp không áp dụng. |
 | `erasing` | `0.4` | `[0,1]` | X | Dùng `point_dropout` có frame/label contract. |
 
 ## 8. Hai extra kwargs, chín legacy names và API control

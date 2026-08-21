@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+import json
 import re
 import subprocess
 import sys
@@ -26,6 +27,7 @@ PINNED_DEFAULT_SHA256 = "eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35
 PINNED_CFG_SHA256 = "ea9a98b498686f44561e9ce9892aa0e7de52226429496b08a20475ebbfa4eed8"
 PINNED_MODEL_API_SHA256 = "69cb4c9c6f572c50bd35328e5154e6b596ed50dc10d218584da8aed3f7c9b32a"
 PINNED_TRAINER_SHA256 = "d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d6c57a32e6"
+PINNED_MANIFEST_FINGERPRINT = "2a7d96fbf6140b196b9e5deae364e4ac34f2fc04ea66bdf7b62a143ec843febc"
 PINNED_COUNTS = {
     "canonical_key_count": 115,
     "extra_config_key_count": 2,
@@ -46,6 +48,135 @@ EXPECTED_LEGACY_KEYS = {
     "crop_fraction",
 }
 EXPECTED_API_CONTROLS = {"trainer"}
+EXPECTED_TOP_FIELDS = {
+    "schema_version",
+    "registry_id",
+    "status",
+    "generated_at",
+    "related_plan",
+}
+EXPECTED_UPSTREAM_FIELDS = {
+    "repository",
+    "tag",
+    "commit",
+    "default_config_path",
+    "default_config_sha256",
+    "config_validator_path",
+    "config_validator_sha256",
+    "model_api_path",
+    "model_api_sha256",
+    "trainer_path",
+    "trainer_sha256",
+    "canonical_key_count",
+    "extra_config_key_count",
+    "legacy_key_count",
+    "api_control_count",
+    "total_public_names",
+    "canonical_disposition_counts",
+    "public_disposition_counts",
+    "manifest_fingerprint",
+}
+PINNED_UPSTREAM_VALUES = {
+    "repository": "https://github.com/ultralytics/ultralytics.git",
+    "tag": "v8.4.125",
+    "commit": PINNED_COMMIT,
+    "default_config_path": "ultralytics/cfg/default.yaml",
+    "default_config_sha256": PINNED_DEFAULT_SHA256,
+    "config_validator_path": "ultralytics/cfg/__init__.py",
+    "config_validator_sha256": PINNED_CFG_SHA256,
+    "model_api_path": "ultralytics/engine/model.py",
+    "model_api_sha256": PINNED_MODEL_API_SHA256,
+    "trainer_path": "ultralytics/engine/trainer.py",
+    "trainer_sha256": PINNED_TRAINER_SHA256,
+    "canonical_disposition_counts": "retain=31,adapt=27,defer=8,reject=49",
+    "public_disposition_counts": "retain=32,adapt=34,defer=8,reject=53",
+}
+EXPECTED_EXTRA_CONTRACTS = {
+    "augmentations": {
+        "source": "allowed_custom_keys",
+        "type": "python_list_or_named_yaml_list",
+        "disposition": "adapt",
+        "dexgrasp_key": "augmentations",
+        "train_role": "augmentation",
+    },
+    "save_dir": {
+        "source": "allowed_custom_keys",
+        "type": "path",
+        "disposition": "retain",
+        "dexgrasp_key": "save_dir",
+        "train_role": "train_core",
+    },
+}
+EXPECTED_LEGACY_CONTRACTS = {
+    "boxes": {"source": "deprecated_mapping", "target": "show_boxes", "behavior": "alias", "disposition": "reject"},
+    "hide_labels": {"source": "deprecated_mapping", "target": "show_labels", "behavior": "inverted_alias", "disposition": "adapt"},
+    "hide_conf": {"source": "deprecated_mapping", "target": "show_conf", "behavior": "inverted_alias", "disposition": "adapt"},
+    "line_thickness": {"source": "deprecated_mapping", "target": "line_width", "behavior": "alias", "disposition": "adapt"},
+    "half": {"source": "precision_alias", "target": "quantize", "behavior": "value_16", "disposition": "adapt"},
+    "int8": {"source": "precision_alias", "target": "quantize", "behavior": "value_8", "disposition": "adapt"},
+    "label_smoothing": {"source": "removed_keys", "target": "null", "behavior": "warn_and_remove", "disposition": "reject"},
+    "save_hybrid": {"source": "removed_keys", "target": "null", "behavior": "warn_and_remove", "disposition": "reject"},
+    "crop_fraction": {"source": "removed_keys", "target": "null", "behavior": "warn_and_remove", "disposition": "reject"},
+}
+EXPECTED_API_CONTRACTS = {
+    "trainer": {
+        "source": "Model.train_signature",
+        "type": "trainer_or_null",
+        "disposition": "adapt",
+        "dexgrasp_key": "trainer",
+    }
+}
+EXPECTED_EXTENSION_CONTRACTS = {
+    "robot": {"status": "required_design", "type": "path_or_profile", "purpose": "robot_profile"},
+    "sim": {"status": "required_design", "type": "enum", "purpose": "validation_backend"},
+    "max_steps": {"status": "required_design", "type": "integer_or_null", "purpose": "step_budget"},
+    "points_per_scene": {"status": "required_design", "type": "integer", "purpose": "raw_point_budget"},
+    "voxel_size": {"status": "required_design", "type": "positive_number", "purpose": "tokenizer_resolution"},
+    "max_tokens": {"status": "required_design", "type": "integer", "purpose": "active_token_budget"},
+    "flow_steps": {"status": "required_design", "type": "positive_integer", "purpose": "wrist_solver_steps"},
+    "topk": {"status": "required_design", "type": "positive_integer", "purpose": "returned_grasps"},
+    "radius": {"status": "required_design", "type": "positive_number", "purpose": "seed_suppression_radius"},
+    "rotation_aug_deg": {"status": "required_design", "type": "nonnegative_number", "purpose": "se3_augmentation"},
+    "translation_aug_m": {"status": "required_design", "type": "nonnegative_number", "purpose": "se3_augmentation"},
+    "point_jitter_std": {"status": "required_design", "type": "nonnegative_number", "purpose": "point_augmentation"},
+    "point_dropout": {"status": "required_design", "type": "fraction", "purpose": "point_augmentation"},
+    "loss_objectness": {"status": "required_design", "type": "nonnegative_number", "purpose": "loss_gain"},
+    "loss_graspness": {"status": "required_design", "type": "nonnegative_number", "purpose": "loss_gain"},
+    "loss_flow": {"status": "required_design", "type": "nonnegative_number", "purpose": "loss_gain"},
+    "loss_joint": {"status": "required_design", "type": "nonnegative_number", "purpose": "loss_gain"},
+    "loss_quality": {"status": "required_design", "type": "nonnegative_number", "purpose": "loss_gain"},
+    "quality_negatives": {"status": "required_design", "type": "enum", "purpose": "quality_sampling"},
+}
+EXPECTED_MERGE_CONTRACT = {
+    "get_cfg_priority": "base_then_overrides",
+    "model_train_without_cfg": "self_overrides_then_method_defaults_data_model_task_then_kwargs_then_forced_mode_train",
+    "model_train_with_cfg": "loaded_cfg_replaces_self_overrides_then_method_defaults_data_model_task_then_kwargs_then_forced_mode_train",
+    "cfg_data_special_case": "loaded_cfg_data_is_method_default_unless_kwargs_data",
+    "model_task_authority": "current_model_and_task_override_cfg_values",
+    "unknown_key_policy": "reject_with_suggestion",
+    "typed_key_count": "93",
+    "centrally_untyped_key_count": "22",
+}
+EXPECTED_CONSTRAINTS = {
+    "float_keys": "integer_or_float",
+    "fraction_keys": "closed_0_1",
+    "dataset_fraction": "open_0_closed_1",
+    "int_keys": "integer_only",
+    "typed_none": "rejected_when_pinned_default_is_nonnull_except_auto_augment",
+    "int_minimums": "mask_ratio_1,max_det_1,nbs_1,seed_0,vid_stride_1",
+    "scale": "scalar_closed_0_1_or_exactly_two_numbers_pair_range_unchecked",
+    "compile": "boolean_or_string_mode_not_centrally_enumerated",
+    "quantize": "null_or_8_16_32_int8_fp16_fp32_w8a8_w16a16_w32a32_w8a16_w8a32",
+    "auto_augment": "string_or_null_downstream_randaugment_augmix_autoaugment",
+    "copy_paste_mode": "downstream_flip_or_mixup",
+    "optimizer": "downstream_SGD_MuSGD_Adam_Adamax_AdamW_NAdam_RAdam_RMSProp_auto",
+    "batch_runtime": "integer_or_cuda_single_device_fraction",
+}
+PINNED_RESUME_MUTABLE_KEYS = {
+    "augmentations", "batch", "cache", "close_mosaic", "device", "distill_model",
+    "freeze", "imgsz", "patience", "plots", "save_dir", "save_period", "time",
+    "val", "workers",
+}
 
 STRUCTURED_SECTIONS = {
     "canonical_arguments",
@@ -54,7 +185,12 @@ STRUCTURED_SECTIONS = {
     "api_controls",
     "dexgrasp_extensions",
 }
-SCALAR_SECTIONS = {"upstream", "upstream_validation", "upstream_merge_contract"}
+SCALAR_SECTIONS = {
+    "upstream",
+    "upstream_validation",
+    "upstream_merge_contract",
+    "upstream_constraints",
+}
 CANONICAL_FIELDS = {
     "default",
     "group",
@@ -96,6 +232,7 @@ DEVICE_POLICIES = {
     "mode_specific",
     "not_applicable",
 }
+DISPOSITION_LETTERS = {"retain": "R", "adapt": "A", "defer": "D", "reject": "X"}
 VALIDATION_FIELDS = {
     "cfg_float_keys",
     "cfg_fraction_keys",
@@ -138,12 +275,13 @@ EXPECTED_TYPES_BY_VALIDATOR = {
 SPECIAL_TYPES = {
     "scale": "number_or_pair",
     "compile": "boolean_or_string",
-    "quantize": "precision",
+    "quantize": "precision_or_null",
 }
 KEY_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 TOP_LEVEL_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):(?:[ \t]*(.*))?$")
 ENTRY_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*):[ \t]*(\{.*\})[ \t]*$")
 NESTED_SCALAR_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*):[ \t]*(.*)$")
+SCALAR_TOKEN_RE = re.compile(r"^[A-Za-z0-9~-][A-Za-z0-9._:/=,+|()~-]*$")
 
 
 @dataclass(frozen=True)
@@ -174,6 +312,18 @@ def clean_scalar(value: str) -> str:
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         return value[1:-1].strip()
     return value
+
+
+def scalar_problem(value: str, context: str, line: int) -> Problem | None:
+    """Validate the deliberately restricted scalar subset used by this registry."""
+
+    if not value:
+        return Problem(f"{context} không được rỗng", line)
+    if not SCALAR_TOKEN_RE.fullmatch(value):
+        return Problem(
+            f"{context} không thuộc YAML scalar subset an toàn: {value!r}", line
+        )
+    return None
 
 
 def sha256(path: Path) -> str:
@@ -207,6 +357,8 @@ def parse_inline_mapping(raw: str, line: int) -> tuple[dict[str, str], list[Prob
             problems.append(Problem(f"field '{key}' không được rỗng", line))
         else:
             values[key] = value
+            if problem := scalar_problem(value, f"field '{key}'", line):
+                problems.append(problem)
     return values, problems
 
 
@@ -243,7 +395,10 @@ def parse_registry(path: Path) -> Registry:
             if key in registry.top:
                 registry.problems.append(Problem(f"metadata trùng: {key}", line_number))
             else:
-                registry.top[key] = clean_scalar(raw_value)
+                value = clean_scalar(raw_value)
+                registry.top[key] = value
+                if problem := scalar_problem(value, f"metadata '{key}'", line_number):
+                    registry.problems.append(problem)
             current_section = None
             continue
 
@@ -286,11 +441,169 @@ def parse_registry(path: Path) -> Registry:
                 )
             else:
                 section_values[key] = value
+                if problem := scalar_problem(
+                    value, f"field '{current_section}.{key}'", line_number
+                ):
+                    registry.problems.append(problem)
             continue
 
         registry.problems.append(Problem("nội dung nằm ngoài section hợp lệ", line_number))
 
     return registry
+
+
+def manifest_fingerprint(registry: Registry) -> str:
+    """Hash every semantic field whose registry-only meaning must not drift."""
+
+    payload = {
+        "entries": {
+            section: registry.entries.get(section, {})
+            for section in sorted(STRUCTURED_SECTIONS)
+        },
+        "scalars": {
+            section: registry.scalars.get(section, {})
+            for section in sorted(
+                {"upstream_validation", "upstream_merge_contract", "upstream_constraints"}
+            )
+        },
+    }
+    encoded = json.dumps(
+        payload, ensure_ascii=True, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def parse_markdown_metadata(text: str) -> dict[str, str]:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    try:
+        closing = next(index for index, line in enumerate(lines[1:], 1) if line.strip() == "---")
+    except StopIteration:
+        return {}
+    metadata: dict[str, str] = {}
+    for line in lines[1:closing]:
+        match = TOP_LEVEL_RE.match(line)
+        if match and match.group(2):
+            metadata[match.group(1)] = clean_scalar(match.group(2))
+    return metadata
+
+
+def validate_documentation(registry: Registry, path: Path) -> tuple[list[Problem], bool]:
+    """Keep the exhaustive human tables synchronized with the machine registry."""
+
+    if not path.is_file():
+        return [Problem(f"train-argument documentation không tồn tại: {path}")], True
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        return [Problem(f"không đọc được train-argument documentation: {exc}")], True
+
+    problems: list[Problem] = []
+    metadata = parse_markdown_metadata(text)
+    expected_metadata = {
+        "document_id": "TRAIN-ARGS-ULTRALYTICS-8.4.125",
+        "document_type": "registry",
+        "status": "active",
+        "related_plan": "PLAN-V2",
+        "source_commit": PINNED_COMMIT,
+        "source_sha256": PINNED_DEFAULT_SHA256,
+    }
+    for key, expected in expected_metadata.items():
+        if metadata.get(key) != expected:
+            problems.append(
+                Problem(f"Markdown metadata '{key}' phải là {expected!r}")
+            )
+
+    canonical_rows: dict[str, tuple[str, str]] = {}
+    row_pattern = re.compile(
+        r"^\| `([A-Za-z_][A-Za-z0-9_]*)` \| `([^`]*)` \| [^|]* \| ([RADX]) \|",
+        re.MULTILINE,
+    )
+    duplicates: set[str] = set()
+    for key, default, disposition in row_pattern.findall(text):
+        if key in canonical_rows:
+            duplicates.add(key)
+        canonical_rows[key] = (default, disposition)
+    canonical = registry.entries.get("canonical_arguments", {})
+    if duplicates:
+        problems.append(Problem(f"Markdown canonical rows trùng: {sorted(duplicates)}"))
+    if set(canonical_rows) != set(canonical):
+        problems.append(
+            Problem(
+                "Markdown canonical rows sai set: "
+                f"missing={sorted(set(canonical) - set(canonical_rows))}, "
+                f"extra={sorted(set(canonical_rows) - set(canonical))}"
+            )
+        )
+    for key in sorted(set(canonical_rows) & set(canonical)):
+        documented_default, documented_disposition = canonical_rows[key]
+        fields = canonical[key]
+        if documented_default != fields.get("default"):
+            problems.append(
+                Problem(
+                    f"Markdown default '{key}' sai: {documented_default!r} != {fields.get('default')!r}"
+                )
+            )
+        expected_letter = DISPOSITION_LETTERS.get(fields.get("disposition", ""))
+        if documented_disposition != expected_letter:
+            problems.append(
+                Problem(
+                    f"Markdown disposition '{key}' sai: {documented_disposition!r} != {expected_letter!r}"
+                )
+            )
+
+    section_match = re.search(r"^## 8\..*?(?=^## 9\.)", text, re.MULTILINE | re.DOTALL)
+    if not section_match:
+        problems.append(Problem("Markdown thiếu mục 8 cho extra/legacy/API names"))
+    else:
+        section = section_match.group(0)
+        surface_rows: dict[str, str] = {}
+        surface_duplicates: set[str] = set()
+        for line in section.splitlines():
+            match = re.match(
+                r"^\| `([A-Za-z_][A-Za-z0-9_]*)` \| [^|]* \| ([RADX])(?:\b|:)", line
+            )
+            if not match:
+                continue
+            key, letter = match.groups()
+            if key in surface_rows:
+                surface_duplicates.add(key)
+            surface_rows[key] = letter
+        expected_surface = {
+            **registry.entries.get("extra_config_arguments", {}),
+            **registry.entries.get("legacy_arguments", {}),
+            **registry.entries.get("api_controls", {}),
+        }
+        if surface_duplicates:
+            problems.append(Problem(f"Markdown surface rows trùng: {sorted(surface_duplicates)}"))
+        if set(surface_rows) != set(expected_surface):
+            problems.append(
+                Problem(
+                    "Markdown extra/legacy/API rows sai set: "
+                    f"missing={sorted(set(expected_surface) - set(surface_rows))}, "
+                    f"extra={sorted(set(surface_rows) - set(expected_surface))}"
+                )
+            )
+        for key in sorted(set(surface_rows) & set(expected_surface)):
+            expected_letter = DISPOSITION_LETTERS[expected_surface[key]["disposition"]]
+            if surface_rows[key] != expected_letter:
+                problems.append(
+                    Problem(
+                        f"Markdown surface disposition '{key}' sai: "
+                        f"{surface_rows[key]} != {expected_letter}"
+                    )
+                )
+
+    normalized = " ".join(text.split())
+    summary_fragments = (
+        "Riêng 115 canonical key: 31 `R`, 27 `A`, 8 `D`, 49 `X`.",
+        "toàn bộ 127 public names là 32 `R`, 34 `A`, 8 `D`, 53 `X`.",
+    )
+    for fragment in summary_fragments:
+        if fragment not in normalized:
+            problems.append(Problem(f"Markdown thiếu disposition summary: {fragment}"))
+    return problems, False
 
 
 def csv_set(value: str) -> set[str]:
@@ -333,15 +646,35 @@ def validate_registry(registry: Registry) -> list[Problem]:
         elif actual != expected:
             problems.append(Problem(f"metadata '{key}' phải là {expected!r}, nhận {actual!r}"))
 
+    if set(registry.top) != EXPECTED_TOP_FIELDS:
+        problems.append(
+            Problem(
+                "top-level metadata sai schema: "
+                f"missing={sorted(EXPECTED_TOP_FIELDS - set(registry.top))}, "
+                f"extra={sorted(set(registry.top) - EXPECTED_TOP_FIELDS)}"
+            )
+        )
+    actual_sections = set(registry.entries) | set(registry.scalars)
+    expected_sections = STRUCTURED_SECTIONS | SCALAR_SECTIONS
+    if actual_sections != expected_sections:
+        problems.append(
+            Problem(
+                "top-level sections sai schema: "
+                f"missing={sorted(expected_sections - actual_sections)}, "
+                f"extra={sorted(actual_sections - expected_sections)}"
+            )
+        )
+
     upstream = registry.scalars.get("upstream", {})
-    pinned_fields = {
-        "commit": PINNED_COMMIT,
-        "default_config_sha256": PINNED_DEFAULT_SHA256,
-        "config_validator_sha256": PINNED_CFG_SHA256,
-        "model_api_sha256": PINNED_MODEL_API_SHA256,
-        "trainer_sha256": PINNED_TRAINER_SHA256,
-    }
-    for key, expected in pinned_fields.items():
+    if set(upstream) != EXPECTED_UPSTREAM_FIELDS:
+        problems.append(
+            Problem(
+                "upstream fields sai schema: "
+                f"missing={sorted(EXPECTED_UPSTREAM_FIELDS - set(upstream))}, "
+                f"extra={sorted(set(upstream) - EXPECTED_UPSTREAM_FIELDS)}"
+            )
+        )
+    for key, expected in PINNED_UPSTREAM_VALUES.items():
         actual = upstream.get(key)
         if actual != expected:
             problems.append(
@@ -351,6 +684,23 @@ def validate_registry(registry: Registry) -> list[Problem]:
         value = integer_field(upstream, key, problems)
         if value is not None and value != expected:
             problems.append(Problem(f"upstream.{key} phải là {expected}, nhận {value}"))
+
+    computed_fingerprint = manifest_fingerprint(registry)
+    recorded_fingerprint = upstream.get("manifest_fingerprint")
+    if recorded_fingerprint != PINNED_MANIFEST_FINGERPRINT:
+        problems.append(
+            Problem(
+                "upstream.manifest_fingerprint không khớp checker pin: "
+                f"expected={PINNED_MANIFEST_FINGERPRINT}, actual={recorded_fingerprint}"
+            )
+        )
+    if computed_fingerprint != PINNED_MANIFEST_FINGERPRINT:
+        problems.append(
+            Problem(
+                "semantic manifest fingerprint sai: "
+                f"expected={PINNED_MANIFEST_FINGERPRINT}, actual={computed_fingerprint}"
+            )
+        )
 
     canonical = registry.entries.get("canonical_arguments", {})
     extra = registry.entries.get("extra_config_arguments", {})
@@ -392,6 +742,18 @@ def validate_registry(registry: Registry) -> list[Problem]:
             )
         )
 
+    exact_contracts = {
+        "extra_config_arguments": (extra, EXPECTED_EXTRA_CONTRACTS),
+        "legacy_arguments": (legacy, EXPECTED_LEGACY_CONTRACTS),
+        "api_controls": (api_controls, EXPECTED_API_CONTRACTS),
+        "dexgrasp_extensions": (extensions, EXPECTED_EXTENSION_CONTRACTS),
+    }
+    for section, (actual_contract, expected_contract) in exact_contracts.items():
+        if actual_contract != expected_contract:
+            problems.append(
+                Problem(f"{section} contract khác pinned manifest")
+            )
+
     for key, fields in canonical.items():
         line = registry.entry_lines.get(("canonical_arguments", key), 1)
         missing = CANONICAL_FIELDS - set(fields)
@@ -427,6 +789,26 @@ def validate_registry(registry: Registry) -> list[Problem]:
             line = registry.entry_lines.get(("dexgrasp_extensions", key), 1)
             problems.append(Problem(f"extension '{key}' thiếu field: {sorted(missing)}", line))
 
+    canonical_dispositions = {
+        name: sum(
+            fields.get("disposition") == name for fields in canonical.values()
+        )
+        for name in sorted(DISPOSITIONS)
+    }
+    public_entries = list(canonical.values()) + list(extra.values()) + list(legacy.values()) + list(api_controls.values())
+    public_dispositions = {
+        name: sum(fields.get("disposition") == name for fields in public_entries)
+        for name in sorted(DISPOSITIONS)
+    }
+    expected_canonical_dispositions = {"retain": 31, "adapt": 27, "defer": 8, "reject": 49}
+    expected_public_dispositions = {"retain": 32, "adapt": 34, "defer": 8, "reject": 53}
+    if canonical_dispositions != expected_canonical_dispositions:
+        problems.append(
+            Problem(f"canonical disposition counts sai: {canonical_dispositions}")
+        )
+    if public_dispositions != expected_public_dispositions:
+        problems.append(Problem(f"public disposition counts sai: {public_dispositions}"))
+
     validation = registry.scalars.get("upstream_validation", {})
     missing_validation = VALIDATION_FIELDS - set(validation)
     if missing_validation:
@@ -451,6 +833,8 @@ def validate_registry(registry: Registry) -> list[Problem]:
                 expected_type = EXPECTED_TYPES_BY_VALIDATOR[set_name]
                 if canonical.get(key, {}).get("default") == "null":
                     expected_type = f"{expected_type}_or_null"
+                if key == "auto_augment":
+                    expected_type = "string_or_null"
                 if canonical.get(key, {}).get("type") != expected_type:
                     problems.append(
                         Problem(
@@ -481,6 +865,14 @@ def validate_registry(registry: Registry) -> list[Problem]:
             problems.append(
                 Problem(f"resume_mutable_keys chứa key lạ: {sorted(resume_keys - allowed_resume)}")
             )
+        if resume_keys != PINNED_RESUME_MUTABLE_KEYS:
+            problems.append(
+                Problem(
+                    "resume_mutable_keys khác pinned source: "
+                    f"missing={sorted(PINNED_RESUME_MUTABLE_KEYS - resume_keys)}, "
+                    f"extra={sorted(resume_keys - PINNED_RESUME_MUTABLE_KEYS)}"
+                )
+            )
         try:
             minimums = key_value_map(validation["cfg_int_min"])
         except (ValueError, TypeError) as exc:
@@ -490,6 +882,8 @@ def validate_registry(registry: Registry) -> list[Problem]:
                 problems.append(Problem("cfg_int_min chứa key không nằm trong cfg_int_keys"))
 
         merge_contract = registry.scalars.get("upstream_merge_contract", {})
+        if merge_contract != EXPECTED_MERGE_CONTRACT:
+            problems.append(Problem("upstream_merge_contract khác pinned contract"))
         typed_count = integer_field(merge_contract, "typed_key_count", problems)
         untyped_count = integer_field(merge_contract, "centrally_untyped_key_count", problems)
         calculated_typed = len(membership) + len(special)
@@ -504,6 +898,10 @@ def validate_registry(registry: Registry) -> list[Problem]:
                     f"nhưng registry tính được {len(expected_untyped)}"
                 )
             )
+
+        constraints = registry.scalars.get("upstream_constraints", {})
+        if constraints != EXPECTED_CONSTRAINTS:
+            problems.append(Problem("upstream_constraints khác pinned contract"))
 
     return problems
 
@@ -809,6 +1207,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Root clone Ultralytics; mặc định .references/ultralytics ở full mode.",
     )
     parser.add_argument(
+        "--documentation",
+        type=Path,
+        default=Path("docs/configuration/TRAIN_ARGUMENTS.md"),
+        help="Bảng tra cứu Markdown phải khớp registry YAML.",
+    )
+    parser.add_argument(
         "--registry-only",
         action="store_true",
         help="Chỉ kiểm cấu trúc/coverage đã pin, không yêu cầu clone source.",
@@ -830,10 +1234,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     problems = validate_registry(registry)
     invocation_error = False
 
+    documentation_path = args.documentation.expanduser().resolve()
+    documentation_problems, documentation_invocation_error = validate_documentation(
+        registry, documentation_path
+    )
+    problems.extend(documentation_problems)
+    invocation_error |= documentation_invocation_error
+
     if not args.registry_only:
         source_root = (args.source or Path(".references/ultralytics")).expanduser().resolve()
-        source_problems, invocation_error = validate_source(registry, source_root)
+        source_problems, source_invocation_error = validate_source(registry, source_root)
         problems.extend(source_problems)
+        invocation_error |= source_invocation_error
 
     if problems:
         for problem in problems:
@@ -845,7 +1257,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         "Train argument registry check passed: "
         "115 canonical + 2 extra + 9 legacy + 1 API = 127 names; "
-        f"zero missing/extra ({mode})."
+        f"exact semantic and Markdown manifest; zero missing/extra ({mode})."
     )
     return 0
 

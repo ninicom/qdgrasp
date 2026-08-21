@@ -2,9 +2,11 @@
 document_id: DOCS-SCHEMA-001
 document_type: policy
 title: Hợp đồng kiểm tra tài liệu
+version: 1.1.0
 status: active
 date: 2026-08-21
 revises: none
+latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
 # Hợp đồng kiểm tra tài liệu
@@ -28,10 +30,17 @@ Kiểm registry tham số train mà không cần source clone:
 python3 scripts/check_train_args.py --registry-only
 ```
 
+Kiểm immutable source lock:
+
+```bash
+python3 scripts/check_references.py --lock-only
+```
+
 Đối chiếu registry với đúng clone Ultralytics đã pin:
 
 ```bash
 python3 scripts/check_train_args.py --source .references/ultralytics
+python3 scripts/check_references.py --source-root .references
 ```
 
 Validator chỉ dùng Python standard library. Phạm vi tài liệu được quản lý gồm:
@@ -63,7 +72,9 @@ phiên/số liệu/review/revision không được dùng `active`.
   trước” và “Bàn giao”.
 - `third_party_review` và `revision_record` tuân theo hai template cùng tên
   trong `docs/templates/`. Validator kiểm tra metadata, enum và các mục bằng
-  chứng/kết luận bắt buộc.
+  chứng/kết luận bắt buộc. Revision mới dùng `revision_schema: 2` và đủ tám mục
+  của template; schema 1 chỉ được giữ để đọc các record lịch sử trước
+  `REV-20260821-006`.
 - Metrics Registry được nhận diện bằng tiêu đề H1 và bắt buộc có front matter
   chung với `document_type: registry`. Báo cáo số liệu dùng front matter
   `metrics_report`. Validator kiểm tra các H2, định danh protocol/môi trường,
@@ -105,7 +116,10 @@ hoặc `final`.
 ## Hợp đồng train-argument registry
 
 `scripts/check_train_args.py --registry-only` khóa 115 canonical key, hai extra
-config kwargs, chín legacy name và một API control. Chế độ full còn kiểm exact
-Git HEAD, SHA-256 của `default.yaml`, config validator, model API, trainer, toàn
-bộ default/group, type/range membership và chữ ký `Model.train`. Exit code `1`
-là mismatch nội dung; `2` là invocation/source path không hợp lệ.
+config kwargs, chín legacy name, một API control, toàn bộ semantic manifest và
+bảng Markdown bằng fingerprint bất biến. Parser chỉ nhận YAML scalar subset
+nghiêm ngặt và exact schema; metadata/section/field lạ là lỗi. Chế độ full còn
+kiểm Git HEAD, SHA-256 của `default.yaml`, config validator, model API, trainer,
+toàn bộ default/group/type membership. `scripts/check_references.py` khóa
+`references.lock.yaml`, origin/HEAD/cleanliness và artifact/license-evidence
+hash. Exit code `1` là mismatch; `2` là invocation/source path không hợp lệ.
