@@ -29,6 +29,33 @@ def load_checker_module():
 CHECKER_MODULE = load_checker_module()
 
 
+def run_git(source: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(source), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def create_source_checkout_fixture(parent: Path) -> tuple[Path, Path]:
+    source = parent / "source"
+    subprocess.run(
+        ["git", "init", "--quiet", str(source)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    for key, value in (("user.name", "Test"), ("user.email", "test@example.invalid")):
+        run_git(source, "config", key, value)
+    tracked = source / "tracked.txt"
+    tracked.write_text("clean\n", encoding="utf-8")
+    run_git(source, "add", "tracked.txt")
+    run_git(source, "commit", "--quiet", "-m", "fixture")
+    run_git(source, "remote", "add", "origin", CHECKER_MODULE.PINNED_REPOSITORY)
+    return source, tracked
+
+
 def run_registry_checker(registry: Path) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -386,6 +413,103 @@ class TrainArgumentRegistryTests(unittest.TestCase):
                 messages = validate_markdown_mutation(old, new)
                 self.assertIn(expected_message, messages)
 
+    def test_markdown_front_matter_tpr_002_mutations_are_rejected(self) -> None:
+        pointer = (
+            "latest_revision_record: "
+            "docs/revisions/REV-20260822-002-source-metadata-hardening.md"
+        )
+        cases = (
+            (pointer + "\n", "", "latest_revision_record"),
+            (
+                pointer,
+                "latest_revision_record: "
+                "docs/revisions/REV-20260822-001-registry-dialect-v2.md",
+                "latest_revision_record",
+            ),
+            ("date: 2026-08-22", "date: never", "Markdown metadata 'date'"),
+            (
+                "title: Registry đầy đủ tham số train tương thích Ultralytics v8.4.125",
+                "title: Registry runtime đã triển khai hoàn chỉnh",
+                "Markdown metadata 'title'",
+            ),
+            (
+                pointer,
+                pointer + "\nruntime_implemented: True",
+                "extra=['runtime_implemented']",
+            ),
+        )
+        for old, new, expected_message in cases:
+            with self.subTest(mutation=new):
+                messages = validate_markdown_mutation(old, new)
+                self.assertIn(expected_message, messages)
+
+    def test_markdown_front_matter_duplicate_and_malformed_fields_are_rejected(self) -> None:
+        cases = (
+            (
+                "status: active",
+                "status: active\nstatus: active",
+                "Markdown metadata trùng: 'status'",
+            ),
+            (
+                "status: active",
+                "status active",
+                "Markdown metadata malformed",
+            ),
+        )
+        for old, new, expected_message in cases:
+            with self.subTest(mutation=new):
+                messages = validate_markdown_mutation(old, new)
+                self.assertIn(expected_message, messages)
+
+    def test_markdown_revision_pointer_requires_current_record_identity(self) -> None:
+        metadata = dict(CHECKER_MODULE.EXPECTED_MARKDOWN_METADATA)
+        original_root = CHECKER_MODULE.PROJECT_ROOT
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            target = root / metadata["latest_revision_record"]
+            target.parent.mkdir(parents=True)
+            target.write_text(
+                """---
+document_id: REV-WRONG
+document_type: revision_record
+status: superseded
+record_id: REV-WRONG
+session_id: SESSION-WRONG
+revises:
+  - record_id: REV-OLD
+---
+""",
+                encoding="utf-8",
+            )
+            CHECKER_MODULE.PROJECT_ROOT = root
+            try:
+                messages = "\n".join(
+                    problem.message
+                    for problem in CHECKER_MODULE.validate_revision_pointer(metadata)
+                )
+            finally:
+                CHECKER_MODULE.PROJECT_ROOT = original_root
+
+        self.assertIn("Revision record metadata 'document_id'", messages)
+        self.assertIn("Revision record metadata 'record_id'", messages)
+        self.assertIn("Revision record metadata 'session_id'", messages)
+        self.assertIn("Revision record metadata 'status'", messages)
+
+    def test_markdown_revision_pointer_requires_existing_target(self) -> None:
+        metadata = dict(CHECKER_MODULE.EXPECTED_MARKDOWN_METADATA)
+        original_root = CHECKER_MODULE.PROJECT_ROOT
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            CHECKER_MODULE.PROJECT_ROOT = Path(temporary_directory)
+            try:
+                messages = "\n".join(
+                    problem.message
+                    for problem in CHECKER_MODULE.validate_revision_pointer(metadata)
+                )
+            finally:
+                CHECKER_MODULE.PROJECT_ROOT = original_root
+
+        self.assertIn("latest_revision_record không tồn tại", messages)
+
     def test_nullable_special_types_are_explicit(self) -> None:
         registry = CHECKER_MODULE.parse_registry(REGISTRY)
         canonical = registry.entries["canonical_arguments"]
@@ -441,48 +565,7 @@ class TrainArgumentRegistryTests(unittest.TestCase):
 
     def test_source_checkout_helper_rejects_tracked_and_untracked_changes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            source = Path(temporary_directory) / "source"
-            subprocess.run(
-                ["git", "init", "--quiet", str(source)],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            for key, value in (("user.name", "Test"), ("user.email", "test@example.invalid")):
-                subprocess.run(
-                    ["git", "-C", str(source), "config", key, value],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                )
-            tracked = source / "tracked.txt"
-            tracked.write_text("clean\n", encoding="utf-8")
-            subprocess.run(
-                ["git", "-C", str(source), "add", "tracked.txt"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            subprocess.run(
-                ["git", "-C", str(source), "commit", "--quiet", "-m", "fixture"],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            subprocess.run(
-                [
-                    "git",
-                    "-C",
-                    str(source),
-                    "remote",
-                    "add",
-                    "origin",
-                    CHECKER_MODULE.PINNED_REPOSITORY,
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
+            source, tracked = create_source_checkout_fixture(Path(temporary_directory))
             tracked.write_text("dirty\n", encoding="utf-8")
             (source / "untracked.txt").write_text("untracked\n", encoding="utf-8")
 
@@ -492,6 +575,29 @@ class TrainArgumentRegistryTests(unittest.TestCase):
         self.assertIn("source checkout không sạch (tracked/untracked)", messages)
         self.assertIn("tracked.txt", messages)
         self.assertIn("untracked.txt", messages)
+
+    def test_source_checkout_helper_rejects_concealed_index_changes(self) -> None:
+        cases = (
+            ("--assume-unchanged", "h tracked.txt"),
+            ("--skip-worktree", "S tracked.txt"),
+        )
+        for flag, expected_entry in cases:
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as temporary_directory:
+                source, tracked = create_source_checkout_fixture(
+                    Path(temporary_directory)
+                )
+                run_git(source, "update-index", flag, "tracked.txt")
+                tracked.write_text("concealed change\n", encoding="utf-8")
+
+                porcelain = run_git(
+                    source, "status", "--porcelain", "--untracked-files=all"
+                ).stdout.strip()
+                self.assertEqual(porcelain, "")
+
+                problems = CHECKER_MODULE.validate_source_checkout(source)
+                messages = "\n".join(problem.message for problem in problems)
+                self.assertIn("source Git index có prefix che giấu/không chuẩn", messages)
+                self.assertIn(expected_entry, messages)
 
     def test_docs_checker_discovers_configuration_registry(self) -> None:
         environment = os.environ.copy()

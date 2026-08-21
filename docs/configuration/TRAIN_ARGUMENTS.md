@@ -2,14 +2,14 @@
 document_id: TRAIN-ARGS-ULTRALYTICS-8.4.125
 document_type: registry
 title: Registry đầy đủ tham số train tương thích Ultralytics v8.4.125
-version: 1.2.0
+version: 1.3.0
 status: active
 date: 2026-08-22
 revises: none
 related_plan: PLAN-V2
 source_commit: 329682a29d27203582ba30e519340f95abccc6a6
 source_sha256: eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839
-latest_revision_record: docs/revisions/REV-20260822-001-registry-dialect-v2.md
+latest_revision_record: docs/revisions/REV-20260822-002-source-metadata-hardening.md
 ---
 
 # Registry tham số train Ultralytics → DexGrasp

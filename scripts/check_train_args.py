@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Sequence
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PINNED_REPOSITORY = "https://github.com/ultralytics/ultralytics.git"
 PINNED_COMMIT = "329682a29d27203582ba30e519340f95abccc6a6"
 PINNED_DEFAULT_SHA256 = "eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839"
@@ -34,6 +35,24 @@ PINNED_TRAINER_SHA256 = "d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d
 # redefining the accepted contract.
 PINNED_MANIFEST_FINGERPRINT = "a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10"
 PINNED_MARKDOWN_BODY_SHA256 = "b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae"
+EXPECTED_MARKDOWN_METADATA = {
+    "document_id": "TRAIN-ARGS-ULTRALYTICS-8.4.125",
+    "document_type": "registry",
+    "title": "Registry đầy đủ tham số train tương thích Ultralytics v8.4.125",
+    "version": "1.3.0",
+    "status": "active",
+    "date": "2026-08-22",
+    "revises": "none",
+    "related_plan": "PLAN-V2",
+    "source_commit": PINNED_COMMIT,
+    "source_sha256": PINNED_DEFAULT_SHA256,
+    "latest_revision_record": (
+        "docs/revisions/REV-20260822-002-source-metadata-hardening.md"
+    ),
+}
+EXPECTED_MARKDOWN_REVISION_ID = "REV-20260822-002"
+EXPECTED_MARKDOWN_SESSION_ID = "SESSION-20260822-002"
+ALLOWED_MARKDOWN_REVISION_STATUSES = {"draft", "in_review", "complete"}
 PINNED_COUNTS = {
     "canonical_key_count": 115,
     "extra_config_key_count": 2,
@@ -586,20 +605,107 @@ def manifest_fingerprint(registry: Registry) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def parse_markdown_metadata(text: str) -> dict[str, str]:
+def parse_markdown_front_matter(
+    text: str,
+    *,
+    context: str,
+    allow_nested_values: bool = False,
+) -> tuple[dict[str, str], list[Problem]]:
+    """Parse top-level front matter without hiding malformed or duplicate fields."""
+
     lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return {}
+    problems: list[Problem] = []
+    if not lines or lines[0] != "---":
+        return {}, [Problem(f"{context} thiếu dòng mở front matter chính xác '---'")]
     try:
-        closing = next(index for index, line in enumerate(lines[1:], 1) if line.strip() == "---")
+        closing = next(index for index, line in enumerate(lines[1:], 1) if line == "---")
     except StopIteration:
-        return {}
+        return {}, [Problem(f"{context} thiếu dòng đóng front matter chính xác '---'")]
+
     metadata: dict[str, str] = {}
-    for line in lines[1:closing]:
-        match = MARKDOWN_METADATA_RE.match(line)
-        if match and match.group(2):
-            metadata[match.group(1)] = clean_markdown_scalar(match.group(2))
+    for index, line in enumerate(lines[1:closing], 2):
+        if not line:
+            continue
+        if allow_nested_values and line[0].isspace():
+            continue
+        match = MARKDOWN_METADATA_RE.fullmatch(line)
+        if not match:
+            problems.append(Problem(f"{context} metadata malformed: {line!r}", index))
+            continue
+        key, raw_value = match.groups()
+        if raw_value is None or not raw_value.strip():
+            if allow_nested_values:
+                value = ""
+            else:
+                problems.append(
+                    Problem(f"{context} metadata '{key}' thiếu giá trị", index)
+                )
+                continue
+        else:
+            value = clean_markdown_scalar(raw_value)
+        if key in metadata:
+            problems.append(Problem(f"{context} metadata trùng: '{key}'", index))
+            continue
+        metadata[key] = value
+    return metadata, problems
+
+
+def parse_markdown_metadata(text: str) -> dict[str, str]:
+    """Compatibility wrapper returning top-level Markdown front-matter values."""
+
+    metadata, _ = parse_markdown_front_matter(text, context="Markdown")
     return metadata
+
+
+def validate_revision_pointer(metadata: dict[str, str]) -> list[Problem]:
+    """Resolve and validate the revision record named by registry front matter."""
+
+    pointer = metadata.get("latest_revision_record")
+    if not pointer:
+        return []
+
+    project_root = PROJECT_ROOT.resolve()
+    revision_path = (project_root / pointer).resolve()
+    try:
+        revision_path.relative_to(project_root)
+    except ValueError:
+        return [Problem(f"latest_revision_record thoát project root: {pointer!r}")]
+    if not revision_path.is_file():
+        return [Problem(f"latest_revision_record không tồn tại: {pointer!r}")]
+    try:
+        revision_text = revision_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        return [Problem(f"không đọc được latest_revision_record {pointer!r}: {exc}")]
+
+    revision_metadata, problems = parse_markdown_front_matter(
+        revision_text,
+        context="Revision record",
+        allow_nested_values=True,
+    )
+    expected_identity = {
+        "document_id": EXPECTED_MARKDOWN_REVISION_ID,
+        "record_id": EXPECTED_MARKDOWN_REVISION_ID,
+        "document_type": "revision_record",
+        "session_id": EXPECTED_MARKDOWN_SESSION_ID,
+    }
+    for key, expected in expected_identity.items():
+        actual = revision_metadata.get(key)
+        if actual != expected:
+            problems.append(
+                Problem(
+                    f"Revision record metadata '{key}' phải là {expected!r}, "
+                    f"nhận {actual!r}"
+                )
+            )
+    status = revision_metadata.get("status")
+    if status not in ALLOWED_MARKDOWN_REVISION_STATUSES:
+        problems.append(
+            Problem(
+                "Revision record metadata 'status' phải thuộc "
+                f"{sorted(ALLOWED_MARKDOWN_REVISION_STATUSES)}, nhận {status!r}"
+            )
+        )
+    return problems
 
 
 def normalized_markdown_body(text: str) -> str | None:
@@ -659,22 +765,28 @@ def validate_documentation(registry: Registry, path: Path) -> tuple[list[Problem
     except (OSError, UnicodeError) as exc:
         return [Problem(f"không đọc được train-argument documentation: {exc}")], True
 
-    problems: list[Problem] = []
-    metadata = parse_markdown_metadata(text)
-    expected_metadata = {
-        "document_id": "TRAIN-ARGS-ULTRALYTICS-8.4.125",
-        "document_type": "registry",
-        "version": "1.2.0",
-        "status": "active",
-        "related_plan": "PLAN-V2",
-        "source_commit": PINNED_COMMIT,
-        "source_sha256": PINNED_DEFAULT_SHA256,
-    }
-    for key, expected in expected_metadata.items():
-        if metadata.get(key) != expected:
-            problems.append(
-                Problem(f"Markdown metadata '{key}' phải là {expected!r}")
+    metadata, problems = parse_markdown_front_matter(
+        text, context="Markdown"
+    )
+    actual_fields = set(metadata)
+    expected_fields = set(EXPECTED_MARKDOWN_METADATA)
+    if actual_fields != expected_fields:
+        problems.append(
+            Problem(
+                "Markdown metadata sai schema: "
+                f"missing={sorted(expected_fields - actual_fields)}, "
+                f"extra={sorted(actual_fields - expected_fields)}"
             )
+        )
+    for key, expected in EXPECTED_MARKDOWN_METADATA.items():
+        actual = metadata.get(key)
+        if actual != expected:
+            problems.append(
+                Problem(
+                    f"Markdown metadata '{key}' phải là {expected!r}, nhận {actual!r}"
+                )
+            )
+    problems.extend(validate_revision_pointer(metadata))
 
     computed_body_hash = markdown_body_sha256(text)
     recorded_body_hash = registry.scalars.get("upstream", {}).get(
@@ -1308,6 +1420,22 @@ def validate_source_checkout(source_root: Path) -> list[Problem]:
         problems.append(
             Problem(f"source origin sai: expected={PINNED_REPOSITORY}, actual={origin}")
         )
+
+    index_entries, error = git_value(source_root, "ls-files", "-v")
+    if error:
+        problems.append(Problem(f"không đọc được Git index flags của source: {error}"))
+    elif index_entries:
+        concealed_entries = [
+            line for line in index_entries.splitlines() if not line.startswith("H ")
+        ]
+        if concealed_entries:
+            problems.append(
+                Problem(
+                    "source Git index có prefix che giấu/không chuẩn; "
+                    "chỉ prefix 'H ' được phép: "
+                    f"{concealed_entries!r}"
+                )
+            )
 
     status, error = git_value(
         source_root, "status", "--porcelain", "--untracked-files=all"
