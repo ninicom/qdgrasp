@@ -3,7 +3,7 @@ document_id: REV-20260821-006
 document_type: revision_record
 revision_schema: 2
 title: Sửa false-negative và evidence gaps của train-argument registry
-status: in_review
+status: invalidated
 date: 2026-08-21
 record_id: REV-20260821-006
 session_id: SESSION-20260821-007
@@ -37,7 +37,8 @@ revises:
 reason: Independent audit TPR-20260821-003 found S1 false-negatives and S2/S3 source, policy and evidence gaps in completed snapshot 7fb01a7.
 necessity: N2
 impact: Replaces the checker guarantee and accountability record for this feature; 127-name inventory remains unchanged and no model/runtime result is altered.
-supersedes: REV-20260821-005
+supersedes: none
+invalidated_by: TPR-20260822-001
 ---
 
 # REV-20260821-006 — Audit remediation
@@ -99,7 +100,8 @@ Replay log bất biến: `docs/reports/evidence/TRAIN-ARGS-20260821-audit-remedi
 4.178 byte, SHA-256
 `fd7888018bfa8e691dd8a6e236ffbca9fbfb6e864f483ed97522abec0ced037f`.
 
-- Kiểm tra chưa chạy: delta review trên remediation commit.
+- Delta review đã chạy: `TPR-20260822-001` trả `fail/S1`; F-001/F-002/F-004/
+  F-005 chưa đóng hoàn toàn và phát hiện thêm F-010.
 - Rollback: không merge; quay về immutable commit `7fb01a7` chỉ để audit, không
   dùng nó làm release candidate vì verdict fail.
 
@@ -108,13 +110,14 @@ Replay log bất biến: `docs/reports/evidence/TRAIN-ARGS-20260821-audit-remedi
 - `TPR-20260821-003` vẫn có hiệu lực cho commit `7fb01a7` và không bị sửa.
 - Verdict REV-005/SESSION-006 không đủ cho revision mới; REV-006 supersede phần
   accountability, không xóa record cũ.
-- Loại kiểm tra lại: `delta_review` độc lập, xuất TPR-004.
+- Loại kiểm tra lại: revision N2 mới rồi `delta_review` độc lập.
 - Không có số liệu model cần đính chính.
 
 ## Xác nhận đóng hồ sơ
 
 - Tác giả: `codex-primary-agent`, 2026-08-21 Asia/Bangkok.
-- Người kiểm tra dự kiến: independent delta reviewer, phạm vi F-001–F-009.
-- Kết luận hiện tại: `in_review`; implementation, commit và replay evidence đã
-  khóa, còn delta review độc lập.
+- Người kiểm tra: `codex-agent-third-party-train-args`, TPR-20260822-001.
+- Kết luận: `invalidated`; baseline gate pass nhưng mutation review chứng minh
+  false-negative S1, nên revision này không supersede REV-005 và không được
+  merge/release.
 - Bản ghi phiên: `SESSION-20260821-007`.

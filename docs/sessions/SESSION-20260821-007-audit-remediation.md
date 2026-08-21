@@ -2,7 +2,7 @@
 document_id: SESSION-20260821-007
 document_type: session_report
 title: Sửa findings audit train-argument registry
-status: in_review
+status: complete
 date: 2026-08-21
 session_id: SESSION-20260821-007
 author: codex-primary-agent
@@ -13,6 +13,7 @@ revision_reason: TPR-20260821-003 chứng minh checker và evidence của snapsh
 necessity: N2
 impact: Siết exact schema/semantic/source/reference gates và sửa documentation contract; không thay đổi danh sách 127 tên hay tuyên bố model runtime.
 related_plan: PLAN-V2
+review_outcome: TPR-20260822-001
 ---
 
 # SESSION-20260821-007 — Audit remediation
@@ -36,6 +37,7 @@ thêm negative tests và chuẩn bị exact commit cho delta review.
 | W-08 | Quy định Git-versioned active living contracts | Policy + version/latest revision pointers |
 | W-09 | Revision schema 2 đủ tám mục | Template, validator và regression test |
 | W-10 | Mở rộng regression suite | 24/24 pass trước khi thêm hồ sơ này |
+| W-11 | Gửi exact snapshot cho delta reviewer | `fdb60eb`, verdict `fail/S1` |
 
 ## Bằng chứng
 
@@ -52,6 +54,9 @@ thêm negative tests và chuẩn bị exact commit cho delta review.
 - Replay log: `docs/reports/evidence/TRAIN-ARGS-20260821-audit-remediation.txt`,
   4.178 byte, SHA-256
   `fd7888018bfa8e691dd8a6e236ffbca9fbfb6e864f483ed97522abec0ced037f`.
+- Delta review: `TPR-20260822-001`, evidence SHA-256
+  `739837d1dd3f559594cb68a99ae8111311d1b53e4755907f6ba5dd606693a29c`,
+  verdict `fail`, max severity `S1`.
 
 ## Kiểm tra đã chạy
 
@@ -66,9 +71,9 @@ thêm negative tests và chuẩn bị exact commit cho delta review.
 
 ## Việc chưa hoàn tất
 
-- Delta review độc lập trên exact remediation commit; không merge nếu còn
-  finding mở.
-- Chuyển SESSION/REV sang `complete` sau verdict pass.
+- Typed/lexical registry fingerprint, normative Markdown pin, structured
+  quantize aliases và standalone clean-source gate chưa được triển khai.
+- F-001/F-002/F-004/F-005/F-010 còn mở; snapshot này không được merge.
 - Model/runtime/CPU-CUDA smoke vẫn chưa được implement và không thuộc claim.
 
 ## Sửa đổi phiên trước
@@ -79,5 +84,6 @@ không đổi, nhưng guarantee checker/evidence/governance được sửa đán
 
 ## Bàn giao
 
-Giao commit `5d86a42` cùng raw evidence bất biến cho reviewer TPR-004; chỉ đóng
-SESSION/REV và merge khi delta review xác nhận F-001–F-009 đã được xử lý.
+Phiên kết thúc với kết quả audit thất bại, không phải acceptance. Giữ nguyên
+`TPR-20260822-001` và evidence; mở session/revision N2 mới để sửa dialect v2,
+sau đó delta review lại exact commit trước merge.
