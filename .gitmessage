@@ -1,0 +1,9 @@
+# <type>(<scope>): <mô tả ngắn>
+#
+# type: feat | fix | docs | test | refactor | perf | build | ci | chore | revert
+# Ví dụ: feat(parser): add explicit YAML module registry
+#
+# Nội dung:
+# - Nêu thay đổi đã hoàn tất và lý do.
+# - Ghi test/evidence nếu commit thay đổi hành vi.
+# - Nếu sửa việc phiên trước, dẫn REV-... và necessity N0-N3.

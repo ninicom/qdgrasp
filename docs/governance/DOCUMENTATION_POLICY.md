@@ -30,8 +30,8 @@ Mỗi tài liệu quản trị dùng YAML front matter và tối thiểu có:
 
 - `document_id`: định danh duy nhất, không tái sử dụng.
 - `document_type`: `plan`, `session_report`, `metrics_report`,
-  `third_party_review`, `revision_record`, `decision`, `policy`, `registry` hoặc
-  `schema`, `index`.
+  `third_party_review`, `revision_record`, `release_report`, `decision`,
+  `policy`, `registry`, `schema` hoặc `index`.
 - `title`, `status`, `date`.
 - `revises`: `none`, document/session ID bị sửa, hoặc danh sách mục đích danh
   khi một revision record sửa nhiều artifact. Không dùng glob hay mô tả mơ hồ.
@@ -48,7 +48,8 @@ Trạng thái hợp lệ cho hồ sơ phiên/kết quả:
 Tài liệu quy phạm (`plan`, `policy`, `registry`, `schema`, `index`) được dùng
 thêm `active`: phiên bản hiện đang có hiệu lực. `active` không hợp lệ cho
 `session_report`, `metrics_report`, `third_party_review` hoặc
-`revision_record`; các record này phải dùng trạng thái vòng đời ở trên.
+`revision_record`/`release_report`; các record này phải dùng trạng thái vòng đời
+ở trên.
 
 File raw được lưu nguyên byte trong `docs/archive/` là ngoại lệ duy nhất được
 phép không có front matter. Trạng thái, SHA-256 và revision pointer của file đó

@@ -30,8 +30,9 @@ PLAN.md
   mức cần thiết khi sửa lịch sử.
 - `governance/SESSION_RULES.md`: cách ghi đúng việc hoàn tất trong từng phiên.
 - `governance/THIRD_PARTY_REVIEW.md`: quy trình kiểm tra độc lập.
+- `governance/GIT_WORKFLOW.md`: branch feature/develop/release, commit và gate.
 - `metrics/METRICS_REGISTRY.md`: định nghĩa metric và điều kiện so sánh.
-- `templates/`: mẫu bắt buộc cho session, metrics, review và revision.
+- `templates/`: mẫu bắt buộc cho session, metrics, review, revision và release.
 - `sessions/`: báo cáo từng phiên làm việc.
 - `metrics/reports/`: báo cáo số liệu đã chạy.
 - `reviews/`: báo cáo kiểm tra của người thứ ba.

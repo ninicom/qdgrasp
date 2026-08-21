@@ -55,7 +55,8 @@ phiên/số liệu/review/revision không được dùng `active`.
   `metrics_report`. Validator kiểm tra các H2, định danh protocol/môi trường,
   `n`, CI 95%, raw artifact, SHA-256, comparability, validity và reviewer.
 - Báo cáo Markdown khác trong `docs/reports/` phải có front matter tối thiểu và
-  các mục “Tóm tắt”, “Bằng chứng”, “Kết luận”.
+  các mục “Tóm tắt”, “Bằng chứng”, “Kết luận”; `release_report` dùng thêm mẫu
+  `docs/templates/RELEASE_REPORT.md`.
 
 Heading có thể có tiền tố số (`## 3. Bằng chứng`); validator bỏ tiền tố này khi
 đối chiếu. Front matter chỉ cần scalar ở cấp cao nhất và list lồng dưới
