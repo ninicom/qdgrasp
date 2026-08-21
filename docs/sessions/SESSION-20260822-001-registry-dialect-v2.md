@@ -43,6 +43,11 @@ sạch trong standalone full mode. Không merge trước independent delta revie
 | E-03 | human contract | `docs/configuration/TRAIN_ARGUMENTS.md` | `a77ab9466ddf44fecca5d8d59410ab315b7423652f7ef5f42e4f07b55dad5480` |
 | E-04 | checker | `scripts/check_train_args.py` | `a77e57e26b277b777585dddb99aea7e0f8bb5b7b8764cb744ca440c85bf73c8d` |
 | E-05 | tests | `scripts/tests/test_check_train_args.py` | `71c6ede6799c7e6011a342ffc6747820d28d07f0714317afbc402ce824321b4d` |
+| E-06 | replay log | `docs/reports/evidence/TRAIN-ARGS-20260822-dialect-v2.txt` | 4.725 byte; `49b29aa755890422863cc2821a293abed612a4981e93d384ac112edc480cdda1` |
+
+Implementation commit: `8dc0e2e0a122e46df95f2f4f7a3cfbfee9dec58c`, tree
+`60794bd3930713bde84a8707325517b05bce2ea2`, committed at
+`2026-08-22T00:25:08+07:00`.
 
 ## Kiểm tra đã chạy
 
@@ -58,7 +63,6 @@ sạch trong standalone full mode. Không merge trước independent delta revie
 
 ## Việc chưa hoàn tất
 
-- Commit implementation trên feature, rồi khóa exact commit/tree/replay evidence.
 - Independent delta review lần hai trên clean exact commit.
 - Model/runtime/CPU-CUDA smoke ngoài claim và vẫn chưa được implement.
 
@@ -69,5 +73,5 @@ tác động. SESSION-007/REV-006/TPR-001 đã đóng và không bị sửa lạ
 
 ## Bàn giao
 
-Implementation/local gate đã pass. Bước tiếp theo là commit, replay gate trên
-clean snapshot, rồi giao exact revision cho reviewer không tham gia sửa code.
+Implementation commit và replay evidence đã khóa. Giao final feature snapshot
+chứa evidence này cho reviewer không tham gia sửa code; chỉ merge sau pass/NONE.

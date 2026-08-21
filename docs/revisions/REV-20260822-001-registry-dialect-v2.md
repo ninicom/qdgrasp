@@ -40,7 +40,8 @@ supersedes: REV-20260821-006
   `2b26aed81b7f8647e85d2bc64b2a6ecf2da979f5`.
 - Finding source: `TPR-20260822-001`, F-001/F-002/F-004/F-005/F-010.
 - Revision trước: `REV-20260821-006` đã bị invalidated và giữ nguyên.
-- Revision sau ở working tree:
+- Revision sau tại commit `8dc0e2e0a122e46df95f2f4f7a3cfbfee9dec58c`,
+  tree `60794bd3930713bde84a8707325517b05bce2ea2`:
   - checker `a77e57e26b277b777585dddb99aea7e0f8bb5b7b8764cb744ca440c85bf73c8d`;
   - tests `71c6ede6799c7e6011a342ffc6747820d28d07f0714317afbc402ce824321b4d`;
   - YAML `5fe682f1d84351564edf858c36bd1f6ac07005295234ad9b23f97d3081c48626`;
@@ -89,8 +90,13 @@ chứng và kết luận kỹ thuật, không phải biên tập.
 | V-003 | PyYAML semantic spot check | int/bool/null đúng kiểu | pass | pass | local diagnostic |
 | V-004 | Delta review | Pass/NONE | Chưa chạy | not_run | Chờ exact commit |
 
+Replay evidence: `docs/reports/evidence/TRAIN-ARGS-20260822-dialect-v2.txt`,
+4.725 byte, SHA-256
+`49b29aa755890422863cc2821a293abed612a4981e93d384ac112edc480cdda1`.
+
 - Regression đã chạy lại: 30/30 cùng full source/reference/docs/shell/diff.
-- Kiểm tra chưa chạy: independent review trên exact committed snapshot.
+- Kiểm tra chưa chạy: independent review trên final feature snapshot chứa
+  immutable replay evidence của implementation commit.
 - Rollback: không merge; giữ commit thất bại chỉ làm audit evidence.
 
 ## Ảnh hưởng tới báo cáo và quyết định cũ
