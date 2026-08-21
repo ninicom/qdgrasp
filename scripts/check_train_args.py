@@ -39,7 +39,7 @@ EXPECTED_MARKDOWN_METADATA = {
     "document_id": "TRAIN-ARGS-ULTRALYTICS-8.4.125",
     "document_type": "registry",
     "title": "Registry đầy đủ tham số train tương thích Ultralytics v8.4.125",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "status": "active",
     "date": "2026-08-22",
     "revises": "none",
@@ -47,11 +47,11 @@ EXPECTED_MARKDOWN_METADATA = {
     "source_commit": PINNED_COMMIT,
     "source_sha256": PINNED_DEFAULT_SHA256,
     "latest_revision_record": (
-        "docs/revisions/REV-20260822-002-source-metadata-hardening.md"
+        "docs/revisions/REV-20260822-003-raw-scalar-fsmonitor-hardening.md"
     ),
 }
-EXPECTED_MARKDOWN_REVISION_ID = "REV-20260822-002"
-EXPECTED_MARKDOWN_SESSION_ID = "SESSION-20260822-002"
+EXPECTED_MARKDOWN_REVISION_ID = "REV-20260822-003"
+EXPECTED_MARKDOWN_SESSION_ID = "SESSION-20260822-003"
 ALLOWED_MARKDOWN_REVISION_STATUSES = {"draft", "in_review", "complete"}
 PINNED_COUNTS = {
     "canonical_key_count": 115,
@@ -339,7 +339,8 @@ REGISTRY_ENTRY_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*): (\{.*\})$")
 REGISTRY_NESTED_SCALAR_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*): (.+)$")
 REGISTRY_INLINE_FIELD_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*): (.+)$")
 SOURCE_TOP_LEVEL_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):(?:[ \t]*(.*))?$")
-MARKDOWN_METADATA_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):(?:[ \t]*(.*))?$")
+MARKDOWN_METADATA_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*): ([^\r\n]+)$")
+MARKDOWN_NESTED_KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):$")
 SCALAR_TOKEN_RE = re.compile(r"^[A-Za-z0-9~-][A-Za-z0-9._:/=,+|()~-]*$")
 INTEGER_SCALAR_RE = re.compile(r"^-?(?:0|[1-9][0-9]*)$")
 FLOAT_SCALAR_RE = re.compile(
@@ -377,15 +378,6 @@ class SourceArgument:
     default: str
     group: str
     line: int
-
-
-def clean_markdown_scalar(value: str) -> str:
-    """Normalize Markdown front-matter scalars, never registry semantics."""
-
-    value = value.strip()
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
-        return value[1:-1].strip()
-    return value
 
 
 def scalar_signature(value: str) -> ScalarSignature:
@@ -629,20 +621,18 @@ def parse_markdown_front_matter(
         if allow_nested_values and line[0].isspace():
             continue
         match = MARKDOWN_METADATA_RE.fullmatch(line)
-        if not match:
-            problems.append(Problem(f"{context} metadata malformed: {line!r}", index))
-            continue
-        key, raw_value = match.groups()
-        if raw_value is None or not raw_value.strip():
-            if allow_nested_values:
+        if match:
+            key, value = match.groups()
+        else:
+            nested_match = MARKDOWN_NESTED_KEY_RE.fullmatch(line)
+            if allow_nested_values and nested_match:
+                key = nested_match.group(1)
                 value = ""
             else:
                 problems.append(
-                    Problem(f"{context} metadata '{key}' thiếu giá trị", index)
+                    Problem(f"{context} metadata malformed: {line!r}", index)
                 )
                 continue
-        else:
-            value = clean_markdown_scalar(raw_value)
         if key in metadata:
             problems.append(Problem(f"{context} metadata trùng: '{key}'", index))
             continue
@@ -1421,21 +1411,26 @@ def validate_source_checkout(source_root: Path) -> list[Problem]:
             Problem(f"source origin sai: expected={PINNED_REPOSITORY}, actual={origin}")
         )
 
-    index_entries, error = git_value(source_root, "ls-files", "-v")
-    if error:
-        problems.append(Problem(f"không đọc được Git index flags của source: {error}"))
-    elif index_entries:
-        concealed_entries = [
-            line for line in index_entries.splitlines() if not line.startswith("H ")
-        ]
-        if concealed_entries:
+    for flag, flag_name in (("-v", "assume/skip-worktree"), ("-f", "fsmonitor")):
+        index_entries, error = git_value(source_root, "ls-files", flag)
+        if error:
             problems.append(
                 Problem(
-                    "source Git index có prefix che giấu/không chuẩn; "
-                    "chỉ prefix 'H ' được phép: "
-                    f"{concealed_entries!r}"
+                    f"không đọc được Git index flags {flag_name} của source: {error}"
                 )
             )
+        elif index_entries:
+            concealed_entries = [
+                line for line in index_entries.splitlines() if not line.startswith("H ")
+            ]
+            if concealed_entries:
+                problems.append(
+                    Problem(
+                        f"source Git index {flag_name} có prefix che giấu/không chuẩn; "
+                        "chỉ prefix 'H ' được phép: "
+                        f"{concealed_entries!r}"
+                    )
+                )
 
     status, error = git_value(
         source_root, "status", "--porcelain", "--untracked-files=all"

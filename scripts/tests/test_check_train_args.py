@@ -416,14 +416,14 @@ class TrainArgumentRegistryTests(unittest.TestCase):
     def test_markdown_front_matter_tpr_002_mutations_are_rejected(self) -> None:
         pointer = (
             "latest_revision_record: "
-            "docs/revisions/REV-20260822-002-source-metadata-hardening.md"
+            "docs/revisions/REV-20260822-003-raw-scalar-fsmonitor-hardening.md"
         )
         cases = (
             (pointer + "\n", "", "latest_revision_record"),
             (
                 pointer,
                 "latest_revision_record: "
-                "docs/revisions/REV-20260822-001-registry-dialect-v2.md",
+                "docs/revisions/REV-20260822-002-source-metadata-hardening.md",
                 "latest_revision_record",
             ),
             ("date: 2026-08-22", "date: never", "Markdown metadata 'date'"),
@@ -442,6 +442,25 @@ class TrainArgumentRegistryTests(unittest.TestCase):
             with self.subTest(mutation=new):
                 messages = validate_markdown_mutation(old, new)
                 self.assertIn(expected_message, messages)
+
+    def test_markdown_front_matter_values_use_exact_raw_lexemes(self) -> None:
+        mutation_styles = {
+            "quoted_and_padded": lambda key, value: f'{key}: " {value} "',
+            "leading_padding": lambda key, value: f"{key}:  {value}",
+            "trailing_padding": lambda key, value: f"{key}: {value} ",
+            "tab_separator": lambda key, value: f"{key}:\t{value}",
+        }
+        for key, value in CHECKER_MODULE.EXPECTED_MARKDOWN_METADATA.items():
+            original = f"{key}: {value}"
+            for style, mutation in mutation_styles.items():
+                with self.subTest(field=key, style=style):
+                    messages = validate_markdown_mutation(
+                        original, mutation(key, value)
+                    )
+                    if style == "tab_separator":
+                        self.assertIn("Markdown metadata malformed", messages)
+                    else:
+                        self.assertIn(f"Markdown metadata '{key}'", messages)
 
     def test_markdown_front_matter_duplicate_and_malformed_fields_are_rejected(self) -> None:
         cases = (
@@ -494,6 +513,61 @@ revises:
         self.assertIn("Revision record metadata 'record_id'", messages)
         self.assertIn("Revision record metadata 'session_id'", messages)
         self.assertIn("Revision record metadata 'status'", messages)
+
+    def test_markdown_revision_pointer_identity_uses_exact_raw_lexemes(self) -> None:
+        expected = {
+            "document_id": CHECKER_MODULE.EXPECTED_MARKDOWN_REVISION_ID,
+            "record_id": CHECKER_MODULE.EXPECTED_MARKDOWN_REVISION_ID,
+            "document_type": "revision_record",
+            "session_id": CHECKER_MODULE.EXPECTED_MARKDOWN_SESSION_ID,
+            "status": "in_review",
+        }
+        base_lines = [
+            "---",
+            f"document_id: {expected['document_id']}",
+            f"document_type: {expected['document_type']}",
+            f"status: {expected['status']}",
+            f"record_id: {expected['record_id']}",
+            f"session_id: {expected['session_id']}",
+            "revises:",
+            "  - record_id: REV-OLD",
+            "---",
+            "",
+        ]
+        mutation_styles = {
+            "quoted_and_padded": lambda key, value: f'{key}: " {value} "',
+            "leading_padding": lambda key, value: f"{key}:  {value}",
+            "trailing_padding": lambda key, value: f"{key}: {value} ",
+            "tab_separator": lambda key, value: f"{key}:\t{value}",
+        }
+        metadata = dict(CHECKER_MODULE.EXPECTED_MARKDOWN_METADATA)
+        original_root = CHECKER_MODULE.PROJECT_ROOT
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            target = root / metadata["latest_revision_record"]
+            target.parent.mkdir(parents=True)
+            CHECKER_MODULE.PROJECT_ROOT = root
+            try:
+                for key, value in expected.items():
+                    original = f"{key}: {value}"
+                    for style, mutation in mutation_styles.items():
+                        with self.subTest(field=key, style=style):
+                            mutated_lines = [
+                                mutation(key, value) if line == original else line
+                                for line in base_lines
+                            ]
+                            target.write_text("\n".join(mutated_lines), encoding="utf-8")
+                            messages = "\n".join(
+                                problem.message
+                                for problem in CHECKER_MODULE.validate_revision_pointer(
+                                    metadata
+                                )
+                            )
+                            self.assertIn(
+                                f"Revision record metadata '{key}'", messages
+                            )
+            finally:
+                CHECKER_MODULE.PROJECT_ROOT = original_root
 
     def test_markdown_revision_pointer_requires_existing_target(self) -> None:
         metadata = dict(CHECKER_MODULE.EXPECTED_MARKDOWN_METADATA)
@@ -596,8 +670,29 @@ revises:
 
                 problems = CHECKER_MODULE.validate_source_checkout(source)
                 messages = "\n".join(problem.message for problem in problems)
-                self.assertIn("source Git index có prefix che giấu/không chuẩn", messages)
+                self.assertIn("source Git index assume/skip-worktree", messages)
                 self.assertIn(expected_entry, messages)
+
+    def test_source_checkout_helper_rejects_fsmonitor_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            source, tracked = create_source_checkout_fixture(Path(temporary_directory))
+            fake_monitor = source / "fake-fsmonitor.sh"
+            fake_monitor.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            fake_monitor.chmod(0o755)
+            run_git(source, "config", "core.fsmonitor", str(fake_monitor))
+            run_git(source, "config", "core.fsmonitorHookVersion", "1")
+            run_git(source, "update-index", "--fsmonitor-valid", "tracked.txt")
+            tracked.write_text("fsmonitor-concealed change\n", encoding="utf-8")
+
+            verbose_view = run_git(source, "ls-files", "-v").stdout.strip()
+            fsmonitor_view = run_git(source, "ls-files", "-f").stdout.strip()
+            self.assertEqual(verbose_view, "H tracked.txt")
+            self.assertEqual(fsmonitor_view, "h tracked.txt")
+
+            problems = CHECKER_MODULE.validate_source_checkout(source)
+            messages = "\n".join(problem.message for problem in problems)
+            self.assertIn("source Git index fsmonitor", messages)
+            self.assertIn("h tracked.txt", messages)
 
     def test_docs_checker_discovers_configuration_registry(self) -> None:
         environment = os.environ.copy()
