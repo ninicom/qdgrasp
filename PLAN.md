@@ -88,11 +88,12 @@ nghiệp.
   dry-run làm bằng chứng CUDA pass. MuJoCo là evaluator chuẩn; backend tùy chọn
   không được làm base install kéo license không nằm trong allowlist.
 - Environment chuẩn là Linux x86_64, Python `>=3.11` (reference lock dùng 3.11),
-  PyTorch 2.11.0, Lightning
-  Fabric 2.6.5 và MuJoCo 3.12.0. CPU dùng wheel `+cpu`, NVIDIA dùng `+cu128`;
-  lock và fingerprint nằm trong `environments/`. Python 3.14 system không phải
-  môi trường dự án. Phase model/training không được đóng nếu CUDA hardware smoke,
-  train-step, resume và parity tương ứng chưa chạy.
+  PyTorch 2.11.0, Lightning Fabric 2.6.5 và MuJoCo 3.12.0. CPU dùng wheel
+  `+cpu`, NVIDIA dùng `+cu128`; lock và fingerprint nằm trong `environments/`.
+  Không cài vào system Python của máy phát triển. Phase model/training không được
+  đóng nếu CUDA hardware smoke, train-step, resume và parity chưa chạy.
+- Packaging theo pattern YOLO: `pyproject.toml` dùng compatible lower bounds cho
+  cài đặt thông thường; exact CPU/cu128 versions chỉ nằm trong research locks.
 - Baseline tham chiếu gồm GraspDiffuser, DexDiffuser, CEDex và GraspGenX đã đủ
   để bắt đầu. Chỉ thêm repository mới khi có issue kỹ thuật tái hiện được và
   phải qua `docs/governance/REFERENCE_INTAKE.md`; reference không tự trở thành

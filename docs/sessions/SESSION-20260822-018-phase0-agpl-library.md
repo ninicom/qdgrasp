@@ -33,7 +33,7 @@ CUDA/cu128 evidence từ notebook repository tách biệt trên Kaggle.
 
 | Evidence ID | Loại | Đường dẫn/URI | SHA-256/tham chiếu |
 | --- | --- | --- | --- |
-| E-01 | PLAN 4.0 | `PLAN.md` | `ff1a832db16ebf4e40a8bbff206cbbd43ee4b381b044f3500e576097886f3875` |
+| E-01 | PLAN 4.0 | `PLAN.md` | `f1d4b9eb1692f229704593502afe088b73ae7f769367f7d9e6a515cc0cfe245c` |
 | E-02 | Package | `pyproject.toml` | version `0.1.0a1` |
 | E-03 | CUDA evidence | external Kaggle output | pending |
 

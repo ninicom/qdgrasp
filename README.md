@@ -9,6 +9,16 @@ Python được hỗ trợ từ 3.11 trở lên. Lock tham chiếu dùng Python 
 
 ## Cài development
 
+Cài thông thường theo pattern package của YOLO — dependency dùng compatible
+version ranges:
+
+```bash
+pip install "git+https://github.com/ninicom/qdgrasp.git"
+qdgrasp env
+```
+
+Để tái lập nghiên cứu/CI chính xác, dùng lock profile:
+
 ```bash
 uv venv --python 3.11 .venv
 source .venv/bin/activate
@@ -17,7 +27,7 @@ uv pip install --no-deps -e .
 python -c "import qdgrasp; print(qdgrasp.environment_info())"
 ```
 
-Hoặc cài exact public commit sau khi đã sync đúng environment lock:
+Có thể pin exact public commit sau khi đã sync đúng environment lock:
 
 ```bash
 uv pip install --no-deps "git+https://github.com/ninicom/qdgrasp.git@<commit>"

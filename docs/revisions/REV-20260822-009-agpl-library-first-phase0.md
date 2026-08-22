@@ -27,7 +27,7 @@ supersedes: REV-20260822-006
 - Phiên bị sửa: `SESSION-20260822-017` và quyết định Apache ở phiên 015.
 - Artifact chính: `PLAN.md`.
 - Checksum trước: `b9c74d6b47adc63813912bdf734a2589dce54fb481c2ab9b119cfaeffd20ec18`.
-- Checksum sau: `ff1a832db16ebf4e40a8bbff206cbbd43ee4b381b044f3500e576097886f3875`.
+- Checksum sau: `f1d4b9eb1692f229704593502afe088b73ae7f769367f7d9e6a515cc0cfe245c`.
 
 ## Lý do chỉnh sửa
 

@@ -20,30 +20,24 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-  "torch==2.11.0",
-  "lightning==2.6.5",
-  "numpy==2.4.6",
-  "scipy==1.17.1",
-  "mujoco==3.12.0",
-  "trimesh==4.12.2",
-  "safetensors==0.8.0",
-  "pydantic==2.13.4",
-  "PyYAML==6.0.3",
-  "einops==0.8.2",
-  "rich==14.3.4",
-  "typer==0.27.1",
+  "torch>=2.10.0",
+  "lightning>=2.6.0",
+  "numpy>=2.0.0",
+  "scipy>=1.14.0",
+  "mujoco>=3.3.0",
+  "trimesh>=4.0.0",
+  "safetensors>=0.5.0",
+  "pydantic>=2.10.0",
+  "PyYAML>=6.0.0",
+  "einops>=0.8.0",
+  "rich>=13.0.0",
+  "typer>=0.16.0",
 ]
 
 [project.optional-dependencies]
-dev = [
-  "pytest==9.1.1",
-  "pytest-cov==7.0.0",
-  "ruff==0.16.4",
-  "mypy==2.3.1",
-  "types-PyYAML==6.0.12.20250915",
-]
-export = ["onnx==1.22.0", "onnxruntime==1.29.0"]
-legacy = ["ultralytics==8.4.125"]
+dev = ["pytest>=9.0.0", "pytest-cov>=7.0.0", "ruff>=0.16.0", "mypy>=2.3.0", "types-PyYAML>=6.0.12"]
+export = ["onnx>=1.20.0", "onnxruntime>=1.20.0"]
+legacy = ["ultralytics>=8.4.125"]
 
 [project.scripts]
 qdgrasp = "qdgrasp.cli:main"

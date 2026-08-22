@@ -42,6 +42,11 @@ QDGrasp luôn được cài như package. Lock profile được sync trước đ
 Torch backend; sau đó cài source/wheel với `--no-deps`. Không chạy trực tiếp bằng
 cách thêm repository root vào `PYTHONPATH`.
 
+Package metadata theo pattern Ultralytics/YOLO: Python và dependencies dùng
+compatible lower bounds để `pip install` dễ trên môi trường hiện có. Các file
+lock bên dưới mới là exact contract cho research, CI và paper evidence; package
+range không thay thế lock.
+
 CPU là profile chuẩn cho CI, schema/FK/unit tests, debugging và inference/export
 smoke; CPU không phải profile train/benchmark chính thức:
 
