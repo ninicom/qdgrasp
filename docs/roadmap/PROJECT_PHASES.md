@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.3.0
+version: 1.4.0
 status: active
 date: 2026-08-22
-revises: ROADMAP-001@1.2.0
+revises: ROADMAP-001@1.3.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260822-010-phase1-gate-status.md
+latest_revision_record: docs/revisions/REV-20260822-013-phase2-roadmap-status.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -33,7 +33,7 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 | --- | --- | --- | --- | --- |
 | P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | complete |
 | P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | complete |
-| P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | pending |
+| P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | complete |
 | P3 — Data layer | Xây procedural objects, candidate generation, physics labels và immutable dataset schema | `DGN-Open-Tiny` có manifest và deterministic regeneration | Regenerate cùng seed/hash; dataset audit và tiny loader pass | pending |
 | P4 — Model MVP | Xây object encoder, HandGraph conditioning và palm+joint flow | QDGrasp-Flow `n` overfit được tiny dataset | CUDA forward/backward, gradient coverage, finite joints/rotations và tiny overfit pass | pending |
 | P5 — Training & evaluation | Hoàn thiện multi-hand training, quality/contact heads, evaluator và ablation | Checkpoint multi-hand đầu tiên cùng benchmark report | CUDA train/eval/resume, held-out protocol, physics success và ablations tái lập | pending |
