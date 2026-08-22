@@ -153,10 +153,10 @@ def load_robot_config(reference: str | Path) -> "RobotConfig | RobotConfigV2":
     return cast("RobotConfig | RobotConfigV2", load_versioned_document(reference, "robot"))
 
 
-def load_data_config(reference: str | Path) -> DataConfig:
-    """Load a ``qdgrasp/data/v1`` document."""
+def load_data_config(reference: str | Path) -> "DataConfig | Any":
+    """Load any registered data profile document."""
 
-    return load_document(reference, DataConfig)
+    return load_versioned_document(reference, "data")
 
 
 def load_run_config(reference: str | Path) -> RunConfig:

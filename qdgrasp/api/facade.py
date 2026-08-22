@@ -115,9 +115,10 @@ class QDGrasp:
     def _run_config(self, overrides: dict[str, Any]) -> RunConfig:
         return parse_document(overrides, RunConfig, origin="run configuration")
 
-    def _datasets(self, data: str | Path, splits: Sequence[str]) -> tuple[DataConfig, dict[str, Any]]:
+    def _datasets(self, data: str | Path, splits: Sequence[str]) -> tuple[Any, dict[str, Any]]:
         data_config = load_data_config(data)
-        builder = get_dataset_builder(data_config.type)
+        builder_name = getattr(data_config, "type", None) or getattr(data_config, "schema_version", "dgn_open")
+        builder = get_dataset_builder(builder_name)
         return data_config, {split: builder(data_config, self.robot_config, split=split) for split in splits}
 
     def train(self, data: str | Path, *, callbacks: Sequence[Callback] | None = None, **overrides: Any) -> RunResult:
