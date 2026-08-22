@@ -6,8 +6,11 @@ status: complete
 date: 2026-08-22
 session_id: SESSION-20260822-019
 author: claude-primary-agent
-revises: none
+revises: ROADMAP-001
 related_plan: PLAN-V2
+revision_reason: Ba tiêu chí gate P1 đã có bằng chứng chạy được nên trạng thái pending của P1 trong ROADMAP-001 không còn mô tả đúng thực tế.
+necessity: N2
+impact: Đổi trạng thái P1 trong ROADMAP-001 sang complete và mở điều kiện bắt đầu P2; không đổi API, schema, số liệu hay artifact khác.
 ---
 
 # SESSION-20260822-019 — Phase 1 core framework
@@ -94,10 +97,11 @@ thêm `target_rotation` và loss có thành phần rotation; test và gate scrip
   bằng `align_optimizer_state()` và `ModelEma.to()`; version 2 pass (T-14). Lớp
   lỗi này không tái hiện được trên host chỉ có CPU, nên gate CUDA chính là
   regression test của nó.
-- **Cần quyết định của maintainer:** cập nhật trạng thái P1 trong
-  `PROJECT_PHASES.md` từ `pending` sang `complete` là sửa một active normative
-  document và theo `DOCUMENTATION_POLICY.md` §4 phải đi kèm revision record.
-  Phiên này không tự ý sửa; bằng chứng gate đã đủ để maintainer ra quyết định.
+- **Chờ independent review:** maintainer đã quyết định chuyển trạng thái, nên
+  P1 trong `PROJECT_PHASES.md` đã đổi sang `complete` kèm
+  `REV-20260822-010`. Vì đây là thay đổi `N2` trên active normative document,
+  revision record đang ở `in_review` và cần reviewer không phải tác giả xác nhận
+  phạm vi `delta_review` trước khi chuyển sang `accepted`.
 - `scripts/check_qdgrasp_imports.py` vẫn báo 7 lỗi resolve trong cây legacy
   (`qdgrasp/engine/model.py`, `qdgrasp/nn/*`). Đây là trạng thái có sẵn từ trước
   phiên này, không phải regression: mọi module mới của P1 resolve sạch. Việc rút
@@ -107,7 +111,12 @@ thêm `target_rotation` và loss có thành phần rotation; test và gate scrip
 
 ## Sửa đổi phiên trước
 
-Không.
+`docs/revisions/REV-20260822-010-phase1-gate-status.md` (`N2`). Claim cũ:
+`ROADMAP-001@1.2.0` ghi P1 là `pending`. Claim mới: `ROADMAP-001@1.3.0` ghi P1
+là `complete`. Lý do chọn `N2`: template revision record cấm dùng `N0`/`N1` khi
+kết luận thay đổi, và trạng thái phase là kết luận quy phạm điều kiện mở P2.
+Không session report nào đã đóng bị sửa; hash trước/sau của
+`PROJECT_PHASES.md` nằm trong revision record.
 
 ## Bàn giao
 
@@ -115,8 +124,8 @@ Không.
   `origin`; `develop` đã có P0 sau khi merge `feature/ultralytics-fork-import`
   trong phiên này. Branch P1 chưa merge vào `develop`.
 - Toàn bộ tiêu chí gate P1 (API/config round-trip, CPU smoke, CUDA dummy
-  train-step) đã có bằng chứng. Bước hợp lệ tiếp theo: chạy
-  `scripts/git/finish_feature.sh`, cập nhật trạng thái roadmap kèm revision
-  record, rồi mở Phase 2 (robot layer).
+  train-step) đã có bằng chứng và P1 đã ở trạng thái `complete`. Bước hợp lệ
+  tiếp theo: chạy `scripts/git/finish_feature.sh` để merge vào `develop`, hoàn
+  tất independent review của `REV-20260822-010`, rồi mở Phase 2 (robot layer).
 - Trước khi mở rộng schema, đọc `docs/configuration/RUN_CONFIG.md`: version mới
   phải là schema identifier mới, không sửa nghĩa `v1`.
