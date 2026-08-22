@@ -1,0 +1,12 @@
+{
+  "modified": true,
+  "output_path": "qdgrasp/assets/derived/allegro_hand_description_right_A.normalized.urdf",
+  "output_sha256": "d75cf234c34ad6a8a8bdaba4e6eb17cbbcd96db9e35f406f657ea56bef1a0ea4",
+  "source_path": ".references/robot-assets/wonik-allegro-ros2/src/allegro_hand_controllers/urdf/allegro_hand_description_right_A.urdf",
+  "source_sha256": "3c0965dff548fdccab3f0b21eb0eef3575278282f839b29872e50ef2a6f4ba09",
+  "transform_id": "urdf_normalize_v1",
+  "transforms_applied": [
+    "resolve_package_uris",
+    "sanitize_inertias"
+  ]
+}

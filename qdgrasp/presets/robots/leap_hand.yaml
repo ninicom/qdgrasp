@@ -1,0 +1,88 @@
+schema: qdgrasp/robot/v2
+name: leap_hand
+format: mjcf
+source_asset: .references/robot-assets/mujoco-menagerie/leap_hand/right_hand.xml
+palm_link: palm
+base_link: palm
+fingertip_links:
+  - if_ds
+  - mf_ds
+  - rf_ds
+  - th_ds
+contact_links:
+  - palm
+  - if_bs
+  - if_px
+  - if_md
+  - if_ds
+  - mf_bs
+  - mf_px
+  - mf_md
+  - mf_ds
+  - rf_bs
+  - rf_px
+  - rf_md
+  - rf_ds
+  - th_mp
+  - th_bs
+  - th_px
+  - th_ds
+joints:
+  - if_mcp
+  - if_rot
+  - if_pip
+  - if_dip
+  - mf_mcp
+  - mf_rot
+  - mf_pip
+  - mf_dip
+  - rf_mcp
+  - rf_rot
+  - rf_pip
+  - rf_dip
+  - th_cmc
+  - th_axl
+  - th_mcp
+  - th_ipl
+joint_limits:
+  if_mcp: [-0.314, 2.23]
+  if_rot: [-1.047, 1.047]
+  if_pip: [-0.506, 1.885]
+  if_dip: [-0.366, 2.042]
+  mf_mcp: [-0.314, 2.23]
+  mf_rot: [-1.047, 1.047]
+  mf_pip: [-0.506, 1.885]
+  mf_dip: [-0.366, 2.042]
+  rf_mcp: [-0.314, 2.23]
+  rf_rot: [-1.047, 1.047]
+  rf_pip: [-0.506, 1.885]
+  rf_dip: [-0.366, 2.042]
+  th_cmc: [-0.349, 2.094]
+  th_axl: [-0.349, 2.094]
+  th_mcp: [-0.47, 2.443]
+  th_ipl: [-1.34, 1.88]
+actuators:
+  if_mcp: {kp: 1.0, kv: 0.1, type: position}
+  if_rot: {kp: 1.0, kv: 0.1, type: position}
+  if_pip: {kp: 1.0, kv: 0.1, type: position}
+  if_dip: {kp: 1.0, kv: 0.1, type: position}
+  mf_mcp: {kp: 1.0, kv: 0.1, type: position}
+  mf_rot: {kp: 1.0, kv: 0.1, type: position}
+  mf_pip: {kp: 1.0, kv: 0.1, type: position}
+  mf_dip: {kp: 1.0, kv: 0.1, type: position}
+  rf_mcp: {kp: 1.0, kv: 0.1, type: position}
+  rf_rot: {kp: 1.0, kv: 0.1, type: position}
+  rf_pip: {kp: 1.0, kv: 0.1, type: position}
+  rf_dip: {kp: 1.0, kv: 0.1, type: position}
+  th_cmc: {kp: 1.0, kv: 0.1, type: position}
+  th_axl: {kp: 1.0, kv: 0.1, type: position}
+  th_mcp: {kp: 1.0, kv: 0.1, type: position}
+  th_ipl: {kp: 1.0, kv: 0.1, type: position}
+frame: palm
+release_blocked: false
+provenance:
+  license: MIT
+  spdx_identifier: MIT
+  source_repository: https://github.com/google-deepmind/mujoco_menagerie.git
+  source_commit: da76818e269b82289eba39808e2fb91d679d6994
+  upstream_tree: efe8f001e555cc08cdd21fdbacc30bfd896241e3

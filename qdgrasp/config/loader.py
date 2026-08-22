@@ -17,12 +17,24 @@ DocumentT = TypeVar("DocumentT", bound=_Document)
 PRESET_PACKAGE = "qdgrasp.presets"
 
 
+def _all_preset_files() -> list[tuple[str, Path]]:
+    results: list[tuple[str, Path]] = []
+    root = resources.files(PRESET_PACKAGE)
+    for entry in root.iterdir():
+        if entry.is_file() and entry.name.endswith(".yaml"):
+            results.append((entry.name, Path(str(entry))))
+        elif entry.is_dir():
+            for child in entry.iterdir():
+                if child.is_file() and child.name.endswith(".yaml"):
+                    results.append((f"{entry.name}/{child.name}", Path(str(child))))
+                    results.append((child.name, Path(str(child))))
+    return results
+
+
 def preset_names() -> tuple[str, ...]:
     """Sorted file names of the YAML presets shipped inside the package."""
 
-    return tuple(
-        sorted(entry.name for entry in resources.files(PRESET_PACKAGE).iterdir() if entry.name.endswith(".yaml"))
-    )
+    return tuple(sorted({name for name, _ in _all_preset_files()}))
 
 
 def resolve_document_path(reference: str | Path) -> Path:
@@ -31,9 +43,12 @@ def resolve_document_path(reference: str | Path) -> Path:
     candidate = Path(reference)
     if candidate.is_file():
         return candidate
-    packaged = resources.files(PRESET_PACKAGE).joinpath(candidate.name)
-    if candidate.parent in (Path(""), Path(".")) and packaged.is_file():
-        return Path(str(packaged))
+    preset_map = dict(_all_preset_files())
+    ref_str = str(reference)
+    if ref_str in preset_map:
+        return preset_map[ref_str]
+    if candidate.name in preset_map:
+        return preset_map[candidate.name]
     raise ConfigError(f"configuration '{reference}' is neither a file nor a packaged preset {preset_names()}")
 
 
@@ -76,10 +91,22 @@ def load_model_config(reference: str | Path) -> ModelConfig:
     return load_document(reference, ModelConfig)
 
 
-def load_robot_config(reference: str | Path) -> RobotConfig:
-    """Load a ``qdgrasp/robot/v1`` document."""
+def load_robot_config(reference: str | Path) -> RobotConfig | Any:
+    """Load a ``qdgrasp/robot/v1`` or ``qdgrasp/robot/v2`` document."""
 
-    return load_document(reference, RobotConfig)
+    from ..robot.schema import ROBOT_SCHEMA_V2, RobotConfigV2
+
+    path = resolve_document_path(reference)
+    mapping = read_yaml_mapping(path)
+    schema_ver = mapping.get("schema")
+    if schema_ver == "qdgrasp/robot/v1":
+        return parse_document(mapping, RobotConfig, origin=str(reference))
+    if schema_ver == ROBOT_SCHEMA_V2:
+        return parse_document(mapping, RobotConfigV2, origin=str(reference))
+    raise ConfigError(
+        f"{reference}: unsupported robot schema {schema_ver!r}; "
+        f"supported: {sorted(SUPPORTED_SCHEMAS['robot'])}"
+    )
 
 
 def load_data_config(reference: str | Path) -> DataConfig:
