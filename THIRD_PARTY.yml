@@ -1,0 +1,38 @@
+schema_version: 1
+generated_at: 2026-08-22
+project_license: AGPL-3.0-only
+notice_policy: retain_component_license_and_copyright
+code:
+  - name: Ultralytics
+    relationship: historical_and_file_level_derivative
+    license: AGPL-3.0
+    source: https://github.com/ultralytics/ultralytics
+    requirement: preserve_original_headers_and_notices
+  - name: PyTorch
+    relationship: runtime_dependency
+    version: 2.11.0
+    license: BSD-3-Clause
+    source: https://github.com/pytorch/pytorch
+  - name: Lightning
+    relationship: runtime_dependency
+    version: 2.6.5
+    license: Apache-2.0
+    source: https://github.com/Lightning-AI/pytorch-lightning
+  - name: MuJoCo
+    relationship: runtime_dependency
+    version: 3.12.0
+    license: Apache-2.0
+    source: https://github.com/google-deepmind/mujoco
+research_references:
+  manifest: architecture_references.lock.yaml
+  distributed_with_package: false
+robot_assets:
+  manifest: robot_assets.lock.yaml
+  distributed_with_package: false
+  excluded: [rh56e2]
+dgn2:
+  relationship: paper_only
+  code_included: false
+  data_included: false
+  checkpoints_included: false
+  assets_included: false

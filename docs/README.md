@@ -1,15 +1,15 @@
 ---
 document_id: DOCS-INDEX
 document_type: index
-title: Chỉ mục tài liệu DexGrasp
-version: 1.1.0
+title: Chỉ mục tài liệu QDGrasp
+version: 1.3.0
 status: active
 date: 2026-08-21
 revises: none
 latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
-# Bộ tài liệu kiểm chứng DexGrasp
+# Bộ tài liệu kiểm chứng QDGrasp
 
 Mục tiêu của thư mục này là làm cho mọi tuyên bố “đã xong” và mọi số liệu đều
 có thể truy ngược đến code, cấu hình, môi trường, artifact thô và người kiểm tra.
@@ -33,6 +33,12 @@ PLAN.md
 - `governance/SESSION_RULES.md`: cách ghi đúng việc hoàn tất trong từng phiên.
 - `governance/THIRD_PARTY_REVIEW.md`: quy trình kiểm tra độc lập.
 - `governance/GIT_WORKFLOW.md`: branch feature/develop/release, commit và gate.
+- `governance/REFERENCE_INTAKE.md`: chỉ bổ sung code tham chiếu khi có issue cụ
+  thể, kèm exact pin và license/provenance gate.
+- `installation/ENVIRONMENT.md`: Python/PyTorch CPU-CUDA profiles, uv lock và
+  environment smoke gate, cùng contract cài QDGrasp như thư viện.
+- `roadmap/PROJECT_PHASES.md`: roadmap cấp cao gồm tám phase cân bằng từ nền
+  dự án đến release/paper/community.
 - `configuration/TRAIN_ARGUMENTS.md`: bảng đủ 127 tên trong public train/config
   surface Ultralytics đã pin, disposition và quy tắc CPU/CUDA.
 - `configuration/TRAIN_ARGUMENTS.yaml`: registry máy đọc được; checker từ chối
@@ -46,6 +52,8 @@ PLAN.md
 - `reviews/`: báo cáo kiểm tra của người thứ ba.
 - `revisions/`: hồ sơ sửa tài liệu hoặc kết luận của phiên trước.
 - `decisions/`: quyết định kiến trúc/quy trình có ảnh hưởng dài hạn.
+- `decisions/0007-agpl-community-library.md`: quyết định AGPL-3.0, library-first,
+  DGN2 paper-only và loại RH56E2; supersede quyết định Apache trước đó.
 - `archive/`: tài liệu đã bị thay thế nhưng không bị xóa; `archive/README.md`
   là sidecar trạng thái/hash cho raw archive bất biến.
 

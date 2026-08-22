@@ -173,7 +173,7 @@ def add_integration_callbacks(instance):
     All third-party/SaaS experiment-tracking integrations and Ultralytics HUB/Platform
     telemetry have been removed (PLAN.md M1: "loại ... integrations ngoài scope").
     This is currently a no-op kept for call-site compatibility with
-    dexgrasp/engine/trainer.py and friends; a dexgrasp-native logging integration, if
+    qdgrasp/engine/trainer.py and friends; a qdgrasp-native logging integration, if
     any, would be wired in here.
 
     Args:

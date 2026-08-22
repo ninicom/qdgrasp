@@ -1,0 +1,147 @@
+---
+document_id: ROADMAP-001
+document_type: roadmap
+title: Roadmap tổng thể QDGrasp theo tám phase
+version: 1.2.0
+status: active
+date: 2026-08-22
+revises: ROADMAP-001@1.1.0
+related_plan: PLAN-V2
+---
+
+# Roadmap tổng thể QDGrasp
+
+Tài liệu này là bản nhìn cấp cao để tổ chức thực thi. `PLAN.md` và các ADR vẫn
+là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm thu.
+
+## Nhịp thực hiện
+
+- Toàn dự án chia thành **8 phase**, mỗi phase dự kiến **4–6 tuần** với một nhóm
+  core nhỏ. Tổng thời gian tuần tự khoảng **32–48 tuần**; làm song song chỉ khi
+  interface đầu vào/đầu ra của phase trước đã được khóa.
+- Mỗi phase phân bổ gần giống nhau: 60% implementation, 25% test/evidence và
+  15% tài liệu/provenance/review.
+- Phase kết thúc theo gate, không kết thúc chỉ vì hết thời gian. Work chưa qua
+  gate được chuyển rõ sang backlog, không ghi “hoàn tất”.
+- Mỗi phase phải tạo ít nhất một artifact chạy được, một bộ test/evidence và một
+  tài liệu bàn giao.
+
+## Tổng quan các phase
+
+| Phase | Mục tiêu chính | Artifact cuối phase | Gate chuyển phase | Trạng thái |
+| --- | --- | --- | --- | --- |
+| P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | in progress |
+| P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | pending |
+| P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | pending |
+| P3 — Data layer | Xây procedural objects, candidate generation, physics labels và immutable dataset schema | `DGN-Open-Tiny` có manifest và deterministic regeneration | Regenerate cùng seed/hash; dataset audit và tiny loader pass | pending |
+| P4 — Model MVP | Xây object encoder, HandGraph conditioning và palm+joint flow | QDGrasp-Flow `n` overfit được tiny dataset | CUDA forward/backward, gradient coverage, finite joints/rotations và tiny overfit pass | pending |
+| P5 — Training & evaluation | Hoàn thiện multi-hand training, quality/contact heads, evaluator và ablation | Checkpoint multi-hand đầu tiên cùng benchmark report | CUDA train/eval/resume, held-out protocol, physics success và ablations tái lập | pending |
+| P6 — Scale & delivery | Scale data/model, tối ưu memory/latency, resume, TorchScript và ONNX | Model `n/s/m`, export bundles và reproducible train recipes | CPU/CUDA/AMP parity, export round-trip, memory/latency gates pass | pending |
+| P7 — Release & paper | Đóng package, model/data cards, paper evidence và community workflow | Public release candidate, model zoo, dataset card và paper artifact bundle | License/security/release review; raw metrics/hash; independent review pass | pending |
+
+## Phạm vi từng phase
+
+### P0 — Foundation
+
+- Hoàn tất boundary DGN2 paper-only và license/provenance cho code, data,
+  checkpoint, robot/object assets.
+- Phát hành code dưới AGPL-3.0-only, giữ notice của source dẫn xuất và source
+  permissive; không còn kế hoạch Apache clean-room.
+- Build/cài package `qdgrasp` từ wheel ngoài source tree. Notebook CUDA nằm ở
+  repository riêng và phải cài exact public commit của library.
+- Giữ bốn architecture baseline đã pin; dùng quy trình reference-on-demand khi
+  có ca khó.
+- Chốt Python/PyTorch/MuJoCo, CPU/cu128 locks, CI gates và nơi lưu raw evidence;
+  cu128 phải được smoke-test trên GPU NVIDIA thật trước khi đóng P0.
+- Chốt repository/history dùng cho implementation và release.
+- Loại RH56E2 khỏi active scope; archive lịch sử chỉ được chú thích bằng sidecar.
+
+### P1 — Framework
+
+- Public façade và CLI tối thiểu, không mở DSL layer tùy ý.
+- YAML chỉ chọn preset/stage/module có schema; unknown/dead key bị từ chối.
+- Runner dựa trên Lightning Fabric, deterministic seed, logging, callbacks,
+  checkpoint/resume và result bundle.
+- Dummy model/data cho phép kiểm toàn lifecycle trước khi model thật xuất hiện.
+
+### P2 — Robot layer
+
+- `RobotSpec`, named joints, joint limits, mimic/coupling policy và HandGraph.
+- URDF/MJCF mesh resolver, frame transforms, FK và batch kinematics.
+- MuJoCo adapter cho grasp/squeeze/lift fixtures.
+- Compatibility matrix bắt buộc cho LEAP, Allegro và Shadow Hand.
+
+### P3 — Data layer
+
+- Procedural/CC0 object generation và asset manifest.
+- Candidate palm/contact sampling, IK hỗ trợ, collision filtering và physics
+  validation.
+- `GraspBatch` schema, shards, splits, seed, camera/frame metadata và hashes.
+- `DGN-Open-Tiny` đủ nhỏ cho CI/overfit và tái tạo từ đầu.
+
+### P4 — Model MVP
+
+- Point-cloud object encoder và variable-length HandGraph conditioning.
+- Sinh trực tiếp palm pose + named joint state bằng flow/diffusion backend.
+- Differentiable FK nối pose với keypoint/contact/force auxiliary heads.
+- Baseline tối thiểu: direct-only, contact-first và evaluator-guided refinement.
+- Overfit, backward và memory smoke của model phải chạy bằng CUDA; CPU chỉ là
+  correctness reference.
+
+### P5 — Training & evaluation
+
+- Full training loop, sampling, quality head, hard negatives và simulator replay.
+- Multi-hand train, held-out object family và held-out embodiment protocols.
+- Ablation khóa trước khi chạy: graph/no-graph, direct/contact-first, FK
+  consistency, energy guidance và evaluator refinement.
+- Metrics gồm success, collision, penetration, diversity, coverage và latency.
+
+### P6 — Scale & delivery
+
+- Mở rộng `DGN-Open-v1`, model sizes `n/s/m` và distributed training.
+- Profile memory để ngăn cấu trúc `N×N`; tối ưu batching và caching có evidence.
+- Exact resume, safetensors weight bundle, TorchScript/ONNX và ONNX Runtime CPU.
+- CPU/CUDA FP32 và AMP parity trên cùng dataset/model/robot hashes.
+
+### P7 — Release & paper
+
+- Package, quickstart, examples CPU, configuration/robot/data documentation.
+- Model/data cards, SBOM, third-party notices, benchmark artifacts và release
+  report.
+- Paper dùng raw runs, environment lock, seeds, confidence intervals và ablation
+  đã khóa; DGN2 chỉ là literature context.
+- Issue/PR/RFC templates, good-first-issue, model zoo và release cadence.
+
+## Công việc xuyên suốt
+
+Các luồng sau chạy trong mọi phase và không được dồn về cuối:
+
+| Luồng | Yêu cầu mỗi phase |
+| --- | --- |
+| License/provenance | Cập nhật exact pin, SPDX, NOTICE và artifact boundary |
+| Test | Unit + integration phù hợp phase; regression cũ tiếp tục pass |
+| Reproducibility | Lưu config, seed, environment/data/model/robot hashes |
+| Documentation | Cập nhật contract, decision và session evidence cùng code |
+| Performance | Train/AMP/distributed/benchmark chạy trên CUDA thật; CPU chỉ là correctness/smoke baseline |
+| Research | Hypothesis/ablation trước experiment; không chọn kết quả sau khi xem số liệu |
+
+## Xử lý ca khó
+
+Khi một phase gặp blocker kỹ thuật, không mở rộng reference tùy ý. Quy trình là:
+
+1. Tạo minimal reproduction và ghi expected/actual behavior.
+2. Kiểm bốn baseline hiện có và paper primary liên quan.
+3. Nếu vẫn thiếu, thực hiện `docs/governance/REFERENCE_INTAKE.md` rồi pin source
+   mới dưới `.references/`.
+4. Trích contract/test/toán học cần thiết; mặc định viết implementation mới.
+5. Ghi cả kết luận đúng lẫn negative finding vào session evidence.
+
+Reference mới không tự làm phase “quay lại từ đầu”; chỉ khi nó thay schema,
+license, model topology hoặc protocol mới cần ADR/revision và đánh giá lại gate.
+
+## Quy tắc ưu tiên
+
+Trong một phase, thứ tự ưu tiên là correctness → reproducibility → license →
+performance → tiện ích. Không scale data/model trước khi tiny overfit và physics
+fixtures pass. Không viết paper claim trước khi protocol, environment và raw
+artifact format được khóa.

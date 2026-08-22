@@ -1,0 +1,130 @@
+schema_version: 1
+generated_at: 2026-08-22
+policy: agpl_project_local_compatibility_corpus_not_vendored
+checkout_root: .references/robot-assets
+release_default: false
+notes:
+  - This lock records local read-only fixtures for the AGPL-3.0 project.
+  - Release packaging must re-fetch exact pins and run an independent per-asset review.
+  - Repository licenses do not automatically cover every submodule, download, checkpoint, CAD file, or trademark.
+excluded_robots:
+  - id: rh56e2
+    status: removed_from_active_scope
+    reason: Maintainer decision; no URDF, mesh, metadata, fixture, config, model, or checkpoint may include this hand.
+
+sources:
+  mujoco_menagerie:
+    repository: https://github.com/google-deepmind/mujoco_menagerie.git
+    commit: da76818e269b82289eba39808e2fb91d679d6994
+    checkout: .references/robot-assets/mujoco-menagerie
+    checkout_mode: sparse_detached
+    selected_manifest_sha256: 301a42865939497ea8640dcfb940adc4e616679eb7cf871355d2a0aeaafe1583
+    selected_manifest_files: 67
+    release_status: eligible_pending_independent_audit
+    models:
+      shadow_hand_e3m5:
+        path: shadow_hand
+        git_tree: 8f85903630df9e0738b2df3c3cb0e8b3dd421c63
+        format: MJCF
+        entrypoint: shadow_hand/right_hand.xml
+        entrypoint_sha256: ac14d09dd12b62c3ca62233d0ac646101cc718146dda76e26d0b993a91abf399
+        license: Apache-2.0
+        license_path: shadow_hand/LICENSE
+        license_sha256: d42cae9a0f292b7a713597ba26e1e1e23d50df906c488f0d36fd3538af200bc1
+        compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass, nq: 24, nu: 20}
+      wonik_allegro_v3:
+        path: wonik_allegro
+        git_tree: 42564d556620bc0c3ba41823bbdf860887f10ff4
+        format: MJCF
+        entrypoint: wonik_allegro/right_hand.xml
+        entrypoint_sha256: cec3efe34be49c8220c23afdae0cfacbce10164a5bc7c34075b6668ee0a862a6
+        license: BSD-2-Clause
+        license_path: wonik_allegro/LICENSE
+        license_sha256: 09c187439ecece8b00330e71eb988d3d30f29373c580dc31ab54200d0aa4deb4
+        compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass, nq: 16, nu: 16}
+      leap_hand_v1:
+        path: leap_hand
+        git_tree: efe8f001e555cc08cdd21fdbacc30bfd896241e3
+        format: MJCF
+        entrypoint: leap_hand/right_hand.xml
+        entrypoint_sha256: 9d8f25c38bdb60617f378c07b7e71f97306471353c81bf281eb9943f3f2340d8
+        license: MIT
+        license_path: leap_hand/LICENSE
+        license_sha256: 5a91c3d709c2ee3a71f166b46e3208cebd83c0c7a870746c729b31a01f156984
+        compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass, nq: 16, nu: 16}
+
+  leap_hand_sim:
+    repository: https://github.com/leap-hand/LEAP_Hand_Sim.git
+    commit: 150bc3d4b61fd6619193ba5a8ef209f3609ced89
+    checkout: .references/robot-assets/leap-hand-sim
+    checkout_mode: sparse_detached
+    selected_path: assets/leap_hand
+    selected_tree: 57d56e2e67d9c0a38c0037ed26b7f505a4b114c9
+    selected_manifest_sha256: b40167db3d6159e232fed96499d303c879e54f7362e11defc9d00c2cbfd6c097
+    selected_manifest_files: 17
+    format: URDF_STL
+    entrypoint: assets/leap_hand/robot.urdf
+    entrypoint_sha256: b3f29881e1c013f8b4eda85e9afecc6b2f4b89b5b49b643183ef6031422ed7f4
+    metadata_paths: [README.md]
+    license: MIT
+    license_path: LICENSE.txt
+    license_sha256: 5a91c3d709c2ee3a71f166b46e3208cebd83c0c7a870746c729b31a01f156984
+    release_selection: robot.urdf_and_stl_only
+    release_status: eligible_pending_independent_audit
+    compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass, links: 17, movable_joints: 16, nq: 16}
+
+  wonik_allegro_ros2_v5:
+    repository: https://github.com/Wonikrobotics-git/allegro_hand_ros2_v5.git
+    commit: 80bd4a88d2c59b8ad0242ec3730302bde61c84fb
+    checkout: .references/robot-assets/wonik-allegro-ros2
+    checkout_mode: sparse_detached
+    selected_path: src/allegro_hand_controllers
+    selected_tree: feed20ce5e4f912ce3d49dd2c27fd8283c4295ff
+    selected_manifest_sha256: 91768e54a1c79941c546bef921ddcb707d8cc8ba1ac15f3028c6dd2a19fd3c82
+    selected_manifest_files: 48
+    format: URDF_STL_ROS2_META
+    entrypoint: src/allegro_hand_controllers/urdf/allegro_hand_description_right_A.urdf
+    entrypoint_sha256: 3c0965dff548fdccab3f0b21eb0eef3575278282f839b29872e50ef2a6f4ba09
+    metadata_paths: [src/allegro_hand_controllers/package.xml]
+    license: BSD-2-Clause
+    license_path: LICENSE
+    license_sha256: 1fe45dba5ed74a680ad1c68a704fe1e4a257bcafcf964f8ef531affe6f1d3c32
+    release_selection: urdf_meshes_and_package_xml_only
+    release_status: eligible_pending_independent_audit
+    compatibility:
+      xml_parse: pass
+      ros_package_mesh_resolution: pass
+      links: 22
+      movable_joints: 16
+      raw_mujoco_forward: fail_invalid_fullinertia
+      simulation_path: use_paired_menagerie_mjcf_or_recorded_normalization
+
+  dexsuite_dex_urdf:
+    repository: https://github.com/dexsuite/dex-urdf.git
+    commit: f5e7132f22108164577fea4c25ef99b5cc0e1900
+    checkout: .references/robot-assets/dex-urdf
+    checkout_mode: sparse_detached
+    selected_manifest_sha256: 9e445ea15e95cce1783c3d5e6627bb851c972917eddefd332146ddd7186db591
+    selected_manifest_files: 161
+    release_status: reference_only_not_for_redistribution
+    reason: Mixed upstream provenance and incomplete Barrett/Allegro per-directory BSD text require separate review.
+    local_fixtures:
+      shadow_hand:
+        git_tree: 713c63bf9b817dc08e270566d54471777887e25f
+        entrypoint: robots/hands/shadow_hand/shadow_hand_right.urdf
+        entrypoint_sha256: 29a50063cced2fba81dfe3d208ba54499fc12635c9189d0822f7caa2771c36de
+        observed_license: Apache-2.0
+        compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass, links: 33, movable_joints: 24}
+      allegro_hand:
+        git_tree: 5a83f36ba332d34f63dbeb7d70770c14f812a892
+        compatibility: {xml_parse: pass, mesh_resolution: pass, raw_mujoco_forward: fail_balanceinertia}
+      leap_hand:
+        git_tree: 708026148f39b509b47430e0718aee880e22c0dc
+        compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass}
+      barrett_hand:
+        git_tree: 13b890008d3b3f6269e4651f7b2073c92c899818
+        entrypoint: robots/hands/barrett_hand/bhand_model.urdf
+        entrypoint_sha256: 13cbfdb7715e54f4e10f9e1f2c7620db6c5f6b2b05adf9a16cdd795cda620fc1
+        observed_license: incomplete_bsd_text_not_spdx_approved
+        compatibility: {xml_parse: pass, mesh_resolution: pass, mujoco_forward: pass, links: 9, movable_joints: 8}
+        distribution_status: blocked_pending_rightsholder_license

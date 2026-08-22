@@ -1,0 +1,14 @@
+# Canonical QDGrasp research environment, Python 3.11, Linux x86_64.
+# Torch backend is selected at lock/install time (cpu or cu128).
+torch==2.11.0
+lightning==2.6.5
+numpy==2.4.6
+scipy==1.17.1
+mujoco==3.12.0
+trimesh==4.12.2
+safetensors==0.8.0
+pydantic==2.13.4
+PyYAML==6.0.3
+einops==0.8.2
+rich==14.3.4
+typer==0.27.1

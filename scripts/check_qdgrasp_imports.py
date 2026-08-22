@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Stdlib-only AST import-graph checker for the vendored ``dexgrasp/`` package.
+"""Stdlib-only AST import-graph checker for the vendored ``qdgrasp/`` package.
 
-Walks every ``dexgrasp/**/*.py`` file with :mod:`ast` (module-level and nested
+Walks every ``qdgrasp/**/*.py`` file with :mod:`ast` (module-level and nested
 imports alike -- ``ast.walk`` visits the whole tree, including imports inside
 function bodies such as ``engine/exporter.py``'s per-format export methods or
 ``utils/callbacks/base.py``'s deferred integration imports), classifies each
-import as internal (``ultralytics.*``/``dexgrasp.*``, or a relative import --
+import as internal (``ultralytics.*``/``qdgrasp.*``, or a relative import --
 both names are treated as internal during the M1 namespace-rewrite transition,
 since content has only been path-renamed so far, not rewritten), stdlib, or
 third-party, and verifies every internal import resolves to a real file on
@@ -34,8 +34,8 @@ from typing import Sequence
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PACKAGE_ROOT = PROJECT_ROOT / "dexgrasp"
-INTERNAL_PREFIXES = ("ultralytics", "dexgrasp")
+DEFAULT_PACKAGE_ROOT = PROJECT_ROOT / "qdgrasp"
+INTERNAL_PREFIXES = ("ultralytics", "qdgrasp")
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ class FileReport:
 def module_parts(file_path: Path, package_root: Path) -> tuple[str, ...]:
     """Dotted-name components of ``file_path``'s own module, rooted one level
     above ``package_root`` (so the first component is the package dir name,
-    e.g. ``dexgrasp``)."""
+    e.g. ``qdgrasp``)."""
 
     relative = file_path.relative_to(package_root.parent)
     parts = list(relative.with_suffix("").parts)
@@ -79,7 +79,7 @@ def package_parts(file_path: Path, package_root: Path) -> tuple[str, ...]:
 
 def resolve_internal(parts: Sequence[str], package_root: Path) -> bool:
     """Check whether a dotted path with an internal prefix resolves to a real
-    file. ``parts[0]`` must already be ``dexgrasp`` or ``ultralytics``."""
+    file. ``parts[0]`` must already be ``qdgrasp`` or ``ultralytics``."""
 
     if not parts or parts[0] not in INTERNAL_PREFIXES:
         return False
@@ -180,13 +180,13 @@ def iter_python_files(package_root: Path) -> list[Path]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Kiểm import graph của dexgrasp/ bằng AST, không phụ thuộc third-party."
+        description="Kiểm import graph của qdgrasp/ bằng AST, không phụ thuộc third-party."
     )
     parser.add_argument(
         "--root",
         type=Path,
         default=DEFAULT_PACKAGE_ROOT,
-        help="Thư mục package cần kiểm (mặc định dexgrasp/).",
+        help="Thư mục package cần kiểm (mặc định qdgrasp/).",
     )
     parser.add_argument(
         "--summary",

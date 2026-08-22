@@ -1,0 +1,49 @@
+schema_version: 1
+generated_at: 2026-08-22
+platform_contract:
+  os: linux
+  architecture: x86_64
+  python: 3.11.x
+  resolver: uv
+execution_policy:
+  cuda_requires_physical_nvidia_gpu: true
+  cpu_fallback_for_cuda: forbidden
+  cuda_required_for: [training, amp, distributed, full_evaluation, parity, gpu_benchmark]
+  cpu_scope: [ci, correctness, schema, fk, unit_tests, inference_smoke, export_smoke]
+profiles:
+  cpu:
+    lock: environments/requirements/cpu.lock
+    sha256: 5d8c65b043eb39b2452f4765e54639acf6e859567198f2354d31213c0aa094e1
+    torch: 2.11.0+cpu
+    status: verified
+    evidence:
+      python: 3.11.15
+      torch_tensor_smoke: pass
+      lightning_fabric_import: pass
+      mujoco_forward: pass
+      dependency_check: pass
+  cuda:
+    lock: environments/requirements/cu128.lock
+    sha256: 43536551e9ecbf4f525eb08f77567378a1531c2a24f1b7275a65751b0b95b4ef
+    torch: 2.11.0+cu128
+    cuda_runtime: "12.8"
+    status: resolved_not_hardware_verified
+    reason: Current host has no nvidia-smi or visible NVIDIA GPU.
+    evidence:
+      uv_sync_dry_run: pass
+      hardware_smoke: not_run
+  dev_cpu:
+    lock: environments/requirements/dev-cpu.lock
+    sha256: 6ea95a3d402e968e817bdf9663252d2f05a27206c13c2e06018f16018beb0c68
+    status: resolved
+  export_cpu:
+    lock: environments/requirements/export-cpu.lock
+    sha256: 4d7ce045ad217e2c77e9ae7d9328dfb3f09c737e838df02e3ddde459c39cfe32
+    status: resolved
+excluded_from_core:
+  - PyTorch3D
+  - pointops
+  - GraspQP
+  - IsaacGym
+  - cuRobo
+  - dependencies from architecture reference checkouts

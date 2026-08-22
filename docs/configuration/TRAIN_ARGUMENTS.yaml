@@ -23,8 +23,8 @@ upstream:
   total_public_names: 127
   canonical_disposition_counts: retain=31,adapt=27,defer=8,reject=49
   public_disposition_counts: retain=32,adapt=34,defer=8,reject=53
-  documentation_body_sha256: b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae
-  manifest_fingerprint: a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10
+  documentation_body_sha256: 8e9e9702d8391eb5cfb6be9100df00ac9885e4c369a7143da4c63e529c459856
+  manifest_fingerprint: 0efcc5be32bd033afc6db2475b93f96b40e4378be3077e300bbb7c456b915ab4
 
 upstream_validation:
   cfg_float_keys: angle,batch,box,cls,degrees,dfl,dgrad,dis,dlog,kobj,pose,rle,shear,time,warmup_epochs,workspace
