@@ -4,7 +4,7 @@
 
 ### Added
 
-- `PLAN-V2` cho kiến trúc thư viện DexGrasp theo YAML và core CPU/CUDA.
+- `PLAN-V2` cho kiến trúc thư viện QDGrasp theo YAML và core CPU/CUDA.
 - Bộ tài liệu session, metrics, revision, independent review và raw evidence.
 - Validator tài liệu cùng bốn regression tests.
 - GitFlow `feature/*` → `develop` → `release/*` → `main`.

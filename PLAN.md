@@ -1,294 +1,434 @@
 ---
 document_id: PLAN-V2
 document_type: plan
-title: DexGrasp — thư viện dexterous grasp theo kiến trúc Ultralytics
-version: 2.2.0
+title: QDGrasp — thư viện dexterous grasp cộng đồng dưới AGPL-3.0
+version: 4.0.0
 status: active
-date: 2026-08-21
-approved_date: 2026-08-21
+date: 2026-08-22
+approved_date: 2026-08-22
 revises: LEGACY-PLAN-PRE-V2
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260822-004-plan-internal-only-scope.md
-revision_reason: Kế hoạch cũ không còn đáp ứng yêu cầu nguồn chuẩn, CPU/GPU, kiến trúc YAML mới và kiểm soát giấy phép.
+latest_revision_record: docs/revisions/REV-20260822-009-agpl-library-first-phase0.md
+revision_reason: Maintainer chọn AGPL-3.0, library-first, public repository hiện tại và loại RH56E2 khỏi mọi phạm vi hoạt động.
 necessity: N3
-impact: Thay đổi nguồn phụ thuộc, mô hình lõi, chiến lược đóng gói, điều kiện phát hành và toàn bộ lộ trình triển khai; chưa có code triển khai bị thay đổi.
+impact: Hủy kế hoạch Apache clean-room/repository mới; phát hành cây hiện tại dưới AGPL-3.0, giữ notice tương thích và khóa P0 bằng wheel cùng CUDA Kaggle evidence.
 ---
 
-# DexGrasp — kế hoạch triển khai chính thức
+# QDGrasp — kế hoạch triển khai chính thức
 
 Tài liệu này là nguồn sự thật cho phạm vi và thứ tự triển khai. Bản kế hoạch cũ
 được giữ nguyên tại `docs/archive/PLAN.pre-v2.md`. Mọi thay đổi kế hoạch phải tuân
 theo `docs/governance/DOCUMENTATION_POLICY.md` và phải có revision record nếu sửa
 lại quyết định hoặc kết quả của phiên trước.
 
+Quyết định kỹ thuật và giấy phép chi tiết nằm tại
+`docs/decisions/0007-agpl-community-library.md` (thay ADR-0002) và clarification DGN2 tại
+`docs/decisions/0004-dgn2-paper-reference-boundary.md`; environment/reference
+intake nằm tại `docs/decisions/0005-environment-and-reference-intake.md`; CUDA
+hardware gate nằm tại `docs/decisions/0006-cuda-hardware-required.md`. Đây là
+chính sách kỹ thuật về nguồn và phát hành, không thay thế tư vấn pháp lý chuyên
+nghiệp.
+
 ## 1. Mục tiêu và quyết định nền
 
-- Xây package độc lập `dexgrasp`, public façade `DexGrasp`, CLI `dexgrasp`, với
-  lifecycle tương đương core Ultralytics: `train`, `val`, `predict`, `export`,
-  `benchmark`, `info`, `load`, `save`, `to`, callbacks, `task_map` và `Results`.
-- Fork và pin [Ultralytics v8.4.125 / `329682a`](https://github.com/ultralytics/ultralytics/commit/329682a29d27203582ba30e519340f95abccc6a6);
-  không phụ thuộc package `ultralytics` lúc runtime.
-- Clone sạch [DexGraspNet2 / `26ecd761`](https://github.com/PKU-EPIC/DexGraspNet2/commit/26ecd76121e3c8218ad53db9840cf34f6b81b076)
-  làm oracle cho dữ liệu, mô hình và benchmark. Clone tùy biến hiện có tại
-  `/media/quyen/Data/DexGraspNet2` không phải nguồn chuẩn và không được tự ý sửa.
-- Clone thêm [GraspGenX / `b942909`](https://github.com/NVlabs/GraspGenX/tree/b9429097728cb1c430dd78b92edf17ba318aad03)
-  và [rectified-flow / `14b4925`](https://github.com/lqiang67/rectified-flow/tree/14b4925ad90abdadaca1f7b5caba5555b84e810a)
-  làm nguồn code chuẩn cho backbone thuần PyTorch và flow solver.
-- Các clone nằm trong `.references/`, bị loại khỏi Git, wheel và source
-  distribution. `references.lock.yaml` lưu URL, SHA, license hash và provenance
-  của từng phần được port.
-- `scripts/check_references.py` khóa content của manifest; khi `.references/`
-  có mặt, feature/release gate xác minh origin, exact HEAD, clean worktree và
-  artifact/license-evidence hashes của mọi checkout bắt buộc.
-- Core model bắt buộc chạy CPU FP32 và NVIDIA CUDA FP32/AMP. MuJoCo là evaluator
-  CPU chính; Isaac Gym chỉ là bộ đối chiếu GPU tùy chọn.
-- CPU phải hoàn tất đúng và không OOM; latency được đo và công bố nhưng chưa là
-  release gate.
+- Tên public chính thức là **QDGrasp**; distribution/import/CLI/repository lần
+  lượt là `qdgrasp`, `qdgrasp`, `qdgrasp` và `ninicom/qdgrasp`. Tên DexGrasp chỉ
+  còn trong hồ sơ lịch sử bất biến hoặc khi nhắc đúng tên dự án/bài báo bên ngoài.
+- Xây package độc lập `qdgrasp`, public façade `QDGrasp` và CLI `qdgrasp` có
+  trải nghiệm một lệnh, dễ train/val/predict/export và dễ mở rộng cho cộng đồng.
+  “Giống YOLO” là mục tiêu về trải nghiệm, tài liệu, model zoo và hệ sinh thái;
+  không phải tương thích source hay sao chép implementation của Ultralytics.
+- License của code chính thức là `AGPL-3.0-only`, cùng hướng copyleft/network-use
+  như hệ sinh thái YOLO hiện đại. Dự án giữ nguyên copyright, license và notice;
+  public source không có nghĩa là không còn nghĩa vụ bản quyền.
+- Cây `qdgrasp/` và lịch sử hiện tại được tiếp tục như sản phẩm AGPL hợp lệ.
+  Ultralytics-derived files còn lại phải giữ header/notice; module mới dùng public
+  API QDGrasp và được giảm dần phụ thuộc legacy theo từng phase.
+- Repository hiện tại là repository public chính thức. Không tạo clean-history
+  Apache repository và không tuyên bố implementation hiện tại là clean-room.
+- Mọi đường dẫn tới artifact/config/data/robot trong project là relative path tính
+  từ project root hoặc working directory. Cấm commit đường dẫn máy phát triển;
+  OS pseudo-files dùng để nhận diện platform không được coi là project artifact.
+- Engine mới dùng PyTorch và
+  [Lightning Fabric](https://github.com/Lightning-AI/pytorch-lightning) làm nền
+  train/device/distributed; façade, config, checkpoint, data và results contract
+  được viết mới theo đặc tả QDGrasp.
+- Nguồn grasp permissive ưu tiên là
+  [GraspGenX `b942909`](https://github.com/NVlabs/GraspGenX/tree/b9429097728cb1c430dd78b92edf17ba318aad03),
+  có code Apache-2.0. Chỉ port file đã audit cùng notice tương ứng; không tự động
+  mang theo checkpoint, dataset, gripper assets hay dependency chưa kiểm tra.
+  GraspGenX sinh wrist pose 6/9 chiều, nên không thay thế joint/qpos head của
+  QDGrasp.
+- [Pointcept](https://github.com/Pointcept/Pointcept) (MIT) và
+  [rectified-flow](https://github.com/lqiang67/rectified-flow) (MIT) là nguồn
+  permissive cho point backbone/flow. Ưu tiên triển khai từ paper và toán học;
+  nếu dùng code thì pin commit, giữ attribution và ghi file-level provenance.
+- DexGraspNet2 (`CC-BY-NC-4.0`) chỉ là **paper/reference-only** để hiểu bài toán
+  và các nguyên lý grasping. DGN2 không phải runtime dependency, oracle hay
+  nguồn dữ liệu của QDGrasp. Không port code, config, URDF/STL, dataset,
+  checkpoint, labels, model weights, distillation target hoặc biểu đạt
+  implementation của DGN2 vào sản phẩm. Mọi model, schema, generator, simulator
+  protocol và checkpoint QDGrasp được phát triển/train mới.
+- Dữ liệu train chính thức được tạo mới bằng generator của QDGrasp trên MuJoCo/
+  MJX, từ procedural/CC0 assets và robot assets có license tường minh.
+  Dataset, code, weights và assets là bốn miền license độc lập, mỗi miền có
+  manifest riêng.
+- Model cross-embodiment lấy graph động học biến độ dài từ URDF/MJCF làm điều
+  kiện và sinh trực tiếp palm pose + named joint state. Differentiable FK nối
+  state thực thi với keypoint/contact/force phụ; không khóa latent hoặc joint
+  order vào Shadow/LEAP và không cần retarget làm đường mặc định.
+- Corpus tương thích cục bộ đầu tiên gồm LEAP, Allegro và Shadow Hand; exact
+  source/commit/tree/license nằm trong `robot_assets.lock.yaml`. Barrett chỉ là
+  fixture nghiên cứu bị chặn phát hành cho tới khi có license đầy đủ bao phủ cả
+  URDF lẫn mesh. RH56E2 bị loại khỏi scope, manifest, fixture, model và checkpoint.
+- Core model bắt buộc hỗ trợ CPU FP32 cho correctness/CI và NVIDIA CUDA
+  FP32/AMP cho train/evaluation/benchmark. Mọi workload hoặc kết quả mang nhãn
+  CUDA phải chạy trên GPU NVIDIA thật; không dùng CPU fallback, emulation hoặc
+  dry-run làm bằng chứng CUDA pass. MuJoCo là evaluator chuẩn; backend tùy chọn
+  không được làm base install kéo license không nằm trong allowlist.
+- Environment chuẩn là Linux x86_64, Python `>=3.11` (reference lock dùng 3.11),
+  PyTorch 2.11.0, Lightning Fabric 2.6.5 và MuJoCo 3.12.0. CPU dùng wheel
+  `+cpu`, NVIDIA dùng `+cu128`; lock và fingerprint nằm trong `environments/`.
+  Không cài vào system Python của máy phát triển. Phase model/training không được
+  đóng nếu CUDA hardware smoke, train-step, resume và parity chưa chạy.
+- Packaging theo pattern YOLO: `pyproject.toml` dùng compatible lower bounds cho
+  cài đặt thông thường; exact CPU/cu128 versions chỉ nằm trong research locks.
+- Baseline tham chiếu gồm GraspDiffuser, DexDiffuser, CEDex và GraspGenX đã đủ
+  để bắt đầu. Chỉ thêm repository mới khi có issue kỹ thuật tái hiện được và
+  phải qua `docs/governance/REFERENCE_INTAKE.md`; reference không tự trở thành
+  dependency, dataset, asset hay checkpoint hợp lệ.
 
-### Những kết luận của kế hoạch cũ bị thay thế
+### Những kết luận của kế hoạch 2.x–3.x bị thay thế
 
-- MinkowskiEngine có CPU build; loại nó vì gánh nặng đóng gói, bảo trì và hiệu
-  năng đa nền tảng, không phải vì tuyệt đối CUDA-only.
-- Không ép 40k điểm xuống 4096 rồi mất độ phân giải graspness; luôn giữ
-  `point_to_token` để unpool feature về raw points.
-- Không dùng một Z/Hilbert sort duy nhất, không thay FPS bằng top-k thuần, không
-  dùng Grasp DiT sinh chung wrist và joints, và không giữ sampler likelihood 200
-  bước.
-- Checkpoint DGN2 cũ chỉ chạy trong upstream oracle; model mới không load trực
-  tiếp checkpoint MinkUNet.
+- Không fork hoặc nâng phiên bản Ultralytics; không giữ engine/cfg/callback/
+  checkpoint/device spine từ upstream AGPL.
+- Không duy trì compatibility manifest 115 train keys, exact CLI key-value,
+  `task_map`, `Results` implementation hay grammar YAML của Ultralytics.
+- Không theo đuổi Apache-2.0 clean-room hoặc repository/history mới. QDGrasp
+  được phát hành trực tiếp dưới AGPL-3.0-only và giữ đầy đủ attribution.
+- Không dùng hoặc chạy DGN2 converter/corpus/checkpoint trong pipeline phát hành;
+  kết quả DGN2 chỉ có thể được trích dẫn như kết quả đã công bố trong paper,
+  không phải baseline artifact bắt buộc hay nguồn nhãn.
+- Không dùng Isaac Gym làm oracle bắt buộc; protocol đánh giá mới được định nghĩa
+  độc lập trên MuJoCo/MJX và bộ dữ liệu mở của QDGrasp.
+- Vẫn giữ các quyết định kỹ thuật độc lập đã hợp lý: pure Torch tokenizer,
+  `point_to_token`, raw-point graspness, named-joint contract, CPU/CUDA parity và
+  không tạo tensor `N×N`.
 
-## 2. Kiến trúc thư viện và public interfaces
+## 2. Biên giấy phép và nguồn thay thế
+
+| Nhu cầu | Nguồn cũ bị loại khỏi sản phẩm | Nguồn/triển khai đích | Điều kiện phát hành |
+| --- | --- | --- | --- |
+| Façade, CLI, lifecycle | Ultralytics AGPL-3.0 | Public API QDGrasp trên Python/PyTorch; UX một lệnh | AGPL-3.0-only, giữ notice của file dẫn xuất |
+| Train/device/distributed | Ultralytics engine | Lightning Fabric | Pin commit/version, giữ LICENSE/NOTICE |
+| Grasp backbone/conditioning | DGN2 CC-BY-NC và code chưa rõ provenance | File đã audit từ GraspGenX Apache-2.0 hoặc implementation mới từ paper | Không dùng checkpoint/dataset GraspGenX nếu chưa audit riêng |
+| Point encoder | MinkowskiEngine/DGN2 implementation | Pure Torch; Pointcept MIT chỉ là nguồn permissive có provenance | Không custom CUDA trong base install |
+| Wrist flow | DGN2 diffusion/ODE code | `rectified-flow` MIT hoặc solver viết từ công thức | Pin source, unit test công thức/parity |
+| Joint/qpos head | DGN2 LEAP-specific head | Joint-token head viết mới từ `RobotSpec` và named limits | Không dùng DGN2 code, URDF, STL hay weights |
+| Config | Ultralytics defaults/grammar | Schema QDGrasp viết mới, YAML khai báo theo tên | Không compatibility-copy keys/defaults upstream |
+| Simulator | Isaac Gym/DGN2 adapter | MuJoCo/MJX Apache-2.0 | Protocol, scenes và assets có manifest riêng |
+| Robot assets | LEAP assets trong DGN2 | MuJoCo Menagerie; LEAP/Wonik official; nguồn cộng đồng theo từng file MIT/BSD/Apache | Exact source/tree/license trong `robot_assets.lock.yaml`; fixture mơ hồ bị chặn |
+| Object assets | DGN2/GraspNet/Acronym corpus | Procedural + CC0 mặc định; GSO/YCB CC-BY chỉ là pack tùy chọn | Official CC0 weights không trộn pack CC-BY/NC |
+| Export/runtime | Ultralytics exporters/backends | PyTorch, ONNX và ONNX Runtime adapters viết mới | Chỉ PyTorch/TorchScript/ONNX ở v1 |
+| Community pattern | Ultralytics implementation | UX/package/docs/model-zoo kiểu YOLO | Không copy branding hoặc trademark; reuse code phải đúng AGPL/provenance |
+
+Allowlist mặc định cho **code dependency/source**: `AGPL-3.0-only`,
+`AGPL-3.0-or-later`, `GPL-3.0`, `Apache-2.0`, `MIT`, `BSD-2-Clause`,
+`BSD-3-Clause`, `ISC`, `Zlib`, khi hướng tương thích và notice đã được kiểm.
+Code kết hợp được phát hành dưới AGPL-3.0-only; license permissive của thành phần
+vẫn phải được giữ. Allowlist mặc định cho **data/assets** là `CC0-1.0`;
+`CC-BY-4.0` chỉ ở pack tách riêng có attribution. `CC-BY-NC`, `CC-BY-ND`,
+custom/no-license và unknown bị chặn khỏi core/release cho tới khi maintainer phê
+duyệt ngoại lệ bằng revision record N3.
+
+Mỗi dependency phải được kiểm ở exact pin và cả dependency bắc cầu. License trên
+trang chủ repository không tự động bao phủ model weights, dataset, sample assets,
+submodule hoặc file mang notice khác.
+
+## 3. Kiến trúc thư viện và public interfaces
 
 ```text
-dexgrasp/
-├── cfg/                 # defaults, models, datasets, robots, sim
-├── data/                # canonical schema, loaders, depth → point cloud
-├── engine/              # Model, Trainer, Validator, Predictor, Exporter, Results
-├── models/grasp/        # task_map và bốn mode của task grasp
-├── nn/
-│   ├── modules/         # serialized point blocks, neck, flow/joint/quality heads
-│   ├── registry.py      # registry tường minh
-│   ├── parser.py        # YAML parser
-│   └── tasks.py         # GraspModel
-├── robot/               # URDF parser, RobotSpec, FK, profile validation
-├── sim/                 # MuJoCo chính, Isaac adapter tùy chọn
-└── utils/               # device, callbacks, metrics, checkpoint, profiling
+src/qdgrasp/
+├── api/                  # façade QDGrasp và public protocols
+├── cli/                  # subcommands train/val/predict/export/benchmark
+├── config/               # schema/versioning; không tương thích-copy Ultralytics
+├── data/                 # GraspBatch, loaders, depth → point cloud, manifests
+├── engine/               # Fabric runner, callbacks, checkpoint, metrics
+├── models/               # encoder, neck, seed, wrist, joint, quality heads
+├── robot/                # RobotSpec, URDF/MJCF, FK, graph, profile validation
+├── sim/                  # MuJoCo/MJX generation và evaluation adapters
+├── export/               # PyTorch/TorchScript/ONNX bundles
+└── provenance/           # SPDX, source/data/weight/asset manifests
 ```
 
 Python API:
 
 ```python
-from dexgrasp import DexGrasp
+from qdgrasp import QDGrasp
 
-model = DexGrasp("dexgrasp-flow-n.yaml", robot="my_hand.yaml")
-model.train(data="dexgraspnet2.yaml", device=0, max_steps=50000)
-metrics = model.val(sim="mujoco")
+model = QDGrasp("qdgrasp-flow-n.yaml", robot="my_hand.yaml")
+model.train(data="dgn-open-v1.yaml", device="cuda:0", max_steps=50_000)
+metrics = model.val(data="dgn-open-v1.yaml", sim="mujoco")
 results = model.predict(points_or_depth, intrinsics=K, device="cpu")
 model.export(format="onnx")
 ```
 
-CLI:
+CLI dùng subcommand chuẩn, không sao chép cú pháp Ultralytics:
 
 ```bash
-dexgrasp task=grasp mode=train model=dexgrasp-flow-n.yaml \
-  data=dexgraspnet2.yaml robot=my_hand.yaml device=0
+qdgrasp train --model qdgrasp-flow-n.yaml --data dgn-open-v1.yaml \
+  --robot my_hand.yaml --device cuda:0
 ```
 
-`GraspResults` phải có `.cpu()`, `.cuda()`, `.to()`, `.numpy()`, `.plot()`,
-`.save()` và `.summary()`. Trường chuẩn gồm translation `[K,3]`, rotation
-`[K,3,3]`, joints `[K,J]`, score `[K]`, seed point, frame và robot/profile hash.
+`GraspResults` là dataclass/protocol viết mới với `.cpu()`, `.to()`, `.numpy()`,
+`.plot()`, `.save()` và `.summary()`. Trường chuẩn gồm translation `[K,3]`,
+rotation `[K,3,3]`, joints theo tên, score `[K]`, seed point, frame, model hash và
+robot/profile hash.
 
-Checkpoint `.pt` chứa YAML snapshot, `state_dict`/EMA, optimizer, scheduler,
-scaler, RNG, global step, dataset manifest, robot profile và source provenance;
-không pickle nguyên module. Resume phải tái lập chính xác optimizer, scheduler và
-RNG.
+Public model bundle không pickle module. Bundle gồm tensors an toàn, config
+snapshot, preprocessing schema, robot profile, source/data manifest và chữ ký
+hash. Resume state tách khỏi public weights và phải tái lập optimizer, scheduler,
+scaler, RNG và global step.
 
-### Train configuration surface
+### Configuration contract
 
-- `docs/configuration/TRAIN_ARGUMENTS.yaml` là compatibility manifest máy đọc
-  được cho đúng commit Ultralytics đã pin. Nó phải kiểm kê 100% canonical key,
-  custom-only key, legacy alias/removed key và tham số điều khiển riêng của
-  `Model.train`; không chỉ chép nhóm “Train settings”.
-- Mỗi key có default upstream, group, type, train role, disposition
-  `retain|adapt|defer|reject`, key DexGrasp đích và device policy. Key YOLO-only
-  phải lỗi rõ khi người dùng truyền, không bị bỏ hoặc no-op im lặng.
-- Runtime lưu requested/effective config. CPU bắt buộc effective `amp=False`;
-  fractional AutoBatch chỉ hợp lệ trên CUDA đơn; mọi device fallback, worker
-  clamp, compile fallback và OOM batch reduction phải được log.
-- DexGrasp extension chỉ được triển khai sau khi khóa default/range và thêm vào
-  checker. Unknown key, dead key hoặc extension còn `required_design` là lỗi.
-- Mỗi lần nâng upstream, full checker phải chứng minh zero missing/extra/default/
-  type mismatch với source clone và hash mới trước khi merge integration branch.
+- Schema được thiết kế từ yêu cầu grasp, không lấy key/default/docstring từ
+  Ultralytics. Mỗi key có type, range, default, device policy và version.
+- Runtime lưu requested/effective config. CPU ép `amp=False`; mọi fallback,
+  worker clamp, compile fallback và OOM batch reduction được log tường minh.
+- Unknown/dead key là lỗi. Migration schema phải có version và test; không giữ
+  alias chỉ để mô phỏng CLI upstream.
+- Parser dùng registry allowlist; không `eval()`, `globals()` hoặc import module
+  tùy ý từ YAML.
 
-### YAML
-
-Giữ grammar Ultralytics `- [from, repeats, module, args]`. Parser flatten
-`backbone + optional neck + head` với chỉ số layer toàn cục. Registry tường minh
-lưu quy tắc input/output channels, repeat và structured outputs; không dùng
-`globals()`, `eval()` hoặc module path tùy ý. Khóa lạ hoặc dead key là lỗi.
+Ví dụ model schema độc lập:
 
 ```yaml
-scales:
-  n: [0.50, 0.50, 128]
-  s: [0.75, 0.75, 192]
-  m: [1.00, 1.00, 256]
-  l: [1.25, 1.25, 384]
-  x: [1.50, 1.50, 512]
+schema: qdgrasp/model/v1
+name: qdgrasp-flow-n
+encoder:
+  type: serialized_point
+  channels: [32, 64, 128, 192]
+  depths: [1, 1, 2, 2]
+neck:
+  type: trace_unpool_fpn
+heads:
+  wrist: {type: rectified_flow, steps: 5}
+  joints: {type: named_joint_tokens}
+  quality: {type: grasp_quality}
 ```
 
-Tất cả `n/s/m/l/x` phải build được; chỉ phát hành weights `n` và `m` ở v1.
-Scale `m` phải đạt 14–16M tham số để đối chiếu DGN2 15.10M; `n` hướng tới
-3–5M.
-
-### Robot contract
-
-Mọi URDF hợp lệ được hỗ trợ theo nghĩa checkpoint theo robot:
+### Robot contract và corpus tương thích
 
 - Fixed/mimic joints được xử lý tự động; actuated revolute/prismatic joints phải
-  có giới hạn hữu hạn.
-- Continuous joint hoặc thiếu limit phải có override tường minh.
+  có giới hạn hữu hạn. Continuous/missing limit cần override tường minh.
 - Profile khai báo base/wrist/palm/contact/fingertip links, joint order, frame
   transform, actuator/squeeze settings và mesh/package resolution.
-- URDF chỉ tạo profile skeleton; semantic links không được suy đoán im lặng.
+- URDF hoặc MJCF chỉ tạo profile skeleton/kinematic graph; semantic links không
+  được suy đoán im lặng. MJCF là đường chuẩn cho MuJoCo, không phải lý do bỏ test
+  URDF.
 - Checkpoint bị từ chối nếu profile hash hoặc joint schema không khớp.
-- Người dùng cung cấp nhãn wrist/joints cho robot mới; v1 không sinh dữ liệu hay
-  retarget nhãn LEAP.
+- Mỗi URDF/mesh/profile public phải có provenance và license manifest. User có
+  thể dùng asset riêng cục bộ nhưng asset đó không tự động được phát hành lại.
+- Matrix đầu tiên phải phủ: LEAP official URDF + Menagerie MJCF; Wonik Allegro
+  official URDF + Menagerie MJCF; Shadow E3M5 Menagerie MJCF và một URDF ngoài
+  distribution để kiểm parser. Raw asset không được sửa để làm test pass; mọi
+  normalization phải là transform tái lập, có hash nguồn/đầu ra và cờ `modified`.
 
-## 3. Họ mô hình `DexGrasp-Flow`
+## 4. Model và pipeline dữ liệu mở
 
 ```text
-raw XYZ 40k / depth + intrinsics
-  → voxel tokenizer thuần Torch
-  → 4k–8k active tokens + point_to_token
-  → serialized point encoder
-  → trace-unpool/FPN neck
-  → feature trở lại 40k raw points
-  → objectness + graspness
-  → local-max + score candidates + radius suppression
-  → local geometry tokens
-  → 5-step wrist rectified flow (R9D + T)
-  → deterministic joint head bounded theo URDF
-  → learned quality head
-  → top-K grasps
+raw XYZ / depth + intrinsics          URDF/MJCF + permissive meshes
+  → point tokenizer/encoder            → variable-size HandGraph
+  → object surface tokens              → link/joint/limit/mesh tokens
+                 └── world-edge graph transformer ──┘
+  → conditional flow: palm R9D + T + masked named joints
+  → differentiable FK → topology-aligned 3D keypoints
+  → contact/normal/force auxiliary heads + feasibility projection
+  → optional energy guidance → physics quality → top-K grasps
 ```
 
-- Tokenizer dùng packed `int64` key có kiểm tra overflow, `sort/unique/scatter`,
+- Tokenizer dùng packed integer key có kiểm tra overflow, sort/unique/scatter,
   không hash collision và không custom C++/CUDA.
-- Encoder `m`: channels `[32,64,128,192,256]`, depths `[1,1,2,2,1]`, bốn
-  serialization orders có shifted windows, LayerNorm/GELU và PyTorch SDPA.
-- Neck là encoder-decoder/FPN dùng pooling parent/inverse và skip connections.
-  `RawPointRefine` kết hợp token feature với offset của raw point trong voxel để
-  chấm graspness trên đủ 40k điểm.
-- Seed selector giữ local maximum theo voxel rồi radius suppression bằng phép
-  toán Torch trên tập candidate nhỏ. Không tạo tensor `N×N`.
-- `WristFlowHead` dùng straight-path rectified flow, velocity matching và Euler
-  solver 5 bước. State là rotation 9D và translation 3D; kết quả chiếu về SO(3)
-  bằng SVD.
-- `JointHead(local_feature, wrist)` sinh vector theo đúng joint order và map
-  sigmoid vào `[lower, upper]`; fixed/mimic joints được dựng lại sau head.
-- `QualityHead` học từ positives, hard/free-space negatives và on-policy failures
-  được gắn nhãn bằng MuJoCo. Score cuối kết hợp objectness, graspness và quality.
-- Input learned của v1 là XYZ. Predictor nhận point cloud hoặc depth+intrinsics;
-  RGB được giữ như metadata nhưng chưa fusion vào model.
-- Base install không được import MinkowskiEngine, spconv, pointops,
-  torch-scatter, torch-cluster, PyTorch3D, Isaac Gym hoặc Open3D.
+- Encoder/neck giữ raw-point resolution qua `point_to_token`; serialization order,
+  shifted windows và pooling được triển khai/ghi provenance độc lập.
+- Flow chính sinh trực tiếp executable palm pose và joint state có mask theo graph,
+  lấy cảm hứng từ GraspGraphNet nhưng được viết từ paper/toán học. Straight-path
+  velocity matching dùng solver Euler 5 bước; rotation chiếu về SO(3) bằng phép
+  toán Torch đã test.
+- Keypoint là tập anchor theo link/topology biến độ dài, không phải bộ 21 điểm
+  Shadow cố định của KPGrasp. FK consistency buộc keypoint phụ khớp palm/qpos;
+  IK chỉ là baseline/adapter và không nằm trên đường inference mặc định.
+- Contact, normal và force là auxiliary state; contact được chiếu về surface và
+  force về Coulomb cone theo đặc tả toán học kiểu EquiDexFlow. Energy penetration,
+  surface-pulling và self-collision kiểu EFF-Grasp là plugin inference có thể tắt,
+  không thay thế simulator labels.
+- v1 phải có cả checkpoint từng robot và một checkpoint multi-hand trên ít nhất
+  LEAP/Allegro/Shadow. Zero-shot hand chỉ được tuyên bố khi robot held-out và
+  morphology perturbation đều qua protocol định trước.
+- Quality head học từ positive, hard/free-space negative và on-policy failures do
+  MuJoCo/MJX gắn nhãn.
+- Base install không import MinkowskiEngine, spconv, pointops, torch-scatter,
+  torch-cluster, PyTorch3D, Isaac Gym, Open3D hoặc dependency license chưa duyệt.
 
-## 4. Lộ trình
+Nguồn nghiên cứu và correction thư mục nằm ở
+`docs/decisions/0003-cross-embodiment-flow-architecture.md`. Paper/PDF chỉ cho
+phép tham khảo ý tưởng, công thức và benchmark có trích dẫn; code, data,
+checkpoint và asset đi kèm không được nhập nếu chưa có exact license evidence.
+CADGrasp chỉ là clutter refiner sau v1; MachaGrasp là baseline few-shot
+articulation; DextER/DexVLG là semantic layer tương lai.
 
-### M0 — Nguồn, license và baseline (1–2 tuần)
+Pipeline `DGN-Open` nằm trong scope bắt buộc:
 
-- Đo lại checkpoint DGN2: params, schemas, outputs, scene/view hashes và
-  benchmark canonical.
-- Khóa corpus 30 scene × 256 view, depth source, camera frame, robot profile và
-  stochastic seeds.
+1. Sinh procedural objects bằng primitives/CSG/superquadrics; cho phép bổ sung
+   CC0 assets có manifest.
+2. Nạp robot permissive, sample wrist/contact candidates và giải IK/qpos theo
+   named limits.
+3. Loại collision, replay squeeze/lift bằng MuJoCo/MJX, lưu success/quality.
+4. Render depth/point cloud với camera/frame metadata và deterministic seed.
+5. Xuất `GraspBatch` shards, split theo object/shape family và immutable manifest.
+6. Phát hành dataset do dự án sở hữu dưới `CC0-1.0`; official weights train chỉ
+   trên manifest đã duyệt; official code/checkpoint recipe phát hành theo chính
+   sách AGPL của dự án, còn dataset giữ license riêng trong manifest.
 
-### M1 — Fork framework (4–6 tuần)
+GSO/YCB `CC-BY-4.0` có thể tăng độ đa dạng nhưng phải là dataset/weight track riêng
+có attribution. Objaverse chỉ được dùng khi lọc từng object theo license; license
+của database không thay thế license của từng mesh.
 
-- Tạo product branch từ Ultralytics pinned commit, đổi namespace thành
-  `dexgrasp`.
-- Giữ engine/cfg/callback/checkpoint/device spine; loại YOLO tasks, trackers,
-  HUB, solutions và integrations ngoài scope.
-- Hoàn thiện façade, CLI, `task_map`, `GraspResults`, safe checkpoint và import
+## 5. Lộ trình
+
+### M0 — Nền AGPL, package và license gates (Phase 0)
+
+- Giữ AGPL-3.0 `LICENSE`, thêm `NOTICE`, `THIRD_PARTY.yml`, package metadata,
+  DCO 1.1 và contribution policy inbound=outbound.
+- Dùng repository hiện tại làm public product repository; giữ lịch sử và notice
+  Ultralytics-derived thay vì tạo lịch sử sạch giả tạo.
+- Build wheel/sdist, cài wheel ngoài source tree, import `qdgrasp`, chạy CLI và
+  yêu cầu mọi notebook dùng package public ở exact commit.
+- Pin/audit PyTorch, Lightning Fabric, GraspGenX file candidates, Pointcept,
+  rectified-flow, MuJoCo/MJX và mọi dependency bắc cầu.
+- CI chạy REUSE/ScanCode hoặc ORT, dependency license allowlist, wheel/sdist
+  content audit, secret scan và forbidden-provenance/hash scan.
+- Golden behavior tests được viết từ requirements/public papers, không import
+  hay chạy cây Ultralytics/DGN2 code trong test suite phát hành.
+
+### M1 — Core framework (4–6 tuần)
+
+- Viết façade, CLI, config schema, Fabric runner, callbacks, result types và
+  checkpoint bundles từ đầu.
+- Chỉ hỗ trợ PyTorch/TorchScript/ONNX; loại telemetry, account, HUB và SaaS hook.
+- Hoàn thiện CPU/CUDA device policy, AMP, EMA, deterministic resume và import
   không đổi cwd.
 
-### M2 — Data và robot layer (4–6 tuần)
+### M2 — Data generator và robot layer (6–10 tuần)
 
-- Canonical dataset schema cho points, objectness, graspness, wrist pose và qpos
-  theo tên joint.
-- Converter DGN2 chỉ đọc dữ liệu gốc; lỗi file/shape/NaN phải fail rõ, không
-  recursive retry hoặc silent skip.
+- Canonical `GraspBatch` và immutable manifests.
 - URDF/Profile validator, FK, joint-limit mapping, mesh resolver và fixtures.
-- Depth-to-point-cloud preprocessing thuần NumPy/Torch.
+- MJCF importer và compatibility matrix LEAP/Allegro/Shadow; test raw XML, mesh
+  resolution, joint names/limits, MuJoCo load/forward và transform normalization.
+- Procedural/CC0 object generator, candidate sampler, collision filter và
+  MuJoCo/MJX label pipeline.
+- Phát hành `DGN-Open-Tiny` để overfit/CI trước khi tạo corpus lớn.
 
-### M3 — YAML model và kiến trúc (10–14 tuần)
+### M3 — Model QDGrasp-Flow (10–14 tuần)
 
-- Registry/parser, tokenizer, serialized encoder, neck, raw-point refinement và
-  seed selector.
-- Flow, joint và quality heads; build/profile đủ năm scale.
-- Overfit tiny dataset, gradient coverage và ablation 4096/8192/16384 tokens,
-  3/5/7 flow steps; mặc định 8192 token và 5 bước.
+- Tokenizer, serialized encoder, neck, raw-point refinement và seed selector.
+- HandGraph/world-edge transformer, executable palm+joint flow, differentiable
+  FK, topology-keypoint/contact/force heads và quality head; scale n/s/m.
+- Overfit tiny dataset, gradient coverage và ablation: no-graph, direct-only,
+  keypoint+IK, dual FK-consistency, equivariance, force projection, energy guidance.
 
 ### M4 — Engine, export và device parity (6–8 tuần)
 
-- Trainer/Validator/Predictor với CPU, CUDA, AMP, EMA, exact resume và Kaggle
-  session recovery.
-- TorchScript và ONNX bundle gồm graph, model YAML, robot profile và preprocessing
+- Full train/val/predict, AMP, exact resume và session recovery chạy trên CUDA;
+  CPU chỉ giữ correctness/inference/export smoke và parity reference.
+- Public weight bundle an toàn; TorchScript/ONNX bundle có schema/robot/preprocess
   metadata.
-- Tokenization/serialization và SVD có thể nằm ngoài ONNX graph trong
-  `AutoBackend`; public results phải giống native.
-- ONNX Runtime CPU bắt buộc; CUDA runner được kiểm trên Kaggle.
+- ONNX Runtime CPU bắt buộc; CUDA runner được kiểm trong môi trường pin.
 
-### M5 — MuJoCo evaluator (8–12 tuần)
+### M5 — Scale dữ liệu và evaluator (8–12 tuần)
 
-- Pin MuJoCo minor version, dùng parser URDF chính thức và named joints.
-- Giữ trajectory DGN2: pregrasp/cover/grasp/squeeze/lift, 60 Hz, waypoint steps
-  `[40,20,20,60]`, nâng 0.2 m và success khi vật thể tăng trên 3 cm.
-- Thêm sáu virtual base joints bằng tên ổn định; giữ collision primitives gốc.
-- Chạy batch bằng `mujoco.rollout`; cùng seed/config phải cho cùng boolean vector.
-- Replay cùng corpus bằng Isaac Gym và MuJoCo, báo confusion matrix/kappa; sau
-  hiệu chuẩn đóng băng `mujoco.yaml`.
+- Khóa protocol grasp/squeeze/lift độc lập, named joints và deterministic seeds.
+- Tạo `DGN-Open-v1`, công bố generator, manifests, splits và attribution.
+- Calibrate MuJoCo/MJX parity; DGN2 không chạy trong release. Nếu cần báo cáo
+  aggregate research comparison thì chỉ trích dẫn paper/public numbers và phải
+  ghi `comparability: limited`, không dùng DGN2 làm nguồn nhãn hay baseline gate.
+- Khóa trước paper protocol: train/held-out hand, held-out object family, seed,
+  compute, success/collision/penetration/diversity/latency metrics và ablations;
+  lưu raw runs, environment, dataset/model/robot hashes trước khi viết kết luận.
 
-### M6 — Full training và release (10–18 tuần)
+### M6 — Full training và community release (10–18 tuần)
 
-- Train `n`, sau đó `m`, trên Kaggle GPU với checkpoint resumable; không
-  warm-start checkpoint MinkUNet.
-- Chọn checkpoint bằng validation pose/joint/quality metrics và MuJoCo success,
-  không dùng total loss đơn lẻ.
-- Phát hành weights chỉ sau khi hoàn tất CPU/CUDA/export/sim gates và benchmark
-  30 scene.
-- Mỗi lần nâng Ultralytics phải đi qua integration branch và API contract tests.
+- Train `n`, sau đó `m`, chỉ từ dataset manifest đã duyệt.
+- Chọn checkpoint bằng pose/joint/quality và physics success, không bằng total
+  loss đơn lẻ.
+- Phát hành package, source, official weights, dataset cards, SBOM, model cards,
+  quickstarts và benchmark artifacts sau khi mọi license/device/export/sim gate
+  pass.
+- Thiết lập model zoo, issue/PR templates, good-first-issue, RFC và release cadence
+  để cộng đồng có đường đóng góp rõ như các hệ sinh thái ML phổ biến.
 
-## 5. Test và nghiệm thu
+## 6. Test và nghiệm thu
 
-- Train-argument registry khớp toàn bộ 115 canonical key, 2 extra config kwargs,
-  9 legacy name và 1 API control của source đã pin; cả registry-only và full
-  source check đều pass với zero missing/extra.
-- Config parser từ chối unknown/dead/rejected key; mọi key `retain/adapt` có test
-  default, override, serialization, resume mutability và effective CPU/CUDA.
-- Mọi YAML n–x build, forward/backward và mọi trainable parameter nhận gradient.
-- CPU và CUDA chạy train-smoke, full val, predict, resume và Results conversions;
-  không có `.cuda()` hard-code.
-- FP32 CPU/CUDA parity `atol/rtol ≤ 1e-4`; AMP `≤ 5e-3`. Preprocess và seed
-  indices deterministic.
+### Release/license gates bắt buộc
+
+- Public repository giữ toàn bộ history hợp lệ và root license AGPL-3.0-only.
+- Source/wheel/sdist/container giữ đúng AGPL và mọi notice MIT/BSD/Apache; không
+  chứa NC, ND, custom/no-license hoặc unknown ngoài tài liệu attribution được duyệt.
+- Không có import, hash trùng hoặc similarity finding chưa xử lý từ Ultralytics/
+  DGN2 implementation/artifacts. Similarity scan chỉ là bằng chứng hỗ trợ, không
+  thay provenance review hay cấm tham khảo ý tưởng học thuật.
+- Mỗi source, dependency, dataset, weight, URDF và mesh có URL bất biến, version/
+  hash, SPDX identifier, license evidence và attribution.
+- Mỗi robot release phải vượt raw XML parse, zero missing mesh, finite named
+  limits, FK/frame fixture và MuJoCo load/forward; transform sửa inertia/package
+  URI phải tái lập và không ghi đè asset gốc.
+- `LICENSE`, `NOTICE`, `THIRD_PARTY`, SBOM và package metadata nhất quán; mọi
+  Apache/MIT/BSD notice được giữ đúng.
+- Mỗi official checkpoint trỏ tới immutable training-data manifest và không có
+  DGN2/NC sample, distillation target hoặc pretrained initialization.
+- Independent reviewer xác nhận N3 pivot AGPL và full license audit trước public beta.
+
+### Functional/model gates
+
+- Config parser từ chối unknown/dead key; mọi key có test default, override,
+  serialization, resume mutability và effective CPU/CUDA behavior.
+- Mọi model scale build, forward/backward và mọi trainable parameter nhận gradient.
+- CUDA hardware chạy train-smoke, full val, predict, resume và results
+  conversions; CPU chạy correctness/inference/export smoke. Không có `.cuda()`
+  hard-code và không fallback CPU khi CUDA được yêu cầu.
+- FP32 CPU/CUDA parity `atol/rtol ≤ 1e-4`; AMP `≤ 5e-3`. Preprocess, generator và
+  seed indices deterministic.
 - Profile chứng minh không tạo `N×N`; tăng token 2× không làm memory tăng gần 4×.
-- Model `m` nằm trong 14–16M params; báo riêng backbone/neck/flow/joint/quality.
-- i5-8365U/14 GiB phải hoàn tất predict một scene 40k/top-64 và train-smoke mà
-  không OOM; latency chỉ được báo cáo.
-- TorchScript và ONNX round-trip giữ số grasp, ordering, rotation, translation,
-  joints và score trong tolerance.
-- Joint outputs luôn hữu hạn và trong giới hạn; rotation hợp lệ; profile mismatch
-  phải fail trước inference.
-- MuJoCo chạy lặp lại cho cùng kết quả; fixtures kiểm geometry, frames, joint
-  order và actuator mapping.
-- Quality gate cuối: corpus MuJoCo 30 scene với ba seed, paired bootstrap một
-  phía 95%; cận dưới của `success_new_m − success_DGN2` không thấp hơn `−0.02`.
-- Mọi số liệu phát hành phải có metrics report, raw artifact/hash và third-party
-  review theo bộ tài liệu trong `docs/`.
+- TorchScript/ONNX round-trip giữ số grasp, ordering, rotation, translation,
+  named joints và score trong tolerance.
+- Joint outputs hữu hạn/trong giới hạn; rotation hợp lệ; profile mismatch fail
+  trước inference.
+- MuJoCo/MJX fixtures kiểm geometry, frames, joint order, actuator mapping và
+  repeatability.
+- Mọi số liệu phát hành có metrics report, raw artifact/hash và third-party review
+  theo bộ tài liệu trong `docs/`.
 
-## 6. Ngoài phạm vi v1
+## 7. Tiêu chí “cộng đồng như YOLO”
 
-- MPS/XPU/NPU, TensorRT/OpenVINO/CoreML và toàn bộ exporter của YOLO.
-- Data generation, LEAP retargeting và một checkpoint universal cho mọi robot.
-- HUB, tune, solutions, tracking và integrations không liên quan grasp.
-- Legacy DGN2 checkpoint loading trong package mới.
+- `pip install qdgrasp`, API một đối tượng và CLI một subcommand cho mỗi lifecycle.
+- Model/data/robot schemas ổn định, có migration và examples nhỏ chạy được trên CPU.
+- Model zoo n/s/m, weight/model/data cards, benchmark có protocol tái lập.
+- Plugin protocols cho dataset, robot, evaluator và exporter mà không yêu cầu fork
+  core package.
+- Tài liệu quickstart, cookbook, Colab/Kaggle, contribution guide, DCO, RFC,
+  semantic versioning, changelog và deprecation policy.
+- Không telemetry mặc định, không tài khoản bắt buộc và không khóa tính năng core
+  sau dịch vụ độc quyền.
+
+## 8. Ngoài phạm vi v1
+
+- Tuyên bố “không còn bất kỳ nghĩa vụ bản quyền nào”; AGPL và license thành phần
+  đều có nghĩa vụ phải tuân thủ.
+- Relicense cây/lịch sử Ultralytics hiện tại sang license không tương thích.
+- Port code/assets/config/labels/checkpoint của DGN2 hoặc phát hành weights
+  train/fine-tune/distill từ DGN2.
+- Exact Ultralytics API/config/CLI compatibility hoặc dùng thương hiệu YOLO.
+- Universal checkpoint cho mọi robot, MPS/XPU/NPU và exporter ngoài
+  PyTorch/TorchScript/ONNX.

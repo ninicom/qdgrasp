@@ -12,9 +12,9 @@ source_sha256: eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839
 latest_revision_record: docs/revisions/REV-20260822-003-raw-scalar-fsmonitor-hardening.md
 ---
 
-# Registry tham số train Ultralytics → DexGrasp
+# Registry tham số train Ultralytics → QDGrasp
 
-Đây là bảng kiểm kê thiết kế, chưa phải tuyên bố runtime DexGrasp đã được cài
+Đây là bảng kiểm kê thiết kế, chưa phải tuyên bố runtime QDGrasp đã được cài
 đặt. Nguồn sự thật máy đọc được là `TRAIN_ARGUMENTS.yaml`; file này giải thích
 rõ từng nhóm để không một tham số upstream nào bị bỏ qua hoặc trở thành no-op
 im lặng.
@@ -80,13 +80,13 @@ key không được `check_cfg()` kiểm kiểu tập trung và phải qua valid
 
 Các key upstream cho phép đổi khi exact-resume gồm `imgsz`, `batch`, `device`,
 `close_mosaic`, `augmentations`, `save_period`, `workers`, `cache`, `patience`,
-`time`, `freeze`, `val`, `plots`, `distill_model`, `save_dir`. DexGrasp chỉ được
+`time`, `freeze`, `val`, `plots`, `distill_model`, `save_dir`. QDGrasp chỉ được
 giữ subset có disposition `R/A`; mọi thay đổi robot schema, model YAML, optimizer,
 scheduler hoặc dataset manifest phải bị từ chối trước khi load state.
 
 ## 3. Global và train settings — 35 key
 
-| Key | Default | Kiểu upstream/documented | Dex | Hợp đồng DexGrasp |
+| Key | Default | Kiểu upstream/documented | Dex | Hợp đồng QDGrasp |
 |---|---:|---|:---:|---|
 | `task` | `detect` | enum | A | Giá trị hợp lệ của package là `grasp`; model quyết định task. |
 | `mode` | `train` | enum | R | `Model.train()` luôn ép `train`. |
@@ -126,7 +126,7 @@ scheduler hoặc dataset manifest phải bị từ chối trước khi load stat
 
 ## 4. Task-specific và validation — 13 key
 
-| Key | Default | Kiểu | Dex | Hợp đồng DexGrasp |
+| Key | Default | Kiểu | Dex | Hợp đồng QDGrasp |
 |---|---:|---|:---:|---|
 | `overlap_mask` | `True` | boolean | X | Mask instance YOLO không thuộc nhãn grasp. |
 | `mask_ratio` | `4` | integer ≥1 | X | Không downsample segmentation mask. |
@@ -146,7 +146,7 @@ scheduler hoặc dataset manifest phải bị từ chối trước khi load stat
 
 Các key này nằm trong config chung nhưng không điều khiển optimizer/train loop.
 
-| Key | Default | Kiểu | Dex | Hợp đồng DexGrasp |
+| Key | Default | Kiểu | Dex | Hợp đồng QDGrasp |
 |---|---:|---|:---:|---|
 | `source` | `null` | source/null | A | Point cloud, depth+intrinsics hoặc path/iterator được hỗ trợ. |
 | `vid_stride` | `1` | integer ≥1 | D | Chỉ khi có depth/video streaming contract. |
@@ -169,7 +169,7 @@ Các key này nằm trong config chung nhưng không điều khiển optimizer/t
 
 ## 6. Export, custom và tracker — 10 key
 
-| Key | Default | Kiểu | Dex | Hợp đồng DexGrasp |
+| Key | Default | Kiểu | Dex | Hợp đồng QDGrasp |
 |---|---:|---|:---:|---|
 | `format` | `torchscript` | string | A | v1 whitelist TorchScript/ONNX; format khác lỗi rõ. |
 | `keras` | `False` | boolean | X | TensorFlow/Keras ngoài phạm vi v1. |
@@ -184,7 +184,7 @@ Các key này nằm trong config chung nhưng không điều khiển optimizer/t
 
 ## 7. Hyperparameters — 39 key
 
-| Key | Default | Kiểu | Dex | Hợp đồng DexGrasp |
+| Key | Default | Kiểu | Dex | Hợp đồng QDGrasp |
 |---|---:|---|:---:|---|
 | `lr0` | `0.01` | `[0,1]` | R | Initial LR; `optimizer=auto` phải log nếu override nó. |
 | `lrf` | `0.01` | `[0,1]` | R | Final LR = `lr0*lrf`. |
@@ -223,12 +223,12 @@ Các key này nằm trong config chung nhưng không điều khiển optimizer/t
 | `cutmix` | `0.0` | `[0,1]` | X | Không cắt-dán rigid scene bằng rule ảnh. |
 | `copy_paste` | `0.0` | `[0,1]` | X | Cần scene composition/simulation riêng. |
 | `copy_paste_mode` | `flip` | string | X | Strategy segmentation không áp dụng. |
-| `auto_augment` | `randaugment` | string/null | X | Central validator cho phép `None`; downstream upstream chỉ nhận ba policy ảnh. DexGrasp không áp dụng. |
+| `auto_augment` | `randaugment` | string/null | X | Central validator cho phép `None`; downstream upstream chỉ nhận ba policy ảnh. QDGrasp không áp dụng. |
 | `erasing` | `0.4` | `[0,1]` | X | Dùng `point_dropout` có frame/label contract. |
 
 ## 8. Hai extra kwargs, chín legacy names và API control
 
-| Tên | Upstream behavior | DexGrasp decision |
+| Tên | Upstream behavior | QDGrasp decision |
 |---|---|---|
 | `augmentations` | Whitelist ngoài `default.yaml` | A: Python API nhận callable an toàn; YAML chỉ nhận transform registry có tên. |
 | `save_dir` | Whitelist runtime/internal | R: path output đã resolve; checkpoint lưu effective path. |
@@ -261,7 +261,7 @@ Mọi run lưu cả requested config và effective config. CPU không được �
 API, không được import dependency CUDA-only ở base install, và smoke train CPU
 phải được chạy trong release gate runtime khi package tồn tại.
 
-## 10. DexGrasp extensions đang chờ khóa thiết kế
+## 10. QDGrasp extensions đang chờ khóa thiết kế
 
 Registry máy đã dành tên cho `robot`, `sim`, `max_steps`, `points_per_scene`,
 `voxel_size`, `max_tokens`, `flow_steps`, `topk`, `radius`, bốn augmentation 3D,

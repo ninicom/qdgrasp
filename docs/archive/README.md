@@ -14,6 +14,10 @@ vòng đời nằm trong sidecar này, không được chèn vào raw file. Mộ
 không phải nguồn sự thật hiện hành và các assertion bên trong không được xem là
 kết quả đã kiểm chứng.
 
+Các nhắc tới RH56E2 trong `PLAN.pre-v2.md` chỉ là lịch sử bất biến. RH56E2 đã bị
+loại khỏi toàn bộ scope hoạt động bởi ADR-0007; archive không cấp quyền đưa hand,
+URDF, mesh, metadata, fixture, config hoặc checkpoint đó trở lại dự án.
+
 | Artifact | Định danh lịch sử | Trạng thái | Được thay bởi | Revision record | SHA-256 |
 |---|---|---|---|---|---|
 | `docs/archive/PLAN.pre-v2.md` | `LEGACY-PLAN-PRE-V2` | `superseded` | `PLAN-V2` (`PLAN.md`) | `docs/revisions/REV-20260821-001-plan-v2.md` | `d4d8b1d51723c830bab041575388cd58984e60b77e06013844ca02f03220d36d` |

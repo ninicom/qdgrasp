@@ -1,9 +1,13 @@
-# Đóng góp vào DexGrasp
+# Đóng góp vào QDGrasp
 
 Mọi thay đổi đi qua branch riêng và commit có bằng chứng. Quy trình đầy đủ nằm
 trong `docs/governance/GIT_WORKFLOW.md`.
 
 ## Thiết lập local
+
+Môi trường implementation chuẩn nằm tại
+`docs/installation/ENVIRONMENT.md`. Dùng Python 3.11 trong virtual environment;
+không cài dependencies vào system Python.
 
 ```bash
 git config core.hooksPath .githooks

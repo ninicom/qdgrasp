@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit the pinned Ultralytics configuration surface against DexGrasp's registry.
+"""Audit the pinned Ultralytics configuration surface against QDGrasp's registry.
 
 The checker intentionally uses only the Python standard library. ``--registry-only``
 is suitable for hooks and source archives that do not contain ``.references``.
@@ -33,8 +33,8 @@ PINNED_TRAINER_SHA256 = "d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d
 # normative Markdown body have reached their final reviewed form.  Keeping the
 # checker-side pins prevents a coordinated registry/document edit from silently
 # redefining the accepted contract.
-PINNED_MANIFEST_FINGERPRINT = "a43bf2d2c51770ca650593c16ffc83c2d79ca96b2bb6e1adf6dddd2d03637a10"
-PINNED_MARKDOWN_BODY_SHA256 = "b10f581f973dd34f627dac1be0de66d8fa2607aaa8dd4e243de316efa32213ae"
+PINNED_MANIFEST_FINGERPRINT = "0efcc5be32bd033afc6db2475b93f96b40e4378be3077e300bbb7c456b915ab4"
+PINNED_MARKDOWN_BODY_SHA256 = "8e9e9702d8391eb5cfb6be9100df00ac9885e4c369a7143da4c63e529c459856"
 EXPECTED_MARKDOWN_METADATA = {
     "document_id": "TRAIN-ARGS-ULTRALYTICS-8.4.125",
     "document_type": "registry",
@@ -1090,7 +1090,7 @@ def validate_registry(registry: Registry) -> list[Problem]:
         problems.append(Problem(f"tổng public names là {total}; yêu cầu 127"))
     overlap = (set(canonical) | set(extra) | set(legacy) | set(api_controls)) & set(extensions)
     if overlap:
-        problems.append(Problem(f"DexGrasp extension trùng tên upstream: {sorted(overlap)}"))
+        problems.append(Problem(f"QDGrasp extension trùng tên upstream: {sorted(overlap)}"))
     for key, fields in extensions.items():
         missing = {"status", "type", "purpose"} - set(fields)
         if missing:

@@ -1,0 +1,14 @@
+QDGrasp
+Copyright 2026 QDGrasp contributors
+
+This product is licensed under GNU Affero General Public License version 3.0
+only. See LICENSE.
+
+Portions of this repository are derived from Ultralytics software and retain
+their original copyright and AGPL-3.0 notices in the corresponding source
+files and Git history. Ultralytics and YOLO are referenced only for provenance
+and community user-experience context; no trademark rights are granted.
+
+Third-party software, research references, datasets, checkpoints and robot or
+object assets have separate boundaries. See THIRD_PARTY.yml and the lock
+manifests. DexGraspNet2 code, data, checkpoints and assets are not included.

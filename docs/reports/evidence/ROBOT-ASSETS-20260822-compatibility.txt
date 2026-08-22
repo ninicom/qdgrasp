@@ -1,0 +1,49 @@
+run_id=ROBOT-ASSETS-20260822-COMPAT-001
+created_at=2026-08-22T17:35:00+07:00
+workspace_head=1f2d1382674e382f6204df875fcd39c8f49fbe49
+python=3.14.4
+mujoco=3.11.0
+platform=Linux-7.0.0-30-generic-x86_64-with-glibc2.43
+policy=local_reference_only_not_release_evidence
+
+PIN dex-urdf=f5e7132f22108164577fea4c25ef99b5cc0e1900
+PIN mujoco-menagerie=da76818e269b82289eba39808e2fb91d679d6994
+PIN leap-hand-sim=150bc3d4b61fd6619193ba5a8ef209f3609ced89
+PIN wonik-allegro-ros2=80bd4a88d2c59b8ad0242ec3730302bde61c84fb
+
+STRUCTURE urdf-dex-shadow links=33 joints=32 movable=24 finite_limits=24 mesh_refs=35 missing=0
+STRUCTURE urdf-dex-allegro links=23 joints=22 movable=16 finite_limits=16 mesh_refs=25 missing=0
+STRUCTURE urdf-dex-leap links=22 joints=21 movable=16 finite_limits=16 mesh_refs=21 missing=0
+STRUCTURE urdf-dex-barrett links=9 joints=8 movable=8 finite_limits=8 mesh_refs=12 missing=0
+STRUCTURE urdf-leap-official links=17 joints=16 movable=16 finite_limits=16 mesh_refs=34 missing=0
+STRUCTURE urdf-wonik-official links=22 joints=21 movable=16 finite_limits=16 unique_mesh_refs=11 missing=0
+STRUCTURE mjcf-shadow bodies=25 joints=45 mesh_defs=14 actuators=20
+STRUCTURE mjcf-allegro bodies=21 joints=25 mesh_defs=11 actuators=16
+STRUCTURE mjcf-leap bodies=17 joints=25 mesh_defs=10 actuators=16
+RESULT xml_parse_and_mesh_resolution=PASS
+
+MUJOCO urdf-dex-shadow=PASS nq=24 nv=24 nu=0 nbody=25 ngeom=45 finite_qpos=true
+MUJOCO urdf-dex-allegro=FAIL reason=inertia_must_satisfy_A_plus_B_ge_C link=link_1.0
+MUJOCO urdf-dex-leap=PASS nq=16 nv=16 nu=0 nbody=17 ngeom=71 finite_qpos=true
+MUJOCO urdf-dex-barrett=PASS nq=8 nv=8 nu=0 nbody=9 ngeom=32 finite_qpos=true
+MUJOCO urdf-leap-official=PASS nq=16 nv=16 nu=0 nbody=17 ngeom=17 finite_qpos=true
+MUJOCO urdf-wonik-official=FAIL reason=fullinertia_must_have_positive_eigenvalues link=link_2_0
+MUJOCO mjcf-shadow=PASS nq=24 nv=24 nu=20 nbody=26 ngeom=62 finite_qpos=true
+MUJOCO mjcf-allegro=PASS nq=16 nv=16 nu=16 nbody=22 ngeom=42 finite_qpos=true
+MUJOCO mjcf-leap=PASS nq=16 nv=16 nu=16 nbody=18 ngeom=88 finite_qpos=true
+
+MANIFEST dex-urdf-selected files=161 sha256=9e445ea15e95cce1783c3d5e6627bb851c972917eddefd332146ddd7186db591
+MANIFEST menagerie-selected files=67 sha256=301a42865939497ea8640dcfb940adc4e616679eb7cf871355d2a0aeaafe1583
+MANIFEST leap-official files=17 sha256=b40167db3d6159e232fed96499d303c879e54f7362e11defc9d00c2cbfd6c097
+MANIFEST wonik-official files=48 sha256=91768e54a1c79941c546bef921ddcb707d8cc8ba1ac15f3028c6dd2a19fd3c82
+
+VERDICT primary_release_candidates=menagerie_shadow,menagerie_allegro,menagerie_leap,leap_official_urdf,wonik_official_urdf
+VERDICT raw_urdf_parser=PASS
+VERDICT paired_mjcf_simulation=PASS
+VERDICT wonik_raw_urdf_requires_recorded_normalization_or_paired_mjcf
+VERDICT dexsuite_bundle=REFERENCE_ONLY_NOT_FOR_REDISTRIBUTION
+VERDICT barrett=BLOCKED_PENDING_COMPLETE_RIGHTSHOLDER_LICENSE
+
+REPRO xml_structure=Python_stdlib_xml.etree_parse; count_link_joint_limit_mesh; resolve_relative_or_ROS_package_mesh_paths
+REPRO mujoco=mujoco.MjModel.from_xml_path_or_from_xml_string_with_package_assets; mujoco.mj_forward; assert_finite_qpos
+REPRO manifests=find_selected_files_sorted_NUL; sha256sum_each_file; sha256sum_manifest

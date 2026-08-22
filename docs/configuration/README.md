@@ -1,7 +1,7 @@
 ---
 document_id: CONFIG-INDEX
 document_type: index
-title: Chỉ mục hợp đồng cấu hình DexGrasp
+title: Chỉ mục hợp đồng cấu hình QDGrasp
 version: 1.1.0
 status: active
 date: 2026-08-21
@@ -9,13 +9,13 @@ revises: none
 latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
 ---
 
-# Hợp đồng cấu hình DexGrasp
+# Hợp đồng cấu hình QDGrasp
 
 Thư mục này chứa các registry có thể kiểm tra bằng máy cho public configuration
 surface của thư viện.
 
 - `TRAIN_ARGUMENTS.yaml`: nguồn sự thật máy đọc được cho toàn bộ tham số cấu
-  hình Ultralytics đã pin và disposition tương ứng của DexGrasp.
+  hình Ultralytics đã pin và disposition tương ứng của QDGrasp.
 - `TRAIN_ARGUMENTS.md`: bảng tra cứu đầy đủ, quy tắc CPU/CUDA và cách nâng phiên
   bản upstream.
 

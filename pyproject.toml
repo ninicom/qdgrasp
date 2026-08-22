@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77,<82", "wheel>=0.45,<1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qdgrasp"
+version = "0.1.0a1"
+description = "AGPL-3.0 cross-embodiment dexterous grasping library"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "AGPL-3.0-only"
+authors = [{name = "QDGrasp contributors"}]
+keywords = ["robotics", "dexterous-grasping", "pytorch", "mujoco"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "torch>=2.10.0",
+  "lightning>=2.6.0",
+  "numpy>=2.0.0",
+  "scipy>=1.14.0",
+  "mujoco>=3.3.0",
+  "trimesh>=4.0.0",
+  "safetensors>=0.5.0",
+  "pydantic>=2.10.0",
+  "PyYAML>=6.0.0",
+  "einops>=0.8.0",
+  "rich>=13.0.0",
+  "typer>=0.16.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.0.0", "pytest-cov>=7.0.0", "ruff>=0.16.0", "mypy>=2.3.0", "types-PyYAML>=6.0.12"]
+export = ["onnx>=1.20.0", "onnxruntime>=1.20.0"]
+legacy = ["ultralytics>=8.4.125"]
+
+[project.scripts]
+qdgrasp = "qdgrasp.cli:main"
+
+[project.urls]
+Repository = "https://github.com/ninicom/qdgrasp"
+Issues = "https://github.com/ninicom/qdgrasp/issues"
+
+[tool.setuptools.packages.find]
+include = ["qdgrasp*"]
+
+[tool.setuptools.package-data]
+qdgrasp = ["py.typed", "cfg/*.yaml", "assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "scripts/tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
