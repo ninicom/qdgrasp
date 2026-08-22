@@ -138,9 +138,11 @@ Hai điểm dễ sai:
 | P2-12 | Gate script CPU của P2 | `scripts/check_phase2.py` | |
 | P2-13 | Test suite | `tests/test_robot_*.py`, `tests/test_sim_*.py` | |
 | P2-14 | Contract doc và session report | `docs/configuration/ROBOT_PROFILE.md`, `docs/sessions/` | `document_type: registry` |
+| P2-15 | CUDA FK parity qua harness Kaggle | `scripts/phase2_cuda_fk_parity.py`, `kaggle-phase2/` | ngoài gate roadmap, xem §10 |
 
 Thứ tự đề xuất: P2-01 → P2-02/03 → P2-04 → P2-05 → P2-06 → P2-07 → P2-08 →
-P2-09/10 → P2-11/12/13/14. P2-02 và P2-03 chạy song song được.
+P2-09/10 → P2-11/12/13/14 → P2-15. P2-02 và P2-03 chạy song song được. P2-15
+chạy sau khi P2-07 ổn định vì nó cần FK đã có kết quả CPU tham chiếu.
 
 ## 6. Hai hạng mục dễ bị đánh giá thấp
 
@@ -237,6 +239,15 @@ Mỗi mục dưới đây phải kiểm được bằng lệnh, không phải b�
 - Chạy hai lần cùng input cho cùng output hash.
 - Manifest có source hash, output hash và cờ `modified`; asset gốc không đổi byte.
 
+**CPU/CUDA parity của FK (P2-15)**
+
+- FK và batch kinematics cho ba hand chạy được trên CUDA thật, không hard-code
+  `.cuda()` và không fallback CPU khi CUDA được yêu cầu.
+- Sai khác lớn nhất giữa FP32 CPU và FP32 CUDA `<= 1e-4` trên cùng profile hash,
+  cùng seed và cùng joint vector.
+- Evidence JSON có environment fingerprint, profile hash của ba hand và deviation
+  từng hand; lưu theo mẫu `evidence/phase2-run-NNN-pass/`.
+
 **Provenance và release**
 
 - Mỗi URDF/mesh/profile công khai có provenance và license manifest.
@@ -263,17 +274,41 @@ python3 -m pytest tests/ -q
 P1 phải tiếp tục pass nguyên vẹn; bất kỳ regression nào ở `check_phase1.py` là lỗi
 của P2, không phải lý do sửa gate P1.
 
-## 10. CUDA trong P2
+P2-15 không nằm trong danh sách trên vì nó chạy trên GPU ngoài máy phát triển;
+kết quả của nó vào bảng test của session report như `T-NN` riêng.
 
-Gate P2 theo `PROJECT_PHASES.md` là parse/mesh/FK/MuJoCo — toàn bộ chạy CPU. P2
-**không cần** notebook Kaggle và không cần vòng CUDA nào để đóng phase.
+## 10. CUDA trong P2 (P2-15)
 
-Một khuyến nghị tách riêng, không thuộc gate: FK và batch kinematics là torch op
-mà P4 trở đi sẽ chạy trên CUDA, và `PLAN.md` §6 đòi CPU/CUDA FP32 parity `<= 1e-4`.
-Bug resume của P1 là bằng chứng trực tiếp rằng code chạm device được verify chỉ
-trên CPU sẽ bỏ sót một lớp lỗi thật. Thêm một FK parity check vào harness Kaggle
-đã có là rẻ; để maintainer quyết, và nếu làm thì đánh dấu là bổ sung tự nguyện chứ
-không gộp vào gate P2.
+Gate chuyển phase của P2 theo `PROJECT_PHASES.md` là parse/mesh/FK/MuJoCo, toàn
+bộ chạy CPU. Kế hoạch này **không** sửa định nghĩa gate đó: P2-15 là hạng mục bổ
+sung của kế hoạch thực thi, không phải điều kiện chuyển phase. P2 vẫn đóng được
+khi P2-15 fail, miễn là kết quả fail được ghi lại và xử lý.
+
+Lý do vẫn đưa vào: FK và batch kinematics là torch op mà P4 trở đi chạy trên
+CUDA, và `PLAN.md` §6 đòi CPU/CUDA FP32 parity `<= 1e-4`. Bug resume của P1 là
+bằng chứng trực tiếp rằng code chạm device chỉ verify trên CPU sẽ bỏ sót một lớp
+lỗi thật: FP32 train và AMP train đều pass trên T4, chỉ bước đầu tiên sau resume
+mới lộ ra optimizer state nằm sai device. FK có cùng đặc tính rủi ro đó. Phát
+hiện ở P2 rẻ hơn nhiều so với phát hiện giữa P4.
+
+Cách làm, theo đúng khuôn đã chạy được ở P1:
+
+1. Viết `scripts/phase2_cuda_fk_parity.py` fail-closed: gọi
+   `qdgrasp.require_cuda()`, dựng `RobotSpec` cho ba hand, chạy FK trên CPU và
+   CUDA với cùng seed/joint vector, so deviation, ghi evidence JSON kèm hash.
+   Script từ chối chạy khi `--device` không phải CUDA.
+2. Tạo `kaggle-phase2/` trong repository `ninicom/qdgrasp-cuda-kaggle` với
+   `kernel-metadata.json` riêng; **không** sửa `kaggle/` của P0 hay
+   `kaggle-phase1/`.
+3. Notebook cài `qdgrasp` từ exact public commit, tải script gate từ đúng commit
+   đó qua `raw.githubusercontent.com` và assert SHA-256 trước khi chạy. Cách này
+   giữ script gate chỉ có một nguồn duy nhất trong repository library.
+4. Lưu evidence pass vào `evidence/phase2-run-NNN-pass/` và ghi hash vào session
+   report. Run fail vẫn giữ trong bảng test của session report, không xóa.
+
+Ràng buộc: notebook cần commit library đã public, nên bước này chỉ chạy được sau
+khi branch P2 được push. Nếu chưa muốn public code P2, hoãn P2-15 tới lúc đó và
+ghi là `Bị chặn` với điều kiện gỡ chặn rõ ràng, thay vì bỏ im lặng.
 
 ## 11. Ngoài phạm vi P2
 
@@ -281,5 +316,6 @@ không gộp vào gate P2.
 - Retarget làm đường mặc định; IK chỉ là baseline/adapter, không nằm trên đường
   inference.
 - Backend simulator ngoài MuJoCo/MJX.
+- Train, AMP hoặc resume trên CUDA; P2-15 chỉ so parity của FK, không train.
 - Phát hành asset Barrett hoặc bất cứ thứ gì dẫn xuất từ `dexsuite_dex_urdf`.
 - Sửa hoặc rút cây legacy Ultralytics-derived.
