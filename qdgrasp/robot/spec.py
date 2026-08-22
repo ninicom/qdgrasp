@@ -21,10 +21,51 @@ from .kinematics import (
     transform_points,
 )
 from .meshes import load_mesh, resolve_mesh_path, sample_mesh_surface
-from .mjcf import parse_mjcf
+from .mjcf import MJCFModel, parse_mjcf
 from .normalize import normalize_urdf
 from .schema import ActuatorSpec, MimicSpec, RobotConfigV2
 from .urdf import URDFJoint, URDFLink, URDFModel, parse_urdf
+
+
+def _validate_mimic_against_tendons(config: RobotConfigV2, model: "MJCFModel") -> None:
+    """Check declared coupling against the tendons the asset actually declares.
+
+    The profile states that one joint follows another; the MJCF states the same
+    thing as a fixed tendon over named joints.  Comparing them turns the mimic
+    ratio from an assertion into something the asset backs up.  Joints the asset
+    says nothing about are left alone -- absence of a tendon is not evidence
+    against a coupling.
+    """
+
+    for mimic_name, mimic in config.mimic_joints.items():
+        tendons = [
+            tendon
+            for tendon in model.tendons.values()
+            if tendon.kind == "fixed" and any(name == mimic_name for name, _ in tendon.joint_coefficients)
+        ]
+        if not tendons:
+            continue
+        for tendon in tendons:
+            coefficients = dict(tendon.joint_coefficients)
+            if mimic.target_joint not in coefficients:
+                raise ConfigError(
+                    f"profile '{config.name}': joint '{mimic_name}' is coupled by tendon "
+                    f"'{tendon.name}', which does not include the declared target "
+                    f"'{mimic.target_joint}'"
+                )
+            target_coefficient = coefficients[mimic.target_joint]
+            mimic_coefficient = coefficients[mimic_name]
+            if mimic_coefficient == 0.0:
+                raise ConfigError(
+                    f"profile '{config.name}': tendon '{tendon.name}' gives joint "
+                    f"'{mimic_name}' a zero coefficient"
+                )
+            expected = target_coefficient / mimic_coefficient
+            if abs(expected - mimic.multiplier) > 1e-6:
+                raise ConfigError(
+                    f"profile '{config.name}': declared mimic multiplier {mimic.multiplier} for "
+                    f"'{mimic_name}' contradicts tendon '{tendon.name}', which implies {expected}"
+                )
 
 
 def _matrix_to_tuple(matrix: torch.Tensor) -> tuple[tuple[float, float, float], ...]:
@@ -232,6 +273,8 @@ class RobotSpec:
                 contact_bodies=config.contact_links,
             )
 
+            _validate_mimic_against_tendons(config, mjcf_model)
+
             links_dict = {}
             id_to_name = {b.id: name for name, b in mjcf_model.bodies.items()}
 
@@ -420,6 +463,8 @@ class RobotSpec:
         """
         if palm_pos.ndim == 1:
             palm_pos = palm_pos.unsqueeze(0)
+        if palm_pos.ndim != 2 or palm_pos.shape[1] != 3:
+            raise ConfigError(f"palm_pos must have shape [B, 3], got {tuple(palm_pos.shape)}")
         B = palm_pos.shape[0]
         device = palm_pos.device
         dtype = palm_pos.dtype
@@ -427,6 +472,8 @@ class RobotSpec:
         if palm_rot.ndim == 1:
             palm_rot = palm_rot.unsqueeze(0)
         if palm_rot.shape[-1] == 9:
+            if palm_rot.ndim != 2 or palm_rot.shape[0] != B:
+                raise ConfigError(f"palm_rot 9D input must have shape [B, 9], got {tuple(palm_rot.shape)}")
             # Reshape 9D to [B, 3, 3] and orthonormalize via SVD/Gram-Schmidt
             R_raw = palm_rot.view(B, 3, 3)
             # Gram-Schmidt on column vectors
@@ -436,6 +483,8 @@ class RobotSpec:
             c2 = torch.cross(c0, c1, dim=-1)
             R_palm = torch.stack([c0, c1, c2], dim=-1)
         else:
+            if palm_rot.ndim != 3 or palm_rot.shape != (B, 3, 3):
+                raise ConfigError(f"palm_rot matrix input must have shape [B, 3, 3], got {tuple(palm_rot.shape)}")
             R_palm = palm_rot.to(device=device, dtype=dtype)
 
         # Map input joint angles to full joint mapping
@@ -443,22 +492,26 @@ class RobotSpec:
         if isinstance(joint_angles, torch.Tensor):
             if joint_angles.ndim == 1:
                 joint_angles = joint_angles.unsqueeze(0)
+            expected = (B, len(self.actuated_joint_names))
+            if tuple(joint_angles.shape) != expected:
+                raise ConfigError(
+                    f"joint_angles tensor must have shape [B, {expected[1]}], got {tuple(joint_angles.shape)}"
+                )
             for j_idx, j_name in enumerate(self.actuated_joint_names):
-                if j_idx < joint_angles.shape[1]:
-                    full_q[j_name] = joint_angles[:, j_idx]
-                else:
-                    full_q[j_name] = torch.zeros(B, dtype=dtype, device=device)
+                full_q[j_name] = joint_angles[:, j_idx].to(device=device, dtype=dtype)
         else:
+            missing = [name for name in self.actuated_joint_names if name not in joint_angles]
+            if missing:
+                raise ConfigError(f"joint_angles mapping is missing actuated joints: {missing}")
             for j_name in self.actuated_joint_names:
-                if j_name in joint_angles:
-                    val = joint_angles[j_name]
-                    if val.ndim == 0:
-                        val = val.unsqueeze(0).expand(B)
-                    elif val.ndim == 1 and val.shape[0] != B:
-                        val = val.expand(B)
-                    full_q[j_name] = val.to(device=device, dtype=dtype)
-                else:
-                    full_q[j_name] = torch.zeros(B, dtype=dtype, device=device)
+                val = joint_angles[j_name]
+                if val.ndim == 0:
+                    val = val.unsqueeze(0).expand(B)
+                elif val.ndim != 1 or val.shape[0] != B:
+                    raise ConfigError(
+                        f"joint_angles['{j_name}'] must have shape [{B}], got {tuple(val.shape)}"
+                    )
+                full_q[j_name] = val.to(device=device, dtype=dtype)
 
         # Apply mimic joint equations
         for m_name, m_spec in self.mimic_joints.items():

@@ -91,6 +91,13 @@ class RobotConfigV2(_Document):
                 raise ValueError(f"joint '{name}' needs finite limits")
             if lower >= upper:
                 raise ValueError(f"joint '{name}' has an empty limit range [{lower}, {upper}]")
+        for mimic_name, mimic in self.mimic_joints.items():
+            if mimic_name in self.joints:
+                raise ValueError(f"mimic joint '{mimic_name}' must not also be an actuated joint")
+            if mimic.target_joint not in self.joints:
+                raise ValueError(
+                    f"mimic joint '{mimic_name}' targets unknown actuated joint '{mimic.target_joint}'"
+                )
         return self
 
     @property

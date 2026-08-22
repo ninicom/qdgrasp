@@ -50,3 +50,25 @@ def test_parse_shadow_mjcf_coupling() -> None:
         palm_body="rh_palm",
         fingertip_bodies=("rh_ffdistal", "rh_mfdistal", "rh_rfdistal", "rh_lfdistal", "rh_thdistal"),
     )
+
+
+def test_declared_mimic_must_match_the_asset_tendon() -> None:
+    """The profile's coupling ratio is checked against the MJCF's own tendon."""
+
+    from qdgrasp.config import ConfigError, load_robot_config
+    from qdgrasp.robot.schema import RobotConfigV2
+    from qdgrasp.robot.spec import RobotSpec
+
+    document = load_robot_config("shadow_hand.yaml").to_document()
+    assert document["mimic_joints"]["rh_FFJ1"]["multiplier"] == 1.0
+    document["mimic_joints"]["rh_FFJ1"]["multiplier"] = 0.5
+
+    with pytest.raises(ConfigError, match="contradicts tendon"):
+        RobotSpec.from_config(RobotConfigV2.model_validate(document), sample_anchors=False)
+
+
+def test_shadow_tendons_are_extracted_with_named_coefficients() -> None:
+    model = parse_mjcf(".references/robot-assets/mujoco-menagerie/shadow_hand/right_hand.xml")
+    assert set(model.tendons) == {"rh_FFJ0", "rh_MFJ0", "rh_RFJ0", "rh_LFJ0"}
+    coefficients = dict(model.tendons["rh_FFJ0"].joint_coefficients)
+    assert coefficients == {"rh_FFJ2": 1.0, "rh_FFJ1": 1.0}
