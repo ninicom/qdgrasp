@@ -1,0 +1,128 @@
+review_id: TPR-20260822-003
+reviewer: codex-agent-third-party-train-args/delta-checker
+reviewer_organization: codex-multi-agent-internal-review
+independence: internal_independent
+reviewed_commit: 42914f550929789fe5d0df45bafedaa0b9ae469b
+reviewed_tree: e6186cdcbfbe4bcf71571bbafbf33982118c4784
+implementation_parent: 62111ed4b0c31e85e47da02c33831f2cf5a32894
+implementation_tree: a52d4782654d8b5c5b2228392965beff1b4da817
+materialized_at: 2026-08-22T03:37:54+07:00
+timezone: Asia/Bangkok
+files_edited_by_reviewer: none
+verdict: FAIL
+max_open_severity: S2
+open_findings: F-005,F-010,F-011
+
+reviewed_evidence:
+  path: docs/reports/evidence/TRAIN-ARGS-20260822-source-metadata-hardening.txt
+  bytes: 5540
+  sha256: 15b540f7dbf4a1be3b173882d02488e93b7638915ceba82cf4e58f67ecd1de17
+
+artifact_identity_replay:
+  references_lock_sha256: 921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7
+  checker_sha256: 99b1b8dde330e011cf0e9e3fb0693ac25aa7c6fd672e69249b72baa1c78a2f29
+  tests_sha256: 76f3480f483963b6d318fbb60ce72e25aa98123259867ecc3b8900e3e3c8fdd9
+  markdown_sha256: 6911f367e8d068200ecaa4de4410922712614805a3f83971c7c98c88de841b17
+  registry_sha256: 5fe682f1d84351564edf858c36bd1f6ac07005295234ad9b23f97d3081c48626
+  identity_and_all_hashes_match: true
+
+finding_status:
+  F-001: resolved
+  F-002: resolved
+  F-003: resolved
+  F-004: resolved; quantize aliases exact 11/11 source match
+  F-005: partial/open S2 because the two new cases have no regression
+  F-006: current artifacts correct; enforcement residual is F-011
+  F-007: resolved
+  F-008: resolved
+  F-009: resolved
+  F-010: open S2
+  F-011: open S2
+
+positive_baseline:
+  references_lock_only: PASS
+  references_full: PASS; 2 pinned clones
+  train_registry_only: PASS
+  train_full_source: PASS
+  documentation: PASS; 39 managed files
+  tests: PASS; 35/35
+  registry_dialect_mutations: 8/8 rejected
+  normative_markdown_mutations: 4/4 rejected
+  coordinated_hash_mutations: rejected
+  fingerprint_scalar_leaves: 968
+  fingerprint_uncovered_leaves: 0
+  fingerprint_intentional_self_exclusion: upstream.manifest_fingerprint
+  canonical: 115
+  extras: 2
+  legacy: 9
+  api_controls: 1
+  total_public_names: 127
+  quantize_aliases_matching_upstream_ast: 11/11
+
+F-010_fsmonitor_valid_reproduction:
+  environment: disposable pinned source clone with exact origin and HEAD
+  mutated_path: ultralytics/data/augment.py
+  mutation: tracked worktree content changed after fsmonitor-valid was set
+  git_status_porcelain: empty
+  git_ls_files_v: 'H ultralytics/data/augment.py'
+  git_ls_files_f: 'h ultralytics/data/augment.py'
+  standalone_full_checker_exit: 0
+  expected_exit: 1
+  result: bypass reproduced
+  ordinary_tracked_mutation: rejected
+  ordinary_untracked_file: rejected
+  assume_unchanged_mutation: rejected
+  skip_worktree_mutation: rejected
+  root_cause: checker inspected ls-files -v but not the fsmonitor-valid view from -f
+
+F-011_exact_scalar_reproduction:
+  mutation_shape: 'field: expected -> field: " expected "'
+  train_registry_front_matter_fields_tested: 11
+  train_registry_front_matter_fields_accepted_unexpectedly: 11
+  affected_fields:
+    - document_id
+    - document_type
+    - title
+    - version
+    - status
+    - date
+    - revises
+    - related_plan
+    - source_commit
+    - source_sha256
+    - latest_revision_record
+  train_checker_exit_for_each: 0
+  generic_docs_checker_exit_for_each: 0
+  yaml_semantic_value_example: " active "
+  revision_identity_fields_tested: 5
+  revision_identity_fields_accepted_unexpectedly: 5
+  affected_revision_fields:
+    - document_id
+    - record_id
+    - document_type
+    - session_id
+    - status
+  result: bypass reproduced
+  normal_missing_wrong_extra_duplicate_malformed_metadata: rejected
+  outside_absolute_symlink_escape_missing_wrong_revision_target: rejected
+  root_cause: parser stripped surrounding whitespace and quotes before exact comparison
+
+required_closure:
+  F-010:
+    - inspect both git ls-files -v and git ls-files -f
+    - reject every non-H prefix in either view
+    - add fsmonitor-valid regression alongside h/S regressions
+  F-011:
+    - preserve raw front-matter scalar lexeme for exact comparison
+    - reject quoted, padded and noncanonical separators for all 11 fields
+    - apply the same rule to revision identity/status fields
+    - add exhaustive train and revision-target regressions
+
+reviewer_limitations:
+  - review is internal_independent, not external or human
+  - no dataset, model, CPU/CUDA runtime, export, simulator or benchmark was tested
+  - all destructive probes used disposable clones or in-memory/temp artifacts
+  - the independent reviewer changed no repository or pinned-source file
+
+final_verdict: FAIL
+final_max_severity: S2

@@ -1,0 +1,52 @@
+RUN_ID=TRAIN-ARGS-20260821-001
+DATE=2026-08-21
+BRANCH=feature/train-argument-registry
+
+$ bash -n .githooks/* scripts/git/*.sh scripts/release_gate.sh
+EXIT=0
+
+$ git diff --check
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py --registry-only
+Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; zero missing/extra (registry-only).
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py --source .references/ultralytics
+Train argument registry check passed: 115 canonical + 2 extra + 9 legacy + 1 API = 127 names; zero missing/extra (source=329682a29d27).
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs.py --root .
+Documentation check passed: 28 file đã kiểm tra.
+EXIT=0
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+test_complete_review_allows_no_open_severity ... ok
+test_completed_session_with_concrete_metadata_passes ... ok
+test_completed_template_with_placeholders_is_rejected ... ok
+test_managed_index_without_revises_is_rejected ... ok
+test_current_registry_has_complete_pinned_surface ... ok
+test_docs_checker_discovers_configuration_registry ... ok
+test_full_check_reports_unpinned_source_and_hashes ... ok
+test_missing_canonical_entry_is_rejected ... ok
+test_missing_disposition_is_rejected ... ok
+test_source_set_comparison_names_omitted_key ... ok
+Ran 10 tests in 0.566s
+OK
+EXIT=0
+
+$ git -C .references/ultralytics rev-parse HEAD
+329682a29d27203582ba30e519340f95abccc6a6
+
+$ git -C .references/ultralytics describe --tags --always --dirty
+v8.4.125
+
+$ git -C .references/dexgraspnet2 rev-parse HEAD
+26ecd76121e3c8218ad53db9840cf34f6b81b076
+
+$ sha256sum pinned-ultralytics-artifacts
+eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839  ultralytics/cfg/default.yaml
+ea9a98b498686f44561e9ce9892aa0e7de52226429496b08a20475ebbfa4eed8  ultralytics/cfg/__init__.py
+69cb4c9c6f572c50bd35328e5154e6b596ed50dc10d218584da8aed3f7c9b32a  ultralytics/engine/model.py
+d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d6c57a32e6  ultralytics/engine/trainer.py
+0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0  LICENSE

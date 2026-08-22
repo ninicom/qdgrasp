@@ -1,0 +1,123 @@
+review_id: TPR-20260822-002
+reviewer: codex-agent-third-party-train-args
+reviewer_organization: codex-multi-agent-internal-review
+independence: internal_independent
+reviewed_commit: 363a671734ea4d2c89d399cec000fd97d4750870
+reviewed_tree: dfb454f1d0fb5af3252a423ff3a563d57131a2a6
+implementation_parent: 8dc0e2e0a122e46df95f2f4f7a3cfbfee9dec58c
+implementation_tree: 60794bd3930713bde84a8707325517b05bce2ea2
+completed_at: 2026-08-22T00:33:47+07:00
+timezone: Asia/Bangkok
+files_edited_by_reviewer: none
+verdict: FAIL
+max_open_severity: S2
+open_findings: F-005,F-010,F-011
+
+reviewed_evidence:
+  path: docs/reports/evidence/TRAIN-ARGS-20260822-dialect-v2.txt
+  bytes: 4725
+  sha256: 49b29aa755890422863cc2821a293abed612a4981e93d384ac112edc480cdda1
+
+closure:
+  F-001: resolved
+  F-002: resolved_for_original_scope
+  F-003: resolved
+  F-004: resolved; quantize aliases exact 11/11 source match
+  F-005: partial/open S2 due F-010 residual coverage gap
+  F-006: resolved_for_current_artifacts; enforcement gap is F-011
+  F-007: resolved
+  F-008: resolved
+  F-009: resolved_as_gate_wiring; cleanliness implementation affected by F-010
+  F-010: partial/open S2
+  F-011: new/open S2
+
+registry_adversarial_results:
+  quoted_integer: reject
+  quoted_boolean: reject
+  quoted_null: reject
+  quoted_schema: reject
+  missing_space_after_colon: reject
+  tab_after_colon: reject
+  trailing_whitespace: reject
+  malformed_flow_separators: reject
+  registry_edit_plus_recomputed_recorded_fingerprint: reject
+  markdown_edit_plus_recomputed_body_and_manifest_hashes: reject
+  quantize_alias_target_mutation: reject
+
+fingerprint_enumeration:
+  scalar_leaves: 968
+  leaves_affecting_fingerprint: 967
+  intentional_exclusion: upstream.manifest_fingerprint
+  exclusion_guard: exact schema and checker-side pin reject removal/change
+
+normative_markdown_mutations_rejected:
+  - epochs and quantize type columns
+  - legacy half target/behavior
+  - scale range prose
+  - cfg merge order
+  - CPU/CUDA batch prose
+  - quantize alias prose
+
+F-010_reproduction:
+  normal_tracked_mutation: 'status=M; checker rc=1'
+  normal_untracked_file: 'status=??; checker rc=1'
+  assume_unchanged_mutation: 'status empty; ls-files -v prefix h; checker rc=0 unexpected'
+  skip_worktree_mutation: 'status empty; ls-files -v prefix S; checker rc=0 unexpected'
+  mutated_path: ultralytics/data/augment.py
+  exact_origin_head_preserved: true
+  root_cause: git status honors index concealment flags
+
+F-011_combined_validator_reproduction:
+  nonexistent_latest_revision_record: 'train=0 problems; generic docs=0 problems'
+  missing_latest_revision_record: 'train=0; generic docs=0'
+  invalid_date_never: 'train=0; generic docs=0'
+  misleading_title: 'train=0; generic docs=0'
+  unknown_runtime_implemented_true: 'train=0; generic docs=0'
+  revises_REV_BOGUS: 'train=0; generic docs rejects missing accountability fields'
+  revises_empty_list: 'train=0; generic docs=0'
+
+positive_baseline:
+  references_lock_only: rc=0
+  references_full: rc=0
+  train_registry_only: rc=0
+  train_full_source: rc=0
+  docs: 'rc=0; 36 files'
+  tests: 'rc=0; 30/30'
+  shell_syntax: rc=0
+  diff_check: rc=0
+  git_fsck_project_upstream_dgn2: rc=0
+
+independent_inventory:
+  canonical: 115
+  extras: 2
+  legacy: 9
+  api_controls: 1
+  total_public_names: 127
+  float: 16
+  fraction: 26
+  integer: 11
+  boolean: 33
+  string: 4
+  special: 3
+  centrally_untyped: 22
+  quantize_aliases: 11
+
+required_closure:
+  F-010:
+    - reject any nondefault git ls-files -v index flag including h and S
+    - or compare every tracked worktree blob independently of concealment flags
+    - add assume-unchanged and skip-worktree regressions
+  F-011:
+    - exact allowed front-matter schema and values
+    - ISO date, title and revises validation
+    - required latest_revision_record that resolves to current revision record
+    - reject unknown metadata
+    - add combined train/docs checker regressions
+
+final_verdict: FAIL
+final_max_severity: S2
+notes:
+  - no S0 or S1 remains open
+  - generated_at is exact-lexeme pinned; YAML date resolution is informational only
+  - all mutations used memory or disposable clones
+  - all project/reference worktrees remained clean

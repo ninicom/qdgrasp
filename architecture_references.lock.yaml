@@ -1,0 +1,108 @@
+schema_version: 1
+generated_at: 2026-08-22
+purpose: >-
+  Read-only upstream architecture references. These checkouts are isolated under
+  .references/ and are not importable product dependencies or release sources.
+references:
+  - id: graspdiffuser
+    role: primary_architecture_reference
+    repository: https://github.com/leggedrobotics/GraspDiffuser
+    commit: ae085627ab0108527255a3da8f6728010a5f1516
+    license:
+      spdx: MIT
+      file: .references/architectures/GraspDiffuser/LICENSE
+      license_sha256: 04e33fe86b4b490c9053df5f223a828e59257e67ea76695a7dc0d1b0ad8fd94d
+      notice_file: .references/architectures/GraspDiffuser/NOTICE
+      notice_sha256: 99a7798280dde1ff67a0658d7a49578a99c0e1e6f09ac436da16e91bca585e78
+    checkout: .references/architectures/GraspDiffuser
+    architecture:
+      conditioning: point_cloud_scene_encoder
+      generator: conditional_diffusion_ddpm
+      pose_representation: hand_pose_with_rotation_utils
+      hand_support: config_selectable_hand_model
+      config: Hydra YAML presets under .references/architectures/GraspDiffuser/configs
+      training: PyTorch Lightning module
+    allowed_use:
+      - inspect module boundaries, diffusion scheduler, data collation and normalization
+      - write a QDGrasp implementation with explicit provenance and tests
+      - cite the upstream repository and preserve MIT/NOTICE attribution if code is copied
+    forbidden_use:
+      - import or copy files into qdgrasp/ without an independent provenance review
+      - use upstream datasets, checkpoints, robot assets or external dependencies as if MIT
+      - treat QDGrasp Anything-derived portions or GraspQP as covered by this repository license
+    external_license_review:
+      required: true
+      items: [GraspQP, datasets, robot_assets, dependencies]
+  - id: dexdiffuser
+    role: secondary_architecture_reference
+    repository: https://github.com/YuLiHN/DexDiffuser
+    commit: d436e771a37d914465276ab8c505f597d5801ed3
+    license:
+      spdx: MIT
+      file: .references/architectures/DexDiffuser/LICENSE
+      license_sha256: d0a22a32ffe2a4a676854a877aa6dfed3acd33e756aca10aeb353b5edac3134f
+    checkout: .references/architectures/DexDiffuser
+    architecture:
+      conditioning: partial_object_point_cloud
+      generator: conditional_diffusion_dexsampler
+      evaluator: separate_dex_evaluator
+      refinement: iterative_grasp_refinement
+      config: OmegaConf/Hydra YAML
+    allowed_use:
+      - compare sampler/evaluator separation and refinement contracts
+      - implement independent diffusion and evaluation interfaces
+    forbidden_use:
+      - use linked checkpoints, data, IsaacGym assets or PyTorch3D/BPS as MIT project content
+      - copy code without MIT attribution and file-level provenance
+    external_license_review:
+      required: true
+      items: [checkpoints, datasets, IsaacGym, PyTorch3D, BPS]
+  - id: cedex
+    role: cross_embodiment_contact_reference
+    repository: https://github.com/GeorgeWuzy/CEDex-Grasp
+    commit: ef59a9fbec062b5aeedf3b7ee7e3f535718bc5a6
+    license:
+      spdx: MIT
+      file: .references/architectures/CEDex-Grasp/LICENSE
+      license_sha256: 53cbd24b80c26ac3b0d879c31285b5cc6c2bb07a863af5e1bfc899322b2951c0
+    checkout: .references/architectures/CEDex-Grasp
+    architecture:
+      conditioning: human_like_contact_representation
+      generator: contact_map_cvae_plus_robot_optimization
+      embodiments: [ShadowHand, Allegro, Barrett, Robotiq-3F, LEAP]
+      validation: IsaacGym_contact_and_controller_filter
+    allowed_use:
+      - inspect contact-map remapping and new-hand adaptation interfaces
+      - compare contact-first versus direct pose generation
+    forbidden_use:
+      - redistribute bundled .pt checkpoints, data, meshes, objects or Isaac assets
+      - assume MIT applies to GenDexGrasp, ContactGen, datasets or dependencies
+      - use CEDex data as QDGrasp labels or official weights
+    external_license_review:
+      required: true
+      items: [GenDexGrasp, ContactGen, datasets, robot_assets, checkpoints, IsaacGym]
+  - id: graspgenx
+    role: permissive_cross_embodiment_gripper_reference
+    repository: https://github.com/NVlabs/GraspGenX
+    commit: b9429097728cb1c430dd78b92edf17ba318aad03
+    license:
+      spdx: Apache-2.0
+      file: .references/architectures/GraspGenX/LICENSE
+      license_sha256: 361e69a3720018973bf2ffc3b8b009562b6c341d29fc7bdc9c26b9d15aff21d8
+      checkpoint_license: NVIDIA Open Model License (separate; not imported)
+    checkout: .references/architectures/GraspGenX
+    architecture:
+      conditioning: swept_volume_gripper_representation
+      generator: cross_embodiment_6dof_diffusion
+      generalization: zero_shot_to_novel_grippers
+      config: JSON/YAML gripper profiles and wizard
+    allowed_use:
+      - inspect gripper-conditioning, profile registry, inference and test layout
+      - adapt software boundary ideas independently to dexterous HandGraph
+    forbidden_use:
+      - treat NVIDIA-licensed checkpoints as covered by the repository AGPL license
+      - treat 6-DOF gripper model as a dexterous joint-state solution
+      - copy third-party dependencies or robot assets without their own review
+    external_license_review:
+      required: true
+      items: [model_checkpoints, third_party_dependencies, gripper_assets]

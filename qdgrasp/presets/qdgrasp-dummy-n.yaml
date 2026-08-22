@@ -1,0 +1,7 @@
+# Phase 1 lifecycle fixture; not a research model.
+schema: qdgrasp/model/v1
+name: qdgrasp-dummy-n
+type: dummy_grasp
+params:
+  hidden: 64
+  grasps: 4

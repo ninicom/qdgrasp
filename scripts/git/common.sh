@@ -24,6 +24,14 @@ require_branch() {
 
 run_project_checks() {
   git diff --check
+  PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_references.py --lock-only
+  PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py --registry-only
+  if [[ -d .references ]]; then
+    PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_references.py \
+      --source-root .references
+    PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py \
+      --source .references/ultralytics
+  fi
   PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs.py --root .
   PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
     -s scripts/tests -p 'test_*.py' -v

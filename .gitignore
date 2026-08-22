@@ -17,10 +17,10 @@ build/
 dist/
 *.egg-info/
 
-runs/
-weights/
-checkpoints/
-datasets/
+/runs/
+/weights/
+/checkpoints/
+/datasets/
 *.pt
 *.pth
 *.ckpt

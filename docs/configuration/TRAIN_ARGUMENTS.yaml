@@ -1,0 +1,226 @@
+schema_version: 2
+registry_id: DEXGRASP-TRAIN-ARGS-ULTRALYTICS-8.4.125
+status: active
+generated_at: 2026-08-22
+related_plan: PLAN-V2
+
+upstream:
+  repository: https://github.com/ultralytics/ultralytics.git
+  tag: v8.4.125
+  commit: 329682a29d27203582ba30e519340f95abccc6a6
+  default_config_path: ultralytics/cfg/default.yaml
+  default_config_sha256: eb5e9ab6825a5d55076f8b38aed00953dec722ed5d5368a6584df35f50f32839
+  config_validator_path: ultralytics/cfg/__init__.py
+  config_validator_sha256: ea9a98b498686f44561e9ce9892aa0e7de52226429496b08a20475ebbfa4eed8
+  model_api_path: ultralytics/engine/model.py
+  model_api_sha256: 69cb4c9c6f572c50bd35328e5154e6b596ed50dc10d218584da8aed3f7c9b32a
+  trainer_path: ultralytics/engine/trainer.py
+  trainer_sha256: d02bfd82d2af38fb58a6fe7903ef0cb9a93633a75b3db778768896d6c57a32e6
+  canonical_key_count: 115
+  extra_config_key_count: 2
+  legacy_key_count: 9
+  api_control_count: 1
+  total_public_names: 127
+  canonical_disposition_counts: retain=31,adapt=27,defer=8,reject=49
+  public_disposition_counts: retain=32,adapt=34,defer=8,reject=53
+  documentation_body_sha256: 8e9e9702d8391eb5cfb6be9100df00ac9885e4c369a7143da4c63e529c459856
+  manifest_fingerprint: 0efcc5be32bd033afc6db2475b93f96b40e4378be3077e300bbb7c456b915ab4
+
+upstream_validation:
+  cfg_float_keys: angle,batch,box,cls,degrees,dfl,dgrad,dis,dlog,kobj,pose,rle,shear,time,warmup_epochs,workspace
+  cfg_fraction_keys: bgr,cls_pw,conf,copy_paste,cutmix,dlam,dropout,erasing,fliplr,flipud,fraction,hsv_h,hsv_s,hsv_v,iou,lr0,lrf,mixup,momentum,mosaic,multi_scale,perspective,translate,warmup_bias_lr,warmup_momentum,weight_decay
+  cfg_int_keys: close_mosaic,epochs,line_width,mask_ratio,max_det,nbs,patience,save_period,seed,vid_stride,workers
+  cfg_int_min: mask_ratio=1,max_det=1,nbs=1,seed=0,vid_stride=1
+  cfg_bool_keys: agnostic_nms,augment,channels_last,cls_remap,cos_lr,deterministic,dnn,dynamic,end2end,exist_ok,keras,nms,optimize,overlap_mask,plots,profile,rect,retina_masks,save,save_conf,save_crop,save_frames,save_json,save_txt,show,show_boxes,show_conf,show_labels,simplify,single_cls,val,verbose,visualize
+  cfg_str_keys: auto_augment,copy_paste_mode,optimizer,split
+  special_keys: compile,quantize,scale
+  centrally_untyped_keys: amp,cache,cfg,classes,data,device,distill_model,embed,format,freeze,imgsz,mode,model,name,opset,pretrained,project,resume,source,stream_buffer,task,tracker
+  resume_mutable_keys: augmentations,batch,cache,close_mosaic,device,distill_model,freeze,imgsz,patience,plots,save_dir,save_period,time,val,workers
+
+upstream_merge_contract:
+  get_cfg_priority: base_then_overrides
+  model_train_without_cfg: self_overrides_then_method_defaults_data_model_task_then_kwargs_then_forced_mode_train
+  model_train_with_cfg: loaded_cfg_replaces_self_overrides_then_method_defaults_data_model_task_then_kwargs_then_forced_mode_train
+  cfg_data_special_case: loaded_cfg_data_is_method_default_unless_kwargs_data
+  model_task_authority: current_model_and_task_override_cfg_values
+  unknown_key_policy: reject_with_suggestion
+  typed_key_count: 93
+  centrally_untyped_key_count: 22
+
+upstream_constraints:
+  float_keys: integer_or_float
+  fraction_keys: closed_0_1
+  dataset_fraction: open_0_closed_1
+  int_keys: integer_only
+  typed_none: rejected_when_pinned_default_is_nonnull_except_auto_augment
+  int_minimums: mask_ratio_1,max_det_1,nbs_1,seed_0,vid_stride_1
+  scale: scalar_closed_0_1_or_exactly_two_numbers_pair_range_unchecked
+  compile: boolean_or_string_mode_not_centrally_enumerated
+  quantize: null_or_8_16_32_int8_fp16_fp32_w8a8_w16a16_w32a32_w8a16_w8a32
+  quantize_aliases: 8=8,16=16,32=32,int8=8,fp16=16,fp32=32,w8a8=8,w16a16=16,w32a32=32,w8a16=w8a16,w8a32=w8a32
+  auto_augment: string_or_null_downstream_randaugment_augmix_autoaugment
+  copy_paste_mode: downstream_flip_or_mixup
+  optimizer: downstream_SGD_MuSGD_Adam_Adamax_AdamW_NAdam_RAdam_RMSProp_auto
+  batch_runtime: integer_or_cuda_single_device_fraction
+
+# Trường của mỗi entry: default, group, type, train_role, disposition,
+# dexgrasp_key và device. Giá trị disposition:
+# retain=same public meaning; adapt=same key with an explicit grasp contract;
+# defer=reserved for a later lifecycle mode; reject=known but invalid for grasp.
+canonical_arguments:
+  task: {default: detect, group: global, type: enum, train_role: routing, disposition: adapt, dexgrasp_key: task, device: portable}
+  mode: {default: train, group: global, type: enum, train_role: routing, disposition: retain, dexgrasp_key: mode, device: portable}
+  model: {default: null, group: train, type: path_or_null, train_role: train_core, disposition: retain, dexgrasp_key: model, device: portable}
+  data: {default: null, group: train, type: path_or_null, train_role: train_core, disposition: retain, dexgrasp_key: data, device: portable}
+  epochs: {default: 100, group: train, type: integer, train_role: train_core, disposition: retain, dexgrasp_key: epochs, device: portable}
+  time: {default: null, group: train, type: number_or_null, train_role: train_core, disposition: retain, dexgrasp_key: time, device: portable}
+  patience: {default: 100, group: train, type: integer, train_role: train_core, disposition: retain, dexgrasp_key: patience, device: portable}
+  batch: {default: 16, group: train, type: number, train_role: train_core, disposition: adapt, dexgrasp_key: batch, device: cpu_adjust}
+  imgsz: {default: 640, group: train, type: integer_or_list, train_role: train_core, disposition: adapt, dexgrasp_key: imgsz, device: portable}
+  save: {default: True, group: train, type: boolean, train_role: train_core, disposition: retain, dexgrasp_key: save, device: portable}
+  save_period: {default: -1, group: train, type: integer, train_role: train_core, disposition: retain, dexgrasp_key: save_period, device: portable}
+  cache: {default: False, group: train, type: boolean_or_enum, train_role: train_core, disposition: adapt, dexgrasp_key: cache, device: portable}
+  device: {default: null, group: train, type: device_selector, train_role: train_core, disposition: adapt, dexgrasp_key: device, device: portable}
+  workers: {default: 8, group: train, type: integer, train_role: train_core, disposition: adapt, dexgrasp_key: workers, device: cpu_adjust}
+  project: {default: null, group: train, type: path_or_null, train_role: train_core, disposition: retain, dexgrasp_key: project, device: portable}
+  name: {default: null, group: train, type: string_or_null, train_role: train_core, disposition: retain, dexgrasp_key: name, device: portable}
+  exist_ok: {default: False, group: train, type: boolean, train_role: train_core, disposition: retain, dexgrasp_key: exist_ok, device: portable}
+  pretrained: {default: True, group: train, type: boolean_or_path, train_role: train_core, disposition: adapt, dexgrasp_key: pretrained, device: portable}
+  cls_remap: {default: True, group: train, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  optimizer: {default: auto, group: train, type: string, train_role: optimization, disposition: retain, dexgrasp_key: optimizer, device: portable}
+  verbose: {default: True, group: train, type: boolean, train_role: train_core, disposition: retain, dexgrasp_key: verbose, device: portable}
+  seed: {default: 0, group: train, type: integer, train_role: train_core, disposition: retain, dexgrasp_key: seed, device: portable}
+  deterministic: {default: True, group: train, type: boolean, train_role: train_core, disposition: retain, dexgrasp_key: deterministic, device: portable_guarded}
+  single_cls: {default: False, group: train, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  rect: {default: False, group: train, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  cos_lr: {default: False, group: train, type: boolean, train_role: optimization, disposition: retain, dexgrasp_key: cos_lr, device: portable}
+  close_mosaic: {default: 10, group: train, type: integer, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  resume: {default: False, group: train, type: boolean_or_path, train_role: train_core, disposition: adapt, dexgrasp_key: resume, device: portable}
+  amp: {default: True, group: train, type: boolean, train_role: train_core, disposition: adapt, dexgrasp_key: amp, device: cpu_adjust}
+  fraction: {default: 1.0, group: train, type: fraction, train_role: train_core, disposition: retain, dexgrasp_key: fraction, device: portable}
+  profile: {default: False, group: train, type: boolean, train_role: train_core, disposition: adapt, dexgrasp_key: profile, device: portable_guarded}
+  freeze: {default: null, group: train, type: integer_or_list_or_null, train_role: train_core, disposition: retain, dexgrasp_key: freeze, device: portable}
+  multi_scale: {default: 0.0, group: train, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  compile: {default: False, group: train, type: boolean_or_string, train_role: train_core, disposition: adapt, dexgrasp_key: compile, device: portable_guarded}
+  channels_last: {default: False, group: train, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  overlap_mask: {default: True, group: segmentation, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  mask_ratio: {default: 4, group: segmentation, type: integer, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  dropout: {default: 0.0, group: classification, type: fraction, train_role: train_core, disposition: adapt, dexgrasp_key: dropout, device: portable}
+  val: {default: True, group: validation, type: boolean, train_role: validation, disposition: retain, dexgrasp_key: val, device: portable}
+  split: {default: val, group: validation, type: string, train_role: validation, disposition: retain, dexgrasp_key: split, device: portable}
+  save_json: {default: False, group: validation, type: boolean, train_role: validation, disposition: adapt, dexgrasp_key: save_json, device: portable}
+  conf: {default: null, group: validation, type: fraction_or_null, train_role: validation, disposition: adapt, dexgrasp_key: conf, device: portable}
+  iou: {default: 0.7, group: validation, type: fraction, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  max_det: {default: 300, group: validation, type: integer, train_role: validation, disposition: adapt, dexgrasp_key: max_det, device: portable}
+  quantize: {default: null, group: validation, type: precision_or_null, train_role: validation, disposition: adapt, dexgrasp_key: quantize, device: mode_specific}
+  dnn: {default: False, group: validation, type: boolean, train_role: compatibility_only, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  plots: {default: True, group: validation, type: boolean, train_role: validation, disposition: adapt, dexgrasp_key: plots, device: portable}
+  end2end: {default: null, group: validation, type: boolean_or_null, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  source: {default: null, group: predict, type: source_or_null, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: source, device: portable}
+  vid_stride: {default: 1, group: predict, type: integer, train_role: lifecycle_only, disposition: defer, dexgrasp_key: vid_stride, device: mode_specific}
+  stream_buffer: {default: False, group: predict, type: boolean, train_role: lifecycle_only, disposition: defer, dexgrasp_key: stream_buffer, device: mode_specific}
+  visualize: {default: False, group: predict, type: boolean, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: visualize, device: portable}
+  augment: {default: False, group: predict, type: boolean, train_role: lifecycle_only, disposition: defer, dexgrasp_key: augment, device: mode_specific}
+  agnostic_nms: {default: False, group: predict, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  classes: {default: null, group: predict, type: integer_or_list_or_null, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  retina_masks: {default: False, group: predict, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  embed: {default: null, group: predict, type: list_or_null, train_role: lifecycle_only, disposition: defer, dexgrasp_key: embed, device: mode_specific}
+  show: {default: False, group: visualize, type: boolean, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: show, device: portable}
+  save_frames: {default: False, group: visualize, type: boolean, train_role: lifecycle_only, disposition: defer, dexgrasp_key: save_frames, device: mode_specific}
+  save_txt: {default: False, group: visualize, type: boolean, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: save_txt, device: portable}
+  save_conf: {default: False, group: visualize, type: boolean, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: save_conf, device: portable}
+  save_crop: {default: False, group: visualize, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  show_labels: {default: True, group: visualize, type: boolean, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: show_labels, device: portable}
+  show_conf: {default: True, group: visualize, type: boolean, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: show_conf, device: portable}
+  show_boxes: {default: True, group: visualize, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  line_width: {default: null, group: visualize, type: integer_or_null, train_role: lifecycle_only, disposition: adapt, dexgrasp_key: line_width, device: portable}
+  format: {default: torchscript, group: export, type: string, train_role: export_only, disposition: adapt, dexgrasp_key: format, device: mode_specific}
+  keras: {default: False, group: export, type: boolean, train_role: export_only, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  optimize: {default: False, group: export, type: boolean, train_role: export_only, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  dynamic: {default: False, group: export, type: boolean, train_role: export_only, disposition: retain, dexgrasp_key: dynamic, device: mode_specific}
+  simplify: {default: True, group: export, type: boolean, train_role: export_only, disposition: adapt, dexgrasp_key: simplify, device: mode_specific}
+  opset: {default: null, group: export, type: integer_or_null, train_role: export_only, disposition: retain, dexgrasp_key: opset, device: mode_specific}
+  workspace: {default: null, group: export, type: number_or_null, train_role: export_only, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  nms: {default: False, group: export, type: boolean, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  lr0: {default: 0.01, group: hyperparameters, type: fraction, train_role: optimization, disposition: retain, dexgrasp_key: lr0, device: portable}
+  lrf: {default: 0.01, group: hyperparameters, type: fraction, train_role: optimization, disposition: retain, dexgrasp_key: lrf, device: portable}
+  momentum: {default: 0.937, group: hyperparameters, type: fraction, train_role: optimization, disposition: retain, dexgrasp_key: momentum, device: portable}
+  weight_decay: {default: 0.0005, group: hyperparameters, type: fraction, train_role: optimization, disposition: retain, dexgrasp_key: weight_decay, device: portable}
+  warmup_epochs: {default: 3.0, group: hyperparameters, type: number, train_role: optimization, disposition: retain, dexgrasp_key: warmup_epochs, device: portable}
+  warmup_momentum: {default: 0.8, group: hyperparameters, type: fraction, train_role: optimization, disposition: retain, dexgrasp_key: warmup_momentum, device: portable}
+  warmup_bias_lr: {default: 0.1, group: hyperparameters, type: fraction, train_role: optimization, disposition: retain, dexgrasp_key: warmup_bias_lr, device: portable}
+  distill_model: {default: null, group: hyperparameters, type: path_or_null, train_role: optimization, disposition: defer, dexgrasp_key: distill_model, device: mode_specific}
+  dis: {default: 6.0, group: hyperparameters, type: number, train_role: optimization, disposition: defer, dexgrasp_key: dis, device: mode_specific}
+  box: {default: 7.5, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  cls: {default: 0.5, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  cls_pw: {default: 0.0, group: hyperparameters, type: fraction, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  dfl: {default: 1.5, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  pose: {default: 12.0, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  kobj: {default: 1.0, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  rle: {default: 1.0, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  angle: {default: 1.0, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  dlog: {default: 1.0, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  dgrad: {default: 0.5, group: hyperparameters, type: number, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  dlam: {default: 1.0, group: hyperparameters, type: fraction, train_role: task_specific, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  nbs: {default: 64, group: hyperparameters, type: integer, train_role: optimization, disposition: retain, dexgrasp_key: nbs, device: portable}
+  hsv_h: {default: 0.015, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  hsv_s: {default: 0.7, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  hsv_v: {default: 0.4, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  degrees: {default: 0.0, group: hyperparameters, type: number, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  translate: {default: 0.1, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  scale: {default: 0.5, group: hyperparameters, type: number_or_pair, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  shear: {default: 0.0, group: hyperparameters, type: number, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  perspective: {default: 0.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  flipud: {default: 0.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  fliplr: {default: 0.5, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  bgr: {default: 0.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  mosaic: {default: 1.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  mixup: {default: 0.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: defer, dexgrasp_key: mixup, device: mode_specific}
+  cutmix: {default: 0.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  copy_paste: {default: 0.0, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  copy_paste_mode: {default: flip, group: hyperparameters, type: string, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  auto_augment: {default: randaugment, group: hyperparameters, type: string_or_null, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  erasing: {default: 0.4, group: hyperparameters, type: fraction, train_role: augmentation, disposition: reject, dexgrasp_key: null, device: not_applicable}
+  cfg: {default: null, group: custom, type: path_or_null, train_role: routing, disposition: retain, dexgrasp_key: cfg, device: portable}
+  tracker: {default: tracktrack.yaml, group: tracker, type: path_or_string, train_role: lifecycle_only, disposition: reject, dexgrasp_key: null, device: not_applicable}
+
+extra_config_arguments:
+  augmentations: {source: allowed_custom_keys, type: python_list_or_named_yaml_list, disposition: adapt, dexgrasp_key: augmentations, train_role: augmentation}
+  save_dir: {source: allowed_custom_keys, type: path, disposition: retain, dexgrasp_key: save_dir, train_role: train_core}
+
+legacy_arguments:
+  boxes: {source: deprecated_mapping, target: show_boxes, behavior: alias, disposition: reject}
+  hide_labels: {source: deprecated_mapping, target: show_labels, behavior: inverted_alias, disposition: adapt}
+  hide_conf: {source: deprecated_mapping, target: show_conf, behavior: inverted_alias, disposition: adapt}
+  line_thickness: {source: deprecated_mapping, target: line_width, behavior: alias, disposition: adapt}
+  half: {source: precision_alias, target: quantize, behavior: value_16, disposition: adapt}
+  int8: {source: precision_alias, target: quantize, behavior: value_8, disposition: adapt}
+  label_smoothing: {source: removed_keys, target: null, behavior: warn_and_remove, disposition: reject}
+  save_hybrid: {source: removed_keys, target: null, behavior: warn_and_remove, disposition: reject}
+  crop_fraction: {source: removed_keys, target: null, behavior: warn_and_remove, disposition: reject}
+
+api_controls:
+  trainer: {source: Model.train_signature, type: trainer_or_null, disposition: adapt, dexgrasp_key: trainer}
+
+# Các extension này là proposal có định danh; default/range phải được khóa trong
+# feature runtime tương ứng trước khi chuyển status sang implemented.
+dexgrasp_extensions:
+  robot: {status: required_design, type: path_or_profile, purpose: robot_profile}
+  sim: {status: required_design, type: enum, purpose: validation_backend}
+  max_steps: {status: required_design, type: integer_or_null, purpose: step_budget}
+  points_per_scene: {status: required_design, type: integer, purpose: raw_point_budget}
+  voxel_size: {status: required_design, type: positive_number, purpose: tokenizer_resolution}
+  max_tokens: {status: required_design, type: integer, purpose: active_token_budget}
+  flow_steps: {status: required_design, type: positive_integer, purpose: wrist_solver_steps}
+  topk: {status: required_design, type: positive_integer, purpose: returned_grasps}
+  radius: {status: required_design, type: positive_number, purpose: seed_suppression_radius}
+  rotation_aug_deg: {status: required_design, type: nonnegative_number, purpose: se3_augmentation}
+  translation_aug_m: {status: required_design, type: nonnegative_number, purpose: se3_augmentation}
+  point_jitter_std: {status: required_design, type: nonnegative_number, purpose: point_augmentation}
+  point_dropout: {status: required_design, type: fraction, purpose: point_augmentation}
+  loss_objectness: {status: required_design, type: nonnegative_number, purpose: loss_gain}
+  loss_graspness: {status: required_design, type: nonnegative_number, purpose: loss_gain}
+  loss_flow: {status: required_design, type: nonnegative_number, purpose: loss_gain}
+  loss_joint: {status: required_design, type: nonnegative_number, purpose: loss_gain}
+  loss_quality: {status: required_design, type: nonnegative_number, purpose: loss_gain}
+  quality_negatives: {status: required_design, type: enum, purpose: quality_sampling}

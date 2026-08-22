@@ -3,8 +3,8 @@
 
 The checker intentionally uses only the Python standard library.  It validates
 published records under ``docs/reports``, ``docs/sessions``, ``docs/reviews``,
-``docs/revisions`` and ``docs/metrics`` while leaving templates and README
-files alone.
+``docs/revisions`` and ``docs/metrics`` plus normative configuration registries,
+while leaving templates alone.
 """
 
 from __future__ import annotations
@@ -19,13 +19,28 @@ from typing import Iterable, Sequence
 
 
 RECORD_DIRECTORIES = ("reports", "sessions", "reviews", "revisions", "metrics")
-MANAGED_INDEX_DIRECTORIES = ("archive", "reports", "reviews", "revisions", "sessions")
-NORMATIVE_CATEGORIES = {"plan", "governance", "decision", "schema", "index"}
+MANAGED_INDEX_DIRECTORIES = (
+    "archive",
+    "configuration",
+    "reports",
+    "reviews",
+    "revisions",
+    "sessions",
+)
+NORMATIVE_CATEGORIES = {
+    "plan",
+    "governance",
+    "decision",
+    "schema",
+    "configuration",
+    "index",
+}
 EXPECTED_NORMATIVE_TYPES = {
     "plan": "plan",
     "governance": "policy",
     "decision": "decision",
     "schema": "policy",
+    "configuration": "registry",
     "index": "index",
 }
 
@@ -80,6 +95,16 @@ REVISION_RECORD_SECTIONS = (
     "Mức độ cần thiết",
     "Phạm vi và tác động",
     "Xác minh",
+)
+REVISION_RECORD_V2_SECTIONS = (
+    "Liên kết truy vết",
+    "Lý do chỉnh sửa",
+    "Mức độ cần thiết",
+    "Phạm vi và tác động",
+    "Nội dung thay đổi đã hoàn tất trong phiên này",
+    "Xác minh",
+    "Ảnh hưởng tới báo cáo và quyết định cũ",
+    "Xác nhận đóng hồ sơ",
 )
 
 GENERIC_REPORT_FIELDS = (
@@ -487,7 +512,20 @@ def validate_third_party_review(document: MarkdownDocument, issues: list[Issue])
 
 def validate_revision_record(document: MarkdownDocument, issues: list[Issue]) -> None:
     require_metadata(document, REVISION_RECORD_FIELDS, issues)
-    require_sections(document, REVISION_RECORD_SECTIONS, issues)
+    revision_schema = clean_scalar(document.metadata.get("revision_schema", "1"))
+    if revision_schema not in {"1", "2"}:
+        issues.append(
+            Issue(
+                document.path,
+                document.metadata_lines.get("revision_schema", 1),
+                "revision_schema phải là '1' hoặc '2'",
+            )
+        )
+    require_sections(
+        document,
+        REVISION_RECORD_V2_SECTIONS if revision_schema == "2" else REVISION_RECORD_SECTIONS,
+        issues,
+    )
     if "revises" in document.metadata and not has_revision(document.metadata["revises"]):
         issues.append(
             Issue(
@@ -631,6 +669,9 @@ def discover_documents(root: Path) -> list[tuple[Path, str]]:
         add(path, "governance")
     for path in sorted((docs_root / "decisions").glob("*.md")):
         add(path, "decision")
+    for path in sorted((docs_root / "configuration").glob("*.md")):
+        if path.name.casefold() != "readme.md":
+            add(path, "configuration")
     for directory in MANAGED_INDEX_DIRECTORIES:
         add(docs_root / directory / "README.md", "index")
 
