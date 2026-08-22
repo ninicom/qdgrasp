@@ -206,6 +206,55 @@ def check_normalization_reproducibility(problems: list[str], root: Path) -> None
             problems.append(f"normalized Allegro URDF failed MuJoCo forward: {exc}")
 
 
+def check_derived_assets_are_portable(problems: list[str], root: Path) -> None:
+    """Committed derived assets must not embed developer-machine paths.
+
+    PLAN.md requires every project path to be relative to the project root or the
+    working directory.  A normalized URDF that hard-codes the absolute mesh
+    directory of the machine that produced it is unusable anywhere else.
+    """
+
+    derived_root = root / "qdgrasp/assets/derived"
+    if not derived_root.is_dir():
+        return
+    checked = 0
+    for path in sorted(derived_root.rglob("*")):
+        if not path.is_file() or path.suffix not in {".urdf", ".xml", ".json"}:
+            continue
+        checked += 1
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for marker in ('="/', '="~', '"/home/', '"/media/', '"/Users/'):
+                if marker in line:
+                    problems.append(
+                        f"{path.relative_to(root)}:{line_number}: derived asset embeds an absolute path"
+                    )
+                    break
+    if checked == 0:
+        problems.append("no derived asset was checked for portability")
+
+
+def check_normalization_manifest_is_per_artifact(problems: list[str]) -> None:
+    """Two assets normalized into one directory must keep both manifests."""
+
+    with tempfile.TemporaryDirectory(prefix="qdgrasp-manifest-gate-") as tmpdir:
+        shared = Path(tmpdir)
+        source = shared / "source.urdf"
+        source.write_text(
+            '<robot name="probe"><link name="root"><inertial><mass value="0.1"/>'
+            '<inertia ixx="1e-4" ixy="0" ixz="0" iyy="1e-4" iyz="0" izz="1e-4"/>'
+            "</inertial></link></robot>",
+            encoding="utf-8",
+        )
+        first = normalize_urdf(source, shared / "first.urdf")
+        second = normalize_urdf(source, shared / "second.urdf")
+        if first["manifest_path"] == second["manifest_path"]:
+            problems.append("normalization manifests collide when two assets share an output directory")
+        for manifest in (first, second):
+            if not Path(manifest["manifest_path"]).is_file():
+                problems.append(f"normalization manifest was not written: {manifest['manifest_path']}")
+
+
 def check_semantic_link_negative_tests(problems: list[str]) -> None:
     # 1. Reject missing palm_link
     try:
@@ -439,6 +488,8 @@ def main() -> int:
     check_urdf_and_mjcf_parsing(problems, root)
     check_mesh_resolution(problems, root)
     check_normalization_reproducibility(problems, root)
+    check_normalization_manifest_is_per_artifact(problems)
+    check_derived_assets_are_portable(problems, root)
     check_semantic_link_negative_tests(problems)
     check_forward_kinematics_ground_truth(problems, root)
     check_forward_kinematics_and_batch_parity(problems)

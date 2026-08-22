@@ -35,7 +35,18 @@ def sanitize_inertia_matrix(
     min_eig = float(np.min(eigvals))
 
     min_diag = max(mass * 1e-4, 1e-6)
-    if min_eig <= 0 or (abs(ixy) > max(ixx, iyy)) or (abs(ixz) > max(ixx, izz)) or (abs(iyz) > max(iyy, izz)):
+    # The triangle inequality is checked on the pass-through path too: an inertia
+    # tensor can be positive definite and still be rejected by MuJoCo for
+    # violating A + B >= C, which is one of the errors this transform exists to
+    # repair.
+    violates_triangle = (ixx + iyy < izz) or (ixx + izz < iyy) or (iyy + izz < ixx)
+    if (
+        min_eig <= 0
+        or violates_triangle
+        or (abs(ixy) > max(ixx, iyy))
+        or (abs(ixz) > max(ixx, izz))
+        or (abs(iyz) > max(iyy, izz))
+    ):
         # Off-diagonal corruption: regularize to diagonal positive-definite inertia
         d_xx = max(abs(ixx), min_diag)
         d_yy = max(abs(iyy), min_diag)
@@ -112,7 +123,8 @@ def normalize_urdf(
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    # Deterministic XML serialization with 2-space indentation and sorted attributes
+    # Deterministic XML serialisation: 2-space indentation, and ElementTree keeps
+    # attributes in document order, so the same input always yields the same bytes.
     ET.indent(tree, space="  ")
     out_xml_bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)
     out.write_bytes(out_xml_bytes)
@@ -129,6 +141,10 @@ def normalize_urdf(
         "transforms_applied": transforms_applied,
     }
 
-    manifest_path = out.parent / "normalization_manifest.json"
+    # Named after the artifact, not after the directory: a fixed
+    # ``normalization_manifest.json`` would be overwritten by the next asset
+    # normalised into the same output directory, destroying its provenance.
+    manifest_path = out.with_suffix(out.suffix + ".manifest.json")
+    manifest["manifest_path"] = str(manifest_path)
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return manifest
