@@ -128,20 +128,31 @@ def check_urdf_and_mjcf_parsing(problems: list[str], root: Path) -> None:
 
 
 def check_mesh_resolution(problems: list[str], root: Path) -> None:
-    # For all 3 hands, build RobotSpec and verify all referenced meshes load cleanly
+    """Every mesh a released profile references must resolve and load.
+
+    The count is asserted as well: an empty mesh list satisfies a per-mesh loop
+    vacuously, which is how this check previously passed while none of the three
+    profiles exposed a single mesh path.
+    """
+
     for name in ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"):
         spec = RobotSpec.from_config(name, sample_anchors=False)
+        checked = 0
         for link in spec.links.values():
             for m_path in link.mesh_paths:
+                checked += 1
                 if not m_path.is_file():
                     problems.append(f"{name}: missing mesh file {m_path}")
-                else:
-                    try:
-                        mesh_obj = load_mesh(m_path)
-                        if len(mesh_obj.vertices) == 0:
-                            problems.append(f"{name}: empty mesh vertices in {m_path}")
-                    except Exception as exc:
-                        problems.append(f"{name}: failed to load mesh {m_path}: {exc}")
+                    continue
+                try:
+                    mesh_obj = load_mesh(m_path)
+                except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+                    problems.append(f"{name}: failed to load mesh {m_path}: {exc}")
+                    continue
+                if len(mesh_obj.vertices) == 0:
+                    problems.append(f"{name}: empty mesh vertices in {m_path}")
+        if checked == 0:
+            problems.append(f"{name}: profile exposes no mesh at all, so mesh resolution is unverified")
 
 
 def check_normalization_reproducibility(problems: list[str], root: Path) -> None:

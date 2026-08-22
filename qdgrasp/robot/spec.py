@@ -162,6 +162,9 @@ class RobotSpec:
                 normals_list: list[np.ndarray] = []
 
                 for m in u_link.visual_meshes:
+                    # No blanket except here: a mesh that cannot be resolved or
+                    # loaded must fail the profile, otherwise the zero-missing-mesh
+                    # guarantee is satisfied by silently dropping the mesh.
                     try:
                         resolved = resolve_mesh_path(
                             m.filename,
@@ -169,16 +172,16 @@ class RobotSpec:
                             mesh_root=config.mesh_root,
                             package_roots=config.package_roots,
                         )
-                        mesh_paths.append(resolved)
-                        if sample_anchors:
-                            mesh_obj = load_mesh(resolved)
-                            if m.scale != (1.0, 1.0, 1.0):
-                                mesh_obj.apply_scale(m.scale)
-                            pts, nrms = sample_mesh_surface(mesh_obj, count=anchor_count_per_link, seed=0)
-                            anchors_list.append(pts)
-                            normals_list.append(nrms)
-                    except Exception:
-                        pass
+                    except ConfigError as exc:
+                        raise ConfigError(f"link '{link_name}': {exc}") from exc
+                    mesh_paths.append(resolved)
+                    if sample_anchors:
+                        mesh_obj = load_mesh(resolved)
+                        if m.scale != (1.0, 1.0, 1.0):
+                            mesh_obj.apply_scale(m.scale)
+                        pts, nrms = sample_mesh_surface(mesh_obj, count=anchor_count_per_link, seed=0)
+                        anchors_list.append(pts)
+                        normals_list.append(nrms)
 
                 if anchors_list:
                     surf_anchors = np.concatenate(anchors_list, axis=0)
@@ -292,9 +295,16 @@ class RobotSpec:
                     axis=axis,
                     mass=b.mass,
                     inertia=(b.inertia[0], 0.0, 0.0, b.inertia[1], 0.0, b.inertia[2]),
-                    mesh_paths=[],
-                    surface_anchors=np.zeros((anchor_count_per_link, 3), dtype=np.float32),
-                    surface_normals=np.zeros((anchor_count_per_link, 3), dtype=np.float32),
+                    mesh_paths=list(b.mesh_files),
+                    # Empty rather than a block of zeros: claiming
+                    # ``anchor_count_per_link`` anchors that are all at the origin
+                    # feeds a false anchor count into the graph features.  Real
+                    # anchors need the geom-level pose offsets, and surface
+                    # sampling is not reproducible across trimesh versions (dev
+                    # runs 5.0.0, the cu128 lock pins 4.12.2), so they are left to
+                    # a later phase rather than baked in environment-dependent.
+                    surface_anchors=np.zeros((0, 3), dtype=np.float32),
+                    surface_normals=np.zeros((0, 3), dtype=np.float32),
                     semantic_tag=tag,
                 )
 

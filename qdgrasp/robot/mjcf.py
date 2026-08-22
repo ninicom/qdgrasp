@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
@@ -21,6 +22,7 @@ class MJCFBody:
     mass: float = 0.0
     inertia: tuple[float, float, float] = (0.0, 0.0, 0.0)
     geom_names: list[str] = field(default_factory=list)
+    mesh_files: list[Path] = field(default_factory=list)
 
 
 @dataclass
@@ -132,6 +134,56 @@ class MJCFModel:
         for m_id in range(self.model.nmesh):
             m_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_MESH, m_id) or f"mesh_{m_id}"
             self.mesh_names.append(m_name)
+
+        self.mesh_files: dict[str, Path] = self._declared_mesh_files()
+        self._attach_geometry()
+
+    def _declared_mesh_files(self) -> dict[str, Path]:
+        """Map every declared mesh asset name to its file on disk.
+
+        ``MjModel`` keeps the compiled vertices but not the source file name, so
+        the paths come from the XML: ``<compiler meshdir=...>`` plus each
+        ``<mesh file=...>``.  A mesh without an explicit ``name`` takes the file
+        stem, which is what MuJoCo itself does.
+        """
+
+        root = ET.parse(self.path).getroot()
+        compiler = root.find("compiler")
+        mesh_dir = compiler.get("meshdir", "") if compiler is not None else ""
+        base_dir = self.path.parent / mesh_dir
+        declared: dict[str, Path] = {}
+        for element in root.iter("mesh"):
+            file_name = element.get("file")
+            if not file_name:
+                continue
+            declared[element.get("name") or Path(file_name).stem] = base_dir / file_name
+        return declared
+
+    def _attach_geometry(self) -> None:
+        """Record each body's geoms and the mesh files they reference."""
+
+        for g_id in range(int(self.model.ngeom)):
+            b_id = int(self.model.geom_bodyid[g_id])
+            b_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_BODY, b_id) or f"body_{b_id}"
+            body = self.bodies.get(b_name)
+            if body is None:
+                continue
+            g_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, g_id) or f"geom_{g_id}"
+            body.geom_names.append(g_name)
+            if int(self.model.geom_type[g_id]) != int(mujoco.mjtGeom.mjGEOM_MESH):
+                continue
+            mesh_id = int(self.model.geom_dataid[g_id])
+            if mesh_id < 0:
+                continue
+            mesh_name = self.mesh_names[mesh_id]
+            mesh_path = self.mesh_files.get(mesh_name)
+            if mesh_path is None:
+                raise ConfigError(
+                    f"{self.path}: geom '{g_name}' references mesh '{mesh_name}' "
+                    "that is not declared with a file in the MJCF assets"
+                )
+            if mesh_path not in body.mesh_files:
+                body.mesh_files.append(mesh_path)
 
     def validate_semantic_bodies(
         self,
