@@ -27,6 +27,26 @@ RESULTS_SCHEMA = "qdgrasp/results/v1"
 RESULTS_FILE = "results.json"
 
 
+STEP_STATE_KEY = "step"
+
+
+def align_optimizer_state(optimizer: torch.optim.Optimizer) -> None:
+    """Put every optimizer state tensor on the device of its own parameter.
+
+    A resume artifact is read with ``map_location="cpu"``, and the model is only
+    moved to the accelerator afterwards by ``Fabric.setup``, so restored moments
+    would otherwise stay on the host and the first step after a resume would mix
+    CPU state with accelerator gradients.  ``step`` is left alone: a
+    non-capturable optimiser keeps it on the host, and matching a fresh run's
+    layout exactly is what keeps resume bit-exact.
+    """
+
+    for parameter, state in optimizer.state.items():
+        for key, value in state.items():
+            if key != STEP_STATE_KEY and isinstance(value, torch.Tensor):
+                state[key] = value.to(parameter.device)
+
+
 @dataclass(frozen=True)
 class RunResult:
     """Everything a run produced, mirrored on disk as ``results.json``."""
@@ -129,6 +149,8 @@ class Runner:
             LOGGER.info("resumed from %s at step %d", self.run_config.resume, start_step)
 
         fabric_model, fabric_optimizer = self.fabric.setup(model, optimizer)
+        align_optimizer_state(optimizer)
+        ema.to(self.runtime.device)
         history: list[tuple[int, float]] = []
         metrics: dict[str, float] = {}
         state: dict[str, Any] = {

@@ -65,7 +65,8 @@ Không thêm dependency mới; version package vẫn là `0.1.0a1`.
 | T-07 | `python3 -m unittest discover -s scripts/tests -p 'test_*.py'` | 0 | 47 tests OK |
 | T-08 | `python3 scripts/check_phase0.py` | 0 | Phase 0 foundation vẫn PASS |
 | T-09 | `python3 scripts/check_phase1.py` | 0 | config round-trip, unknown-key reject, CPU lifecycle, gradient coverage, resume bit-exact, TorchScript deviation `0.0` |
-| T-10 | `python3 -m pytest tests/ -q` | 0 | 124 passed, 1 skipped (ONNX extra vắng trong venv dev) |
+| T-10 | `python3 -m pytest tests/ -q` | 0 | 126 passed, 1 skipped (ONNX extra vắng trong venv dev) |
+| T-13 | Kaggle kernel `qdgrasp-phase-1-cuda-framework-gate` version 1 (T4, cu128) | 1 | FAIL — resume trên CUDA crash; đã sửa, chờ chạy lại |
 | T-11 | `uv build` rồi cài wheel vào venv sạch ngoài source tree, chạy `qdgrasp train/export` | 0 | import, preset packaged và CLI pass |
 | T-12 | `pytest tests/test_export.py` trong venv có `export-cpu.lock` | 0 | 5 passed; ONNX Runtime CPU deviation lớn nhất `2.68e-07` |
 
@@ -84,10 +85,17 @@ thêm `target_rotation` và loss có thành phần rotation; test và gate scrip
 - **Bị chặn — CUDA dummy train-step của gate P1.** Máy phát triển chạy
   `torch 2.11.0+cpu`, `cuda_available=false`; theo
   `docs/decisions/0006-cuda-hardware-required.md`, CPU fallback không phải bằng
-  chứng CUDA. Điều kiện gỡ chặn: chạy `scripts/phase1_cuda_smoke.py --out ...`
-  trên GPU NVIDIA thật (repository notebook `ninicom/qdgrasp-cuda-kaggle`) và lưu
-  evidence JSON kèm hash. Vì hạng mục này chưa chạy, **Phase 1 chưa được ghi là
-  hoàn tất** và `PROJECT_PHASES.md` giữ nguyên trạng thái `pending`.
+  chứng CUDA. Gate đã được chạy thật trên Kaggle T4 cu128 (T-13) và **fail**:
+  FP32 train và AMP train pass, nhưng bước đầu tiên sau resume raise
+  `RuntimeError: Expected all tensors to be on the same device, but found at
+  least two devices, cuda:0 and cpu!`. Nguyên nhân: `ResumeState.load` đọc bằng
+  `map_location="cpu"` và `_restore` chạy trước khi `Fabric.setup` chuyển model
+  lên accelerator, nên Adam moments ở lại host. Đã sửa bằng
+  `align_optimizer_state()` và `ModelEma.to()` trong cùng phiên; lỗi này không
+  thể tái hiện trên host chỉ có CPU. Điều kiện gỡ chặn còn lại: chạy lại kernel
+  ở commit đã sửa và lưu `phase1_cuda_evidence.json` kèm hash. Vì hạng mục này
+  chưa pass, **Phase 1 chưa được ghi là hoàn tất** và `PROJECT_PHASES.md` giữ
+  nguyên trạng thái `pending`.
 - `scripts/check_qdgrasp_imports.py` vẫn báo 7 lỗi resolve trong cây legacy
   (`qdgrasp/engine/model.py`, `qdgrasp/nn/*`). Đây là trạng thái có sẵn từ trước
   phiên này, không phải regression: mọi module mới của P1 resolve sạch. Việc rút

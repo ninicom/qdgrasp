@@ -167,3 +167,52 @@ def test_val_reflects_the_trained_weights(tmp_path, monkeypatch) -> None:
     trained = trained_model.val("dummy-tiny.yaml", batch_size=4)
     assert trained["loss"] != untrained["loss"]
     assert trained["loss"] < untrained["loss"]
+
+
+def test_align_optimizer_state_matches_each_parameter_device() -> None:
+    from qdgrasp.engine.runner import STEP_STATE_KEY, align_optimizer_state
+
+    model = torch.nn.Linear(4, 4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    model(torch.randn(2, 4)).sum().backward()
+    optimizer.step()
+    before = {
+        id(parameter): {key: value.clone() for key, value in state.items() if isinstance(value, torch.Tensor)}
+        for parameter, state in optimizer.state.items()
+    }
+
+    align_optimizer_state(optimizer)
+
+    assert optimizer.state, "optimizer built no state to align"
+    for parameter, state in optimizer.state.items():
+        for key, value in state.items():
+            if not isinstance(value, torch.Tensor):
+                continue
+            if key != STEP_STATE_KEY:
+                assert value.device == parameter.device
+            assert torch.equal(value, before[id(parameter)][key])
+
+
+def test_resumed_run_leaves_optimizer_state_on_the_runtime_device(tmp_path, monkeypatch) -> None:
+    from qdgrasp.engine.runner import STEP_STATE_KEY, align_optimizer_state
+
+    monkeypatch.chdir(tmp_path)
+    QDGrasp().train("dummy-tiny.yaml", max_steps=8, stop_after_steps=4, run_name="dev1")
+
+    seen: list[torch.optim.Optimizer] = []
+    original = align_optimizer_state
+
+    def spy(optimizer: torch.optim.Optimizer) -> None:
+        original(optimizer)
+        seen.append(optimizer)
+
+    monkeypatch.setattr("qdgrasp.engine.runner.align_optimizer_state", spy)
+    QDGrasp().train("dummy-tiny.yaml", max_steps=8, resume="runs/dev1/resume.pt", run_name="dev2")
+
+    assert len(seen) == 1
+    optimizer = seen[0]
+    assert optimizer.state, "resume restored no optimizer state"
+    for parameter, state in optimizer.state.items():
+        for key, value in state.items():
+            if isinstance(value, torch.Tensor) and key != STEP_STATE_KEY:
+                assert value.device == parameter.device

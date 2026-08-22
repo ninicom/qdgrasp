@@ -39,6 +39,17 @@ class ModelEma:
             shadow = self.shadow[key]
             shadow.mul_(self.decay).add_(value.detach().to(shadow.device), alpha=1.0 - self.decay)
 
+    def to(self, device: torch.device | str) -> "ModelEma":
+        """Move the shadow copy onto ``device``.
+
+        Needed after a resume: the shadow is restored from a CPU artifact while
+        the model itself may live on an accelerator.
+        """
+
+        target = torch.device(device)
+        self.shadow = {key: value.to(target) for key, value in self.shadow.items()}
+        return self
+
     def state_dict(self) -> dict[str, Any]:
         """Serializable EMA state."""
 
