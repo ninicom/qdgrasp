@@ -1401,14 +1401,6 @@ class SettingsManager(JSONDict):
             "sync": True,  # Enable synchronization
             "api_key": "",  # Ultralytics API Key
             "openai_api_key": "",  # OpenAI API Key
-            "clearml": True,  # ClearML integration
-            "comet": True,  # Comet integration
-            "dvc": True,  # DVC integration
-            "mlflow": True,  # MLflow integration
-            "neptune": True,  # Neptune integration
-            "raytune": True,  # Ray Tune integration
-            "tensorboard": False,  # TensorBoard logging
-            "wandb": False,  # Weights & Biases logging
             "vscode_msg": True,  # VSCode message
             "openvino_msg": True,  # OpenVINO export on Intel CPU message
         }
