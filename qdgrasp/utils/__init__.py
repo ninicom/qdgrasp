@@ -767,7 +767,7 @@ def is_kaggle():
     Returns:
         (bool): True if running inside a Kaggle kernel, False otherwise.
     """
-    return os.environ.get("PWD") == "/kaggle/working" and os.environ.get("KAGGLE_URL_BASE") == "https://www.kaggle.com"
+    return "KAGGLE_KERNEL_RUN_TYPE" in os.environ and os.environ.get("KAGGLE_URL_BASE") == "https://www.kaggle.com"
 
 
 def is_jupyter():

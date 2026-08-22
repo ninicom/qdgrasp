@@ -47,6 +47,9 @@ nghiệp.
   API QDGrasp và được giảm dần phụ thuộc legacy theo từng phase.
 - Repository hiện tại là repository public chính thức. Không tạo clean-history
   Apache repository và không tuyên bố implementation hiện tại là clean-room.
+- Mọi đường dẫn tới artifact/config/data/robot trong project là relative path tính
+  từ project root hoặc working directory. Cấm commit đường dẫn máy phát triển;
+  OS pseudo-files dùng để nhận diện platform không được coi là project artifact.
 - Engine mới dùng PyTorch và
   [Lightning Fabric](https://github.com/Lightning-AI/pytorch-lightning) làm nền
   train/device/distributed; façade, config, checkpoint, data và results contract
