@@ -14,6 +14,7 @@ T = TypeVar("T")
 
 _MODEL_BUILDERS: dict[str, Callable[..., object]] = {}
 _DATASET_BUILDERS: dict[str, Callable[..., object]] = {}
+_DOCUMENT_SCHEMAS: dict[str, dict[str, type]] = {}
 
 
 class RegistryError(KeyError):
@@ -63,6 +64,40 @@ def get_dataset_builder(name: str) -> Callable[..., object]:
     """Return the registered dataset builder or raise :class:`RegistryError`."""
 
     return _lookup(_DATASET_BUILDERS, "dataset", name)
+
+
+def register_document_schema(kind: str, schema_id: str, model: type) -> type:
+    """Bind a schema identifier to the model that validates it.
+
+    Lets a higher layer add a document version without the configuration layer
+    importing it back -- the same allowlist pattern the model and dataset
+    builders use.
+    """
+
+    table = _DOCUMENT_SCHEMAS.setdefault(kind, {})
+    if schema_id in table and table[schema_id] is not model:
+        raise RegistryError(f"schema '{schema_id}' is already registered for kind '{kind}'")
+    table[schema_id] = model
+    return model
+
+
+def get_document_model(kind: str, schema_id: str) -> type:
+    """Return the model registered for ``schema_id`` or raise :class:`RegistryError`."""
+
+    table = _DOCUMENT_SCHEMAS.get(kind, {})
+    try:
+        return table[schema_id]
+    except KeyError:
+        known = ", ".join(sorted(table)) or "<none>"
+        raise RegistryError(
+            f"unsupported {kind} schema {schema_id!r}; registered schemas: {known}"
+        ) from None
+
+
+def registered_document_schemas(kind: str) -> tuple[str, ...]:
+    """Sorted schema identifiers registered for ``kind``."""
+
+    return tuple(sorted(_DOCUMENT_SCHEMAS.get(kind, {})))
 
 
 def registered_models() -> tuple[str, ...]:

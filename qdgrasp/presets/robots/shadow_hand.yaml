@@ -1,0 +1,106 @@
+schema: qdgrasp/robot/v2
+name: shadow_hand
+format: mjcf
+source_asset: .references/robot-assets/mujoco-menagerie/shadow_hand/right_hand.xml
+palm_link: rh_palm
+base_link: rh_forearm
+wrist_link: rh_wrist
+fingertip_links:
+  - rh_ffdistal
+  - rh_mfdistal
+  - rh_rfdistal
+  - rh_lfdistal
+  - rh_thdistal
+contact_links:
+  - rh_palm
+  - rh_ffproximal
+  - rh_ffmiddle
+  - rh_ffdistal
+  - rh_mfproximal
+  - rh_mfmiddle
+  - rh_mfdistal
+  - rh_rfproximal
+  - rh_rfmiddle
+  - rh_rfdistal
+  - rh_lfproximal
+  - rh_lfmiddle
+  - rh_lfdistal
+  - rh_thproximal
+  - rh_thmiddle
+  - rh_thdistal
+joints:
+  - rh_WRJ2
+  - rh_WRJ1
+  - rh_THJ5
+  - rh_THJ4
+  - rh_THJ3
+  - rh_THJ2
+  - rh_THJ1
+  - rh_FFJ4
+  - rh_FFJ3
+  - rh_FFJ2
+  - rh_MFJ4
+  - rh_MFJ3
+  - rh_MFJ2
+  - rh_RFJ4
+  - rh_RFJ3
+  - rh_RFJ2
+  - rh_LFJ5
+  - rh_LFJ4
+  - rh_LFJ3
+  - rh_LFJ2
+mimic_joints:
+  rh_FFJ1: {target_joint: rh_FFJ2, multiplier: 1.0, offset: 0.0}
+  rh_MFJ1: {target_joint: rh_MFJ2, multiplier: 1.0, offset: 0.0}
+  rh_RFJ1: {target_joint: rh_RFJ2, multiplier: 1.0, offset: 0.0}
+  rh_LFJ1: {target_joint: rh_LFJ2, multiplier: 1.0, offset: 0.0}
+joint_limits:
+  rh_WRJ2: [-0.523599, 0.174533]
+  rh_WRJ1: [-0.698132, 0.488692]
+  rh_THJ5: [-1.0472, 1.0472]
+  rh_THJ4: [0.0, 1.22173]
+  rh_THJ3: [-0.20944, 0.20944]
+  rh_THJ2: [-0.698132, 0.698132]
+  rh_THJ1: [-0.261799, 1.5708]
+  rh_FFJ4: [-0.349066, 0.349066]
+  rh_FFJ3: [-0.261799, 1.5708]
+  rh_FFJ2: [0.0, 1.5708]
+  rh_MFJ4: [-0.349066, 0.349066]
+  rh_MFJ3: [-0.261799, 1.5708]
+  rh_MFJ2: [0.0, 1.5708]
+  rh_RFJ4: [-0.349066, 0.349066]
+  rh_RFJ3: [-0.261799, 1.5708]
+  rh_RFJ2: [0.0, 1.5708]
+  rh_LFJ5: [0.0, 0.785398]
+  rh_LFJ4: [-0.349066, 0.349066]
+  rh_LFJ3: [-0.261799, 1.5708]
+  rh_LFJ2: [0.0, 1.5708]
+actuators:
+  rh_WRJ2: {kp: 1.0, kv: 0.1, type: position}
+  rh_WRJ1: {kp: 1.0, kv: 0.1, type: position}
+  rh_THJ5: {kp: 1.0, kv: 0.1, type: position}
+  rh_THJ4: {kp: 1.0, kv: 0.1, type: position}
+  rh_THJ3: {kp: 1.0, kv: 0.1, type: position}
+  rh_THJ2: {kp: 1.0, kv: 0.1, type: position}
+  rh_THJ1: {kp: 1.0, kv: 0.1, type: position}
+  rh_FFJ4: {kp: 1.0, kv: 0.1, type: position}
+  rh_FFJ3: {kp: 1.0, kv: 0.1, type: position}
+  rh_FFJ2: {kp: 1.0, kv: 0.1, type: position}
+  rh_MFJ4: {kp: 1.0, kv: 0.1, type: position}
+  rh_MFJ3: {kp: 1.0, kv: 0.1, type: position}
+  rh_MFJ2: {kp: 1.0, kv: 0.1, type: position}
+  rh_RFJ4: {kp: 1.0, kv: 0.1, type: position}
+  rh_RFJ3: {kp: 1.0, kv: 0.1, type: position}
+  rh_RFJ2: {kp: 1.0, kv: 0.1, type: position}
+  rh_LFJ5: {kp: 1.0, kv: 0.1, type: position}
+  rh_LFJ4: {kp: 1.0, kv: 0.1, type: position}
+  rh_LFJ3: {kp: 1.0, kv: 0.1, type: position}
+  rh_LFJ2: {kp: 1.0, kv: 0.1, type: position}
+frame: palm
+release_blocked: false
+provenance:
+  license: Apache-2.0
+  spdx_identifier: Apache-2.0
+  source_repository: https://github.com/google-deepmind/mujoco_menagerie.git
+  source_commit: da76818e269b82289eba39808e2fb91d679d6994
+  upstream_tree: 8f85903630df9e0738b2df3c3cb0e8b3dd421c63

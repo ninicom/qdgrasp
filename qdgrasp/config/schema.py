@@ -14,15 +14,18 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .registry import register_document_schema
+
 
 MODEL_SCHEMA_V1 = "qdgrasp/model/v1"
 ROBOT_SCHEMA_V1 = "qdgrasp/robot/v1"
+ROBOT_SCHEMA_V2 = "qdgrasp/robot/v2"
 DATA_SCHEMA_V1 = "qdgrasp/data/v1"
 RUN_SCHEMA_V1 = "qdgrasp/run/v1"
 
 SUPPORTED_SCHEMAS: dict[str, frozenset[str]] = {
     "model": frozenset({MODEL_SCHEMA_V1}),
-    "robot": frozenset({ROBOT_SCHEMA_V1}),
+    "robot": frozenset({ROBOT_SCHEMA_V1, ROBOT_SCHEMA_V2}),
     "data": frozenset({DATA_SCHEMA_V1}),
     "run": frozenset({RUN_SCHEMA_V1}),
 }
@@ -183,3 +186,9 @@ class RunConfig(_Document):
         if value.startswith("/") or value.startswith("~"):
             raise ValueError("project_dir must be a relative path from the working directory")
         return value
+
+
+register_document_schema("model", MODEL_SCHEMA_V1, ModelConfig)
+register_document_schema("robot", ROBOT_SCHEMA_V1, RobotConfig)
+register_document_schema("data", DATA_SCHEMA_V1, DataConfig)
+register_document_schema("run", RUN_SCHEMA_V1, RunConfig)

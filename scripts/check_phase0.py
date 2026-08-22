@@ -30,12 +30,15 @@ RH_ALLOWLIST = {
     Path("THIRD_PARTY.yml"),
     Path("robot_assets.lock.yaml"),
     Path("scripts/check_phase0.py"),
+    Path("scripts/check_robot_assets.py"),
     Path("docs/archive/README.md"),
     Path("docs/README.md"),
     Path("docs/decisions/0007-agpl-community-library.md"),
     Path("docs/roadmap/PROJECT_PHASES.md"),
+    Path("docs/roadmap/PHASE2_EXECUTION_PLAN.md"),
     Path("docs/revisions/REV-20260822-009-agpl-library-first-phase0.md"),
     Path("docs/sessions/SESSION-20260822-018-phase0-agpl-library.md"),
+    Path("docs/sessions/SESSION-20260822-020-phase2-robot-layer.md"),
 }
 
 

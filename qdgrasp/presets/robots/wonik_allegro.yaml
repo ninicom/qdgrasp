@@ -1,0 +1,92 @@
+schema: qdgrasp/robot/v2
+name: wonik_allegro
+format: mjcf
+source_asset: .references/robot-assets/mujoco-menagerie/wonik_allegro/right_hand.xml
+palm_link: palm
+base_link: palm
+fingertip_links:
+  - ff_tip
+  - mf_tip
+  - rf_tip
+  - th_tip
+contact_links:
+  - palm
+  - ff_base
+  - ff_proximal
+  - ff_medial
+  - ff_distal
+  - ff_tip
+  - mf_base
+  - mf_proximal
+  - mf_medial
+  - mf_distal
+  - mf_tip
+  - rf_base
+  - rf_proximal
+  - rf_medial
+  - rf_distal
+  - rf_tip
+  - th_base
+  - th_proximal
+  - th_medial
+  - th_distal
+  - th_tip
+joints:
+  - ffj0
+  - ffj1
+  - ffj2
+  - ffj3
+  - mfj0
+  - mfj1
+  - mfj2
+  - mfj3
+  - rfj0
+  - rfj1
+  - rfj2
+  - rfj3
+  - thj0
+  - thj1
+  - thj2
+  - thj3
+joint_limits:
+  ffj0: [-0.47, 0.47]
+  ffj1: [-0.196, 1.61]
+  ffj2: [-0.174, 1.709]
+  ffj3: [-0.227, 1.618]
+  mfj0: [-0.47, 0.47]
+  mfj1: [-0.196, 1.61]
+  mfj2: [-0.174, 1.709]
+  mfj3: [-0.227, 1.618]
+  rfj0: [-0.47, 0.47]
+  rfj1: [-0.196, 1.61]
+  rfj2: [-0.174, 1.709]
+  rfj3: [-0.227, 1.618]
+  thj0: [0.263, 1.396]
+  thj1: [-0.105, 1.163]
+  thj2: [-0.189, 1.644]
+  thj3: [-0.162, 1.719]
+actuators:
+  ffj0: {kp: 1.0, kv: 0.1, type: position}
+  ffj1: {kp: 1.0, kv: 0.1, type: position}
+  ffj2: {kp: 1.0, kv: 0.1, type: position}
+  ffj3: {kp: 1.0, kv: 0.1, type: position}
+  mfj0: {kp: 1.0, kv: 0.1, type: position}
+  mfj1: {kp: 1.0, kv: 0.1, type: position}
+  mfj2: {kp: 1.0, kv: 0.1, type: position}
+  mfj3: {kp: 1.0, kv: 0.1, type: position}
+  rfj0: {kp: 1.0, kv: 0.1, type: position}
+  rfj1: {kp: 1.0, kv: 0.1, type: position}
+  rfj2: {kp: 1.0, kv: 0.1, type: position}
+  rfj3: {kp: 1.0, kv: 0.1, type: position}
+  thj0: {kp: 1.0, kv: 0.1, type: position}
+  thj1: {kp: 1.0, kv: 0.1, type: position}
+  thj2: {kp: 1.0, kv: 0.1, type: position}
+  thj3: {kp: 1.0, kv: 0.1, type: position}
+frame: palm
+release_blocked: false
+provenance:
+  license: BSD-2-Clause
+  spdx_identifier: BSD-2-Clause
+  source_repository: https://github.com/google-deepmind/mujoco_menagerie.git
+  source_commit: da76818e269b82289eba39808e2fb91d679d6994
+  upstream_tree: 42564d556620bc0c3ba41823bbdf860887f10ff4
