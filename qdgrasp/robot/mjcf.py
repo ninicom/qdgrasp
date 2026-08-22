@@ -18,6 +18,8 @@ class MJCFBody:
     parent_id: int
     pos: tuple[float, float, float]
     quat: tuple[float, float, float, float]
+    mass: float = 0.0
+    inertia: tuple[float, float, float] = (0.0, 0.0, 0.0)
     geom_names: list[str] = field(default_factory=list)
 
 
@@ -67,12 +69,15 @@ class MJCFModel:
             pos = tuple(float(x) for x in self.model.body_pos[b_id])
             quat = tuple(float(x) for x in self.model.body_quat[b_id])
             parent_id = int(self.model.body_parentid[b_id])
+            inertia = tuple(float(x) for x in self.model.body_inertia[b_id])
             self.bodies[b_name] = MJCFBody(
                 name=b_name,
                 id=b_id,
                 parent_id=parent_id,
                 pos=(pos[0], pos[1], pos[2]),
                 quat=(quat[0], quat[1], quat[2], quat[3]),
+                mass=float(self.model.body_mass[b_id]),
+                inertia=(inertia[0], inertia[1], inertia[2]),
             )
 
         self.joints: dict[str, MJCFJoint] = {}
@@ -133,18 +138,28 @@ class MJCFModel:
         *,
         palm_body: str,
         base_body: str | None = None,
+        wrist_body: str | None = None,
         fingertip_bodies: Sequence[str] = (),
+        contact_bodies: Sequence[str] = (),
     ) -> None:
-        """Ensure declared palm/fingertip body names exist in the model without guessing."""
+        """Ensure every declared semantic body exists, without guessing any of them.
+
+        Covers the same five roles as the URDF path.  All released profiles are
+        MJCF, so a role validated only on the URDF side would be unchecked in
+        practice.
+        """
+
         if palm_body not in self.bodies:
             raise ConfigError(
                 f"declared palm_body '{palm_body}' does not exist in MJCF bodies {list(self.bodies.keys())}"
             )
-        if base_body is not None and base_body not in self.bodies:
-            raise ConfigError(f"declared base_body '{base_body}' not in MJCF bodies")
-        for tip in fingertip_bodies:
-            if tip not in self.bodies:
-                raise ConfigError(f"declared fingertip_body '{tip}' not in MJCF bodies")
+        for role, name in (("base_body", base_body), ("wrist_body", wrist_body)):
+            if name is not None and name not in self.bodies:
+                raise ConfigError(f"declared {role} '{name}' not in MJCF bodies")
+        for role, names in (("fingertip_body", fingertip_bodies), ("contact_body", contact_bodies)):
+            for name in names:
+                if name not in self.bodies:
+                    raise ConfigError(f"declared {role} '{name}' not in MJCF bodies")
 
 
 def parse_mjcf(path: str | Path) -> MJCFModel:

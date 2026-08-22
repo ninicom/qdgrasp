@@ -224,7 +224,9 @@ class RobotSpec:
             mjcf_model.validate_semantic_bodies(
                 palm_body=config.palm_link,
                 base_body=config.base_link,
+                wrist_body=config.wrist_link,
                 fingertip_bodies=config.fingertip_links,
+                contact_bodies=config.contact_links,
             )
 
             links_dict = {}
@@ -234,8 +236,24 @@ class RobotSpec:
                 parent_name = id_to_name.get(b.parent_id) if b.parent_id != b.id else None
                 # Check joints belonging to this body
                 b_joints = [j for j in mjcf_model.joints.values() if j.body_name == b_name]
+                if len(b_joints) > 1:
+                    # A body carrying several joints needs their transforms composed
+                    # in order.  No hand in the pinned corpus does this, so rather
+                    # than compose it untested, refuse loudly.
+                    raise ConfigError(
+                        f"body '{b_name}' carries {len(b_joints)} joints "
+                        f"({[j.name for j in b_joints]}); multi-joint bodies are not supported yet"
+                    )
                 if b_joints:
                     j = b_joints[0]
+                    if any(abs(value) > 1e-12 for value in j.pos):
+                        # A joint anchor offset composes as T_origin . T_anchor .
+                        # T_motion . T_anchor^-1; every pinned hand has a zero
+                        # anchor, so refuse instead of silently ignoring it.
+                        raise ConfigError(
+                            f"joint '{j.name}' declares a non-zero anchor offset {j.pos}; "
+                            "joint anchor offsets are not supported yet"
+                        )
                     joint_name = j.name
                     joint_type = "revolute" if j.type == 3 else "prismatic" if j.type == 2 else "fixed"
                     axis = j.axis
@@ -272,8 +290,8 @@ class RobotSpec:
                     origin_xyz=origin_xyz,
                     origin_rotation=origin_rotation,
                     axis=axis,
-                    mass=0.05,
-                    inertia=(1e-4, 0.0, 0.0, 1e-4, 0.0, 1e-4),
+                    mass=b.mass,
+                    inertia=(b.inertia[0], 0.0, 0.0, b.inertia[1], 0.0, b.inertia[2]),
                     mesh_paths=[],
                     surface_anchors=np.zeros((anchor_count_per_link, 3), dtype=np.float32),
                     surface_normals=np.zeros((anchor_count_per_link, 3), dtype=np.float32),
