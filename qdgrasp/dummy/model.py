@@ -69,28 +69,36 @@ class DummyGraspModel(nn.Module):
         return translation, rotation, joints, score
 
     def training_step(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
-        """Mean-squared error against the dummy translation/joint targets."""
+        """Mean-squared error against the dummy pose/joint targets.
 
-        translation, _rotation, joints, score = self(batch["points"])
+        Every head is supervised, including rotation, so that the Phase 1
+        gradient-coverage gate can detect a head that has been disconnected.
+        """
+
+        translation, rotation, joints, score = self(batch["points"])
         target_translation = batch["target_translation"].unsqueeze(1)
+        target_rotation = batch["target_rotation"].unsqueeze(1)
         target_joints = batch["target_joints"].unsqueeze(1)
         translation_loss = torch.nn.functional.mse_loss(translation, target_translation.expand_as(translation))
+        rotation_loss = torch.nn.functional.mse_loss(rotation, target_rotation.expand_as(rotation))
         joint_loss = torch.nn.functional.mse_loss(joints, target_joints.expand_as(joints))
         score_loss = torch.nn.functional.mse_loss(score, torch.ones_like(score))
-        return translation_loss + joint_loss + 0.1 * score_loss
+        return translation_loss + rotation_loss + joint_loss + 0.1 * score_loss
 
     @torch.no_grad()
     def validation_step(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
-        """Report loss plus translation/joint errors for the best-scoring grasp."""
+        """Report loss plus pose/joint errors for the best-scoring grasp."""
 
-        translation, _rotation, joints, score = self(batch["points"])
+        translation, rotation, joints, score = self(batch["points"])
         best = score.argmax(dim=1)
         index = torch.arange(translation.shape[0], device=translation.device)
         translation_error = (translation[index, best] - batch["target_translation"]).norm(dim=-1).mean()
         joint_error = (joints[index, best] - batch["target_joints"]).abs().mean()
+        rotation_error = (rotation[index, best] - batch["target_rotation"]).flatten(1).norm(dim=-1).mean()
         return {
             "loss": self.training_step(batch),
             "translation_error": translation_error,
+            "rotation_error": rotation_error,
             "joint_error": joint_error,
         }
 

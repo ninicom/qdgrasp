@@ -28,6 +28,7 @@ from ..engine.checkpoint import BundleInfo, load_public_bundle, read_bundle_mani
 from ..engine.runner import RunResult, Runner
 from ..engine.seeding import seed_everything
 from ..export import ExportResult, export_bundle
+from .protocols import GraspModel
 from .results import GraspResults
 
 
@@ -66,6 +67,10 @@ class QDGrasp:
         self.seed = seed_everything(seed, deterministic=False)
         builder = get_model_builder(self.model_config.type)
         self.module: nn.Module = builder(self.model_config, self.robot_config)
+        if not isinstance(self.module, GraspModel):
+            raise ConfigError(
+                f"model type '{self.model_config.type}' does not satisfy the GraspModel protocol"
+            )
         self.bundle_manifest: dict[str, Any] | None = None
         if weights is not None:
             self.load_weights(weights)

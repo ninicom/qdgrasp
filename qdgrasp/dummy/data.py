@@ -13,10 +13,14 @@ from torch.utils.data import Dataset
 
 from ..config.registry import register_dataset
 from ..config.schema import ConfigError, DataConfig, RobotConfig
+from ..geometry import rot6d_to_matrix
 
 
 class DummyPointDataset(Dataset):
-    """Point clouds around a random centre, with matching palm/joint targets."""
+    """Point clouds around a random centre, with palm, rotation and joint targets.
+
+    Every model head is supervised so gradient-coverage checks are meaningful.
+    """
 
     def __init__(self, *, samples: int, num_points: int, seed: int, robot_config: RobotConfig, split: str) -> None:
         if samples < 1 or num_points < 1:
@@ -40,9 +44,11 @@ class DummyPointDataset(Dataset):
         points = centre + 0.05 * torch.randn(self.num_points, 3, generator=generator)
         fraction = torch.rand(len(self.lower), generator=generator)
         joints = self.lower + (self.upper - self.lower) * fraction
+        rotation = rot6d_to_matrix(torch.randn(6, generator=generator))
         return {
             "points": points.to(torch.float32),
             "target_translation": centre.to(torch.float32),
+            "target_rotation": rotation.to(torch.float32),
             "target_joints": joints.to(torch.float32),
         }
 

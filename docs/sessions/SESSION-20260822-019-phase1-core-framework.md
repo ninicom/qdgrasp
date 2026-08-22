@@ -46,10 +46,10 @@ Không thêm dependency mới; version package vẫn là `0.1.0a1`.
 | --- | --- | --- | --- |
 | E-01 | Kế hoạch phase | `docs/roadmap/PHASE1_EXECUTION_PLAN.md` | `9ab87fe4a938b27ee9a1e55b2b133c61e9e1a2b7fa46384f70c1fbb351d31f59` |
 | E-02 | Config registry | `docs/configuration/RUN_CONFIG.md` | `5d68b4c8fc76104d8da199dcb74655b6f972fc687c70628826a1fa201abe3562` |
-| E-03 | CPU gate script | `scripts/check_phase1.py` | `78e99d468cb2b261a4b5bf89153303cd08167fb3e68c84a24c53b5f5487c631f` |
+| E-03 | CPU gate script | `scripts/check_phase1.py` | `e987bbbdf5f57d2bce1b0d33412454439a5dc9c01c59983998dfd5f27bc782d3` |
 | E-04 | CUDA gate script | `scripts/phase1_cuda_smoke.py` | `ff9da25b9008af8c24c7f034197595fdbbda5fbcbdfb89b4e8a1046fb54ecaa3` |
 | E-05 | Runner | `qdgrasp/engine/runner.py` | `9899e747f2184dd034a7cab95dc087a8e51886d421317ff0068ace2fb55946ab` |
-| E-06 | Wheel dựng lại từ cây phiên này | `qdgrasp-0.1.0a1-py3-none-any.whl` | `2acce61b07c6032d7caac850c50d560076fda8c23dd44c0a1cf08d3070e05488` |
+| E-06 | Wheel dựng lại từ cây phiên này | `qdgrasp-0.1.0a1-py3-none-any.whl` | `228d5c0572323001a2be4dd5db4e5cefed572f133e77cef3cb9c0e78cd81dce2` |
 | E-07 | PLAN không đổi trong phiên | `PLAN.md` | `f1d4b9eb1692f229704593502afe088b73ae7f769367f7d9e6a515cc0cfe245c` |
 
 ## Kiểm tra đã chạy
@@ -64,14 +64,20 @@ Không thêm dependency mới; version package vẫn là `0.1.0a1`.
 | T-06 | `python3 scripts/check_docs.py --root .` | 0 | 72 file pass |
 | T-07 | `python3 -m unittest discover -s scripts/tests -p 'test_*.py'` | 0 | 47 tests OK |
 | T-08 | `python3 scripts/check_phase0.py` | 0 | Phase 0 foundation vẫn PASS |
-| T-09 | `python3 scripts/check_phase1.py` | 0 | config round-trip, unknown-key reject, CPU lifecycle, resume bit-exact, TorchScript deviation `0.0` |
-| T-10 | `python3 -m pytest tests/ -q` | 0 | 121 passed, 1 skipped (ONNX extra vắng trong venv dev) |
+| T-09 | `python3 scripts/check_phase1.py` | 0 | config round-trip, unknown-key reject, CPU lifecycle, gradient coverage, resume bit-exact, TorchScript deviation `0.0` |
+| T-10 | `python3 -m pytest tests/ -q` | 0 | 124 passed, 1 skipped (ONNX extra vắng trong venv dev) |
 | T-11 | `uv build` rồi cài wheel vào venv sạch ngoài source tree, chạy `qdgrasp train/export` | 0 | import, preset packaged và CLI pass |
 | T-12 | `pytest tests/test_export.py` trong venv có `export-cpu.lock` | 0 | 5 passed; ONNX Runtime CPU deviation lớn nhất `2.68e-07` |
 
 Chi tiết nghiệm thu T-09: `max_steps=8` liên tục cho cùng dãy loss với
 `stop_after_steps=4` rồi `--resume`, so khớp bit-for-bit; joints dự đoán nằm trong
-limit khai báo; `amp=True` trên CPU bị ép về `false` kèm adjustment được ghi lại.
+limit khai báo; `amp=True` trên CPU bị ép về `false` kèm adjustment được ghi lại;
+mọi trainable parameter đều nhận gradient (`parameters_without_gradient: []`).
+
+Gradient coverage lúc đầu phát hiện `rotation_head` không nhận gradient vì
+`training_step` chưa giám sát rotation. Đã sửa trong cùng phiên: dummy sample có
+thêm `target_rotation` và loss có thành phần rotation; test và gate script kiểm
+điều kiện này để head bị ngắt kết nối không thể lọt qua.
 
 ## Việc chưa hoàn tất
 

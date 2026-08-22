@@ -28,7 +28,7 @@ def test_cpu_train_smoke_writes_every_artifact(tmp_path, monkeypatch) -> None:
     payload = json.loads((tmp_path / "runs/smoke/results.json").read_text())
     assert payload["schema"] == "qdgrasp/results/v1"
     assert payload["runtime"]["effective"]["device"] == "cpu"
-    assert set(payload["metrics"]) == {"loss", "translation_error", "joint_error"}
+    assert set(payload["metrics"]) == {"loss", "translation_error", "rotation_error", "joint_error"}
 
 
 def test_same_seed_reproduces_the_loss_curve(tmp_path, monkeypatch) -> None:
@@ -130,3 +130,40 @@ def test_predicted_joints_stay_inside_the_declared_limits(tmp_path, monkeypatch)
     assert torch.all(results.joint_values >= lower)
     assert torch.all(results.joint_values <= upper)
     assert torch.isfinite(results.joint_values).all()
+
+
+def test_every_trainable_parameter_receives_a_gradient(tmp_path, monkeypatch) -> None:
+    from qdgrasp.config import load_data_config
+    from qdgrasp.dummy.data import build_dummy_points
+    from qdgrasp.engine.sampling import collate_indices
+
+    monkeypatch.chdir(tmp_path)
+    grasper = QDGrasp()
+    dataset = build_dummy_points(load_data_config("dummy-tiny.yaml"), grasper.robot_config, split="train")
+    grasper.module.training_step(collate_indices(dataset, [0, 1])).backward()
+    dead = [
+        name
+        for name, parameter in grasper.module.named_parameters()
+        if parameter.requires_grad and (parameter.grad is None or not parameter.grad.any())
+    ]
+    assert dead == []
+
+
+def test_two_stage_resume_advances_to_the_end_of_the_schedule(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    first = QDGrasp().train("dummy-tiny.yaml", max_steps=8, stop_after_steps=4, run_name="s1")
+    assert first.global_step == 4
+    second = QDGrasp().train(
+        "dummy-tiny.yaml", max_steps=8, stop_after_steps=4, resume="runs/s1/resume.pt", run_name="s2"
+    )
+    assert second.global_step == 8
+
+
+def test_val_reflects_the_trained_weights(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    untrained = QDGrasp().val("dummy-tiny.yaml", batch_size=4)
+    trained_model = QDGrasp()
+    trained_model.train("dummy-tiny.yaml", max_steps=20, learning_rate=1e-2, run_name="trained")
+    trained = trained_model.val("dummy-tiny.yaml", batch_size=4)
+    assert trained["loss"] != untrained["loss"]
+    assert trained["loss"] < untrained["loss"]

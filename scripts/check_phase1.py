@@ -20,7 +20,10 @@ import yaml
 
 from qdgrasp import QDGrasp, __version__
 from qdgrasp.config import ConfigError, RunConfig, dump_document, load_model_config, parse_document, resolve_runtime
+from qdgrasp.config import load_data_config
+from qdgrasp.dummy.data import build_dummy_points
 from qdgrasp.engine.callbacks import LossHistory
+from qdgrasp.engine.sampling import collate_indices
 
 
 def check_config_round_trip(problems: list[str]) -> None:
@@ -63,6 +66,17 @@ def check_lifecycle(problems: list[str], workdir: Path) -> dict[str, object]:
     if not result.metrics:
         problems.append("training produced no validation metrics")
 
+    dataset = build_dummy_points(load_data_config("dummy-tiny.yaml"), grasper.robot_config, split="train")
+    probe = QDGrasp()
+    probe.module.training_step(collate_indices(dataset, [0, 1])).backward()
+    dead = [
+        name
+        for name, parameter in probe.module.named_parameters()
+        if parameter.requires_grad and (parameter.grad is None or not parameter.grad.any())
+    ]
+    if dead:
+        problems.append(f"trainable parameters received no gradient: {dead}")
+
     metrics = grasper.val("dummy-tiny.yaml", batch_size=4)
     if not all(float(value) == float(value) for value in metrics.values()):
         problems.append("validation produced a non-finite metric")
@@ -91,6 +105,7 @@ def check_lifecycle(problems: list[str], workdir: Path) -> dict[str, object]:
         "final_loss": result.final_loss,
         "metrics": result.metrics,
         "bundle_hash": result.hashes["bundle"],
+        "parameters_without_gradient": dead,
         "export_deviation": deviations,
     }
 
