@@ -51,6 +51,8 @@ Không thêm dependency mới; version package vẫn là `0.1.0a1`.
 | E-05 | Runner | `qdgrasp/engine/runner.py` | `9899e747f2184dd034a7cab95dc087a8e51886d421317ff0068ace2fb55946ab` |
 | E-06 | Wheel dựng lại từ cây phiên này | `qdgrasp-0.1.0a1-py3-none-any.whl` | `228d5c0572323001a2be4dd5db4e5cefed572f133e77cef3cb9c0e78cd81dce2` |
 | E-07 | PLAN không đổi trong phiên | `PLAN.md` | `f1d4b9eb1692f229704593502afe088b73ae7f769367f7d9e6a515cc0cfe245c` |
+| E-08 | CUDA evidence Phase 1 (Kaggle T4, cu128) | `ninicom/qdgrasp-cuda-kaggle` `evidence/phase1-run-002-pass/phase1_cuda_evidence.json` | `e2285f6005fa9c48535d199f5a8e1b3b2e30421e559846c8593fbcecadc329ca` |
+| E-09 | Commit library được gate CUDA xác minh | `github.com/ninicom/qdgrasp` | `67a40724d3521d1447a5234974a36f70504f7f18` |
 
 ## Kiểm tra đã chạy
 
@@ -66,7 +68,8 @@ Không thêm dependency mới; version package vẫn là `0.1.0a1`.
 | T-08 | `python3 scripts/check_phase0.py` | 0 | Phase 0 foundation vẫn PASS |
 | T-09 | `python3 scripts/check_phase1.py` | 0 | config round-trip, unknown-key reject, CPU lifecycle, gradient coverage, resume bit-exact, TorchScript deviation `0.0` |
 | T-10 | `python3 -m pytest tests/ -q` | 0 | 126 passed, 1 skipped (ONNX extra vắng trong venv dev) |
-| T-13 | Kaggle kernel `qdgrasp-phase-1-cuda-framework-gate` version 1 (T4, cu128) | 1 | FAIL — resume trên CUDA crash; đã sửa, chờ chạy lại |
+| T-13 | Kaggle kernel `qdgrasp-phase-1-cuda-framework-gate` version 1 (T4, cu128) | 1 | FAIL — bước optimizer đầu tiên sau resume trộn CPU state với CUDA gradient |
+| T-14 | Cùng kernel version 2 ở commit `67a4072` | 0 | PASS — FP32 và AMP train 8 step, resume bit-exact, joints trong limit, TorchScript deviation `0.0`, CPU/CUDA FP32 parity `2.98e-08` |
 | T-11 | `uv build` rồi cài wheel vào venv sạch ngoài source tree, chạy `qdgrasp train/export` | 0 | import, preset packaged và CLI pass |
 | T-12 | `pytest tests/test_export.py` trong venv có `export-cpu.lock` | 0 | 5 passed; ONNX Runtime CPU deviation lớn nhất `2.68e-07` |
 
@@ -82,20 +85,19 @@ thêm `target_rotation` và loss có thành phần rotation; test và gate scrip
 
 ## Việc chưa hoàn tất
 
-- **Bị chặn — CUDA dummy train-step của gate P1.** Máy phát triển chạy
-  `torch 2.11.0+cpu`, `cuda_available=false`; theo
-  `docs/decisions/0006-cuda-hardware-required.md`, CPU fallback không phải bằng
-  chứng CUDA. Gate đã được chạy thật trên Kaggle T4 cu128 (T-13) và **fail**:
-  FP32 train và AMP train pass, nhưng bước đầu tiên sau resume raise
-  `RuntimeError: Expected all tensors to be on the same device, but found at
-  least two devices, cuda:0 and cpu!`. Nguyên nhân: `ResumeState.load` đọc bằng
-  `map_location="cpu"` và `_restore` chạy trước khi `Fabric.setup` chuyển model
-  lên accelerator, nên Adam moments ở lại host. Đã sửa bằng
-  `align_optimizer_state()` và `ModelEma.to()` trong cùng phiên; lỗi này không
-  thể tái hiện trên host chỉ có CPU. Điều kiện gỡ chặn còn lại: chạy lại kernel
-  ở commit đã sửa và lưu `phase1_cuda_evidence.json` kèm hash. Vì hạng mục này
-  chưa pass, **Phase 1 chưa được ghi là hoàn tất** và `PROJECT_PHASES.md` giữ
-  nguyên trạng thái `pending`.
+- **Không còn hạng mục kỹ thuật mở trong gate P1.** Máy phát triển chỉ có
+  `torch 2.11.0+cpu` nên phần CUDA chạy trên Kaggle T4 cu128 qua notebook riêng.
+  Version 1 fail (T-13): `RuntimeError: Expected all tensors to be on the same
+  device, but found at least two devices, cuda:0 and cpu!` ở bước optimizer đầu
+  tiên sau resume, vì `ResumeState.load` đọc bằng `map_location="cpu"` còn
+  `_restore` chạy trước khi `Fabric.setup` chuyển model lên accelerator. Đã sửa
+  bằng `align_optimizer_state()` và `ModelEma.to()`; version 2 pass (T-14). Lớp
+  lỗi này không tái hiện được trên host chỉ có CPU, nên gate CUDA chính là
+  regression test của nó.
+- **Cần quyết định của maintainer:** cập nhật trạng thái P1 trong
+  `PROJECT_PHASES.md` từ `pending` sang `complete` là sửa một active normative
+  document và theo `DOCUMENTATION_POLICY.md` §4 phải đi kèm revision record.
+  Phiên này không tự ý sửa; bằng chứng gate đã đủ để maintainer ra quyết định.
 - `scripts/check_qdgrasp_imports.py` vẫn báo 7 lỗi resolve trong cây legacy
   (`qdgrasp/engine/model.py`, `qdgrasp/nn/*`). Đây là trạng thái có sẵn từ trước
   phiên này, không phải regression: mọi module mới của P1 resolve sạch. Việc rút
@@ -109,9 +111,12 @@ Không.
 
 ## Bàn giao
 
-- `feature/phase1-framework` chứa toàn bộ output P1; `develop` đã có P0 sau khi
-  merge `feature/ultralytics-fork-import` trong phiên này.
-- Phiên sau bắt đầu bằng việc chạy `scripts/phase1_cuda_smoke.py` trên GPU thật để
-  đóng nốt gate P1, rồi mới mở Phase 2 (robot layer).
+- `feature/phase1-framework` chứa toàn bộ output P1 và đã được push lên
+  `origin`; `develop` đã có P0 sau khi merge `feature/ultralytics-fork-import`
+  trong phiên này. Branch P1 chưa merge vào `develop`.
+- Toàn bộ tiêu chí gate P1 (API/config round-trip, CPU smoke, CUDA dummy
+  train-step) đã có bằng chứng. Bước hợp lệ tiếp theo: chạy
+  `scripts/git/finish_feature.sh`, cập nhật trạng thái roadmap kèm revision
+  record, rồi mở Phase 2 (robot layer).
 - Trước khi mở rộng schema, đọc `docs/configuration/RUN_CONFIG.md`: version mới
   phải là schema identifier mới, không sửa nghĩa `v1`.
