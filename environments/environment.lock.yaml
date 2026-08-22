@@ -3,7 +3,8 @@ generated_at: 2026-08-22
 platform_contract:
   os: linux
   architecture: x86_64
-  python: 3.11.x
+  python: ">=3.11"
+  reference_lock_python: 3.11.x
   resolver: uv
 execution_policy:
   cuda_requires_physical_nvidia_gpu: true

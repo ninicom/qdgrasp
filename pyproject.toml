@@ -7,7 +7,7 @@ name = "qdgrasp"
 version = "0.1.0a1"
 description = "AGPL-3.0 cross-embodiment dexterous grasping library"
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.11"
 license = "AGPL-3.0-only"
 authors = [{name = "QDGrasp contributors"}]
 keywords = ["robotics", "dexterous-grasping", "pytorch", "mujoco"]
@@ -16,6 +16,7 @@ classifiers = [
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [

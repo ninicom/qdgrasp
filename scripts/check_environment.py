@@ -61,8 +61,8 @@ def main() -> int:
     problems: list[str] = []
     versions: dict[str, str | None] = {}
     check_lock_manifest(problems)
-    if sys.version_info[:2] != (3, 11):
-        problems.append(f"Python phải là 3.11.x, hiện tại là {platform.python_version()}")
+    if sys.version_info < (3, 11):
+        problems.append(f"Python phải >=3.11, hiện tại là {platform.python_version()}")
 
     for package, expected in REQUIRED.items():
         try:

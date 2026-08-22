@@ -4,6 +4,9 @@ QDGrasp là thư viện AGPL-3.0 cho nghiên cứu và phát triển dexterous g
 cross-embodiment. Dự án được thiết kế để dùng như package ngay từ đầu; notebook
 chỉ là client của public API, không chứa bản sao source.
 
+Python được hỗ trợ từ 3.11 trở lên. Lock tham chiếu dùng Python 3.11 để tái lập;
+đây không phải upper bound của thư viện.
+
 ## Cài development
 
 ```bash

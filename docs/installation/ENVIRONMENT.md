@@ -18,7 +18,8 @@ revision_reason: Maintainer chốt mọi workload CUDA phải chạy trên GPU N
 | Thành phần | Phiên bản/profile |
 | --- | --- |
 | OS chuẩn | Linux x86_64 |
-| Python | 3.11.x |
+| Python package support | `>=3.11` |
+| Python reference lock | 3.11.x |
 | PyTorch | 2.11.0 |
 | CPU wheel | `torch==2.11.0+cpu` |
 | NVIDIA wheel | `torch==2.11.0+cu128` |
@@ -31,8 +32,9 @@ revision_reason: Maintainer chốt mọi workload CUDA phải chạy trên GPU N
 Fingerprint, SHA-256 và trạng thái xác minh từng profile nằm trong
 `environments/environment.lock.yaml`.
 
-Python 3.14 của host hiện tại không phải môi trường dự án. Không cài dependencies
-QDGrasp vào system Python.
+Profile tái lập Phase 0 được resolve/test bằng Python 3.11, nhưng package không
+chặn Python 3.12 trở lên. Mỗi minor mới vẫn phải resolve dependency và chạy test;
+không cài dependencies QDGrasp vào system Python của máy phát triển.
 
 ## Cài thư viện bằng uv
 

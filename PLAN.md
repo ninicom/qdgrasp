@@ -87,7 +87,8 @@ nghiệp.
   CUDA phải chạy trên GPU NVIDIA thật; không dùng CPU fallback, emulation hoặc
   dry-run làm bằng chứng CUDA pass. MuJoCo là evaluator chuẩn; backend tùy chọn
   không được làm base install kéo license không nằm trong allowlist.
-- Environment chuẩn là Linux x86_64, Python 3.11, PyTorch 2.11.0, Lightning
+- Environment chuẩn là Linux x86_64, Python `>=3.11` (reference lock dùng 3.11),
+  PyTorch 2.11.0, Lightning
   Fabric 2.6.5 và MuJoCo 3.12.0. CPU dùng wheel `+cpu`, NVIDIA dùng `+cu128`;
   lock và fingerprint nằm trong `environments/`. Python 3.14 system không phải
   môi trường dự án. Phase model/training không được đóng nếu CUDA hardware smoke,
