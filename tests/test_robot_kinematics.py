@@ -91,9 +91,17 @@ def test_forward_kinematics_matches_mujoco_for_every_body(profile: str, mjcf: st
     for name in config.joints:
         lower, upper = config.joint_limits[name]
         angles[name] = float(generator.uniform(lower, upper))
+
+    # The profile's declared coupling is part of the configuration, so MuJoCo has
+    # to be given the resolved mimic values as well.
+    full_angles = dict(angles)
+    for mimic_name, mimic in config.mimic_joints.items():
+        full_angles[mimic_name] = angles.get(mimic.target_joint, 0.0) * mimic.multiplier + mimic.offset
+
+    for name, value in full_angles.items():
         joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
         assert joint_id >= 0, f"declared joint {name} missing from MJCF"
-        data.qpos[model.jnt_qposadr[joint_id]] = angles[name]
+        data.qpos[model.jnt_qposadr[joint_id]] = value
     mujoco.mj_forward(model, data)
 
     palm_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, config.palm_link)

@@ -258,11 +258,21 @@ def check_forward_kinematics_ground_truth(problems: list[str], root: Path) -> No
         for joint_name in config.joints:
             lower, upper = config.joint_limits[joint_name]
             angles[joint_name] = float(generator.uniform(lower, upper))
+
+        # Resolve the profile's declared coupling and write it into MuJoCo too, so
+        # both sides describe the same full configuration.  Whether the declared
+        # ratio matches the hand's physical tendon is a separate question; this
+        # check is about FK arithmetic.
+        full_angles = dict(angles)
+        for mimic_name, mimic in config.mimic_joints.items():
+            full_angles[mimic_name] = angles.get(mimic.target_joint, 0.0) * mimic.multiplier + mimic.offset
+
+        for joint_name, value in full_angles.items():
             joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
             if joint_id < 0:
                 problems.append(f"{profile}: declared joint '{joint_name}' is absent from the MJCF")
                 continue
-            data.qpos[model.jnt_qposadr[joint_id]] = angles[joint_name]
+            data.qpos[model.jnt_qposadr[joint_id]] = value
         mujoco.mj_forward(model, data)
 
         palm_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, config.palm_link)
@@ -277,28 +287,34 @@ def check_forward_kinematics_ground_truth(problems: list[str], root: Path) -> No
         )
 
         compared = 0
-        worst_link, worst_position, worst_rotation = "", 0.0, 0.0
+        # Track position and rotation independently: a rotation-only error would
+        # be invisible if it were only reported for the worst-position link.
+        worst = {"position": ("", 0.0), "rotation": ("", 0.0)}
         for link_name, transform in transforms.items():
             body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, link_name)
             if body_id < 0:
                 continue
             compared += 1
-            position_error = float(np.abs(transform[0, :3, 3].numpy() - data.xpos[body_id]).max())
-            rotation_error = float(
-                np.abs(transform[0, :3, :3].numpy() - data.xmat[body_id].reshape(3, 3)).max()
-            )
-            if position_error > worst_position:
-                worst_link, worst_position, worst_rotation = link_name, position_error, rotation_error
+            errors = {
+                "position": float(np.abs(transform[0, :3, 3].numpy() - data.xpos[body_id]).max()),
+                "rotation": float(
+                    np.abs(transform[0, :3, :3].numpy() - data.xmat[body_id].reshape(3, 3)).max()
+                ),
+            }
+            for kind, error in errors.items():
+                if error > worst[kind][1]:
+                    worst[kind] = (link_name, error)
 
         if compared < len(spec.links):
             problems.append(
                 f"{profile}: only {compared}/{len(spec.links)} links could be compared against MuJoCo"
             )
-        if worst_position > FK_GROUND_TRUTH_ATOL or worst_rotation > FK_GROUND_TRUTH_ATOL:
-            problems.append(
-                f"{profile}: FK disagrees with mj_forward at '{worst_link}' "
-                f"(position {worst_position:.6f} m, rotation {worst_rotation:.6f}, atol {FK_GROUND_TRUTH_ATOL})"
-            )
+        for kind, (link_name, error) in worst.items():
+            if error > FK_GROUND_TRUTH_ATOL:
+                problems.append(
+                    f"{profile}: FK {kind} disagrees with mj_forward at '{link_name}' "
+                    f"({error:.6f}, atol {FK_GROUND_TRUTH_ATOL})"
+                )
 
 
 def check_forward_kinematics_and_batch_parity(problems: list[str]) -> None:

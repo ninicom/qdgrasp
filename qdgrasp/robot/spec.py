@@ -13,12 +13,56 @@ import torch.nn.functional as F
 from ..config.loader import load_robot_config, resolve_document_path
 from ..config.schema import ConfigError
 from .graph import HandGraph
-from .kinematics import compute_joint_transform, rpy_to_rotation_matrix, transform_points
+from .kinematics import (
+    compute_joint_transform,
+    invert_rigid_transform,
+    quaternion_to_rotation_matrix,
+    rpy_to_rotation_matrix,
+    transform_points,
+)
 from .meshes import load_mesh, resolve_mesh_path, sample_mesh_surface
 from .mjcf import parse_mjcf
 from .normalize import normalize_urdf
 from .schema import ActuatorSpec, MimicSpec, RobotConfigV2
 from .urdf import URDFJoint, URDFLink, URDFModel, parse_urdf
+
+
+def _matrix_to_tuple(matrix: torch.Tensor) -> tuple[tuple[float, float, float], ...]:
+    """Freeze a 3x3 rotation tensor into a hashable nested tuple."""
+
+    values = matrix.reshape(3, 3).tolist()
+    return tuple(tuple(float(value) for value in row) for row in values)
+
+
+def _topological_order(links: dict[str, "LinkSpec"], preferred: Sequence[str]) -> list[str]:
+    """Order links so that every parent precedes its children.
+
+    The order is derived from ``parent_link`` rather than inherited from the
+    parser, so forward kinematics never depends on a parser happening to emit
+    bodies in tree order.  ``preferred`` only breaks ties, keeping the source
+    file's ordering among siblings.
+    """
+
+    remaining = [name for name in preferred if name in links]
+    remaining += [name for name in links if name not in set(remaining)]
+
+    ordered: list[str] = []
+    placed: set[str] = set()
+    while remaining:
+        progressed = False
+        deferred: list[str] = []
+        for name in remaining:
+            parent = links[name].parent_link
+            if parent is None or parent not in links or parent in placed:
+                ordered.append(name)
+                placed.add(name)
+                progressed = True
+            else:
+                deferred.append(name)
+        if not progressed:
+            raise ConfigError(f"kinematic tree contains a cycle among links {sorted(deferred)}")
+        remaining = deferred
+    return ordered
 
 
 @dataclass
@@ -28,7 +72,7 @@ class LinkSpec:
     parent_joint: str | None
     joint_type: str  # "revolute", "prismatic", "fixed"
     origin_xyz: tuple[float, float, float]
-    origin_rpy: tuple[float, float, float]
+    origin_rotation: tuple[tuple[float, float, float], ...]
     axis: tuple[float, float, float]
     mass: float
     inertia: tuple[float, float, float, float, float, float]
@@ -52,7 +96,7 @@ class RobotSpec:
     ) -> None:
         self.config = config
         self.links = links
-        self.topological_links = topological_links
+        self.topological_links = _topological_order(links, topological_links)
         self.actuated_joint_names = actuated_joint_names
         self.joint_limits = joint_limits
         self.mimic_joints = mimic_joints
@@ -109,6 +153,7 @@ class RobotSpec:
                 joint_type = u_joint.type if u_joint else "fixed"
                 origin_xyz = u_joint.origin_xyz if u_joint else (0.0, 0.0, 0.0)
                 origin_rpy = u_joint.origin_rpy if u_joint else (0.0, 0.0, 0.0)
+                origin_rotation = _matrix_to_tuple(rpy_to_rotation_matrix(origin_rpy))
                 axis = u_joint.axis if u_joint else (1.0, 0.0, 0.0)
 
                 # Resolve visual meshes and sample anchors
@@ -162,7 +207,7 @@ class RobotSpec:
                     parent_joint=joint_name,
                     joint_type=joint_type,
                     origin_xyz=origin_xyz,
-                    origin_rpy=origin_rpy,
+                    origin_rotation=origin_rotation,
                     axis=axis,
                     mass=u_link.mass,
                     inertia=u_link.inertia,
@@ -200,20 +245,10 @@ class RobotSpec:
                     axis = (1.0, 0.0, 0.0)
 
                 origin_xyz = b.pos
-                # Convert quaternion (w, x, y, z) to rpy
-                qw, qx, qy, qz = b.quat
-                # Compute rpy from quat
-                sinr_cosp = 2 * (qw * qx + qy * qz)
-                cosr_cosp = 1 - 2 * (qx * qx + qy * qy)
-                roll = np.arctan2(sinr_cosp, cosr_cosp)
-
-                sinp = 2 * (qw * qy - qz * qx)
-                pitch = np.arcsin(np.clip(sinp, -1.0, 1.0))
-
-                siny_cosp = 2 * (qw * qz + qx * qy)
-                cosy_cosp = 1 - 2 * (qy * qy + qz * qz)
-                yaw = np.arctan2(siny_cosp, cosy_cosp)
-                origin_rpy = (float(roll), float(pitch), float(yaw))
+                # Use the quaternion directly: the Euler detour is degenerate at
+                # |pitch| == 90 deg, which is exactly where several Menagerie
+                # bodies sit (Allegro 'palm', Shadow 'rh_forearm').
+                origin_rotation = _matrix_to_tuple(quaternion_to_rotation_matrix(b.quat))
 
                 # Determine semantic tag
                 if b_name == config.palm_link:
@@ -235,7 +270,7 @@ class RobotSpec:
                     parent_joint=joint_name,
                     joint_type=joint_type,
                     origin_xyz=origin_xyz,
-                    origin_rpy=origin_rpy,
+                    origin_rotation=origin_rotation,
                     axis=axis,
                     mass=0.05,
                     inertia=(1e-4, 0.0, 0.0, 1e-4, 0.0, 1e-4),
@@ -272,14 +307,21 @@ class RobotSpec:
         for idx, link_name in enumerate(self.topological_links):
             link = self.links[link_name]
             ox, oy, oz = link.origin_xyz
-            r, p, y = link.origin_rpy
+            rotation = link.origin_rotation
+            # First two columns of the rotation: a continuous 6D encoding, unlike
+            # RPY which is discontinuous and degenerate at the Euler singularity.
+            r6 = [
+                rotation[0][0], rotation[1][0], rotation[2][0],
+                rotation[0][1], rotation[1][1], rotation[2][1],
+            ]
             ixx, _, _, iyy, _, izz = link.inertia
             num_anchors = float(len(link.surface_anchors))
 
-            # 14-dim node feature: [pos(3), rpy(3), mass(1), inertia_diag(3), semantic_tag(1), anchor_count(1), num_joints(1), index_norm(1)]
+            # 17-dim node feature: [pos(3), rot6d(6), mass(1), inertia_diag(3),
+            # semantic_tag(1), anchor_count(1), num_joints(1), index_norm(1)]
             feat = [
                 ox, oy, oz,
-                r, p, y,
+                *r6,
                 link.mass,
                 ixx, iyy, izz,
                 float(link.semantic_tag),
@@ -397,41 +439,48 @@ class RobotSpec:
             else:
                 full_q[m_name] = torch.zeros(B, dtype=dtype, device=device)
 
-        # Root / Palm transform
         T_palm = torch.eye(4, dtype=dtype, device=device).unsqueeze(0).expand(B, 4, 4).clone()
         T_palm[:, :3, :3] = R_palm
         T_palm[:, :3, 3] = palm_pos
 
-        link_transforms: dict[str, torch.Tensor] = {}
-        link_transforms[self.palm_link] = T_palm
-
+        # Pass 1: every link in the frame of its own kinematic root.  Links above
+        # the palm in the tree are ordinary members of this chain, so they are no
+        # longer silently re-parented onto the palm.
+        root_transforms: dict[str, torch.Tensor] = {}
         for link_name in self.topological_links:
-            if link_name == self.palm_link:
-                continue
             link = self.links[link_name]
-            p_name = link.parent_link
-
-            if p_name is not None and p_name in link_transforms:
-                T_parent = link_transforms[p_name]
-            else:
-                T_parent = T_palm
-
-            j_name = link.parent_joint
-            q_val = full_q.get(j_name, torch.zeros(B, dtype=dtype, device=device)) if j_name else torch.zeros(B, dtype=dtype, device=device)
-
+            joint_name = link.parent_joint
+            q_val = (
+                full_q.get(joint_name, torch.zeros(B, dtype=dtype, device=device))
+                if joint_name
+                else torch.zeros(B, dtype=dtype, device=device)
+            )
             T_local = compute_joint_transform(
                 joint_type=link.joint_type,
                 axis=link.axis,
                 origin_xyz=link.origin_xyz,
-                origin_rpy=link.origin_rpy,
-                q=q_val,
+                origin_rotation=link.origin_rotation,
+                q=q_val.to(device=device, dtype=dtype),
             )
+            parent = link.parent_link
+            if parent is None or parent not in self.links:
+                root_transforms[link_name] = T_local
+            elif parent in root_transforms:
+                root_transforms[link_name] = torch.bmm(root_transforms[parent], T_local)
+            else:
+                raise ConfigError(
+                    f"link '{link_name}' is visited before its parent '{parent}'; "
+                    "the kinematic order is not topological"
+                )
 
-            # T_global = T_parent @ T_local
-            T_global = torch.bmm(T_parent, T_local)
-            link_transforms[link_name] = T_global
+        if self.palm_link not in root_transforms:
+            raise ConfigError(f"palm link '{self.palm_link}' is not part of the kinematic tree")
 
-        return link_transforms
+        # Pass 2: pin the palm at the requested pose and carry the whole tree with
+        # it, so the caller's palm frame is honoured exactly.
+        T_palm_in_root_inverse = invert_rigid_transform(root_transforms[self.palm_link])
+        rebase = torch.bmm(T_palm, T_palm_in_root_inverse)
+        return {name: torch.bmm(rebase, T) for name, T in root_transforms.items()}
 
     def fingertip_positions(
         self,
@@ -441,13 +490,13 @@ class RobotSpec:
     ) -> torch.Tensor:
         """Compute [B, num_fingertips, 3] world positions of the declared fingertips."""
         transforms = self.forward_kinematics(palm_pos, palm_rot, joint_angles)
-        tip_positions: list[torch.Tensor] = []
-        for tip in self.fingertip_links:
-            if tip in transforms:
-                tip_positions.append(transforms[tip][:, :3, 3])
-            else:
-                # Fallback to palm pos
-                tip_positions.append(palm_pos)
+        missing = [tip for tip in self.fingertip_links if tip not in transforms]
+        if missing:
+            raise ConfigError(
+                f"profile '{self.config.name}' declares fingertip links {missing} "
+                "that are absent from the kinematic tree"
+            )
+        tip_positions = [transforms[tip][:, :3, 3] for tip in self.fingertip_links]
         if not tip_positions:
             return torch.zeros((palm_pos.shape[0], 0, 3), dtype=palm_pos.dtype, device=palm_pos.device)
         return torch.stack(tip_positions, dim=1)

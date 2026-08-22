@@ -53,6 +53,35 @@ def rpy_to_rotation_matrix(rpy: tuple[float, float, float] | torch.Tensor, dtype
     return torch.stack([row0, row1, row2], dim=-2)
 
 
+def quaternion_to_rotation_matrix(
+    quaternion: tuple[float, float, float, float],
+    dtype: torch.dtype = torch.float32,
+    device: torch.device | str = "cpu",
+) -> torch.Tensor:
+    """Build a 3x3 rotation matrix from a ``(w, x, y, z)`` quaternion.
+
+    Used instead of a quaternion-to-RPY-to-matrix detour: the Euler round trip
+    is degenerate at ``|pitch| == 90 deg``, where roll and yaw are no longer
+    separable and the recovered triple describes a different rotation.  Several
+    Menagerie bodies sit exactly on that singularity.
+    """
+
+    w, x, y, z = quaternion
+    norm = math.sqrt(w * w + x * x + y * y + z * z)
+    if norm == 0.0:
+        raise ValueError("quaternion has zero norm")
+    w, x, y, z = w / norm, x / norm, y / norm, z / norm
+    return torch.tensor(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ],
+        dtype=dtype,
+        device=device,
+    )
+
+
 def rodrigues_rotation(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tensor:
     """Compute batched 3x3 rotation matrix for rotation around unit axis by angle.
 
@@ -94,16 +123,26 @@ def compute_joint_transform(
     joint_type: str,
     axis: tuple[float, float, float] | torch.Tensor,
     origin_xyz: tuple[float, float, float],
-    origin_rpy: tuple[float, float, float],
+    origin_rotation: Sequence[Sequence[float]] | torch.Tensor,
     q: torch.Tensor,  # [B]
 ) -> torch.Tensor:
-    """Compute [B, 4, 4] homogeneous transform for a joint given its q value."""
+    """Compute [B, 4, 4] homogeneous transform for a joint given its q value.
+
+    ``origin_rotation`` is the parent-to-child rotation as a 3x3 matrix.  Taking
+    the matrix rather than an RPY triple keeps the transform exact for bodies
+    that sit on the Euler singularity.
+    """
+
     B = q.shape[0]
     device = q.device
     dtype = q.dtype
 
     # Base origin transform
-    R_orig = rpy_to_rotation_matrix(origin_rpy, dtype=dtype, device=device).unsqueeze(0).expand(B, 3, 3)
+    if isinstance(origin_rotation, torch.Tensor):
+        R_orig = origin_rotation.to(device=device, dtype=dtype)
+    else:
+        R_orig = torch.tensor(origin_rotation, dtype=dtype, device=device)
+    R_orig = R_orig.reshape(3, 3).unsqueeze(0).expand(B, 3, 3)
     t_orig = torch.tensor(origin_xyz, dtype=dtype, device=device).unsqueeze(0).expand(B, 3)
 
     if joint_type == "fixed":
@@ -138,6 +177,26 @@ def compute_joint_transform(
     T[:, :3, :3] = R_total
     T[:, :3, 3] = t_total
     return T
+
+
+def invert_rigid_transform(T: torch.Tensor) -> torch.Tensor:
+    """Invert a batch of rigid ``[B, 4, 4]`` transforms exactly.
+
+    Uses the closed form ``(R', -R'@t)`` rather than a general matrix inverse:
+    it is exact in FP32, cheaper, and keeps the round-trip bit-exact so a link
+    expressed relative to itself comes back as the identity.
+    """
+
+    if T.shape[-2:] != (4, 4):
+        raise ValueError(f"expected [..., 4, 4] transforms, got {tuple(T.shape)}")
+    R = T[..., :3, :3]
+    t = T[..., :3, 3:4]
+    R_inverse = R.transpose(-1, -2)
+    inverted = torch.zeros_like(T)
+    inverted[..., :3, :3] = R_inverse
+    inverted[..., :3, 3:4] = -torch.matmul(R_inverse, t)
+    inverted[..., 3, 3] = 1.0
+    return inverted
 
 
 def transform_points(T: torch.Tensor, points: torch.Tensor) -> torch.Tensor:
