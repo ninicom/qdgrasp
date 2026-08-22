@@ -1,0 +1,11 @@
+# Minimal named-joint profile; the real robot layer arrives in Phase 2.
+schema: qdgrasp/robot/v1
+name: dummy-hand
+palm_link: palm
+frame: palm
+joints: [thumb_joint_0, thumb_joint_1, index_joint_0, index_joint_1]
+joint_limits:
+  thumb_joint_0: [-0.5, 1.2]
+  thumb_joint_1: [0.0, 1.5]
+  index_joint_0: [-0.3, 1.4]
+  index_joint_1: [0.0, 1.6]

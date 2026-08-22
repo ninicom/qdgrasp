@@ -44,6 +44,33 @@ uv pip install --no-deps -e .
 qdgrasp env --require-cuda
 ```
 
+## Lifecycle Phase 1
+
+Framework hiện chạy được đủ `train/val/predict/export` trên dummy model/data.
+Dummy chỉ là fixture để kiểm lifecycle; model thật thuộc Phase 4.
+
+```bash
+qdgrasp train --model qdgrasp-dummy-n.yaml --data dummy-tiny.yaml \
+  --robot dummy-hand.yaml --device cpu --max-steps 20 --run-name demo
+qdgrasp val --model qdgrasp-dummy-n.yaml --data dummy-tiny.yaml \
+  --robot dummy-hand.yaml --weights runs/demo/bundle
+qdgrasp export --model qdgrasp-dummy-n.yaml --robot dummy-hand.yaml \
+  --format torchscript --out-dir runs/demo/export
+```
+
+```python
+from qdgrasp import QDGrasp
+
+grasper = QDGrasp("qdgrasp-dummy-n.yaml", robot="dummy-hand.yaml")
+result = grasper.train(data="dummy-tiny.yaml", device="cpu", max_steps=20)
+metrics = grasper.val(data="dummy-tiny.yaml", device="cpu")
+grasps = grasper.predict(points, device="cpu")
+```
+
+Mỗi run ghi `results.json`, public bundle safetensors và resume state riêng.
+CLI chỉ nhận subcommand cùng `--flag`; key lạ trong YAML hoặc trên CLI là lỗi.
+CUDA không bao giờ fallback về CPU.
+
 Các model/data/checkpoint của DGN2 không được sử dụng. Source tham chiếu nằm
 ngoài import path và tuân theo manifest/provenance riêng.
 

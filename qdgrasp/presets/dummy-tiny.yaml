@@ -1,0 +1,9 @@
+# Deterministic synthetic split pair used by CPU smoke and CI.
+schema: qdgrasp/data/v1
+name: dummy-tiny
+type: dummy_points
+params:
+  train_samples: 32
+  val_samples: 8
+  num_points: 128
+  seed: 0
