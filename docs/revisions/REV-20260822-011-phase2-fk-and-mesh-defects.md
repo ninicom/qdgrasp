@@ -15,7 +15,7 @@ revises:
     revision: "3e7d34d4e8f0f2b2ed0742ea5807cd0e314e1c3da8fd584618e018de55ab1047"
 reason: "Gate FK của Phase 2 chỉ so forward_kinematics với chính nó nên không thể phát hiện FK sai; đối chiếu với mj_forward cho thấy Shadow đặt sai rh_wrist 0.216 m và rh_forearm 0.247 m, cùng bốn defect khác mà các gate liên quan không bắt được."
 necessity: N2
-impact: "Sửa kết luận kỹ thuật của W-04, W-05, W-06, W-07, W-08 và W-12 trong SESSION-20260822-020; thay đổi hành vi FK, node feature của HandGraph, dữ liệu inertial, tên manifest và artifact dẫn xuất đã commit. Không ảnh hưởng Phase 0, Phase 1 hay license/provenance."
+impact: "Sửa kết luận kỹ thuật của W-04, W-05, W-06, W-07, W-08, W-09 và W-12 trong SESSION-20260822-020; thay đổi hành vi FK, node feature của HandGraph, dữ liệu inertial, tên manifest và artifact dẫn xuất đã commit. Không ảnh hưởng Phase 0, Phase 1 hay license/provenance."
 ---
 
 # Hồ sơ sửa kết quả của phiên trước
@@ -65,6 +65,11 @@ Khi đối chiếu với `mj_forward` làm oracle độc lập, sáu defect lộ
 6. `validate_semantic_bodies` của đường MJCF không kiểm `wrist_link` và
    `contact_links`, tức hai vai trò này chỉ được kiểm trên đường URDF mà không
    profile phát hành nào dùng.
+7. `evaluate_grasp_fixture` dựng scene bằng `<include>` rồi compile từ chuỗi, nên
+   `meshdir` của hand không được áp và mọi mesh fail; một `except Exception` nuốt
+   lỗi rồi load hand trơ không có vật thể. Fixture chưa bao giờ chạy trên scene
+   có vật để nắm. Sau khi sửa, cách đếm contact cũng sai: `data.ncon` tính cả vật
+   chạm sàn nên `squeeze_contacts` luôn dương.
 
 ## 3. Mức độ cần thiết
 
@@ -102,6 +107,7 @@ hash `f1d4b9eb…f245c`, `check_phase1.py` vẫn PASS, `dummy-hand.yaml` vẫn �
 | `CH-004` | Lấy mesh path thật cho MJCF; bỏ `except Exception: pass`; gate đếm mesh và fail khi bằng 0; anchor rỗng thay vì zeros giả | commit `c70ce25` | `V-004` |
 | `CH-005` | Manifest đặt tên theo artifact; regenerate URDF dẫn xuất bằng đường dẫn tương đối; kiểm bất đẳng thức tam giác; gate kiểm portability | commit `ab84edb` | `V-005` |
 | `CH-006` | Registry schema document thay cho import ngược; sửa kiểu trả về; từ chối preset trùng basename; gate in summary | commit `ffd5dec` | `V-006` |
+| `CH-007` | Scene fixture dựng bằng `MjSpec`; contact chỉ đếm cặp tay–vật; mimic multiplier đối chiếu fixed tendon | commit `366c76e` | `V-008` |
 
 ## 6. Xác minh
 
@@ -112,8 +118,9 @@ hash `f1d4b9eb…f245c`, `check_phase1.py` vẫn PASS, `dummy-hand.yaml` vẫn �
 | `V-003` | Đếm mass phân biệt trên ba profile | không còn hằng số | 12/12/9 giá trị phân biệt; tổng 3.794/0.644/0.746 kg | `pass` | summary của gate |
 | `V-004` | Đếm mesh đã kiểm trên ba profile | lớn hơn 0, không thiếu file | 25/21/21 mesh, missing 0 | `pass` | summary của gate |
 | `V-005` | `grep` đường dẫn tuyệt đối trong `qdgrasp/assets/derived/` | không còn | 0; MuJoCo vẫn load `nq=16` | `pass` | `check_derived_assets_are_portable` |
-| `V-006` | `pytest tests/ -q` | pass | 148 passed, 1 skipped | `pass` | log phiên |
-| `V-007` | `check_phase0.py`, `check_phase1.py`, `check_docs.py`, `unittest scripts/tests` | pass, PLAN hash không đổi | PASS; PLAN `f1d4b9eb…f245c`; 76 file; 50 tests | `pass` | log phiên |
+| `V-006` | `pytest tests/ -q` | pass | 150 passed, 1 skipped | `pass` | log phiên |
+| `V-007` | `check_phase0.py`, `check_phase1.py`, `check_docs.py`, `unittest scripts/tests` | pass, PLAN hash không đổi | PASS; PLAN `f1d4b9eb…f245c`; 78 file; 50 tests | `pass` | log phiên |
+| `V-008` | Chạy `evaluate_grasp_fixture` ba hand; sửa multiplier sai rồi dựng `RobotSpec` | scene có `target_object`; contact đếm đúng; multiplier sai bị chặn | scene compile được; contact tay–vật `0/0/0`; `0.5` bị từ chối do mâu thuẫn tendon `rh_FFJ0` | `pass` | `tests/test_robot_mjcf.py`, `tests/test_sim_mujoco.py` |
 
 - Regression đã chạy lại: toàn bộ gate Phase 0, Phase 1, Phase 2 và hai bộ test.
 - Kiểm tra chưa chạy: `scripts/phase2_cuda_fk_parity.py` (cần GPU thật, ngoài gate
@@ -128,7 +135,7 @@ hash `f1d4b9eb…f245c`, `check_phase1.py` vẫn PASS, `dummy-hand.yaml` vẫn �
   `SESSION-20260822-020` dựa trên một gate không thể fail
 - Loại kiểm tra lại cần thiết: `delta_review` trên Phase 2
 - Đính chính số liệu/tài liệu cần phát hành: `SESSION-20260822-021` thay các claim
-  W-04, W-05, W-06, W-07, W-08 và W-12
+  W-04, W-05, W-06, W-07, W-08, W-09 và W-12
 - Người chấp nhận rủi ro/ngoại lệ: maintainer yêu cầu review và sửa, 2026-08-22
 
 ## 8. Xác nhận đóng hồ sơ

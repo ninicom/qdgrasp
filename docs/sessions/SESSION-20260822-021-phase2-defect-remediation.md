@@ -35,6 +35,8 @@ impact: Thay kết luận nghiệm thu của W-04, W-05, W-06, W-07, W-08 và W-
 | W-07 | Manifest đặt tên theo artifact; URDF dẫn xuất dùng đường dẫn tương đối; gate kiểm portability | `qdgrasp/robot/normalize.py`, `qdgrasp/assets/derived/` | Hoàn tất |
 | W-08 | Registry schema document thay import ngược; kiểu trả về thật; preset trùng basename bị từ chối | `qdgrasp/config/` | Hoàn tất |
 | W-09 | Gate Phase 2 in summary máy đọc được | `scripts/check_phase2.py` | Hoàn tất |
+| W-10 | Scene fixture dựng bằng `MjSpec` nên thật sự chứa vật thể; contact chỉ đếm cặp tay–vật | `qdgrasp/sim/fixtures.py` | Hoàn tất |
+| W-11 | Mimic multiplier được đối chiếu với fixed tendon của MJCF | `qdgrasp/robot/spec.py`, `mjcf.py` | Hoàn tất |
 
 ## Bằng chứng
 
@@ -47,7 +49,8 @@ impact: Thay kết luận nghiệm thu của W-04, W-05, W-06, W-07, W-08 và W-
 | E-05 | Commit manifest và portability | `git` | `ab84edb` |
 | E-06 | Commit cấu trúc config | `git` | `ffd5dec` |
 | E-07 | Revision record | `docs/revisions/REV-20260822-011-phase2-fk-and-mesh-defects.md` | `N2`, `in_review` |
-| E-08 | PLAN không đổi | `PLAN.md` | `f1d4b9eb1692f229704593502afe088b73ae7f769367f7d9e6a515cc0cfe245c` |
+| E-08 | Commit sửa fixture và nối tendon vào validation | `git` | `366c76e` |
+| E-09 | PLAN không đổi | `PLAN.md` | `f1d4b9eb1692f229704593502afe088b73ae7f769367f7d9e6a515cc0cfe245c` |
 
 ## Kiểm tra đã chạy
 
@@ -55,18 +58,37 @@ impact: Thay kết luận nghiệm thu của W-04, W-05, W-06, W-07, W-08 và W-
 | --- | --- | ---: | --- |
 | T-01 | `scripts/check_phase2.py` tại `bebb653` | 1 | FAIL có chủ ý: `leap 0.100000 m`, `shadow 0.246727 m` |
 | T-02 | `scripts/check_phase2.py` tại `ffd5dec` | 0 | PASS; FK worst `3.75e-08` m trên mọi body của ba hand |
-| T-03 | `python3 -m pytest tests/ -q` | 0 | 148 passed, 1 skipped |
+| T-03 | `python3 -m pytest tests/ -q` | 0 | 150 passed, 1 skipped |
 | T-04 | `python3 -m unittest discover -s scripts/tests` | 0 | 50 tests OK |
 | T-05 | `scripts/check_phase0.py` | 0 | PASS, PLAN hash không đổi |
 | T-06 | `scripts/check_phase1.py` | 0 | PASS |
 | T-07 | `scripts/check_docs.py --root .` | 0 | 78 file |
 | T-08 | `scripts/check_robot_assets.py` | 0 | 4 checkouts sạch |
+| T-09 | `evaluate_grasp_fixture` trên ba hand sau khi sửa scene | 0 | scene compile được và chứa `target_object`; contact tay–vật `0/0/0`; lặp lại cùng seed cho metric giống hệt |
+| T-10 | Sửa multiplier `rh_FFJ1` thành `0.5` rồi dựng `RobotSpec` | — | bị từ chối: mâu thuẫn tendon `rh_FFJ0` |
 
 Số liệu gate sau sửa: LEAP 18 link / 16 joint / 21 mesh / 0.746 kg; Allegro 22 /
 16 / 21 / 0.644 kg; Shadow 26 link / 20 joint / 4 mimic / 25 mesh / 3.794 kg.
 
 ## Việc chưa hoàn tất
 
+- **Fixture grasp/squeeze/lift chưa nắm được vật ở cấu hình mặc định.** Trước phiên
+  này `build_evaluation_scene_xml` ghép hand bằng `<include>` rồi compile từ
+  chuỗi; model dựng từ chuỗi không có model directory nên `meshdir` của hand
+  không được áp và mọi mesh reference fail. Một `except Exception` nuốt lỗi rồi
+  load hand trơ **không có vật thể**, nên fixture báo cáo kết quả cho một scene
+  không có gì để nắm. Scene nay dựng bằng `mujoco.MjSpec.from_file` và fail
+  closed. Khi có scene thật, cách đếm contact cũng lộ ra là vô nghĩa: `data.ncon`
+  tính cả vật nằm trên sàn nên `squeeze_contacts` luôn dương dù tay không chạm gì.
+  Sau khi lọc chỉ đếm cặp tay–vật, kết quả trung thực là **0 contact tay–vật trên
+  cả ba hand**, `success=False` và `stable_lift=False`.
+
+  Đây là giới hạn cần khai báo, không phải regression: gate P2 theo
+  `PROJECT_PHASES.md` chỉ đòi fixture repeatability, và điều đó vẫn pass — nay
+  pass một cách có nghĩa thay vì pass rỗng. Muốn `stable_lift` đúng thật phải
+  tune hình học vật thể và hướng đóng của từng ngón theo từng hand; đó là protocol
+  grasp/squeeze/lift thuộc M5 trong `PLAN.md`, không phải P2. Không được nới tiêu
+  chí `success` để làm số liệu đẹp lên.
 - **Giới hạn đã khai báo, không phải defect.** Body MJCF mang nhiều joint và
   joint anchor offset khác 0 nay bị từ chối tường minh thay vì xử lý sai im lặng.
   Không hand nào trong corpus đã pin rơi vào hai ca này (đo được 0/24, 0/16, 0/16
