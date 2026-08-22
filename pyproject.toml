@@ -50,7 +50,14 @@ Issues = "https://github.com/ninicom/qdgrasp/issues"
 include = ["qdgrasp*"]
 
 [tool.setuptools.package-data]
-qdgrasp = ["py.typed", "cfg/*.yaml", "presets/*.yaml", "assets/*"]
+qdgrasp = [
+  "py.typed",
+  "cfg/*.yaml",
+  "presets/*.yaml",
+  "presets/**/*.yaml",
+  "assets/*",
+  "assets/**/*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "scripts/tests"]

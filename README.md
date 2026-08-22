@@ -77,6 +77,11 @@ ngoài import path và tuân theo manifest/provenance riêng.
 RH56E2 không thuộc robot corpus. Corpus Phase 0 chỉ khóa LEAP, Allegro và Shadow
 Hand; asset robot không được đóng gói trong wheel.
 
+Robot presets trong wheel dùng URI `asset://…`. Trước khi dựng `RobotSpec` cho
+một preset đó, cung cấp checkout asset đã pin qua
+`QDGRASP_ROBOT_ASSETS_ROOT=/path/to/robot-assets`; main wheel không tự tải hoặc
+phân phối lại MJCF/mesh robot.
+
 Mọi đường dẫn project trong config/manifest/example là tương đối với project
 root hoặc working directory. Không commit đường dẫn tuyệt đối của máy phát triển;
 đường dẫn hệ điều hành đặc biệt chỉ được dùng khi đọc runtime platform metadata.

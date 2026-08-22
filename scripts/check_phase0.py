@@ -36,6 +36,7 @@ RH_ALLOWLIST = {
     Path("docs/decisions/0007-agpl-community-library.md"),
     Path("docs/roadmap/PROJECT_PHASES.md"),
     Path("docs/roadmap/PHASE2_EXECUTION_PLAN.md"),
+    Path("docs/roadmap/PHASE3_EXECUTION_PLAN.md"),
     Path("docs/revisions/REV-20260822-009-agpl-library-first-phase0.md"),
     Path("docs/sessions/SESSION-20260822-018-phase0-agpl-library.md"),
     Path("docs/sessions/SESSION-20260822-020-phase2-robot-layer.md"),
@@ -58,6 +59,12 @@ def main() -> int:
 
     if importlib.metadata.version("qdgrasp") != "0.1.0a1":
         problems.append("installed qdgrasp version is not 0.1.0a1")
+
+    wheel_gate = ROOT / "scripts" / "check_wheel.py"
+    wheel_result = subprocess.run([sys.executable, str(wheel_gate)], cwd=ROOT, capture_output=True, text=True)
+    if wheel_result.returncode:
+        detail = (wheel_result.stderr or wheel_result.stdout).strip()
+        problems.append(f"clean wheel gate failed: {detail}")
 
     for relative in tracked_files():
         lowered = str(relative).lower()

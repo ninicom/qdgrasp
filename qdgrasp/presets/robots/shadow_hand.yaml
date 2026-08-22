@@ -1,7 +1,7 @@
 schema: qdgrasp/robot/v2
 name: shadow_hand
 format: mjcf
-source_asset: .references/robot-assets/mujoco-menagerie/shadow_hand/right_hand.xml
+source_asset: asset://mujoco-menagerie/shadow_hand/right_hand.xml
 palm_link: rh_palm
 base_link: rh_forearm
 wrist_link: rh_wrist

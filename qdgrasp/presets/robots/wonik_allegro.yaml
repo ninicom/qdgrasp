@@ -1,7 +1,7 @@
 schema: qdgrasp/robot/v2
 name: wonik_allegro
 format: mjcf
-source_asset: .references/robot-assets/mujoco-menagerie/wonik_allegro/right_hand.xml
+source_asset: asset://mujoco-menagerie/wonik_allegro/right_hand.xml
 palm_link: palm
 base_link: palm
 fingertip_links:

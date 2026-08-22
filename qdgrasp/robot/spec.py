@@ -10,9 +10,10 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from ..config.loader import load_robot_config, resolve_document_path
+from ..config.loader import load_robot_config
 from ..config.schema import ConfigError
 from .graph import HandGraph
+from .assets import resolve_robot_asset
 from .kinematics import (
     compute_joint_transform,
     invert_rigid_transform,
@@ -163,14 +164,7 @@ class RobotSpec:
             if not isinstance(config, RobotConfigV2):
                 raise ConfigError(f"RobotSpec requires RobotConfigV2, got {type(config).__name__}")
 
-        asset_path = Path(config.source_asset)
-        if not asset_path.is_file():
-            # Try resolving relative to workspace
-            cand = Path(resolve_document_path(config.source_asset)) if not asset_path.is_file() else asset_path
-            if cand.is_file():
-                asset_path = cand
-            else:
-                raise ConfigError(f"source asset '{config.source_asset}' does not exist")
+        asset_path = resolve_robot_asset(config.source_asset)
 
         base_dir = asset_path.parent
 

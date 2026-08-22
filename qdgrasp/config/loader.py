@@ -30,14 +30,20 @@ def _all_preset_files() -> list[tuple[str, Path]]:
 
     results: list[tuple[str, Path]] = []
     root = resources.files(PRESET_PACKAGE)
-    for entry in sorted(root.iterdir(), key=lambda item: item.name):
-        if entry.is_file() and entry.name.endswith(".yaml"):
-            results.append((entry.name, Path(str(entry))))
-        elif entry.is_dir():
-            for child in sorted(entry.iterdir(), key=lambda item: item.name):
-                if child.is_file() and child.name.endswith(".yaml"):
-                    results.append((f"{entry.name}/{child.name}", Path(str(child))))
-                    results.append((child.name, Path(str(child))))
+    def collect(directory: Any, prefix: str = "") -> None:
+        for entry in sorted(directory.iterdir(), key=lambda item: item.name):
+            relative = f"{prefix}{entry.name}"
+            if entry.is_file() and entry.name.endswith(".yaml"):
+                # Wheels installed by pip expose real files, which preserves the
+                # path-based loader contract.  ``as_file`` is used by callers
+                # that distribute a zipped importer instead.
+                path = Path(str(entry))
+                results.append((relative, path))
+                results.append((entry.name, path))
+            elif entry.is_dir():
+                collect(entry, f"{relative}/")
+
+    collect(root)
     return results
 
 

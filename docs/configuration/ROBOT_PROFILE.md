@@ -79,3 +79,13 @@ Phase 2 phát hành 3 presets chuẩn:
 1. `leap_hand.yaml`: LEAP Hand v2 (16 actuated joints, Menagerie MJCF).
 2. `wonik_allegro.yaml`: Wonik Allegro Hand v2 (16 actuated joints, Menagerie MJCF / normalized URDF).
 3. `shadow_hand.yaml`: Shadow Hand E3M5 v2 (20 actuated joints từ $nq=24$, 4 mimic joints, Menagerie MJCF).
+
+Các preset dùng `source_asset: asset://…`, không trỏ tới đường dẫn workspace.
+Wheel không mang MJCF/mesh robot; trước khi gọi `RobotSpec.from_config`, đặt
+`QDGRASP_ROBOT_ASSETS_ROOT` tới checkout `robot-assets` khớp manifest. Thiếu
+biến này là lỗi cấu hình có hướng dẫn, không phải fallback sang asset khác.
+
+`qdgrasp/assets/derived/*.urdf` là artifact normalization/provenance, không phải
+robot bundle tự chứa: mesh của nó vẫn thuộc external asset checkout. Không dùng
+file đó trực tiếp từ bare wheel; một asset bundle phân phối riêng sẽ cần review
+license/provenance trước khi được thêm.

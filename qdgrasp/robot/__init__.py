@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .assets import ROBOT_ASSET_ROOT_ENV, ROBOT_ASSET_URI_PREFIX, resolve_robot_asset
 from .graph import HandGraph
 from .kinematics import compute_joint_transform, rpy_to_rotation_matrix, transform_points
 from .meshes import load_mesh, resolve_mesh_path, sample_mesh_surface
@@ -14,6 +15,8 @@ from .urdf import URDFJoint, URDFLink, URDFModel, parse_urdf
 __all__ = (
     "ROBOT_SCHEMA_V1",
     "ROBOT_SCHEMA_V2",
+    "ROBOT_ASSET_ROOT_ENV",
+    "ROBOT_ASSET_URI_PREFIX",
     "ActuatorSpec",
     "HandGraph",
     "LinkSpec",
@@ -32,6 +35,7 @@ __all__ = (
     "parse_urdf",
     "resolve_mesh_path",
     "rpy_to_rotation_matrix",
+    "resolve_robot_asset",
     "sample_mesh_surface",
     "transform_points",
 )
