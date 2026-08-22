@@ -40,6 +40,20 @@ def build_labeled_scene_model(
         raise ConfigError(f"hand XML file not found: {hand_p}")
 
     spec = mujoco.MjSpec.from_file(str(hand_p))
+    hand_root = spec.worldbody.bodies[0]
+    has_free = any(j.type == mujoco.mjtJoint.mjJNT_FREE for j in hand_root.joints)
+    if not has_free:
+        hand_root.add_freejoint(name="hand_freejoint")
+
+    mocap_body = spec.worldbody.add_body(name="hand_mocap", mocap=True)
+    spec.add_equality(
+        type=mujoco.mjtEq.mjEQ_WELD,
+        name="mocap_weld",
+        name1="hand_mocap",
+        name2=hand_root.name,
+        objtype=mujoco.mjtObj.mjOBJ_BODY,
+    )
+
     obj_body = spec.worldbody.add_body(
         name="target_object",
         pos=[float(object_pos[0]), float(object_pos[1]), float(object_pos[2])],
@@ -121,9 +135,24 @@ def evaluate_grasp_physics(
     while int(model.body_parentid[root_id]) != 0:
         root_id = int(model.body_parentid[root_id])
 
+    mocap_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "hand_mocap")
+    if mocap_body_id < 0:
+        raise ConfigError("could not identify mocap body in model")
+    mocap_idx = model.body_mocapid[mocap_body_id]
+
     mujoco.mj_forward(model, data)
     palm_delta = np.asarray(palm_pos, dtype=np.float64) - data.xpos[palm_id]
-    model.body_pos[root_id] += palm_delta
+
+    root_start_pos = np.array(data.xpos[root_id]) + palm_delta
+    data.mocap_pos[mocap_idx][:3] = root_start_pos
+
+    jnt_id = model.body_jntadr[root_id]
+    if jnt_id >= 0 and model.jnt_type[jnt_id] == mujoco.mjtJoint.mjJNT_FREE:
+        qpos_adr = model.jnt_qposadr[jnt_id]
+        data.qpos[qpos_adr : qpos_adr + 3] = root_start_pos
+    else:
+        model.body_pos[root_id] += palm_delta
+
     mujoco.mj_forward(model, data)
 
     # Set initial joint positions
@@ -186,16 +215,15 @@ def evaluate_grasp_physics(
 
     for _ in range(lift_steps):
         if lift_steps > 0:
-            model.body_pos[root_id][2] += requested_lift / lift_steps
-            mujoco.mj_forward(model, data)
+            data.mocap_pos[mocap_idx][2] += requested_lift / lift_steps
         mujoco.mj_step(model, data)
 
     # 3. Perturbation stage (apply disturbance shaking wrench)
     for step_p in range(perturbation_steps):
         shake_x = 0.002 * np.sin(step_p * 0.5)
         shake_y = 0.002 * np.cos(step_p * 0.5)
-        model.body_pos[root_id][0] += shake_x
-        model.body_pos[root_id][1] += shake_y
+        data.mocap_pos[mocap_idx][0] += shake_x
+        data.mocap_pos[mocap_idx][1] += shake_y
         mujoco.mj_step(model, data)
 
     final_z = float(data.xpos[obj_id][2]) if obj_id >= 0 else 0.0

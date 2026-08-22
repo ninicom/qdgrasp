@@ -76,13 +76,12 @@ def solve_dls_ik(
                 converged = True
                 break
 
-            # Compute Jacobian J [3K, J]
-            J = torch.zeros((3 * num_tips, num_joints), dtype=torch.float32)
-            for j_idx in range(num_joints):
-                q_pert = q.clone()
-                q_pert[0, j_idx] += delta
-                tips_pert = spec.fingertip_positions(t_palm_pos, t_palm_rot, q_pert).view(-1)
-                J[:, j_idx] = (tips_pert - cur_flat) / delta
+            # Compute exact analytical Jacobian J [3K, J] using PyTorch Autograd
+            def compute_tips(q_in):
+                return spec.fingertip_positions(t_palm_pos, t_palm_rot, q_in).view(-1)
+
+            J_full = torch.autograd.functional.jacobian(compute_tips, q)
+            J = J_full.view(3 * num_tips, num_joints)
 
             # DLS step: dq = (J^T J + lambda^2 I)^-1 J^T e
             Jt = J.t()

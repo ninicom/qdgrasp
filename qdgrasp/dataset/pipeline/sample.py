@@ -76,23 +76,30 @@ def sample_grasp_candidates(
 ) -> list[GraspCandidate]:
     """Sample candidate palm poses and target contact points on the object.
 
-    1. Approach vector is sampled towards the object center or along surface normals.
+    1. Approach vector is aligned with the inverse surface normal at a sampled point.
     2. Palm orientation is aligned with the approach vector, modulated by random in-plane roll.
-    3. Palm position is placed at a standoff distance from the object surface.
-    4. Target contacts are sampled on the object surface in the vicinity of the approach ray.
+    3. Palm position is placed at a standoff distance from the surface point.
+    4. Target contacts are sampled in the vicinity of the surface point.
     """
     hand_axis = _detect_hand_approach_axis(spec)
-    obj_center = mesh.centroid
 
-    # Sample random directions from unit sphere
-    approach_dirs = sample_sphere_surface(rng, size=num_candidates)
+    # 1. Sample approach points directly on the surface mesh
+    seed_val = int(rng.integers(0, 2**31 - 1))
+    samples, face_indices = trimesh.sample.sample_surface(mesh, num_candidates, seed=seed_val)
+    normals = mesh.face_normals[face_indices]
 
     candidates: list[GraspCandidate] = []
     num_tips = len(spec.fingertip_links)
 
     for i in range(num_candidates):
-        # Target vector pointing into object
-        target_approach = -approach_dirs[i]
+        surface_point = samples[i]
+        surface_normal = normals[i]
+
+        # Target vector pointing into object (inverse of normal)
+        target_approach = -surface_normal
+        if np.linalg.norm(target_approach) < 1e-5:
+            target_approach = np.array([0.0, 0.0, -1.0], dtype=np.float64)
+
         standoff = float(rng.uniform(standoff_range[0], standoff_range[1]))
 
         # Align hand approach axis with target approach direction
@@ -107,15 +114,15 @@ def sample_grasp_candidates(
 
         palm_rot = R_roll @ R_align
 
-        # Palm position standoff from object center
-        palm_pos = obj_center - target_approach * standoff
+        # Palm position standoff from the surface point
+        palm_pos = surface_point - target_approach * standoff
 
-        # Sample target contact points on object surface
-        # Project approach ray to object surface approximation
+        # Sample target contact points in the vicinity of the surface point
         target_contacts = np.zeros((num_tips, 3), dtype=np.float64)
         for t_idx in range(num_tips):
-            jitter = rng.normal(0.0, 0.01, size=3)
-            target_contacts[t_idx] = obj_center + jitter
+            jitter = rng.normal(0.0, 0.015, size=3)
+            # Tangential jitter preferred, but 3D is okay for now as DLS-IK pulls them
+            target_contacts[t_idx] = surface_point + jitter
 
         candidates.append(
             GraspCandidate(
