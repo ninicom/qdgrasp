@@ -10,6 +10,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+import mujoco
 import numpy as np
 import torch
 import yaml
@@ -228,6 +229,78 @@ def check_semantic_link_negative_tests(problems: list[str]) -> None:
         problems.append("RobotSpec silently accepted a non-existent palm link without raising ConfigError")
 
 
+MJCF_PROFILES = {
+    "leap_hand.yaml": ".references/robot-assets/mujoco-menagerie/leap_hand/right_hand.xml",
+    "wonik_allegro.yaml": ".references/robot-assets/mujoco-menagerie/wonik_allegro/right_hand.xml",
+    "shadow_hand.yaml": ".references/robot-assets/mujoco-menagerie/shadow_hand/right_hand.xml",
+}
+FK_GROUND_TRUTH_ATOL = 1e-4
+
+
+def check_forward_kinematics_ground_truth(problems: list[str], root: Path) -> None:
+    """Compare RobotSpec FK against MuJoCo ``mj_forward`` for every shared body.
+
+    Batch-versus-single agreement cannot detect a wrong FK because both sides run
+    the same code, so the gate needs an independent oracle.  MuJoCo is that
+    oracle: the profile's own joint values are written into ``qpos``, the palm
+    pose that ``mj_forward`` produces is fed to ``forward_kinematics``, and every
+    body -- not only the palm's descendants -- must land in the same place.
+    """
+
+    for profile, mjcf_relative in MJCF_PROFILES.items():
+        spec = RobotSpec.from_config(profile, sample_anchors=False)
+        config = spec.config
+        model = mujoco.MjModel.from_xml_path(str(root / mjcf_relative))
+        data = mujoco.MjData(model)
+
+        generator = np.random.default_rng(20260822)
+        angles: dict[str, float] = {}
+        for joint_name in config.joints:
+            lower, upper = config.joint_limits[joint_name]
+            angles[joint_name] = float(generator.uniform(lower, upper))
+            joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+            if joint_id < 0:
+                problems.append(f"{profile}: declared joint '{joint_name}' is absent from the MJCF")
+                continue
+            data.qpos[model.jnt_qposadr[joint_id]] = angles[joint_name]
+        mujoco.mj_forward(model, data)
+
+        palm_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, config.palm_link)
+        if palm_id < 0:
+            problems.append(f"{profile}: palm link '{config.palm_link}' is absent from the MJCF")
+            continue
+
+        transforms = spec.forward_kinematics(
+            torch.tensor(data.xpos[palm_id], dtype=torch.float32).unsqueeze(0),
+            torch.tensor(data.xmat[palm_id].reshape(3, 3), dtype=torch.float32).unsqueeze(0),
+            torch.tensor([[angles[name] for name in config.joints]], dtype=torch.float32),
+        )
+
+        compared = 0
+        worst_link, worst_position, worst_rotation = "", 0.0, 0.0
+        for link_name, transform in transforms.items():
+            body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, link_name)
+            if body_id < 0:
+                continue
+            compared += 1
+            position_error = float(np.abs(transform[0, :3, 3].numpy() - data.xpos[body_id]).max())
+            rotation_error = float(
+                np.abs(transform[0, :3, :3].numpy() - data.xmat[body_id].reshape(3, 3)).max()
+            )
+            if position_error > worst_position:
+                worst_link, worst_position, worst_rotation = link_name, position_error, rotation_error
+
+        if compared < len(spec.links):
+            problems.append(
+                f"{profile}: only {compared}/{len(spec.links)} links could be compared against MuJoCo"
+            )
+        if worst_position > FK_GROUND_TRUTH_ATOL or worst_rotation > FK_GROUND_TRUTH_ATOL:
+            problems.append(
+                f"{profile}: FK disagrees with mj_forward at '{worst_link}' "
+                f"(position {worst_position:.6f} m, rotation {worst_rotation:.6f}, atol {FK_GROUND_TRUTH_ATOL})"
+            )
+
+
 def check_forward_kinematics_and_batch_parity(problems: list[str]) -> None:
     for name in ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"):
         spec = RobotSpec.from_config(name, sample_anchors=False)
@@ -340,6 +413,7 @@ def main() -> int:
     check_mesh_resolution(problems, root)
     check_normalization_reproducibility(problems, root)
     check_semantic_link_negative_tests(problems)
+    check_forward_kinematics_ground_truth(problems, root)
     check_forward_kinematics_and_batch_parity(problems)
     check_hand_graph_memory_scaling(problems)
     check_mujoco_and_fixtures(problems, root)

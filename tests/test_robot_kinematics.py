@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pytest
 import torch
 
@@ -60,3 +61,58 @@ def test_hand_graph_linear_memory_scaling() -> None:
     node_ratio = 26 / 18
     # Scaling is linear O(L), so mem_ratio ~= node_ratio
     assert mem_ratio < node_ratio * 1.5
+
+
+@pytest.mark.parametrize(
+    ("profile", "mjcf"),
+    (
+        ("leap_hand.yaml", ".references/robot-assets/mujoco-menagerie/leap_hand/right_hand.xml"),
+        ("wonik_allegro.yaml", ".references/robot-assets/mujoco-menagerie/wonik_allegro/right_hand.xml"),
+        ("shadow_hand.yaml", ".references/robot-assets/mujoco-menagerie/shadow_hand/right_hand.xml"),
+    ),
+)
+def test_forward_kinematics_matches_mujoco_for_every_body(profile: str, mjcf: str) -> None:
+    """FK must agree with an independent oracle, not merely with itself.
+
+    Batch-versus-single agreement runs the same code on both sides; only
+    ``mj_forward`` can show that the transforms are actually right, and it must
+    hold for every body, including the ones above the palm in the tree.
+    """
+
+    import mujoco
+
+    spec = RobotSpec.from_config(profile, sample_anchors=False)
+    config = spec.config
+    model = mujoco.MjModel.from_xml_path(mjcf)
+    data = mujoco.MjData(model)
+
+    generator = np.random.default_rng(20260822)
+    angles = {}
+    for name in config.joints:
+        lower, upper = config.joint_limits[name]
+        angles[name] = float(generator.uniform(lower, upper))
+        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
+        assert joint_id >= 0, f"declared joint {name} missing from MJCF"
+        data.qpos[model.jnt_qposadr[joint_id]] = angles[name]
+    mujoco.mj_forward(model, data)
+
+    palm_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, config.palm_link)
+    transforms = spec.forward_kinematics(
+        torch.tensor(data.xpos[palm_id], dtype=torch.float32).unsqueeze(0),
+        torch.tensor(data.xmat[palm_id].reshape(3, 3), dtype=torch.float32).unsqueeze(0),
+        torch.tensor([[angles[name] for name in config.joints]], dtype=torch.float32),
+    )
+
+    compared = 0
+    for link_name, transform in transforms.items():
+        body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, link_name)
+        if body_id < 0:
+            continue
+        compared += 1
+        assert np.allclose(transform[0, :3, 3].numpy(), data.xpos[body_id], atol=1e-4), (
+            f"{profile}: position mismatch at {link_name}"
+        )
+        assert np.allclose(
+            transform[0, :3, :3].numpy(), data.xmat[body_id].reshape(3, 3), atol=1e-4
+        ), f"{profile}: rotation mismatch at {link_name}"
+    assert compared == len(spec.links)
