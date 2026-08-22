@@ -170,8 +170,11 @@ def get_default_callbacks():
 def add_integration_callbacks(instance):
     """Add integration callbacks to the instance's callbacks dictionary.
 
-    This function loads and adds analytics callbacks to every instance. Trainer instances also receive a Platform
-    callback (see dexgrasp/utils/callbacks/platform.py -- pending removal, tracked separately).
+    All third-party/SaaS experiment-tracking integrations and Ultralytics HUB/Platform
+    telemetry have been removed (PLAN.md M1: "loại ... integrations ngoài scope").
+    This is currently a no-op kept for call-site compatibility with
+    dexgrasp/engine/trainer.py and friends; a dexgrasp-native logging integration, if
+    any, would be wired in here.
 
     Args:
         instance (Trainer | Predictor | Validator | Exporter): The object instance to which callbacks will be added. The
@@ -182,15 +185,7 @@ def add_integration_callbacks(instance):
         >>> trainer = BaseTrainer()
         >>> add_integration_callbacks(trainer)
     """
-    from ultralytics.utils.events import callbacks as events_cb
-
-    callbacks_list = [events_cb]
-
-    # Load training callbacks
-    if "Trainer" in instance.__class__.__name__:
-        from .platform import callbacks as platform_cb
-
-        callbacks_list.extend([platform_cb])
+    callbacks_list: list[dict] = []
 
     # Add the callbacks to the callbacks dictionary
     for callbacks in callbacks_list:
