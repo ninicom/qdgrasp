@@ -14,6 +14,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .registry import register_document_schema
+
 
 MODEL_SCHEMA_V1 = "qdgrasp/model/v1"
 ROBOT_SCHEMA_V1 = "qdgrasp/robot/v1"
@@ -184,3 +186,9 @@ class RunConfig(_Document):
         if value.startswith("/") or value.startswith("~"):
             raise ValueError("project_dir must be a relative path from the working directory")
         return value
+
+
+register_document_schema("model", MODEL_SCHEMA_V1, ModelConfig)
+register_document_schema("robot", ROBOT_SCHEMA_V1, RobotConfig)
+register_document_schema("data", DATA_SCHEMA_V1, DataConfig)
+register_document_schema("run", RUN_SCHEMA_V1, RunConfig)

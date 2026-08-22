@@ -478,6 +478,26 @@ def check_provenance_and_release_enforcement(problems: list[str]) -> None:
         problems.append("validate_profile_for_release failed to reject a release_blocked=True profile")
 
 
+def _summary() -> dict[str, object]:
+    """Machine-readable evidence for the session report, like the Phase 1 gate."""
+
+    hands: dict[str, object] = {}
+    for profile in MJCF_PROFILES:
+        spec = RobotSpec.from_config(profile, sample_anchors=False)
+        graph = spec.to_hand_graph()
+        hands[profile] = {
+            "links": len(spec.links),
+            "actuated_joints": len(spec.actuated_joint_names),
+            "mimic_joints": len(spec.mimic_joints),
+            "meshes": sum(len(link.mesh_paths) for link in spec.links.values()),
+            "graph_nodes": graph.num_nodes,
+            "graph_edges": graph.num_edges,
+            "graph_bytes": graph.memory_bytes(),
+            "total_mass_kg": round(sum(link.mass for link in spec.links.values()), 6),
+        }
+    return {"fk_ground_truth_atol": FK_GROUND_TRUTH_ATOL, "hands": hands}
+
+
 def main() -> int:
     logging.basicConfig(level=logging.WARNING)
     root = Path(__file__).resolve().parents[1]
@@ -498,6 +518,9 @@ def main() -> int:
     check_provenance_and_release_enforcement(problems)
 
     print(f"Phase 2 CPU Robot Layer: {'PASS' if not problems else 'FAIL'}")
+    if not problems:
+        print(json.dumps(_summary(), indent=2, sort_keys=True))
+    print("CUDA FK parity is NOT covered here; run scripts/phase2_cuda_fk_parity.py on NVIDIA hardware.")
     for problem in problems:
         print(f"- {problem}")
     return 0 if not problems else 1

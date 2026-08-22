@@ -8,6 +8,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from ..config.registry import register_document_schema
 from ..config.schema import ROBOT_SCHEMA_V1, _Document
 
 
@@ -107,3 +108,6 @@ class RobotConfigV2(_Document):
     @property
     def num_fingertips(self) -> int:
         return len(self.fingertip_links)
+
+
+register_document_schema("robot", ROBOT_SCHEMA_V2, RobotConfigV2)
