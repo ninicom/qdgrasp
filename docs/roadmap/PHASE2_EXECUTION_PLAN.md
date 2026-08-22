@@ -138,7 +138,7 @@ Hai điểm dễ sai:
 | P2-12 | Gate script CPU của P2 | `scripts/check_phase2.py` | |
 | P2-13 | Test suite | `tests/test_robot_*.py`, `tests/test_sim_*.py` | |
 | P2-14 | Contract doc và session report | `docs/configuration/ROBOT_PROFILE.md`, `docs/sessions/` | `document_type: registry` |
-| P2-15 | CUDA FK parity qua harness Kaggle | `scripts/phase2_cuda_fk_parity.py`, `kaggle-phase2/` | ngoài gate roadmap, xem §10 |
+| P2-15 | CUDA FK parity thêm vào harness Kaggle sẵn có | `scripts/phase2_cuda_fk_parity.py`, cell mới trong `kaggle-phase1/` | ngoài gate roadmap, xem §10 |
 
 Thứ tự đề xuất: P2-01 → P2-02/03 → P2-04 → P2-05 → P2-06 → P2-07 → P2-08 →
 P2-09/10 → P2-11/12/13/14 → P2-15. P2-02 và P2-03 chạy song song được. P2-15
@@ -246,7 +246,9 @@ Mỗi mục dưới đây phải kiểm được bằng lệnh, không phải b�
 - Sai khác lớn nhất giữa FP32 CPU và FP32 CUDA `<= 1e-4` trên cùng profile hash,
   cùng seed và cùng joint vector.
 - Evidence JSON có environment fingerprint, profile hash của ba hand và deviation
-  từng hand; lưu theo mẫu `evidence/phase2-run-NNN-pass/`.
+  từng hand; lưu cùng evidence P1 của chính lần chạy đó trong
+  `evidence/phase2-run-NNN-pass/`.
+- Cùng lần chạy đó, gate CUDA của P1 vẫn pass nguyên vẹn.
 
 **Provenance và release**
 
@@ -291,20 +293,36 @@ lỗi thật: FP32 train và AMP train đều pass trên T4, chỉ bước đầ
 mới lộ ra optimizer state nằm sai device. FK có cùng đặc tính rủi ro đó. Phát
 hiện ở P2 rẻ hơn nhiều so với phát hiện giữa P4.
 
-Cách làm, theo đúng khuôn đã chạy được ở P1:
+P2-15 mở rộng **harness Kaggle sẵn có**, không tạo kernel mới:
 
 1. Viết `scripts/phase2_cuda_fk_parity.py` fail-closed: gọi
    `qdgrasp.require_cuda()`, dựng `RobotSpec` cho ba hand, chạy FK trên CPU và
-   CUDA với cùng seed/joint vector, so deviation, ghi evidence JSON kèm hash.
-   Script từ chối chạy khi `--device` không phải CUDA.
-2. Tạo `kaggle-phase2/` trong repository `ninicom/qdgrasp-cuda-kaggle` với
-   `kernel-metadata.json` riêng; **không** sửa `kaggle/` của P0 hay
-   `kaggle-phase1/`.
-3. Notebook cài `qdgrasp` từ exact public commit, tải script gate từ đúng commit
-   đó qua `raw.githubusercontent.com` và assert SHA-256 trước khi chạy. Cách này
-   giữ script gate chỉ có một nguồn duy nhất trong repository library.
-4. Lưu evidence pass vào `evidence/phase2-run-NNN-pass/` và ghi hash vào session
-   report. Run fail vẫn giữ trong bảng test của session report, không xóa.
+   CUDA với cùng seed/joint vector, so deviation, ghi
+   `phase2_fk_parity_evidence.json` kèm hash. Script từ chối chạy khi `--device`
+   không phải CUDA, giống `scripts/phase1_cuda_smoke.py`.
+2. Thêm **một cell** vào `kaggle-phase1/qdgrasp_phase1_cuda.ipynb`: tải script
+   mới từ đúng commit đã pin trong cell cài đặt, assert SHA-256, rồi chạy. Không
+   tạo `kaggle-phase2/`, không đụng `kaggle/` của P0.
+3. Repin `QDGRASP_COMMIT` sang commit P2 và cập nhật hằng SHA-256 của cả hai
+   script gate. Giữ nguyên kernel id `niniflo/qdgrasp-phase-1-cuda-framework-gate`
+   để version history và evidence cũ nằm cùng một chỗ.
+4. Một lần chạy sinh hai evidence JSON. Lưu cả hai vào cùng một thư mục run
+   `evidence/phase2-run-NNN-pass/` và ghi hash vào session report. Run fail vẫn
+   giữ trong bảng test, không xóa.
+
+Lợi ích chính của việc dùng chung một kernel: mỗi lần chạy FK parity của P2 đồng
+thời chạy lại toàn bộ gate CUDA của P1 — train FP32, AMP, resume bit-exact,
+export round-trip — nên P2 không thể âm thầm làm hỏng P1 trên GPU mà không ai
+thấy. Đây là regression check thật, chi phí thêm bằng không.
+
+Hai điều phải xử lý vì dùng chung kernel:
+
+- Tên kernel vẫn mang chữ “phase 1” trong khi nó chạy cả check của P2. Ghi rõ
+  trong `README.md` của repository harness từ version nào kernel bắt đầu tích lũy
+  gate, để người đọc sau không hiểu nhầm phạm vi.
+- Khi kernel fail, phải quy trách nhiệm theo **evidence file**, không theo tên
+  kernel. FK parity fail không phải P1 regression, và ngược lại; session report
+  ghi hai dòng test riêng.
 
 Ràng buộc: notebook cần commit library đã public, nên bước này chỉ chạy được sau
 khi branch P2 được push. Nếu chưa muốn public code P2, hoãn P2-15 tới lúc đó và
