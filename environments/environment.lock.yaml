@@ -28,11 +28,27 @@ profiles:
     sha256: 43536551e9ecbf4f525eb08f77567378a1531c2a24f1b7275a65751b0b95b4ef
     torch: 2.11.0+cu128
     cuda_runtime: "12.8"
-    status: resolved_not_hardware_verified
-    reason: Current host has no nvidia-smi or visible NVIDIA GPU.
+    status: verified
     evidence:
       uv_sync_dry_run: pass
-      hardware_smoke: not_run
+      hardware_smoke: pass
+      runner: kaggle
+      kernel: niniflo/qdgrasp-phase-0-cuda-hardware-smoke
+      kernel_version: 8
+      notebook_repository: https://github.com/ninicom/qdgrasp-cuda-kaggle
+      notebook_repository_commit: c078333f5ee1cf8c243bd8cc17ad8b0d2527ed76
+      project_commit: e20ce61bb44dd4d0787d1924e34335f91cec5289
+      evidence_url: https://github.com/ninicom/qdgrasp-cuda-kaggle/blob/main/evidence/run-008-pass/phase0_cuda_evidence.json
+      evidence_sha256: 00e75d727393ff7dae8c2c893362a6df34ba5abd265cb346823058af86b69291
+      python: 3.12.13
+      torch: 2.11.0+cu128
+      cuda_runtime: "12.8"
+      device: Tesla T4
+      device_capability: [7, 5]
+      device_count: 2
+      amp_train_steps: 3
+      checkpoint_resume: pass
+      mujoco_forward: pass
   dev_cpu:
     lock: environments/requirements/dev-cpu.lock
     sha256: 6ea95a3d402e968e817bdf9663252d2f05a27206c13c2e06018f16018beb0c68

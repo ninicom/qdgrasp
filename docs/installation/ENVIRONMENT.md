@@ -109,12 +109,15 @@ python3 scripts/check_docs.py --root .
 python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 ```
 
-Môi trường hiện tại chỉ xác minh được CPU vì host không có `nvidia-smi`. CUDA
-lock là reproducible contract nhưng **P0 chưa qua CUDA gate** cho tới khi
-validator, tensor/model smoke, train-step và MuJoCo evaluation chạy trên máy
-NVIDIA. Không có kết quả CUDA/paper nào được chấp nhận trước gate đó.
+CPU reference đã được xác minh cục bộ bằng Python 3.11. CUDA gate Phase 0 đã
+được xác minh độc lập trên Kaggle bằng Python 3.12.13, PyTorch 2.11.0+cu128,
+CUDA 12.8 và Tesla T4. Run 8 pass CUDA validation, ba AMP train-step,
+checkpoint resume và MuJoCo forward trên exact project commit
+`e20ce61bb44dd4d0787d1924e34335f91cec5289`.
 
-GPU gate Phase 0 chạy ở notebook repository tách biệt
-`https://github.com/ninicom/qdgrasp-cuda-kaggle`. Notebook phải cài exact commit
-từ `https://github.com/ninicom/qdgrasp`, gọi `qdgrasp.require_cuda()` và xuất
-evidence JSON; notebook không được chứa bản sao package source.
+Notebook nằm ở repository tách biệt
+`https://github.com/ninicom/qdgrasp-cuda-kaggle`; evidence công khai nằm tại
+`evidence/run-008-pass/phase0_cuda_evidence.json`, SHA-256
+`00e75d727393ff7dae8c2c893362a6df34ba5abd265cb346823058af86b69291`.
+Notebook cài exact public commit của `https://github.com/ninicom/qdgrasp`, gọi
+`qdgrasp.require_cuda()` và không chứa bản sao package source.

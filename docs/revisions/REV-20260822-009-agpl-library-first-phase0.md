@@ -3,7 +3,7 @@ document_id: REV-20260822-009
 document_type: revision_record
 revision_schema: 2
 title: Chuyển Phase 0 sang AGPL library-first
-status: draft
+status: complete
 date: 2026-08-22
 record_id: REV-20260822-009
 session_id: SESSION-20260822-018
@@ -58,7 +58,7 @@ dùng để xóa history, notice hoặc trì hoãn public package.
 | CH-001 | Chốt AGPL và DGN2 boundary | ADR-0007, PLAN 4.0 | docs gate |
 | CH-002 | Tạo public package/CLI/runtime | `pyproject.toml`, `qdgrasp/runtime.py` | wheel test |
 | CH-003 | Loại RH56E2 khỏi active scope | robot lock, archive sidecar | Phase 0 checker |
-| CH-004 | Tách Kaggle harness | external repository | pending GPU run |
+| CH-004 | Tách Kaggle harness | `ninicom/qdgrasp-cuda-kaggle` | public run 8 pass |
 
 ## Xác minh
 
@@ -67,7 +67,7 @@ dùng để xóa history, notice hoặc trì hoãn public package.
 | V-001 | wheel install ngoài source tree | import/CLI pass | pass | pass | session T-01 |
 | V-002 | CPU environment + runtime tests | pass | pass | pass | session T-02 |
 | V-003 | docs/legacy tests | pass | pass | pass | session T-03 |
-| V-004 | Kaggle cu128 hardware run | pass | pending | pending | external run |
+| V-004 | Kaggle cu128 hardware run | pass | pass: T4, CUDA 12.8, AMP/resume/MuJoCo | pass | run 8, SHA-256 `00e75d727393ff7dae8c2c893362a6df34ba5abd265cb346823058af86b69291` |
 
 ## Ảnh hưởng tới báo cáo và quyết định cũ
 
@@ -79,6 +79,6 @@ dùng để xóa history, notice hoặc trì hoãn public package.
 ## Xác nhận đóng hồ sơ
 
 - Tác giả: `codex-primary-agent`, 2026-08-22.
-- Reviewer: automated gates; external GPU runtime pending.
-- Kết luận: draft cho tới khi Kaggle run và public repositories pass.
+- Reviewer: automated gates và external Kaggle GPU runtime.
+- Kết luận: complete; public repositories và CUDA hardware gate đều pass.
 - Session: `docs/sessions/SESSION-20260822-018-phase0-agpl-library.md`.

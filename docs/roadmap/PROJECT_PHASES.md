@@ -30,7 +30,7 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 
 | Phase | Mục tiêu chính | Artifact cuối phase | Gate chuyển phase | Trạng thái |
 | --- | --- | --- | --- | --- |
-| P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | in progress |
+| P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | complete |
 | P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | pending |
 | P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | pending |
 | P3 — Data layer | Xây procedural objects, candidate generation, physics labels và immutable dataset schema | `DGN-Open-Tiny` có manifest và deterministic regeneration | Regenerate cùng seed/hash; dataset audit và tiny loader pass | pending |
