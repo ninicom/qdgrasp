@@ -10,7 +10,7 @@
     "python": "3.11.15",
     "torch": "2.11.0+cpu"
   },
-  "generator_commit": "c0644e6728bcd2b32c6459ff984fa15d7da2c0dd",
+  "generator_commit": "354826e08e9be7e65f707212a4f321e4a57a0235",
   "generator_source_hashes": {
     "qdgrasp/dataset/manifest.py": "dd1bdc4d93eb03825a9544c0a861c6d36b4b479f98aeb13e767dbc457c05be9e",
     "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "158096bb4b8798331e654593e939336cdce93e932ae8dca9e064fe413cff10a2",
@@ -25,7 +25,7 @@
     "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "7eff75c6a9207f97490f863f23da4ce5af3fa2098cff770b53cac3c083c99822",
     "qdgrasp/dataset/pipeline/solvers/region_dls.py": "0d845ea1965149def9c50709376b07e4fa637a6aac72d156b55fdd034cc4e653",
     "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "407d61f35db16fc4ba1571758f76db98aa0e7d812d951bc9fa24d60d771c2a9b",
-    "scripts/generate_dgn_open_tiny.py": "66ce18692d001070d8ea41f9d161d3dd7502ec77b791b7884489fa0101d98553"
+    "scripts/generate_dgn_open_tiny.py": "9119f1855efba038597b1f69cbd44c76e75ce0e1c0f3b5281d32b70a260d3262"
   },
   "generator_version": "0.1.0a1",
   "generator_worktree_dirty": false,

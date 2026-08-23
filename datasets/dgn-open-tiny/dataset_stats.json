@@ -3,7 +3,7 @@
   "recipe_id": "wrench_guided_v1",
   "generator_version": "0.1.0a1",
   "seed": 42,
-  "release_blocked": true,
+  "release_blocked": false,
   "total_samples": 144,
   "positive_samples": 6,
   "negative_samples": 138,
