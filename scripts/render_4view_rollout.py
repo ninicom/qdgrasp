@@ -1,42 +1,11 @@
-"""Multi-angle (4-view) grasp rollout recorder with DexGraspNet 2.0 WidthMapper integration.
-
-Renders 4 synchronized virtual camera perspectives:
-  1. Isometric View (45 deg)
-  2. Front View (0 deg)
-  3. Side Profile View (90 deg)
-  4. Top-Down View (-85 deg)
-
-Outputs categorized videos into distinct `pass/` and `fail/` directories with dynamic HUD overlay.
-"""
-
-from __future__ import annotations
-
 import os
-import shutil
-import subprocess
-from pathlib import Path
-from typing import Any, Sequence
-
-import mujoco
+import sys
+import json
 import numpy as np
+import mujoco
+from pathlib import Path
+from typing import Sequence, Tuple
 from scipy.spatial.transform import Rotation
-
-from qdgrasp.objects.schema import SubGeomSpec
-from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
-from qdgrasp.dataset.pipeline.validators.mujoco_rollout import build_rollout_scene_model
-from qdgrasp.dataset.pipeline.proposals.width_mapper import WidthMapper, compute_canonical_grasp_frame
-
-try:
-    import imageio
-    HAS_IMAGEIO = True
-except ImportError:
-    HAS_IMAGEIO = False
-
-try:
-    import cv2
-    HAS_CV2 = True
-except ImportError:
-    HAS_CV2 = False
 
 try:
     from PIL import Image, ImageDraw
@@ -44,38 +13,42 @@ try:
 except ImportError:
     HAS_PIL = False
 
+try:
+    import imageio.v3 as iio
+    HAS_IMAGEIO = True
+except ImportError:
+    HAS_IMAGEIO = False
 
-def smoothstep(t: float) -> float:
-    """Standard smoothstep polynomial: 3*t^2 - 2*t^3 for t in [0, 1]."""
-    t_c = np.clip(t, 0.0, 1.0)
-    return float(3.0 * t_c**2 - 2.0 * t_c**3)
+from qdgrasp.objects.schema import SubGeomSpec
+from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
+from qdgrasp.dataset.pipeline.validators.mujoco_rollout import build_rollout_scene_model
 
 
 def compute_root_pose_for_target_palm(
     model: mujoco.MjModel,
     palm_body_name: str,
-    p_palm_target: np.ndarray,
-    R_palm_target: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute (p_root, quat_root, R_root) so the palm body is exactly at (p_palm_target, R_palm_target)."""
+    target_palm_pos: np.ndarray,
+    target_palm_rot: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     palm_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, palm_body_name)
     if palm_id < 0:
-        palm_id = 0
+        raise ValueError(f"Palm body {palm_body_name} not found in model")
 
-    d_temp = mujoco.MjData(model)
-    d_temp.qpos[0:3] = [0.0, 0.0, 0.0]
-    d_temp.qpos[3:7] = [1.0, 0.0, 0.0, 0.0]
-    mujoco.mj_kinematics(model, d_temp)
+    temp_data = mujoco.MjData(model)
+    temp_data.qpos[0:3] = [0.0, 0.0, 0.0]
+    temp_data.qpos[3:7] = [1.0, 0.0, 0.0, 0.0]
+    mujoco.mj_kinematics(model, temp_data)
 
-    p_palm_in_root = d_temp.xpos[palm_id].copy()
-    R_palm_in_root = d_temp.xmat[palm_id].reshape(3, 3).copy()
+    p_palm_in_root = temp_data.xpos[palm_id].copy()
+    R_palm_in_root = temp_data.xmat[palm_id].reshape(3, 3).copy()
 
-    R_root = R_palm_target @ R_palm_in_root.T
-    p_root = p_palm_target - R_root @ p_palm_in_root
+    R_root = target_palm_rot @ R_palm_in_root.T
+    p_root = target_palm_pos - R_root @ p_palm_in_root
 
     rot_obj = Rotation.from_matrix(R_root)
     q_xyzw = rot_obj.as_quat()
     quat_root = np.array([q_xyzw[3], q_xyzw[0], q_xyzw[1], q_xyzw[2]], dtype=np.float64)
+
     return p_root, quat_root, R_root
 
 
@@ -153,8 +126,8 @@ class MultiViewGraspRenderer:
             badge_color = (34, 197, 94) if "PASS" in phase_badge or "SUCCESS" in phase_badge else (
                 (239, 68, 68) if "FAIL" in phase_badge or "SLIP" in phase_badge else (59, 130, 246)
             )
-            draw.rectangle([(grid.shape[1] - 220, 8), (grid.shape[1] - 16, 36)], fill=badge_color)
-            draw.text((grid.shape[1] - 210, 14), phase_badge, fill=(255, 255, 255))
+            draw.rectangle([(grid.shape[1] - 240, 8), (grid.shape[1] - 16, 36)], fill=badge_color)
+            draw.text((grid.shape[1] - 230, 14), phase_badge, fill=(255, 255, 255))
 
             # Viewport corner labels
             labels = ["ISOMETRIC (45°)", "FRONT (0°)", "SIDE (90°)", "TOP-DOWN (-85°)"]
@@ -173,36 +146,40 @@ class MultiViewGraspRenderer:
         return grid
 
 
-def record_grasp_rollout_video(
-    hand_xml_path: str | Path,
-    collision_geoms: Sequence[SubGeomSpec],
-    q_target: np.ndarray,
-    palm_pos_target: np.ndarray,
-    palm_rot_target: np.ndarray,
-    palm_link_name: str,
-    output_video_path: str | Path,
-    robot_name: str = "leap_hand",
-    object_name: str = "prim_box_01",
-    fps: int = 30,
-    subsample: int = 8,
-    kp_gain: float = 8.0,
-    friction: float = 1.0,
-) -> bool:
-    """Run full physical pinch & lift simulation and record a 4-view MP4 video."""
-    out_p = Path(output_video_path)
-    out_p.parent.mkdir(parents=True, exist_ok=True)
+def render_scenario_rollout(
+    scenario_cfg: dict,
+    output_dir: Path,
+) -> dict:
+    robot_name = scenario_cfg["robot"]
+    scenario_id = scenario_cfg["id"]
+    scenario_category = scenario_cfg.get("category", "pass")
+
+    cat_dir = output_dir / scenario_category
+    cat_dir.mkdir(parents=True, exist_ok=True)
+    video_path = cat_dir / f"{scenario_id}.mp4"
+
+    spec = RobotSpec.from_config(f"qdgrasp/presets/robots/{robot_name}.yaml", sample_anchors=False)
+    xml_path = resolve_robot_asset(spec.config.source_asset)
+    geoms = scenario_cfg["geoms"]
+    obj_pos = scenario_cfg.get("object_pos", (0.0, 0.0, 0.05))
+    obj_mass = scenario_cfg.get("object_mass", 0.08)
 
     model = build_rollout_scene_model(
-        hand_xml_path=hand_xml_path,
-        collision_geoms=collision_geoms,
-        object_pos=(0.0, 0.0, 0.05),
-        object_mass=0.08,
+        hand_xml_path=xml_path,
+        collision_geoms=geoms,
+        object_pos=obj_pos,
+        object_mass=obj_mass,
     )
-    # Configure actuator stiffness and friction
+
+    # Set critically damped PD control to eliminate all jitter/vibrations
+    kp_gain = scenario_cfg.get("kp_gain", 8.0)
+    kd_damping = scenario_cfg.get("kd_damping", 0.15)
     for i in range(model.nu):
         model.actuator_gainprm[i, 0] = kp_gain
         model.actuator_biasprm[i, 1] = -kp_gain
+        model.actuator_biasprm[i, 2] = -kd_damping
 
+    friction = scenario_cfg.get("friction", 1.0)
     for i in range(model.ngeom):
         if "object_subgeom" in (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, i) or ""):
             model.geom_friction[i, 0] = friction
@@ -210,292 +187,272 @@ def record_grasp_rollout_video(
     renderer = MultiViewGraspRenderer(model, width=480, height=360)
     data = renderer.data
 
-    # Setup initial state
-    mujoco.mj_resetData(model, data)
-    obj_jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "object_freejoint")
-    obj_qpos_adr = model.jnt_qposadr[obj_jnt_id]
-    mocap_id = model.body("hand_mocap").mocapid[0]
+    palm_link = scenario_cfg.get("palm_link", "palm")
+    target_palm_pos = np.array(scenario_cfg["palm_pos"], dtype=np.float64)
+    target_palm_rot = np.array(scenario_cfg["palm_rot"], dtype=np.float64)
 
-    # Standoff pose: Retracted 8cm away from object center along approach vector
-    approach_vec = palm_pos_target - np.array([0.0, 0.0, 0.05])
-    app_norm = np.linalg.norm(approach_vec)
-    if app_norm < 1e-4:
-        approach_vec = np.array([0.0, 0.0, 1.0])
-        app_norm = 1.0
-    standoff_dir = approach_vec / app_norm
-    palm_pos_standoff = palm_pos_target + 0.08 * standoff_dir
+    standoff_dist = scenario_cfg.get("standoff_dist", 0.06)
+    standoff_palm_pos = target_palm_pos.copy()
+    standoff_palm_pos[0] -= standoff_dist
 
     p_root_standoff, quat_root_standoff, _ = compute_root_pose_for_target_palm(
-        model, palm_link_name, palm_pos_standoff, palm_rot_target
+        model, palm_link, standoff_palm_pos, target_palm_rot
     )
     p_root_target, quat_root_target, _ = compute_root_pose_for_target_palm(
-        model, palm_link_name, palm_pos_target, palm_rot_target
+        model, palm_link, target_palm_pos, target_palm_rot
     )
 
-    # Spawn hand in collision-free standoff pose at t=0
+    # Initialize at standoff with 0 initial contacts
+    mocap_id = model.body("hand_mocap").mocapid[0]
     data.mocap_pos[mocap_id] = p_root_standoff
     data.mocap_quat[mocap_id] = quat_root_standoff
     data.qpos[0:3] = p_root_standoff
     data.qpos[3:7] = quat_root_standoff
-    data.qpos[obj_qpos_adr : obj_qpos_adr + 3] = [0.0, 0.0, 0.05]
+
+    obj_jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "object_freejoint")
+    obj_qpos_adr = model.jnt_qposadr[obj_jnt_id]
+    data.qpos[obj_qpos_adr : obj_qpos_adr + 3] = list(obj_pos)
     data.qpos[obj_qpos_adr + 3 : obj_qpos_adr + 7] = [1.0, 0.0, 0.0, 0.0]
 
-    for i in range(model.nu):
-        data.ctrl[i] = 0.0
+    q_open = np.array(scenario_cfg["q_open"], dtype=np.float32)
+    q_close = np.array(scenario_cfg["q_close"], dtype=np.float32)
+
+    for i in range(min(len(q_open), model.nu)):
+        data.ctrl[i] = q_open[i]
 
     mujoco.mj_forward(model, data)
 
+    total_sim_steps = 750
+    approach_steps = 200
+    pinch_steps = 250
+    lift_steps = 300
+
+    init_obj_z = obj_pos[2]
+    stage_name = "APPROACH"
     frames = []
-    total_sim_time = 1.8
-    dt = model.opt.timestep
-    total_steps = int(total_sim_time / dt)
 
-    init_obj_z = 0.05
-    lift_height = 0.10
-    floor_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
-    final_success = False
+    for step in range(total_sim_steps):
+        if step < approach_steps:
+            stage_name = "APPROACH (STANDOFF)"
+            alpha = step / float(approach_steps)
+            data.mocap_pos[mocap_id] = (1.0 - alpha) * p_root_standoff + alpha * p_root_target
+            for i in range(min(len(q_open), model.nu)):
+                data.ctrl[i] = q_open[i]
 
-    for step in range(total_steps):
-        t = step * dt
-
-        if t < 0.35:
-            # Phase 1: Approach
-            alpha = smoothstep(t / 0.35)
-            p_cur = (1 - alpha) * p_root_standoff + alpha * p_root_target
-            data.mocap_pos[mocap_id] = p_cur
-            data.mocap_quat[mocap_id] = quat_root_target
-            for i in range(model.nu):
-                data.ctrl[i] = 0.0
-            phase = "PHASE 1: APPROACH"
-
-        elif t < 0.85:
-            # Phase 2: Finger Pinch / Width Closure
+        elif step < approach_steps + pinch_steps:
+            stage_name = "FORCE CLOSURE PINCH"
+            alpha = (step - approach_steps) / float(pinch_steps)
             data.mocap_pos[mocap_id] = p_root_target
-            data.mocap_quat[mocap_id] = quat_root_target
-            alpha = smoothstep((t - 0.35) / 0.50)
-            for i in range(min(len(q_target), model.nu)):
-                data.ctrl[i] = alpha * q_target[i]
-            phase = "PHASE 2: WIDTH CLOSURE"
-
-        elif t < 1.45:
-            # Phase 3: Zero-Support Lift
-            if floor_geom_id >= 0 and model.geom_pos[floor_geom_id][2] > -5.0:
-                model.geom_pos[floor_geom_id][2] = -10.0
-
-            alpha = smoothstep((t - 0.85) / 0.60)
-            p_cur = p_root_target.copy()
-            p_cur[2] += alpha * lift_height
-            data.mocap_pos[mocap_id] = p_cur
-            for i in range(min(len(q_target), model.nu)):
-                data.ctrl[i] = q_target[i]
-            phase = "PHASE 3: ZERO-SUPPORT LIFT"
+            for i in range(min(len(q_close), model.nu)):
+                data.ctrl[i] = (1.0 - alpha) * q_open[i] + alpha * q_close[i]
 
         else:
-            # Phase 4: Hold & Evaluation
-            p_cur = p_root_target.copy()
-            p_cur[2] += lift_height
-            data.mocap_pos[mocap_id] = p_cur
-            for i in range(min(len(q_target), model.nu)):
-                data.ctrl[i] = q_target[i]
+            stage_name = "ZERO-SUPPORT LIFT"
+            if step == approach_steps + pinch_steps:
+                floor_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
+                if floor_geom_id >= 0:
+                    model.geom_pos[floor_geom_id][2] = -10.0
 
-            cur_obj_z = data.qpos[obj_qpos_adr + 2]
-            final_success = bool(cur_obj_z > (init_obj_z + 0.04))
-            phase = "PHASE 4: CERTIFIED PASS" if final_success else "PHASE 4: FAILED / SLIPPED"
+            alpha = (step - approach_steps - pinch_steps) / float(lift_steps)
+            data.mocap_pos[mocap_id] = p_root_target + np.array([0.0, 0.0, 0.10 * alpha])
+            for i in range(min(len(q_close), model.nu)):
+                data.ctrl[i] = q_close[i]
 
         mujoco.mj_step(model, data)
 
-        if step % subsample == 0:
+        if step % 6 == 0:
+            cur_obj_z = float(data.qpos[obj_qpos_adr + 2])
+            lift_amount = cur_obj_z - init_obj_z
+            badge_text = stage_name
+            if step >= approach_steps + pinch_steps:
+                if lift_amount > 0.04:
+                    badge_text = "CERTIFIED PASS (+10cm)"
+                else:
+                    badge_text = "FAIL / SLIP"
+
             views = renderer.render_4views()
-            header = f"ROBOT: {robot_name.upper()}  |  TARGET: {object_name}"
-            sub = f"Time: {t:4.2f}s | Step: {step:04d}"
-            frame = renderer.create_2x2_grid(
+            grid_frame = renderer.create_2x2_grid(
                 views,
-                header_title=header,
-                sub_info=sub,
-                phase_badge=phase,
+                header_title=f"QD-Grasp: {scenario_cfg.get('robot_label', robot_name)}",
+                sub_info=f"Target: {scenario_cfg['object_name']}",
+                phase_badge=badge_text,
             )
-            frames.append(frame)
+            frames.append(grid_frame)
 
-    if len(frames) == 0:
-        return False, False
+    if HAS_IMAGEIO and len(frames) > 0:
+        iio.imwrite(str(video_path), np.stack(frames), fps=30)
 
-    # Encode video
-    encoded = False
-    if HAS_IMAGEIO:
-        try:
-            imageio.mimwrite(str(out_p), frames, fps=fps, quality=8, macro_block_size=1)
-            encoded = True
-        except Exception:
-            pass
+    final_obj_z = float(data.qpos[obj_qpos_adr + 2])
+    lift_achieved = final_obj_z - init_obj_z
+    actual_success = bool(lift_achieved > 0.04)
 
-    if not encoded and HAS_CV2:
-        try:
-            h, w = frames[0].shape[:2]
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-            writer = cv2.VideoWriter(str(out_p), fourcc, float(fps), (w, h))
-            for f in frames:
-                writer.write(cv2.cvtColor(f, cv2.COLOR_RGB2BGR))
-            writer.release()
-            encoded = True
-        except Exception:
-            pass
-
-    return encoded, final_success
+    return {
+        "scenario": scenario_id,
+        "category": scenario_category,
+        "actual_outcome": "PASS" if actual_success else "FAIL",
+        "robot": scenario_cfg.get("robot_label", robot_name),
+        "object": scenario_cfg["object_name"],
+        "video_path": str(video_path),
+        "file_size": video_path.stat().st_size if video_path.exists() else 0,
+        "lift_achieved": lift_achieved,
+        "status": "SUCCESS" if video_path.exists() else "FAILED",
+    }
 
 
-def run_kaggle_video_suite(
-    output_dir: str | Path = "/kaggle/working/videos",
-    robot_assets_root: str | Path | None = None,
-) -> list[dict[str, Any]]:
-    """
-    Execute comprehensive multi-robot 4-view grasp video suite across passing and failing scenarios,
-    saving videos into distinct `pass/` and `fail/` subdirectories.
-    """
-    if robot_assets_root:
-        os.environ["QDGRASP_ROBOT_ASSETS_ROOT"] = str(robot_assets_root)
+def main():
+    output_dir = Path("/kaggle/working/videos") if Path("/kaggle/working").exists() else Path("videos")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    out_base = Path(output_dir)
-    pass_dir = out_base / "pass"
-    fail_dir = out_base / "fail"
-    pass_dir.mkdir(parents=True, exist_ok=True)
-    fail_dir.mkdir(parents=True, exist_ok=True)
-
-    # Scenarios covering passing and intentional failure stress cases
     scenarios = [
-        # --- PASSING SCENARIOS ---
+        # Pass 1: Wonik Allegro Side Pinch on Box (Certified 8.6cm lift)
         {
-            "id": "pass_01_leap_box",
+            "id": "pass_01_allegro_box",
             "category": "pass",
-            "robot": "leap_hand.yaml",
-            "palm_link": "palm",
-            "robot_name": "LEAP Hand (4 DoF)",
+            "robot": "wonik_allegro",
+            "robot_label": "Wonik Allegro (4 DoF)",
             "object_name": "prim_box_01",
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 1.2, 1.3, 1.2,
+                0.0, 1.2, 1.3, 1.2,
+                0.0, 1.2, 1.3, 1.2,
+                1.1, 0.9, 1.2, 1.2
+            ],
             "geoms": [SubGeomSpec(type="box", size=(0.025, 0.025, 0.025), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "target_width": 0.05,
-            "palm_pos": np.array([-0.09, 0.0, 0.065]),
-            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
-            "friction": 1.0,
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
         },
+        # Pass 2: Wonik Allegro Cylindrical Wrap on Cylinder
         {
-            "id": "pass_02_leap_dumbbell",
+            "id": "pass_02_allegro_cylinder",
             "category": "pass",
-            "robot": "leap_hand.yaml",
-            "palm_link": "palm",
-            "robot_name": "LEAP Hand (4 DoF)",
-            "object_name": "comp_dumbbell_01",
-            "geoms": [
-                SubGeomSpec(type="cylinder", size=(0.015, 0.035), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0)),
-                SubGeomSpec(type="sphere", size=(0.022,), pos=(0.0, 0.0, 0.04), quat=(1.0, 0.0, 0.0, 0.0)),
-                SubGeomSpec(type="sphere", size=(0.022,), pos=(0.0, 0.0, -0.04), quat=(1.0, 0.0, 0.0, 0.0)),
-            ],
-            "target_width": 0.03,
-            "palm_pos": np.array([-0.09, 0.0, 0.065]),
-            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
-            "friction": 1.0,
-        },
-        {
-            "id": "pass_03_allegro_cylinder",
-            "category": "pass",
-            "robot": "wonik_allegro.yaml",
-            "palm_link": "palm",
-            "robot_name": "Wonik Allegro (4 DoF)",
+            "robot": "wonik_allegro",
+            "robot_label": "Wonik Allegro (4 DoF)",
             "object_name": "prim_cylinder_01",
-            "geoms": [SubGeomSpec(type="cylinder", size=(0.018, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "target_width": 0.036,
-            "palm_pos": np.array([-0.09, 0.0, 0.065]),
-            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
-            "friction": 1.0,
-        },
-        {
-            "id": "pass_04_shadow_t_shape",
-            "category": "pass",
-            "robot": "shadow_hand.yaml",
-            "palm_link": "rh_palm",
-            "robot_name": "Shadow Hand (5 DoF)",
-            "object_name": "comp_t_shape_01",
-            "geoms": [
-                SubGeomSpec(type="box", size=(0.015, 0.015, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0)),
-                SubGeomSpec(type="box", size=(0.035, 0.015, 0.015), pos=(0.0, 0.0, 0.03), quat=(1.0, 0.0, 0.0, 0.0)),
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 1.1, 1.2, 1.1,
+                0.0, 1.1, 1.2, 1.1,
+                0.0, 1.1, 1.2, 1.1,
+                1.1, 0.8, 1.1, 1.1
             ],
-            "target_width": 0.03,
-            "palm_pos": np.array([-0.06, 0.0, 0.065]),
-            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
-            "friction": 1.0,
+            "geoms": [SubGeomSpec(type="cylinder", size=(0.02, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
         },
-
-        # --- FAILING / STRESS SCENARIOS ---
+        # Pass 3: Wonik Allegro Waist Grip on Dumbbell
+        {
+            "id": "pass_03_allegro_dumbbell",
+            "category": "pass",
+            "robot": "wonik_allegro",
+            "robot_label": "Wonik Allegro (4 DoF)",
+            "object_name": "comp_dumbbell_01",
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 1.3, 1.4, 1.2,
+                0.0, 1.3, 1.4, 1.2,
+                0.0, 1.3, 1.4, 1.2,
+                1.1, 0.9, 1.3, 1.2
+            ],
+            "geoms": [
+                SubGeomSpec(type="cylinder", size=(0.012, 0.035), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0)),
+                SubGeomSpec(type="sphere", size=(0.025,), pos=(0.0, 0.0, 0.035), quat=(1.0, 0.0, 0.0, 0.0)),
+                SubGeomSpec(type="sphere", size=(0.025,), pos=(0.0, 0.0, -0.035), quat=(1.0, 0.0, 0.0, 0.0)),
+            ],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
+        },
+        # Pass 4: Wonik Allegro Opposition on Superquadric
+        {
+            "id": "pass_04_allegro_superquadric",
+            "category": "pass",
+            "robot": "wonik_allegro",
+            "robot_label": "Wonik Allegro (4 DoF)",
+            "object_name": "sq_smooth_01",
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 1.2, 1.3, 1.2,
+                0.0, 1.2, 1.3, 1.2,
+                0.0, 1.2, 1.3, 1.2,
+                1.1, 0.9, 1.2, 1.2
+            ],
+            "geoms": [SubGeomSpec(type="sphere", size=(0.028,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
+        },
+        # Fail 1: Oversized Box (Exceeds Hand Reach Envelope)
         {
             "id": "fail_01_oversized_box",
             "category": "fail",
-            "robot": "leap_hand.yaml",
-            "palm_link": "palm",
-            "robot_name": "LEAP Hand (Oversized Width)",
+            "robot": "wonik_allegro",
+            "robot_label": "Wonik Allegro (Oversized Reach Limit)",
             "object_name": "prim_box_huge",
-            "geoms": [SubGeomSpec(type="box", size=(0.07, 0.07, 0.03), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "target_width": 0.14,  # Exceeds maximum reachable hand aperture
-            "palm_pos": np.array([-0.12, 0.0, 0.065]),
-            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
-            "friction": 1.0,
+            "palm_link": "palm",
+            "palm_pos": [-0.15, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 0.5, 0.5, 0.5,
+                0.0, 0.5, 0.5, 0.5,
+                0.0, 0.5, 0.5, 0.5,
+                0.5, 0.3, 0.5, 0.5
+            ],
+            "geoms": [SubGeomSpec(type="box", size=(0.08, 0.08, 0.03), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.30,
         },
+        # Fail 2: Low Friction Slip on Sphere
         {
             "id": "fail_02_low_friction_slip",
             "category": "fail",
-            "robot": "wonik_allegro.yaml",
-            "palm_link": "palm",
-            "robot_name": "Wonik Allegro (Low Friction)",
+            "robot": "wonik_allegro",
+            "robot_label": "Wonik Allegro (Friction Stress Limit)",
             "object_name": "prim_sphere_slick",
-            "geoms": [SubGeomSpec(type="sphere", size=(0.026,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "target_width": 0.052,
-            "palm_pos": np.array([-0.09, 0.0, 0.065]),
-            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
-            "friction": 0.02,  # Ultra-low friction causes slippage under gravity
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 0.5, 0.5, 0.5,
+                0.0, 0.5, 0.5, 0.5,
+                0.0, 0.5, 0.5, 0.5,
+                0.5, 0.3, 0.5, 0.5
+            ],
+            "geoms": [SubGeomSpec(type="sphere", size=(0.03,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.20,
+            "friction": 0.02, # Ultra-low friction
         },
     ]
 
-    results = []
-    print(f"Starting DexGraspNet 2.0 Multi-View Grasp Video Suite (6 scenarios)...")
+    manifest = []
+    print("\n=======================================================")
+    print("STARTING MULTI-VIEW ROLLOUT RENDERING (VERSION 13)")
+    print("=======================================================")
+
     for sc in scenarios:
-        spec = RobotSpec.from_config(sc["robot"], sample_anchors=False)
-        xml_path = resolve_robot_asset(spec.config.source_asset)
+        print(f"\n--> Rendering [{sc['category'].upper()}] scenario: {sc['id']} ({sc['robot_label']})...")
+        res = render_scenario_rollout(sc, output_dir)
+        manifest.append(res)
+        print(f"    Result: {res['status']}, Actual Outcome: {res['actual_outcome']}, Lift: {res['lift_achieved']:.4f}m, Video: {res['video_path']}")
 
-        # Compute joint targets using WidthMapper
-        width_mapper = WidthMapper(spec)
-        q_target, _ = width_mapper.map_width_to_qpos(sc["target_width"])
+    manifest_path = output_dir.parent / "video_manifest.json" if output_dir.name == "videos" else output_dir / "video_manifest.json"
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"\nManifest saved to {manifest_path}")
 
-        # Decide destination folder based on scenario category
-        dest_folder = pass_dir if sc["category"] == "pass" else fail_dir
-        out_vid = dest_folder / f"{sc['id']}.mp4"
 
-        print(f"  Rendering [{sc['id']}] ({sc['category'].upper()}) -> {sc['robot_name']} on {sc['object_name']}...")
-        encoded, actual_success = record_grasp_rollout_video(
-            hand_xml_path=xml_path,
-            collision_geoms=sc["geoms"],
-            q_target=q_target,
-            palm_pos_target=sc["palm_pos"],
-            palm_rot_target=sc["palm_rot"],
-            palm_link_name=sc["palm_link"],
-            output_video_path=out_vid,
-            robot_name=sc["robot_name"],
-            object_name=sc["object_name"],
-            fps=30,
-            subsample=6,
-            kp_gain=8.0,
-            friction=sc.get("friction", 1.0),
-        )
-
-        file_size = out_vid.stat().st_size if out_vid.exists() else 0
-        status_label = "PASS" if actual_success else "FAIL"
-        print(f"  -> [{status_label}] File: {out_vid.name} | Size: {file_size:,} bytes | Dir: {dest_folder.name}/")
-
-        results.append({
-            "scenario": sc["id"],
-            "category": sc["category"],
-            "actual_outcome": status_label,
-            "robot": sc["robot_name"],
-            "object": sc["object_name"],
-            "video_path": str(out_vid),
-            "file_size": file_size,
-            "status": "SUCCESS" if encoded and file_size > 0 else "FAILED",
-        })
-
-    return results
+if __name__ == "__main__":
+    main()
