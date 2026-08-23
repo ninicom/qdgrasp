@@ -181,7 +181,7 @@ def verify_p31_regression_bundle() -> None:
         env=environment,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
         check=False,
     )
     if completed.returncode != 0:

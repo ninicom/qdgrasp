@@ -10,7 +10,7 @@
     "python": "3.11.15",
     "torch": "2.11.0+cpu"
   },
-  "generator_commit": "9b77ee998c8c7c61f296f4befc1a7c279c351caf",
+  "generator_commit": "488fd835bdd83019e42c83952233f2db26134d3c",
   "generator_source_hashes": {
     "qdgrasp/dataset/manifest.py": "dd1bdc4d93eb03825a9544c0a861c6d36b4b479f98aeb13e767dbc457c05be9e",
     "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "158096bb4b8798331e654593e939336cdce93e932ae8dca9e064fe413cff10a2",
