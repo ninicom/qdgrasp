@@ -299,9 +299,14 @@ def render_scenario_rollout(
     }
 
 
-def main():
-    output_dir = Path("/kaggle/working/videos") if Path("/kaggle/working").exists() else Path("videos")
-    output_dir.mkdir(parents=True, exist_ok=True)
+def run_kaggle_video_suite(
+    output_dir: str | Path = "/kaggle/working/videos",
+    robot_assets_root: str | None = None,
+) -> list[dict]:
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    if robot_assets_root:
+        os.environ["QDGRASP_ROBOT_ASSETS_ROOT"] = str(robot_assets_root)
 
     scenarios = [
         # Pass 1: Wonik Allegro Side Pinch on Box (Certified 8.6cm lift)
@@ -433,21 +438,27 @@ def main():
             "geoms": [SubGeomSpec(type="sphere", size=(0.03,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
             "object_pos": (0.0, 0.0, 0.05),
             "object_mass": 0.20,
-            "friction": 0.02, # Ultra-low friction
+            "friction": 0.02,
         },
     ]
 
     manifest = []
     print("\n=======================================================")
-    print("STARTING MULTI-VIEW ROLLOUT RENDERING (VERSION 13)")
+    print("STARTING MULTI-VIEW ROLLOUT RENDERING (VERSION 14)")
     print("=======================================================")
 
     for sc in scenarios:
         print(f"\n--> Rendering [{sc['category'].upper()}] scenario: {sc['id']} ({sc['robot_label']})...")
-        res = render_scenario_rollout(sc, output_dir)
+        res = render_scenario_rollout(sc, out_dir)
         manifest.append(res)
         print(f"    Result: {res['status']}, Actual Outcome: {res['actual_outcome']}, Lift: {res['lift_achieved']:.4f}m, Video: {res['video_path']}")
 
+    return manifest
+
+
+def main():
+    output_dir = Path("/kaggle/working/videos") if Path("/kaggle/working").exists() else Path("videos")
+    manifest = run_kaggle_video_suite(output_dir=output_dir)
     manifest_path = output_dir.parent / "video_manifest.json" if output_dir.name == "videos" else output_dir / "video_manifest.json"
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
