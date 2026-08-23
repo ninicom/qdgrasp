@@ -10,7 +10,7 @@
     "python": "3.11.15",
     "torch": "2.11.0+cpu"
   },
-  "generator_commit": "984df26e59feb5c46a021557c5b42c969a497459",
+  "generator_commit": "9b77ee998c8c7c61f296f4befc1a7c279c351caf",
   "generator_source_hashes": {
     "qdgrasp/dataset/manifest.py": "dd1bdc4d93eb03825a9544c0a861c6d36b4b479f98aeb13e767dbc457c05be9e",
     "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "158096bb4b8798331e654593e939336cdce93e932ae8dca9e064fe413cff10a2",
@@ -25,10 +25,10 @@
     "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "7eff75c6a9207f97490f863f23da4ce5af3fa2098cff770b53cac3c083c99822",
     "qdgrasp/dataset/pipeline/solvers/region_dls.py": "0d845ea1965149def9c50709376b07e4fa637a6aac72d156b55fdd034cc4e653",
     "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "407d61f35db16fc4ba1571758f76db98aa0e7d812d951bc9fa24d60d771c2a9b",
-    "scripts/generate_dgn_open_tiny.py": "6c58b09c63bf1ccd4f987a02d79687723d40bc2a068289c57f5599d7761849fd"
+    "scripts/generate_dgn_open_tiny.py": "66ce18692d001070d8ea41f9d161d3dd7502ec77b791b7884489fa0101d98553"
   },
   "generator_version": "0.1.0a1",
-  "generator_worktree_dirty": false,
+  "generator_worktree_dirty": true,
   "license": "CC0-1.0",
   "object_manifest_hashes": {
     "comp_dumbbell_01": "db3a61eea3d6d15c0a30da7c13e5a113f05efc675930820d9ae6f2da27b65cde",
@@ -46,7 +46,7 @@
   },
   "proposal_module": "wrench_guided",
   "recipe_id": "wrench_guided_v1",
-  "release_blocked": false,
+  "release_blocked": true,
   "robot_profile_hashes": {
     "leap_hand": "7f002e8e70028ac5ff62dedb2602d23dbc1f3603f28187d58a7078e9ffcea7ba",
     "shadow_hand": "30de83dd9ca7f406430dd557b7751141d05f400921902687de8f07ea2928f7fa",
@@ -61,7 +61,7 @@
       "positive_samples": 1,
       "recipe_id": "wrench_guided_v1",
       "robot_name": "leap_hand",
-      "sha256": "a174daefec763c16a4f355f8af78df22beee24ca628a3353c412f061ffc6c4c1",
+      "sha256": "1a74186c0d3c84301eb1bd511862874325bec11eb4908165a412743101f504a9",
       "split": "train"
     },
     {
@@ -70,7 +70,7 @@
       "positive_samples": 1,
       "recipe_id": "wrench_guided_v1",
       "robot_name": "wonik_allegro",
-      "sha256": "401b4fd80736e188834beba8e02886888f3c374eabe7fa5ed1d0ed2d40fc0941",
+      "sha256": "ed0958e5a257b9274f242923d4117f83d0cad601e6ed092b0dbcc7fd2e7717e4",
       "split": "train"
     },
     {
@@ -79,7 +79,7 @@
       "positive_samples": 1,
       "recipe_id": "wrench_guided_v1",
       "robot_name": "shadow_hand",
-      "sha256": "b4ea0d32eb0282fdba9141771b8c23247744928eef57b8cb81b22006b2b81b7b",
+      "sha256": "85e46a044ffe31adcfae42e315a55602228df22d432430efac21ea79b94b6205",
       "split": "train"
     },
     {
@@ -88,7 +88,7 @@
       "positive_samples": 1,
       "recipe_id": "wrench_guided_v1",
       "robot_name": "leap_hand",
-      "sha256": "6a50023335eee76b93d0f84332be4c226e419ae01a49d344e99a16b5a84a9b4f",
+      "sha256": "686a5d2c5c357354cd34d4e2ed2a57ad6f07aa4f792ef73ff32f2617b6b52c05",
       "split": "val"
     },
     {
@@ -97,7 +97,7 @@
       "positive_samples": 1,
       "recipe_id": "wrench_guided_v1",
       "robot_name": "wonik_allegro",
-      "sha256": "534e69a5019475393c9a2e85859917104af9d3586e91fded2fe3b5ad8318b629",
+      "sha256": "f9b8746bd96d8d7ff8adae35f098ebf75b9e974f19c23c4210c578598a1babf2",
       "split": "val"
     },
     {
@@ -106,7 +106,7 @@
       "positive_samples": 1,
       "recipe_id": "wrench_guided_v1",
       "robot_name": "shadow_hand",
-      "sha256": "1a800d8e38e65ffbadb3374bec9b90ef3283977dce8afe5ce603f67021d196ab",
+      "sha256": "e21e03514c1986f7b60f7cb1563c8b03323d7ff038f63e91194ee705e39d7e03",
       "split": "val"
     }
   ],
