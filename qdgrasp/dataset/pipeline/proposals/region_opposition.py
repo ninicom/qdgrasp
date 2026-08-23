@@ -1,7 +1,22 @@
 import numpy as np
 import trimesh
 from qdgrasp.dataset.pipeline.contracts import ContactProposal
-from qdgrasp.dataset.pipeline.proposals.surface_fixed import generate_surface_fixed_proposal
+
+
+def _sample_face_points(
+    mesh: trimesh.Trimesh,
+    face_ids: np.ndarray,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Sample one exact barycentric point for every face id."""
+    r1 = rng.random(len(face_ids))
+    r2 = rng.random(len(face_ids))
+    sqrt_r1 = np.sqrt(r1)
+    barycentric = np.stack(
+        [1.0 - sqrt_r1, r2 * sqrt_r1, (1.0 - r2) * sqrt_r1], axis=1
+    )
+    vertices = mesh.vertices[mesh.faces[face_ids]]
+    return np.einsum("ij,ijk->ik", barycentric, vertices)
 
 def generate_region_opposition_proposal(
     mesh: trimesh.Trimesh,
@@ -10,6 +25,7 @@ def generate_region_opposition_proposal(
     finger_ids: np.ndarray,
     thumb_index: int = 0,
     max_retries: int = 10,
+    region_size: int = 32,
 ) -> ContactProposal:
     """
     Generate region anchors for fingers, explicitly separating a thumb from opposing fingers.
@@ -19,8 +35,7 @@ def generate_region_opposition_proposal(
         raise ValueError(f"Expected {num_fingers} finger_ids, got {len(finger_ids)}")
 
     if num_fingers < 2:
-        # Fallback to surface fixed if we can't form an opposition
-        return generate_surface_fixed_proposal(mesh, num_fingers, rng, finger_ids)
+        raise ValueError("region_opposition requires at least two fingers")
 
     # 1. Prepare area-based probability for faces
     areas = mesh.area_faces
@@ -81,18 +96,24 @@ def generate_region_opposition_proposal(
                     final_face_ids[i] = opposing_face_ids[opposing_idx]
                     opposing_idx += 1
 
-            # 4. Generate points for these faces
-            r1 = rng.random(num_fingers)
-            r2 = rng.random(num_fingers)
+            # 4. Build fixed-size regions from nearby, similarly oriented faces.
+            # Every region sample remains an exact barycentric point on the mesh.
+            region_face_ids = np.empty((num_fingers, region_size), dtype=np.int64)
+            region_points = np.empty((num_fingers, region_size, 3), dtype=np.float64)
+            region_normals = np.empty((num_fingers, region_size, 3), dtype=np.float64)
+            region_radius = max(scale * 0.35, 1e-6)
+            for finger_idx, anchor_face in enumerate(final_face_ids):
+                center_delta = np.linalg.norm(face_centers - face_centers[anchor_face], axis=1)
+                normal_dot = inward_normals @ inward_normals[anchor_face]
+                nearby = np.where((center_delta <= region_radius) & (normal_dot >= 0.8))[0]
+                if len(nearby) == 0:
+                    nearby = np.array([anchor_face], dtype=np.int64)
+                chosen = rng.choice(nearby, size=region_size, replace=len(nearby) < region_size)
+                region_face_ids[finger_idx] = chosen
+                region_points[finger_idx] = _sample_face_points(mesh, chosen, rng)
+                region_normals[finger_idx] = inward_normals[chosen]
 
-            sqrt_r1 = np.sqrt(r1)
-            u = 1.0 - sqrt_r1
-            v = r2 * sqrt_r1
-            w = 1.0 - u - v
-
-            barycentric = np.vstack([u, v, w]).T
-            vertices = mesh.vertices[mesh.faces[final_face_ids]]
-            target_points = np.einsum('ij,ijk->ik', barycentric, vertices)
+            target_points = region_points[:, 0]
 
             final_inward_normals = inward_normals[final_face_ids]
 
@@ -105,8 +126,10 @@ def generate_region_opposition_proposal(
                 face_ids=final_face_ids,
                 inward_normals=final_inward_normals,
                 finger_ids=finger_ids,
+                region_points=region_points,
+                region_face_ids=region_face_ids,
+                region_normals=region_normals,
                 provenance="region_opposition"
             )
 
-    # Fallback if no opposition could be found after max_retries
-    return generate_surface_fixed_proposal(mesh, num_fingers, rng, finger_ids)
+    raise ValueError("could not find an opposing surface region")

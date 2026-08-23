@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from qdgrasp.robot.graph import HandGraph
-from qdgrasp.robot.kinematics import compute_joint_transform, rpy_to_rotation_matrix, transform_points
+from qdgrasp.robot.kinematics import rpy_to_rotation_matrix
 from qdgrasp.robot.spec import RobotSpec
 
 
@@ -124,3 +123,34 @@ def test_forward_kinematics_matches_mujoco_for_every_body(profile: str, mjcf: st
             transform[0, :3, :3].numpy(), data.xmat[body_id].reshape(3, 3), atol=1e-4
         ), f"{profile}: rotation mismatch at {link_name}"
     assert compared == len(spec.links)
+
+    contact_points = spec.fingertip_positions(
+        torch.tensor(data.xpos[palm_id], dtype=torch.float32).unsqueeze(0),
+        torch.tensor(data.xmat[palm_id].reshape(3, 3), dtype=torch.float32).unsqueeze(0),
+        torch.tensor([[angles[name] for name in config.joints]], dtype=torch.float32),
+    )[0].numpy()
+    contact_directions = spec.fingertip_contact_directions(
+        torch.tensor(data.xpos[palm_id], dtype=torch.float32).unsqueeze(0),
+        torch.tensor(data.xmat[palm_id].reshape(3, 3), dtype=torch.float32).unsqueeze(0),
+        torch.tensor([[angles[name] for name in config.joints]], dtype=torch.float32),
+    )[0].numpy()
+    for index, tip in enumerate(spec.fingertip_links):
+        body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, tip)
+        body_rot = data.xmat[body_id].reshape(3, 3)
+        expected_point = data.xpos[body_id] + body_rot @ spec.fingertip_contact_offsets[tip]
+        expected_direction = body_rot @ spec.fingertip_contact_axes[tip]
+        assert np.allclose(contact_points[index], expected_point, atol=1e-5)
+        assert np.allclose(contact_directions[index], expected_direction, atol=1e-5)
+
+
+def test_shadow_fixed_tendon_joints_remain_independent_state_variables() -> None:
+    spec = RobotSpec.from_config("shadow_hand.yaml", sample_anchors=False)
+    targets = {name: 0.0 for name in spec.actuated_joint_names}
+    targets["rh_FFJ2"] = 0.37
+    targets["rh_FFJ1"] = 0.21
+
+    expanded = spec.expand_mimic_joint_targets(targets)
+
+    assert expanded["rh_FFJ2"] == pytest.approx(0.37)
+    assert expanded["rh_FFJ1"] == pytest.approx(0.21)
+    assert len(expanded) == 24

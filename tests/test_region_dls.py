@@ -58,10 +58,12 @@ def test_region_dls_converges_in_region(mock_spec):
     target_contacts[0, 0] = [0.5, 0.0, 0.0]
 
     target_normals = np.zeros((B, K, 3))
-    target_normals[:] = [0.0, 0.0, -1.0]
+    target_normals[:] = [1.0, 0.0, 0.0]
+    region_points = np.array([[[[0.48, 0.0, 0.0], [0.50, 0.0, 0.0], [0.52, 0.0, 0.0]]]])
+    region_normals = np.broadcast_to(target_normals[:, :, None, :], region_points.shape).copy()
 
     # Start the joint slightly off the anchor, but within region_radius
-    init_q = np.array([[0.51]])
+    init_q = np.array([[0.519]])
 
     sol = solve_region_dls_ik_batch(
         spec=mock_spec,
@@ -69,9 +71,10 @@ def test_region_dls_converges_in_region(mock_spec):
         palm_rot=palm_rot,
         target_contacts=target_contacts,
         target_normals=target_normals,
+        region_points=region_points,
+        region_normals=region_normals,
         init_q=init_q,
         max_iter=10,
-        region_radius=0.02
     )
 
     # Since 0.51 is within 0.02 of 0.5, the dynamic target should be 0.51 itself (distance 0 to current)
@@ -79,7 +82,7 @@ def test_region_dls_converges_in_region(mock_spec):
 
     assert np.all(sol.converged)
     # The joint shouldn't have moved much from 0.51
-    np.testing.assert_allclose(sol.q[0, 0], 0.51, atol=1e-3)
+    np.testing.assert_allclose(sol.q[0, 0], 0.519, atol=1e-3)
 
     # Now start far away (e.g., 0.8)
     init_q = np.array([[0.8]])
@@ -89,9 +92,10 @@ def test_region_dls_converges_in_region(mock_spec):
         palm_rot=palm_rot,
         target_contacts=target_contacts,
         target_normals=target_normals,
+        region_points=region_points,
+        region_normals=region_normals,
         init_q=init_q,
         max_iter=50,
-        region_radius=0.02
     )
 
     assert np.all(sol.converged)

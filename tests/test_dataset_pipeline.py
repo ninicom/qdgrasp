@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
 import pytest
 import trimesh
 
@@ -28,6 +27,7 @@ def test_sample_grasp_candidates_all_hands(preset: str, test_mesh: trimesh.Trime
         assert cand.palm_pos.shape == (3,)
         assert cand.palm_rot.shape == (3, 3)
         assert cand.target_contacts.shape == (len(spec.fingertip_links), 3)
+        assert cand.target_normals.shape == (len(spec.fingertip_links), 3)
         assert cand.standoff >= 0.04
 
 
@@ -37,7 +37,14 @@ def test_solve_dls_ik_and_joint_limits(preset: str, test_mesh: trimesh.Trimesh) 
     rng = get_generator(123, preset)
 
     cand = sample_grasp_candidates(spec, test_mesh, rng, num_candidates=1)[0]
-    res = solve_dls_ik(spec, cand.palm_pos, cand.palm_rot, cand.target_contacts, max_iter=20)
+    res = solve_dls_ik(
+        spec,
+        cand.palm_pos,
+        cand.palm_rot,
+        cand.target_contacts,
+        target_normals=cand.target_normals,
+        max_iter=20,
+    )
 
     assert len(res.q) == len(spec.actuated_joint_names)
     assert res.fingertip_positions.shape == (len(spec.fingertip_links), 3)
@@ -52,7 +59,14 @@ def test_filter_grasp_candidate_rejections(test_mesh: trimesh.Trimesh) -> None:
     spec = RobotSpec.from_config("wonik_allegro.yaml", sample_anchors=False)
     rng = get_generator(777)
     cand = sample_grasp_candidates(spec, test_mesh, rng, num_candidates=1)[0]
-    res_ik = solve_dls_ik(spec, cand.palm_pos, cand.palm_rot, cand.target_contacts, max_iter=10)
+    res_ik = solve_dls_ik(
+        spec,
+        cand.palm_pos,
+        cand.palm_rot,
+        cand.target_contacts,
+        target_normals=cand.target_normals,
+        max_iter=10,
+    )
 
     # 1. Normal candidate should pass
     filter_res = filter_grasp_candidate(spec, cand.palm_pos, cand.palm_rot, res_ik.q, test_mesh)

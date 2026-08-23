@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
-
 import numpy as np
 import torch
 import trimesh
 
 from ...robot.kinematics import quaternion_to_rotation_matrix
 from ...robot.spec import RobotSpec
-from ..rng import sample_quaternion_so3, sample_sphere_surface
+from .proposals.surface_fixed import generate_surface_fixed_proposal
 
 
 @dataclass(frozen=True)
@@ -21,6 +19,7 @@ class GraspCandidate:
     palm_pos: np.ndarray  # [3]
     palm_rot: np.ndarray  # [3, 3]
     target_contacts: np.ndarray  # [num_fingertips, 3]
+    target_normals: np.ndarray  # [num_fingertips, 3], inward face normals
     standoff: float
 
 
@@ -83,42 +82,16 @@ def sample_grasp_candidates(
     """
     hand_axis = _detect_hand_approach_axis(spec)
 
-    # 1. Sample approach points directly on the surface mesh deterministically
-    areas = mesh.area_faces
-    total_area = np.sum(areas)
-    if total_area <= 0:
-        raise ValueError("Mesh has zero surface area")
-    probs = areas / total_area
-    cum_probs = np.cumsum(probs)
-
-    r_faces = rng.random(num_candidates)
-    face_indices = np.searchsorted(cum_probs, r_faces)
-    face_indices = np.clip(face_indices, 0, len(mesh.faces) - 1)
-
-    r1 = rng.random(num_candidates)
-    r2 = rng.random(num_candidates)
-    sqrt_r1 = np.sqrt(r1)
-    u = 1.0 - sqrt_r1
-    v = r2 * sqrt_r1
-    w = 1.0 - u - v
-
-    triangles = mesh.vertices[mesh.faces[face_indices]]
-    samples = (
-        u[:, None] * triangles[:, 0]
-        + v[:, None] * triangles[:, 1]
-        + w[:, None] * triangles[:, 2]
-    )
-    normals = mesh.face_normals[face_indices]
-
     candidates: list[GraspCandidate] = []
     num_tips = len(spec.fingertip_links)
 
     for i in range(num_candidates):
-        surface_point = samples[i]
-        surface_normal = normals[i]
+        proposal = generate_surface_fixed_proposal(
+            mesh, num_tips, rng, np.arange(num_tips, dtype=np.int64)
+        )
+        surface_point = proposal.target_points[0]
 
-        # Target vector pointing into object (inverse of normal)
-        target_approach = -surface_normal
+        target_approach = proposal.inward_normals[0]
         if np.linalg.norm(target_approach) < 1e-5:
             target_approach = np.array([0.0, 0.0, -1.0], dtype=np.float64)
 
@@ -139,18 +112,14 @@ def sample_grasp_candidates(
         # Palm position standoff from the surface point
         palm_pos = surface_point - target_approach * standoff
 
-        # Sample target contact points in the vicinity of the surface point
-        target_contacts = np.zeros((num_tips, 3), dtype=np.float64)
-        for t_idx in range(num_tips):
-            jitter = rng.normal(0.0, 0.015, size=3)
-            # Tangential jitter preferred, but 3D is okay for now as DLS-IK pulls them
-            target_contacts[t_idx] = surface_point + jitter
+        target_contacts = proposal.target_points
 
         candidates.append(
             GraspCandidate(
                 palm_pos=palm_pos.astype(np.float64),
                 palm_rot=palm_rot.astype(np.float64),
                 target_contacts=target_contacts.astype(np.float64),
+                target_normals=proposal.inward_normals.astype(np.float64),
                 standoff=standoff,
             )
         )

@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..config.registry import register_document_schema
-from ..config.schema import ROBOT_SCHEMA_V1, _Document
+from ..config.schema import ROBOT_SCHEMA_V1 as ROBOT_SCHEMA_V1, _Document
 
 
 ROBOT_SCHEMA_V2 = "qdgrasp/robot/v2"
@@ -39,6 +37,30 @@ class ActuatorSpec(BaseModel):
     squeeze_target: float | None = None
 
 
+class FingertipContactSpec(BaseModel):
+    """Pinned contact anchor and approach axis in a fingertip body's frame."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    offset: tuple[float, float, float]
+    approach_axis: tuple[float, float, float]
+
+    @field_validator("offset", "approach_axis")
+    @classmethod
+    def _finite_vector(cls, value: tuple[float, float, float]) -> tuple[float, float, float]:
+        if not all(float(component) == float(component) and abs(float(component)) != float("inf") for component in value):
+            raise ValueError("contact vectors must be finite")
+        return value
+
+    @field_validator("approach_axis")
+    @classmethod
+    def _nonzero_axis(cls, value: tuple[float, float, float]) -> tuple[float, float, float]:
+        norm = sum(float(component) ** 2 for component in value) ** 0.5
+        if norm < 1e-8:
+            raise ValueError("approach_axis must be non-zero")
+        return tuple(float(component) / norm for component in value)
+
+
 class RobotConfigV2(_Document):
     """Rich robot profile for cross-embodiment kinematics, meshes and simulation."""
 
@@ -50,6 +72,7 @@ class RobotConfigV2(_Document):
     base_link: str | None = None
     wrist_link: str | None = None
     fingertip_links: tuple[str, ...] = Field(default_factory=tuple)
+    fingertip_contacts: dict[str, FingertipContactSpec] = Field(default_factory=dict)
     contact_links: tuple[str, ...] = Field(default_factory=tuple)
     joints: tuple[str, ...]
     joint_limits: dict[str, tuple[float, float]]
@@ -98,6 +121,13 @@ class RobotConfigV2(_Document):
                 raise ValueError(
                     f"mimic joint '{mimic_name}' targets unknown actuated joint '{mimic.target_joint}'"
                 )
+        missing_contacts = sorted(set(self.fingertip_links) - set(self.fingertip_contacts))
+        extra_contacts = sorted(set(self.fingertip_contacts) - set(self.fingertip_links))
+        if missing_contacts or extra_contacts:
+            raise ValueError(
+                "fingertip_contacts must cover fingertip_links exactly: "
+                f"missing={missing_contacts}, extra={extra_contacts}"
+            )
         return self
 
     @property

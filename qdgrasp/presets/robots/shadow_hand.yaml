@@ -11,6 +11,12 @@ fingertip_links:
   - rh_rfdistal
   - rh_lfdistal
   - rh_thdistal
+fingertip_contacts:
+  rh_ffdistal: {offset: [-0.000004, 0.002646, 0.031723], approach_axis: [0.0, 0.0, 1.0]}
+  rh_mfdistal: {offset: [-0.000004, 0.002646, 0.031723], approach_axis: [0.0, 0.0, 1.0]}
+  rh_rfdistal: {offset: [-0.000004, 0.002646, 0.031723], approach_axis: [0.0, 0.0, 1.0]}
+  rh_lfdistal: {offset: [-0.000004, 0.002646, 0.031723], approach_axis: [0.0, 0.0, 1.0]}
+  rh_thdistal: {offset: [-0.000055, 0.005553, 0.034741], approach_axis: [0.0, 0.0, 1.0]}
 contact_links:
   - rh_palm
   - rh_ffproximal
@@ -39,21 +45,21 @@ joints:
   - rh_FFJ4
   - rh_FFJ3
   - rh_FFJ2
+  - rh_FFJ1
   - rh_MFJ4
   - rh_MFJ3
   - rh_MFJ2
+  - rh_MFJ1
   - rh_RFJ4
   - rh_RFJ3
   - rh_RFJ2
+  - rh_RFJ1
   - rh_LFJ5
   - rh_LFJ4
   - rh_LFJ3
   - rh_LFJ2
-mimic_joints:
-  rh_FFJ1: {target_joint: rh_FFJ2, multiplier: 1.0, offset: 0.0}
-  rh_MFJ1: {target_joint: rh_MFJ2, multiplier: 1.0, offset: 0.0}
-  rh_RFJ1: {target_joint: rh_RFJ2, multiplier: 1.0, offset: 0.0}
-  rh_LFJ1: {target_joint: rh_LFJ2, multiplier: 1.0, offset: 0.0}
+  - rh_LFJ1
+mimic_joints: {}
 joint_limits:
   rh_WRJ2: [-0.523599, 0.174533]
   rh_WRJ1: [-0.698132, 0.488692]
@@ -65,16 +71,20 @@ joint_limits:
   rh_FFJ4: [-0.349066, 0.349066]
   rh_FFJ3: [-0.261799, 1.5708]
   rh_FFJ2: [0.0, 1.5708]
+  rh_FFJ1: [0.0, 1.5708]
   rh_MFJ4: [-0.349066, 0.349066]
   rh_MFJ3: [-0.261799, 1.5708]
   rh_MFJ2: [0.0, 1.5708]
+  rh_MFJ1: [0.0, 1.5708]
   rh_RFJ4: [-0.349066, 0.349066]
   rh_RFJ3: [-0.261799, 1.5708]
   rh_RFJ2: [0.0, 1.5708]
+  rh_RFJ1: [0.0, 1.5708]
   rh_LFJ5: [0.0, 0.785398]
   rh_LFJ4: [-0.349066, 0.349066]
   rh_LFJ3: [-0.261799, 1.5708]
   rh_LFJ2: [0.0, 1.5708]
+  rh_LFJ1: [0.0, 1.5708]
 actuators:
   rh_WRJ2: {kp: 1.0, kv: 0.1, type: position}
   rh_WRJ1: {kp: 1.0, kv: 0.1, type: position}
@@ -97,10 +107,11 @@ actuators:
   rh_LFJ3: {kp: 1.0, kv: 0.1, type: position}
   rh_LFJ2: {kp: 1.0, kv: 0.1, type: position}
 frame: palm
-release_blocked: false
+release_blocked: true
 provenance:
   license: Apache-2.0
   spdx_identifier: Apache-2.0
   source_repository: https://github.com/google-deepmind/mujoco_menagerie.git
   source_commit: da76818e269b82289eba39808e2fb91d679d6994
   upstream_tree: 8f85903630df9e0738b2df3c3cb0e8b3dd421c63
+  restriction_reason: fixed-tendon underactuation requires a 24-state/20-control solver before dataset release

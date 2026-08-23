@@ -9,6 +9,11 @@ fingertip_links:
   - mf_ds
   - rf_ds
   - th_ds
+fingertip_contacts:
+  if_ds: {offset: [-0.003192, -0.049839, 0.013323], approach_axis: [0.0, -1.0, 0.0]}
+  mf_ds: {offset: [-0.003192, -0.049839, 0.013323], approach_axis: [0.0, -1.0, 0.0]}
+  rf_ds: {offset: [-0.003192, -0.049839, 0.013323], approach_axis: [0.0, -1.0, 0.0]}
+  th_ds: {offset: [-0.004125, -0.061975, -0.016346], approach_axis: [0.0, -1.0, 0.0]}
 contact_links:
   - palm
   - if_bs

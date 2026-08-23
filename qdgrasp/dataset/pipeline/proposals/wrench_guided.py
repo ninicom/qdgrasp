@@ -29,9 +29,12 @@ def compute_preliminary_wrench_score(target_points: np.ndarray, inward_normals: 
     # We will use the product of singular values or the minimum non-zero singular value as a proxy score.
     U, S, Vh = np.linalg.svd(G, full_matrices=False)
 
-    # We use the product of singular values (volume of the wrench ellipsoid in its subspace)
-    # Plus a small penalty if singular values drop too quickly
-    score = np.prod(S)
+    # A normal-only matrix with fewer than six independent directions cannot
+    # span 6D wrench space.  Keep this as a ranking heuristic, but explicitly
+    # penalize rank deficiency instead of calling a non-zero subspace volume
+    # force closure.
+    rank = int(np.linalg.matrix_rank(G, tol=1e-8))
+    score = float(np.prod(S)) * (rank / 6.0)
     return float(score)
 
 def generate_wrench_guided_proposal(
@@ -81,11 +84,12 @@ def generate_wrench_guided_proposal(
             face_ids=best_proposal.face_ids,
             inward_normals=best_proposal.inward_normals,
             finger_ids=best_proposal.finger_ids,
+            region_points=best_proposal.region_points,
+            region_face_ids=best_proposal.region_face_ids,
+            region_normals=best_proposal.region_normals,
             force_hints=best_proposal.force_hints,
             provenance="wrench_guided"
         )
         return best_proposal
 
-    # Fallback (should theoretically never reach here as generate_region_opposition_proposal always returns something)
-    from qdgrasp.dataset.pipeline.proposals.surface_fixed import generate_surface_fixed_proposal
-    return generate_surface_fixed_proposal(mesh, num_fingers, rng, finger_ids)
+    raise ValueError("could not generate a wrench-guided proposal")

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, Optional
 import numpy as np
 
 @dataclasses.dataclass(frozen=True)
@@ -9,6 +9,9 @@ class ContactProposal:
     face_ids: np.ndarray       # [K]
     inward_normals: np.ndarray # [K, 3]
     finger_ids: np.ndarray     # [K]
+    region_points: Optional[np.ndarray] = None  # [K, R, 3] exact surface samples
+    region_face_ids: Optional[np.ndarray] = None  # [K, R]
+    region_normals: Optional[np.ndarray] = None  # [K, R, 3]
     force_hints: Optional[np.ndarray] = None # [K, 3]
     provenance: str = ""       # Identity of the strategy
 
@@ -16,12 +19,18 @@ class ContactProposal:
 class KinematicSolution:
     """Output of a KinematicSolver (e.g. fixed_contact_dls, region_dls)."""
     q: np.ndarray               # [B, J] joint configuration
+    palm_pos: np.ndarray        # [B, 3] palm pose used by FK
+    palm_rot: np.ndarray        # [B, 3, 3] palm pose used by FK
     achieved_contacts: np.ndarray # [B, K, 3]
     achieved_normals: np.ndarray  # [B, K, 3]
     position_residuals: np.ndarray # [B, K] per-finger position error
     normal_residuals: np.ndarray   # [B, K] per-finger normal angular error
     converged: np.ndarray       # [B] boolean mask
     reason: np.ndarray          # [B] string or enum for failure reason
+    iterations: Optional[np.ndarray] = None  # [B] solver iterations consumed
+    surface_contacts: Optional[np.ndarray] = None  # nearest object points [B,K,3]
+    surface_normals: Optional[np.ndarray] = None  # inward object normals [B,K,3]
+    surface_distances: Optional[np.ndarray] = None  # tip-to-surface distance [B,K]
 
 @dataclasses.dataclass(frozen=True)
 class StaticCertificate:
@@ -50,6 +59,7 @@ class PipelineOutcome:
     dynamic_valid: bool
     failure_stage: str
     failure_reason: str
+    recipe_id: str = ""
 
     proposal: Optional[ContactProposal] = None
     kinematics: Optional[KinematicSolution] = None

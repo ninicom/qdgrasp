@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
-
 import numpy as np
 import torch
 import trimesh
@@ -22,6 +20,30 @@ class CollisionFilterResult:
     estimated_penetration: float
 
 
+def _point_inside_watertight_mesh(point: np.ndarray, mesh: trimesh.Trimesh) -> bool:
+    """Brute-force odd/even ray test without the optional rtree dependency."""
+    if not mesh.is_watertight:
+        return False
+    triangles = np.asarray(mesh.triangles, dtype=np.float64)
+    origin = np.asarray(point, dtype=np.float64)
+    direction = np.array([1.0, 0.37139068, 0.127831], dtype=np.float64)
+    direction /= np.linalg.norm(direction)
+    edge1 = triangles[:, 1] - triangles[:, 0]
+    edge2 = triangles[:, 2] - triangles[:, 0]
+    h = np.cross(np.broadcast_to(direction, edge2.shape), edge2)
+    a = np.einsum("ij,ij->i", edge1, h)
+    valid = np.abs(a) > 1e-10
+    f = np.zeros_like(a)
+    f[valid] = 1.0 / a[valid]
+    s = origin - triangles[:, 0]
+    u = f * np.einsum("ij,ij->i", s, h)
+    q = np.cross(s, edge1)
+    v = f * (q @ direction)
+    t = f * np.einsum("ij,ij->i", edge2, q)
+    hits = valid & (u >= 0.0) & (v >= 0.0) & ((u + v) <= 1.0) & (t > 1e-9)
+    return bool(np.count_nonzero(hits) % 2 == 1)
+
+
 def filter_grasp_candidate(
     spec: RobotSpec,
     palm_pos: np.ndarray,
@@ -29,7 +51,7 @@ def filter_grasp_candidate(
     q: np.ndarray,
     mesh: trimesh.Trimesh,
     *,
-    max_penetration: float = 0.02,  # 20mm penetration limit
+    max_penetration: float = 0.002,
     min_fingertip_distance: float = 0.008,  # 8mm self-collision clearance
     max_reach_distance: float = 0.25,
 ) -> CollisionFilterResult:
@@ -57,7 +79,8 @@ def filter_grasp_candidate(
     t_palm_rot = torch.from_numpy(np.array(palm_rot, copy=True, dtype=np.float32)).view(1, 3, 3)
     t_q = torch.from_numpy(np.array(q, copy=True, dtype=np.float32)).view(1, -1)
 
-    tips = spec.fingertip_positions(t_palm_pos, t_palm_rot, t_q)[0].numpy()  # [K, 3]
+    transforms = spec.forward_kinematics(t_palm_pos, t_palm_rot, t_q)
+    tips = spec.fingertip_positions(t_palm_pos, t_palm_rot, t_q)[0].numpy()
     num_tips = len(tips)
 
     # Pairwise fingertip distance check (self-collision)
@@ -87,20 +110,27 @@ def filter_grasp_candidate(
             estimated_penetration=0.0,
         )
 
-    # Approximate penetration using signed distance / closest point
-    # Sample points on palm and fingertips
-    probe_points = np.vstack([palm_pos.reshape(1, 3), tips])
-    # Fast bounding box signed distance approximation
-    bounds = mesh.bounds
-    b_min, b_max = bounds[0], bounds[1]
+    # Probe the complete declared contact chain against the actual watertight mesh.  An AABB is
+    # not a collision representation for cylinders, superquadrics or concave
+    # compounds.
+    probe_parts = [palm_pos.reshape(1, 3), tips]
+    for link_name in spec.contact_links:
+        if link_name not in transforms:
+            continue
+        child = transforms[link_name][0, :3, 3].numpy()
+        probe_parts.append(child.reshape(1, 3))
+        parent_name = spec.links[link_name].parent_link
+        if parent_name in transforms:
+            parent = transforms[parent_name][0, :3, 3].numpy()
+            fractions = np.linspace(0.2, 0.8, 4)[:, None]
+            probe_parts.append(parent + fractions * (child - parent))
+    probe_points = np.vstack(probe_parts)
+    _, distances, _ = trimesh.proximity.closest_point_naive(mesh, probe_points)
 
     max_penetration_found = 0.0
-    for pt in probe_points:
-        # Check if inside bounding box
-        if np.all(pt >= b_min) and np.all(pt <= b_max):
-            # Point is inside bounding box: compute distance to surface
-            d_to_face = np.min(np.abs(np.concatenate([pt - b_min, b_max - pt])))
-            max_penetration_found = max(max_penetration_found, float(d_to_face))
+    for pt, distance in zip(probe_points, distances):
+        if _point_inside_watertight_mesh(pt, mesh):
+            max_penetration_found = max(max_penetration_found, float(distance))
 
     if max_penetration_found > max_penetration:
         return CollisionFilterResult(

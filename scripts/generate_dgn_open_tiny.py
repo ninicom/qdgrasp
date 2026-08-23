@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
 from pathlib import Path
+import subprocess
 from typing import Any
 
 import numpy as np
 import torch
 
 from qdgrasp.dataset.manifest import DatasetManifestSpec, ShardMetadata, save_dataset_manifest
+from qdgrasp.dataset.pipeline.contracts import ALLOWED_RECIPES, PipelineOutcome, get_recipe
 from qdgrasp.dataset.pipeline.orchestrator import run_pipeline_chunk
 from qdgrasp.dataset.render import sample_analytic_point_cloud
-from qdgrasp.dataset.rng import derive_seed, get_generator
+from qdgrasp.dataset.rng import get_generator
 from qdgrasp.dataset.shards import write_shard_file
 from qdgrasp.dataset.split import create_object_family_splits
 from qdgrasp.objects.generate import (
@@ -26,10 +29,103 @@ from qdgrasp.objects.generate import (
 )
 from qdgrasp.objects.manifest import create_object_asset, save_object_asset
 from qdgrasp.objects.schema import ObjectManifestSpec
-from qdgrasp.robot.spec import RobotSpec
+from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
+from qdgrasp.robot.provenance import validate_profile_for_release
 from qdgrasp.runtime import environment_info
 
 logger = logging.getLogger("generate_dgn_open_tiny")
+
+
+def outcome_to_sample(
+    outcome: PipelineOutcome,
+    *,
+    spec: RobotSpec,
+    mesh: Any,
+    rng: np.random.Generator,
+    object_id: str,
+    robot_name: str,
+    recipe_id: str,
+) -> dict[str, Any]:
+    """Serialize one staged outcome without manufacturing missing evidence."""
+    recipe = get_recipe(recipe_id)
+    stage_flags = (
+        outcome.proposal_valid,
+        outcome.ik_valid,
+        outcome.collision_valid,
+        outcome.static_force_valid,
+        outcome.dynamic_valid,
+    )
+    if any(stage_flags[index] and not stage_flags[index - 1] for index in range(1, 5)):
+        raise RuntimeError("pipeline outcome has non-monotonic stage flags")
+    if outcome.dynamic_valid and (
+        outcome.dynamic_validation is None or not outcome.dynamic_validation.passed
+    ):
+        raise RuntimeError("dynamic-valid outcome lacks passing rollout evidence")
+
+    is_success = bool(outcome.dynamic_valid)
+    quality = (
+        float(outcome.dynamic_validation.trajectory_metrics.get("lift_achieved", 0.0))
+        if is_success and outcome.dynamic_validation is not None
+        else 0.0
+    )
+    q = (
+        np.asarray(outcome.kinematics.q, dtype=np.float64)
+        if outcome.kinematics is not None
+        else np.zeros(len(spec.actuated_joint_names), dtype=np.float64)
+    )
+    achieved_contacts = (
+        np.asarray(outcome.kinematics.achieved_contacts, dtype=np.float64)
+        if outcome.kinematics is not None
+        else np.zeros((len(spec.fingertip_links), 3), dtype=np.float64)
+    )
+    palm_pos = (
+        np.asarray(outcome.kinematics.palm_pos, dtype=np.float64)
+        if outcome.kinematics is not None
+        else np.zeros(3, dtype=np.float64)
+    )
+    palm_rot = (
+        np.asarray(outcome.kinematics.palm_rot, dtype=np.float64)
+        if outcome.kinematics is not None
+        else np.eye(3, dtype=np.float64)
+    )
+
+    cam_pos = palm_pos + np.array([0.0, 0.0, 0.15])
+    pcd_cam, camera_meta = sample_analytic_point_cloud(
+        mesh,
+        camera_pos=cam_pos,
+        camera_rot=np.eye(3),
+        num_points=1024,
+        rng=rng,
+    )
+    camera_rot = np.asarray(camera_meta["camera_rot"], dtype=np.float64)
+    camera_pos = np.asarray(camera_meta["camera_pos"], dtype=np.float64)
+    pcd_object = (camera_rot @ pcd_cam.astype(np.float64).T).T + camera_pos
+
+    return {
+        "points": torch.from_numpy(pcd_object).float(),
+        "palm_pos": torch.from_numpy(palm_pos).float(),
+        "palm_rot": torch.from_numpy(palm_rot).float(),
+        "joint_angles": torch.from_numpy(q).float(),
+        "fingertip_positions": torch.from_numpy(achieved_contacts).float(),
+        "success": torch.tensor(float(is_success), dtype=torch.float32),
+        "quality": torch.tensor(quality, dtype=torch.float32),
+        "object_id": object_id,
+        "robot_name": robot_name,
+        "frame": "object",
+        "recipe_id": recipe_id,
+        "proposal_module": recipe["proposal"],
+        "solver_module": recipe["solver"],
+        "certifier_version": "gws-gravity-v1",
+        "dynamic_protocol_version": "mocap-weld-v3",
+        "success_schema_version": "dynamic-only-v1",
+        "failure_stage": outcome.failure_stage,
+        "failure_reason": outcome.failure_reason,
+        "proposal_valid": outcome.proposal_valid,
+        "ik_valid": outcome.ik_valid,
+        "collision_valid": outcome.collision_valid,
+        "static_force_valid": outcome.static_force_valid,
+        "dynamic_valid": outcome.dynamic_valid,
+    }
 
 
 def generate_tiny_dataset(
@@ -39,6 +135,19 @@ def generate_tiny_dataset(
     recipe_id: str = "wrench_guided_v1",
 ) -> Path:
     """Generate all objects, grasp samples, and manifest for DGN-Open-Tiny."""
+    recipe = get_recipe(recipe_id)
+    robot_configs = [
+        ("leap_hand", "leap_hand.yaml"),
+        ("wonik_allegro", "wonik_allegro.yaml"),
+        ("shadow_hand", "shadow_hand.yaml"),
+    ]
+    robot_specs = {
+        name: RobotSpec.from_config(cfg_name, sample_anchors=False)
+        for name, cfg_name in robot_configs
+    }
+    for spec in robot_specs.values():
+        validate_profile_for_release(spec.config)
+
     out_p = Path(output_dir).resolve()
     obj_dir = out_p / "objects"
     shards_dir = out_p / "shards"
@@ -92,23 +201,17 @@ def generate_tiny_dataset(
     splits = create_object_family_splits(objects, val_fraction=0.25, seed=base_seed)
     logger.info(f"Split objects: train={splits['train']}, val={splits['val']}")
 
-    robot_configs = [
-        ("leap_hand", "leap_hand.yaml", ".references/robot-assets/mujoco-menagerie/leap_hand/right_hand.xml"),
-        ("wonik_allegro", "wonik_allegro.yaml", ".references/robot-assets/mujoco-menagerie/wonik_allegro/right_hand.xml"),
-        ("shadow_hand", "shadow_hand.yaml", ".references/robot-assets/mujoco-menagerie/shadow_hand/right_hand.xml"),
-    ]
-
-    robot_specs = {name: RobotSpec.from_config(cfg_name, sample_anchors=False) for name, cfg_name, _ in robot_configs}
     robot_hashes = {name: spec.config.content_hash() for name, spec in robot_specs.items()}
 
     shard_metas: list[ShardMetadata] = []
 
     # Generate samples per (split, robot)
     for split_name, obj_ids in splits.items():
-        for r_name, r_cfg, xml_rel in robot_configs:
+        for r_name, r_cfg in robot_configs:
             spec = robot_specs[r_name]
-            xml_path = Path(xml_rel).resolve()
-            has_sim = xml_path.is_file()
+            xml_path = resolve_robot_asset(spec.config.source_asset)
+            if not xml_path.is_file():
+                raise RuntimeError(f"dynamic robot asset unavailable: {xml_path}")
 
             samples: list[dict[str, Any]] = []
             positives = 0
@@ -123,65 +226,25 @@ def generate_tiny_dataset(
                     spec=spec,
                     mesh=mesh,
                     collision_geoms=obj_manifest.collision_geoms,
-                    hand_xml_path=xml_path if has_sim else None,
+                    hand_xml_path=xml_path,
                     rng=rng,
                     num_candidates=samples_per_pair,
                     object_mass=obj_manifest.mass,
-                    run_dynamic=has_sim,
+                    run_dynamic=True,
                 )
 
-                for cand_idx, outcome in enumerate(outcomes):
-                    is_success = outcome.dynamic_valid or (outcome.static_force_valid and outcome.collision_valid)
-                    if is_success:
-                        positives += 1
-                        quality = 0.05
-                        if outcome.dynamic_validation:
-                            quality = float(outcome.dynamic_validation.trajectory_metrics.get("lift_achieved", 0.05))
-                        elif outcome.static_certificate:
-                            quality = float(outcome.static_certificate.wrench_quality)
-                    else:
-                        quality = 0.0
-
-                    q = outcome.kinematics.q if outcome.kinematics is not None else np.zeros(len(spec.actuated_joint_names))
-                    achieved_contacts = (
-                        outcome.kinematics.achieved_contacts
-                        if outcome.kinematics is not None
-                        else np.zeros((len(spec.fingertip_links), 3))
-                    )
-
-                    # Dummy/Sample palm pose from mesh center if not available
-                    palm_pos = np.array([0.0, 0.0, 0.1])
-                    palm_rot = np.eye(3)
-
-                    # Sample camera point cloud
-                    cam_pos = palm_pos + np.array([0.0, 0.0, 0.15])
-                    pcd_cam, _ = sample_analytic_point_cloud(
-                        mesh,
-                        camera_pos=cam_pos,
-                        camera_rot=np.eye(3),
-                        num_points=1024,
+                for outcome in outcomes:
+                    sample = outcome_to_sample(
+                        outcome,
+                        spec=spec,
+                        mesh=mesh,
                         rng=rng,
+                        object_id=obj_id,
+                        robot_name=r_name,
+                        recipe_id=recipe_id,
                     )
-
-                    sample_dict = {
-                        "points": torch.from_numpy(pcd_cam).float(),
-                        "palm_pos": torch.from_numpy(palm_pos).float(),
-                        "palm_rot": torch.from_numpy(palm_rot).float(),
-                        "joint_angles": torch.from_numpy(q).float(),
-                        "fingertip_positions": torch.from_numpy(achieved_contacts).float(),
-                        "success": torch.tensor(1.0 if is_success else 0.0, dtype=torch.float32),
-                        "quality": torch.tensor(quality, dtype=torch.float32),
-                        "object_id": obj_id,
-                        "robot_name": r_name,
-                    }
-                    samples.append(sample_dict)
-
-            # Ensure at least 1 positive sample in shard for contrastive learning
-            if positives == 0 and len(samples) > 0:
-                # Find an outcome with best static/kinematic convergence and mark as positive
-                samples[0]["success"] = torch.tensor(1.0, dtype=torch.float32)
-                samples[0]["quality"] = torch.tensor(0.01, dtype=torch.float32)
-                positives += 1
+                    positives += int(bool(sample["dynamic_valid"]))
+                    samples.append(sample)
 
             shard_filename = f"shards/{split_name}_{r_name}.pt"
             shard_path = out_p / shard_filename
@@ -194,6 +257,7 @@ def generate_tiny_dataset(
                 positive_samples=positives,
                 robot_name=r_name,
                 split=split_name,
+                recipe_id=recipe_id,
             )
             shard_metas.append(shard_meta)
             logger.info(
@@ -202,21 +266,78 @@ def generate_tiny_dataset(
 
     # Top-level dataset manifest
     env_info = environment_info().to_dict()
+    object_hashes = {
+        obj.object_id: hashlib.sha256(
+            (obj_dir / f"{obj.object_id}.manifest.json").read_bytes()
+        ).hexdigest()
+        for obj in objects
+    }
+    repo_root = Path(__file__).resolve().parent.parent
+    source_names = [
+        "scripts/generate_dgn_open_tiny.py",
+        "qdgrasp/dataset/manifest.py",
+        "qdgrasp/dataset/pipeline/contracts.py",
+        "qdgrasp/dataset/pipeline/filter.py",
+        "qdgrasp/dataset/pipeline/orchestrator.py",
+        "qdgrasp/dataset/pipeline/proposals/surface_fixed.py",
+        "qdgrasp/dataset/pipeline/proposals/region_opposition.py",
+        "qdgrasp/dataset/pipeline/proposals/wrench_guided.py",
+        "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py",
+        "qdgrasp/dataset/pipeline/solvers/region_dls.py",
+        "qdgrasp/dataset/pipeline/certifiers/contact_force.py",
+        "qdgrasp/dataset/pipeline/certifiers/grasp_wrench.py",
+        "qdgrasp/dataset/pipeline/observers/contact_load.py",
+        "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py",
+    ]
+    source_hashes = {
+        name: hashlib.sha256((repo_root / name).read_bytes()).hexdigest()
+        for name in source_names
+    }
+    release_blocked = any(
+        shard.positive_samples == 0 or shard.positive_samples == shard.num_samples
+        for shard in shard_metas
+    )
+    generator_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    generator_worktree_dirty = bool(
+        subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    release_blocked = release_blocked or generator_worktree_dirty
     dataset_manifest = DatasetManifestSpec(
         dataset_id="dgn-open-tiny-v1",
         generator_version="0.1.0a1",
+        generator_commit=generator_commit,
+        generator_worktree_dirty=generator_worktree_dirty,
         seed=base_seed,
         environment_fingerprint=env_info,
         robot_profile_hashes=robot_hashes,
+        object_manifest_hashes=object_hashes,
+        generator_source_hashes=source_hashes,
+        recipe_id=recipe_id,
+        proposal_module=recipe["proposal"],
+        solver_module=recipe["solver"],
+        certifier_version="gws-gravity-v1",
+        dynamic_protocol_version="mocap-weld-v3",
         splits=splits,
         shards=shard_metas,
         success_criteria={
             "min_contacts": 2.0,
-            "max_penetration": 0.02,
+            "max_penetration": 0.002,
             "min_lift_ratio": 0.5,
         },
         license="CC0-1.0",
-        release_blocked=False,
+        release_blocked=release_blocked,
     )
     save_dataset_manifest(dataset_manifest, out_p / "dataset_manifest.json")
     logger.info(f"Saved dataset manifest at {out_p / 'dataset_manifest.json'}")
@@ -229,12 +350,19 @@ def main() -> None:
     parser.add_argument("--output-dir", default="datasets/dgn-open-tiny", help="Target output directory.")
     parser.add_argument("--seed", type=int, default=42, help="Base random seed.")
     parser.add_argument("--samples-per-pair", type=int, default=4, help="Samples per object-robot pair.")
+    parser.add_argument(
+        "--recipe",
+        default="wrench_guided_v1",
+        choices=tuple(sorted(ALLOWED_RECIPES)),
+        help="Allowlisted proposal/solver recipe.",
+    )
     args = parser.parse_args()
 
     generate_tiny_dataset(
         output_dir=args.output_dir,
         base_seed=args.seed,
         samples_per_pair=args.samples_per_pair,
+        recipe_id=args.recipe,
     )
 
 

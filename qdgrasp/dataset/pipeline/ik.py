@@ -1,25 +1,25 @@
-"""Damped Least Squares Inverse Kinematics (DLS-IK) for multifingered hands."""
+"""Compatibility facade for the canonical batched DLS-IK solver."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Sequence
 
 import numpy as np
 import torch
 
 from ...robot.spec import RobotSpec
+from .solvers.fixed_contact_dls import solve_dls_ik_batch
 
 
 @dataclass(frozen=True)
 class DlsIkResult:
-    """Outcome of a Damped Least Squares IK optimization."""
+    """Single-candidate view of a canonical batched IK result."""
 
-    q: np.ndarray  # [num_actuated_joints]
+    q: np.ndarray
     converged: bool
     final_error: float
     iterations: int
-    fingertip_positions: np.ndarray  # [num_fingertips, 3]
+    fingertip_positions: np.ndarray
 
 
 def solve_dls_ik(
@@ -28,82 +28,64 @@ def solve_dls_ik(
     palm_rot: np.ndarray | torch.Tensor,
     target_contacts: np.ndarray | torch.Tensor,
     *,
+    target_normals: np.ndarray | torch.Tensor | None = None,
     init_q: np.ndarray | torch.Tensor | None = None,
     damping: float = 0.01,
     step_size: float = 0.5,
     max_iter: int = 50,
-    tolerance: float = 0.005,  # 5mm convergence threshold
+    tolerance: float = 0.005,
 ) -> DlsIkResult:
-    """Solve for actuated joint angles q that reach target fingertip positions.
+    """Dispatch one candidate through the canonical autodiff DLS solver.
 
-    Uses Damped Least Squares (Levenberg-Marquardt) optimization with projection
-    onto the declared joint limits of the robot profile.
+    Legacy callers did not provide surface normals. That path remains
+    position-only for API compatibility; artifact generation and correctness
+    gates must pass face-derived ``target_normals`` explicitly.
     """
-    t_palm_pos = torch.as_tensor(palm_pos, dtype=torch.float32).view(1, 3)
-    t_palm_rot = torch.as_tensor(palm_rot, dtype=torch.float32).view(1, 3, 3)
-    t_targets = torch.as_tensor(target_contacts, dtype=torch.float32).view(1, -1, 3)
-
-    num_joints = len(spec.actuated_joint_names)
-    num_tips = len(spec.fingertip_links)
-
-    # Joint limits [J, 2]
-    q_mins = torch.tensor([spec.joint_limits[j][0] for j in spec.actuated_joint_names], dtype=torch.float32)
-    q_maxs = torch.tensor([spec.joint_limits[j][1] for j in spec.actuated_joint_names], dtype=torch.float32)
-
-    # Initial joint configuration
-    if init_q is not None:
-        q = torch.as_tensor(init_q, dtype=torch.float32).view(1, num_joints)
+    palm_pos_np = np.asarray(palm_pos, dtype=np.float32).reshape(1, 3)
+    palm_rot_np = np.asarray(palm_rot, dtype=np.float32).reshape(1, 3, 3)
+    contacts_np = np.asarray(target_contacts, dtype=np.float32).reshape(
+        1, len(spec.fingertip_links), 3
+    )
+    if target_normals is None:
+        inferred = contacts_np - palm_pos_np[:, None, :]
+        inferred /= np.clip(
+            np.linalg.norm(inferred, axis=-1, keepdims=True), 1e-8, None
+        )
+        normals_np = inferred
+        require_normal_alignment = False
     else:
-        q = ((q_mins + q_maxs) * 0.5).view(1, num_joints)
+        normals_np = np.asarray(target_normals, dtype=np.float32).reshape(
+            1, len(spec.fingertip_links), 3
+        )
+        require_normal_alignment = True
 
-    delta = 1e-4
-    converged = False
-    final_error = float("inf")
-    iterations_run = 0
-
-    target_flat = t_targets.view(-1)  # [3 * K]
-
-    for it in range(max_iter):
-        iterations_run = it + 1
-        with torch.no_grad():
-            cur_tips = spec.fingertip_positions(t_palm_pos, t_palm_rot, q)  # [1, K, 3]
-            cur_flat = cur_tips.view(-1)  # [3 * K]
-            err = target_flat - cur_flat
-            err_norm = float(torch.norm(err).item())
-            final_error = err_norm
-
-            if err_norm < tolerance:
-                converged = True
-                break
-
-            # Compute exact analytical Jacobian J [3K, J] using PyTorch Autograd
-            def compute_tips(q_in):
-                return spec.fingertip_positions(t_palm_pos, t_palm_rot, q_in).view(-1)
-
-            J_full = torch.autograd.functional.jacobian(compute_tips, q)
-            J = J_full.view(3 * num_tips, num_joints)
-
-            # DLS step: dq = (J^T J + lambda^2 I)^-1 J^T e
-            Jt = J.t()
-            H = torch.mm(Jt, J) + (damping**2) * torch.eye(num_joints)
-            g = torch.mv(Jt, err)
-
-            try:
-                dq = torch.linalg.solve(H, g.unsqueeze(-1)).squeeze(-1)
-            except Exception:
-                dq = torch.zeros(num_joints)
-
-            q = q + step_size * dq.unsqueeze(0)
-            # Project onto joint limits
-            q = torch.clamp(q, min=q_mins.unsqueeze(0), max=q_maxs.unsqueeze(0))
-
-    final_tips = spec.fingertip_positions(t_palm_pos, t_palm_rot, q)[0].numpy()
-    final_q = q[0].numpy().astype(np.float64)
-
+    init_q_np = (
+        None
+        if init_q is None
+        else np.asarray(init_q, dtype=np.float32).reshape(
+            1, len(spec.actuated_joint_names)
+        )
+    )
+    solution = solve_dls_ik_batch(
+        spec,
+        palm_pos_np,
+        palm_rot_np,
+        contacts_np,
+        normals_np,
+        init_q=init_q_np,
+        damping=damping,
+        step_size=step_size,
+        max_iter=max_iter,
+        pos_tolerance=tolerance,
+        require_normal_alignment=require_normal_alignment,
+    )
+    iteration_count = (
+        max_iter if solution.iterations is None else int(solution.iterations[0])
+    )
     return DlsIkResult(
-        q=final_q,
-        converged=converged,
-        final_error=final_error,
-        iterations=iterations_run,
-        fingertip_positions=final_tips.astype(np.float64),
+        q=solution.q[0].astype(np.float64),
+        converged=bool(solution.converged[0]),
+        final_error=float(np.max(solution.position_residuals[0])),
+        iterations=iteration_count,
+        fingertip_positions=solution.achieved_contacts[0].astype(np.float64),
     )

@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 import pytest
 
-from qdgrasp.config import ConfigError
 from qdgrasp.robot.mjcf import parse_mjcf
 
 
@@ -52,19 +51,16 @@ def test_parse_shadow_mjcf_coupling() -> None:
     )
 
 
-def test_declared_mimic_must_match_the_asset_tendon() -> None:
-    """The profile's coupling ratio is checked against the MJCF's own tendon."""
+def test_fixed_tendon_is_not_misrepresented_as_a_mimic_joint() -> None:
+    """A tendon transmits a joint sum; it does not constrain the two qpos."""
 
-    from qdgrasp.config import ConfigError, load_robot_config
-    from qdgrasp.robot.schema import RobotConfigV2
     from qdgrasp.robot.spec import RobotSpec
 
-    document = load_robot_config("shadow_hand.yaml").to_document()
-    assert document["mimic_joints"]["rh_FFJ1"]["multiplier"] == 1.0
-    document["mimic_joints"]["rh_FFJ1"]["multiplier"] = 0.5
-
-    with pytest.raises(ConfigError, match="contradicts tendon"):
-        RobotSpec.from_config(RobotConfigV2.model_validate(document), sample_anchors=False)
+    spec = RobotSpec.from_config("shadow_hand.yaml", sample_anchors=False)
+    assert len(spec.actuated_joint_names) == 24
+    assert spec.mimic_joints == {}
+    assert "rh_FFJ1" in spec.actuated_joint_names
+    assert "rh_FFJ2" in spec.actuated_joint_names
 
 
 def test_shadow_tendons_are_extracted_with_named_coefficients() -> None:

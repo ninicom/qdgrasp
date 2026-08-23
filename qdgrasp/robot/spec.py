@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 import torch
@@ -19,54 +19,11 @@ from .kinematics import (
     invert_rigid_transform,
     quaternion_to_rotation_matrix,
     rpy_to_rotation_matrix,
-    transform_points,
 )
 from .meshes import load_mesh, resolve_mesh_path, sample_mesh_surface
-from .mjcf import MJCFModel, parse_mjcf
-from .normalize import normalize_urdf
-from .schema import ActuatorSpec, MimicSpec, RobotConfigV2
-from .urdf import URDFJoint, URDFLink, URDFModel, parse_urdf
-
-
-def _validate_mimic_against_tendons(config: RobotConfigV2, model: "MJCFModel") -> None:
-    """Check declared coupling against the tendons the asset actually declares.
-
-    The profile states that one joint follows another; the MJCF states the same
-    thing as a fixed tendon over named joints.  Comparing them turns the mimic
-    ratio from an assertion into something the asset backs up.  Joints the asset
-    says nothing about are left alone -- absence of a tendon is not evidence
-    against a coupling.
-    """
-
-    for mimic_name, mimic in config.mimic_joints.items():
-        tendons = [
-            tendon
-            for tendon in model.tendons.values()
-            if tendon.kind == "fixed" and any(name == mimic_name for name, _ in tendon.joint_coefficients)
-        ]
-        if not tendons:
-            continue
-        for tendon in tendons:
-            coefficients = dict(tendon.joint_coefficients)
-            if mimic.target_joint not in coefficients:
-                raise ConfigError(
-                    f"profile '{config.name}': joint '{mimic_name}' is coupled by tendon "
-                    f"'{tendon.name}', which does not include the declared target "
-                    f"'{mimic.target_joint}'"
-                )
-            target_coefficient = coefficients[mimic.target_joint]
-            mimic_coefficient = coefficients[mimic_name]
-            if mimic_coefficient == 0.0:
-                raise ConfigError(
-                    f"profile '{config.name}': tendon '{tendon.name}' gives joint "
-                    f"'{mimic_name}' a zero coefficient"
-                )
-            expected = target_coefficient / mimic_coefficient
-            if abs(expected - mimic.multiplier) > 1e-6:
-                raise ConfigError(
-                    f"profile '{config.name}': declared mimic multiplier {mimic.multiplier} for "
-                    f"'{mimic_name}' contradicts tendon '{tendon.name}', which implies {expected}"
-                )
+from .mjcf import parse_mjcf
+from .schema import MimicSpec, RobotConfigV2
+from .urdf import parse_urdf
 
 
 def _matrix_to_tuple(matrix: torch.Tensor) -> tuple[tuple[float, float, float], ...]:
@@ -148,11 +105,46 @@ class RobotSpec:
         self.wrist_link = config.wrist_link
         self.fingertip_links = config.fingertip_links
         self.contact_links = config.contact_links
+        self.fingertip_contact_offsets = {
+            name: np.asarray(contact.offset, dtype=np.float32)
+            for name, contact in config.fingertip_contacts.items()
+        }
+        self.fingertip_contact_axes = {
+            name: np.asarray(contact.approach_axis, dtype=np.float32)
+            for name, contact in config.fingertip_contacts.items()
+        }
 
         # Precompute fingertip anchor indices
         self.fingertip_indices = tuple(
             self.topological_links.index(tip) for tip in self.fingertip_links if tip in self.topological_links
         )
+
+    def expand_mimic_joint_targets(
+        self, joint_targets: Mapping[str, float]
+    ) -> dict[str, float]:
+        """Expand independent targets to the physical coupled joints.
+
+        MuJoCo fixed-tendon hands expose the coupled joints as real qpos
+        entries.  FK already applies these equations, so simulation must use
+        the same expanded state or its tendon lengths will disagree with FK.
+        """
+        expanded = {name: float(value) for name, value in joint_targets.items()}
+        if not all(np.isfinite(value) for value in expanded.values()):
+            raise ConfigError("joint targets must be finite")
+        unresolved = dict(self.mimic_joints)
+        for _ in range(len(unresolved) + 1):
+            progressed = False
+            for mimic_name, mimic in list(unresolved.items()):
+                if mimic.target_joint not in expanded:
+                    continue
+                expanded[mimic_name] = (
+                    expanded[mimic.target_joint] * mimic.multiplier + mimic.offset
+                )
+                del unresolved[mimic_name]
+                progressed = True
+            if not progressed:
+                break
+        return expanded
 
     @classmethod
     def from_config(cls, reference: str | Path | RobotConfigV2, *, sample_anchors: bool = True, anchor_count_per_link: int = 16) -> "RobotSpec":
@@ -266,8 +258,6 @@ class RobotSpec:
                 fingertip_bodies=config.fingertip_links,
                 contact_bodies=config.contact_links,
             )
-
-            _validate_mimic_against_tendons(config, mjcf_model)
 
             links_dict = {}
             id_to_name = {b.id: name for name, b in mjcf_model.bodies.items()}
@@ -563,7 +553,7 @@ class RobotSpec:
         palm_rot: torch.Tensor,
         joint_angles: torch.Tensor | Mapping[str, torch.Tensor],
     ) -> torch.Tensor:
-        """Compute [B, num_fingertips, 3] world positions of the declared fingertips."""
+        """Compute physical contact anchors, not distal body origins."""
         transforms = self.forward_kinematics(palm_pos, palm_rot, joint_angles)
         missing = [tip for tip in self.fingertip_links if tip not in transforms]
         if missing:
@@ -571,7 +561,49 @@ class RobotSpec:
                 f"profile '{self.config.name}' declares fingertip links {missing} "
                 "that are absent from the kinematic tree"
             )
-        tip_positions = [transforms[tip][:, :3, 3] for tip in self.fingertip_links]
+        tip_positions = []
+        for tip in self.fingertip_links:
+            transform = transforms[tip]
+            offset = torch.as_tensor(
+                self.fingertip_contact_offsets[tip],
+                dtype=transform.dtype,
+                device=transform.device,
+            )
+            tip_positions.append(
+                transform[:, :3, 3]
+                + torch.matmul(transform[:, :3, :3], offset.view(3, 1)).squeeze(-1)
+            )
         if not tip_positions:
             return torch.zeros((palm_pos.shape[0], 0, 3), dtype=palm_pos.dtype, device=palm_pos.device)
         return torch.stack(tip_positions, dim=1)
+
+    def fingertip_contact_directions(
+        self,
+        palm_pos: torch.Tensor,
+        palm_rot: torch.Tensor,
+        joint_angles: torch.Tensor | Mapping[str, torch.Tensor],
+    ) -> torch.Tensor:
+        """Return configured fingertip approach axes in the world frame."""
+        transforms = self.forward_kinematics(palm_pos, palm_rot, joint_angles)
+        directions = []
+        for tip in self.fingertip_links:
+            transform = transforms[tip]
+            axis = torch.as_tensor(
+                self.fingertip_contact_axes[tip],
+                dtype=transform.dtype,
+                device=transform.device,
+            )
+            directions.append(
+                torch.nn.functional.normalize(
+                    torch.matmul(transform[:, :3, :3], axis.view(3, 1)).squeeze(-1),
+                    dim=-1,
+                    eps=1e-8,
+                )
+            )
+        if not directions:
+            return torch.zeros(
+                (palm_pos.shape[0], 0, 3),
+                dtype=palm_pos.dtype,
+                device=palm_pos.device,
+            )
+        return torch.stack(directions, dim=1)

@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple
 from pathlib import Path
 import numpy as np
 import mujoco
@@ -31,15 +31,27 @@ def build_rollout_scene_model(
     if not has_free:
         hand_root.add_freejoint(name="hand_freejoint")
 
-    mocap_body = spec.worldbody.add_body(name="hand_mocap", mocap=True)
-    spec.add_equality(
+    spec.worldbody.add_body(name="hand_mocap", mocap=True)
+    mocap_weld = spec.add_equality(
         type=mujoco.mjtEq.mjEQ_WELD,
         name="mocap_weld",
         name1="hand_mocap",
         name2=hand_root.name,
         objtype=mujoco.mjtObj.mjOBJ_BODY,
-        solref=[0.002, 1.0],
+        # Keep the weld softer than the simulation timestep scale.  A very
+        # stiff weld amplifies even a small initialization mismatch into an
+        # unstable free-joint acceleration.
+        solref=[0.01, 1.0],
         solimp=[0.99, 0.999, 0.001, 0.5, 2],
+    )
+    # A body-body weld otherwise inherits the bodies' reference-pose offset
+    # during compilation.  At rollout initialization both bodies are placed
+    # at the same world pose, so that inherited offset immediately violates
+    # the constraint.  Declare the intended identity relative pose explicitly:
+    # anchor1, anchor2, relative quaternion (wxyz), torque scale.
+    mocap_weld.data = np.array(
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+        dtype=np.float64,
     )
 
     obj_body = spec.worldbody.add_body(
@@ -70,7 +82,7 @@ def build_rollout_scene_model(
         name="floor",
         type=mujoco.mjtGeom.mjGEOM_PLANE,
         size=[1.0, 1.0, 0.1],
-        pos=[0.0, 0.0, -0.1],
+        pos=[0.0, 0.0, 0.0],
         rgba=[0.9, 0.9, 0.9, 1.0],
     )
 
@@ -94,6 +106,7 @@ def validate_grasp_rollout(
     palm_pos: Tuple[float, float, float] = (0.0, 0.0, 0.1),
     palm_rot: Optional[np.ndarray] = None, # 3x3 rotation matrix or quaternion
     joint_targets: Optional[Mapping[str, float]] = None,
+    initial_joint_targets: Optional[Mapping[str, float]] = None,
     object_pos: Tuple[float, float, float] = (0.0, 0.0, 0.05),
     object_mass: float = 0.1,
     squeeze_steps: int = 150,
@@ -101,8 +114,14 @@ def validate_grasp_rollout(
     lift_height: float = 0.05,
     perturbation_steps: int = 50,
     perturbation_wrench: Optional[np.ndarray] = None, # [6] force & torque
-    max_allowed_penetration: float = 0.02,
-    min_active_fingers: int = 1,
+    max_allowed_penetration: float = 0.002,
+    min_active_fingers: int = 2,
+    pregrasp_distance: float = 0.03,
+    expected_fingertip_positions: Optional[np.ndarray] = None,
+    fingertip_local_offsets: Optional[np.ndarray] = None,
+    stage_observer: Optional[
+        Callable[[str, mujoco.MjModel, mujoco.MjData], None]
+    ] = None,
 ) -> DynamicValidation:
     """
     Executes a multi-stage physical rollout:
@@ -121,6 +140,34 @@ def validate_grasp_rollout(
     data = mujoco.MjData(model)
     mujoco.mj_resetData(model, data)
 
+    fingertip_body_ids = [
+        mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
+        for name in fingertip_body_names
+    ]
+    missing_tips = [
+        name for name, body_id in zip(fingertip_body_names, fingertip_body_ids)
+        if body_id < 0
+    ]
+    if missing_tips:
+        raise ConfigError(f"fingertip bodies are absent from rollout model: {missing_tips}")
+
+    expected_tips = None
+    if expected_fingertip_positions is not None:
+        expected_tips = np.asarray(expected_fingertip_positions, dtype=np.float64)
+        if expected_tips.shape != (len(fingertip_body_names), 3):
+            raise ConfigError(
+                "expected_fingertip_positions must have shape "
+                f"({len(fingertip_body_names)}, 3), got {expected_tips.shape}"
+            )
+    local_tip_offsets = np.zeros((len(fingertip_body_names), 3), dtype=np.float64)
+    if fingertip_local_offsets is not None:
+        local_tip_offsets = np.asarray(fingertip_local_offsets, dtype=np.float64)
+        if local_tip_offsets.shape != (len(fingertip_body_names), 3):
+            raise ConfigError(
+                "fingertip_local_offsets must have shape "
+                f"({len(fingertip_body_names)}, 3), got {local_tip_offsets.shape}"
+            )
+
     palm_candidates = [
         b_id
         for b_id in range(1, model.nbody)
@@ -134,38 +181,77 @@ def validate_grasp_rollout(
     while int(model.body_parentid[root_id]) != 0:
         root_id = int(model.body_parentid[root_id])
 
+    # Establish the complete articulated initial shape before measuring the
+    # root->palm transform.  Shadow has two wrist joints above the palm; using
+    # the q=0 transform and applying wrist targets afterwards rotates the palm
+    # away from the requested pose even while the free root tracks mocap.
+    if initial_joint_targets:
+        for joint_name, value in initial_joint_targets.items():
+            joint_id = mujoco.mj_name2id(
+                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
+            )
+            if joint_id < 0 or int(model.jnt_type[joint_id]) not in (
+                int(mujoco.mjtJoint.mjJNT_HINGE),
+                int(mujoco.mjtJoint.mjJNT_SLIDE),
+            ):
+                raise ConfigError(
+                    f"initial joint target refers to unsupported joint: {joint_name}"
+                )
+            data.qpos[model.jnt_qposadr[joint_id]] = float(value)
+
     mocap_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "hand_mocap")
     if mocap_body_id < 0:
         raise ConfigError("could not identify mocap body in model")
     mocap_idx = model.body_mocapid[mocap_body_id]
 
-    # Determine palm vs root offset
+    # Determine the complete root->palm transform.  Translation-only alignment
+    # is wrong whenever the requested palm rotation is not identity.
     mujoco.mj_forward(model, data)
-    palm_delta = np.asarray(palm_pos, dtype=np.float64) - data.xpos[palm_id]
-    root_start_pos = np.array(data.xpos[root_id]) + palm_delta
+    root_rot_initial = np.array(data.xmat[root_id]).reshape(3, 3)
+    palm_rot_initial = np.array(data.xmat[palm_id]).reshape(3, 3)
+    root_to_palm_rot = root_rot_initial.T @ palm_rot_initial
+    root_to_palm_pos = root_rot_initial.T @ (
+        np.array(data.xpos[palm_id]) - np.array(data.xpos[root_id])
+    )
+
+    requested_palm_rot = np.eye(3, dtype=np.float64)
+    if palm_rot is not None:
+        if palm_rot.shape == (3, 3):
+            requested_palm_rot = np.asarray(palm_rot, dtype=np.float64)
+        elif palm_rot.shape == (4,):
+            quat = np.asarray(palm_rot, dtype=np.float64)
+            requested_palm_rot = Rotation.from_quat(
+                [quat[1], quat[2], quat[3], quat[0]]
+            ).as_matrix()
+        else:
+            raise ConfigError("palm_rot must have shape (3, 3) or (4,)")
+
+    root_start_rot = requested_palm_rot @ root_to_palm_rot.T
+    root_target_pos = np.asarray(palm_pos, dtype=np.float64) - root_start_rot @ root_to_palm_pos
+    outward = np.asarray(palm_pos, dtype=np.float64) - np.asarray(object_pos, dtype=np.float64)
+    outward_norm = float(np.linalg.norm(outward))
+    if outward_norm < 1e-8:
+        raise ConfigError("target palm position coincides with object center")
+    root_pregrasp_pos = root_target_pos + pregrasp_distance * outward / outward_norm
 
     jnt_id = model.body_jntadr[root_id]
-    if jnt_id < 0 or model.jnt_type[jnt_id] != mujoco.mjtJoint.mjJNT_FREE:
+    if jnt_id < 0 or int(model.jnt_type[jnt_id]) != int(
+        mujoco.mjtJoint.mjJNT_FREE
+    ):
         raise ConfigError(f"Root body {root_id} must have a freejoint for mocap-weld control.")
 
     qpos_adr = model.jnt_qposadr[jnt_id]
-    data.qpos[qpos_adr : qpos_adr + 3] = root_start_pos
-    if palm_rot is not None:
-        if palm_rot.shape == (3, 3):
-            # Convert rotation matrix to quat [w, x, y, z]
-            r = Rotation.from_matrix(palm_rot)
-            quat_xyzw = r.as_quat()
-            quat_wxyz = [quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]]
-        elif palm_rot.shape == (4,):
-            quat_wxyz = list(palm_rot)
-        else:
-            quat_wxyz = [1.0, 0.0, 0.0, 0.0]
-        data.qpos[qpos_adr + 3 : qpos_adr + 7] = quat_wxyz
-        data.mocap_quat[mocap_idx] = quat_wxyz
+    data.qpos[qpos_adr : qpos_adr + 3] = root_pregrasp_pos
+    quat_xyzw = Rotation.from_matrix(root_start_rot).as_quat()
+    quat_wxyz = np.array([quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]])
+    data.qpos[qpos_adr + 3 : qpos_adr + 7] = quat_wxyz
+    data.mocap_quat[mocap_idx] = quat_wxyz
 
-    data.mocap_pos[mocap_idx][:3] = root_start_pos
+    data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos
 
-    # Set initial joint angles and map to actuators
+    # Set target joint angles and map them through the compiled transmissions.
+    # In particular, a tendon actuator's control target is a tendon length, not
+    # one arbitrarily selected joint angle.
     target_by_joint: Dict[int, float] = {}
     target_by_actuator: Dict[int, float] = {}
 
@@ -173,24 +259,59 @@ def validate_grasp_rollout(
         for j_name, val in joint_targets.items():
             j_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, j_name)
             if j_id >= 0:
-                data.qpos[model.jnt_qposadr[j_id]] = float(val)
                 target_by_joint[j_id] = float(val)
 
+    mujoco.mj_forward(model, data)
+    target_data = mujoco.MjData(model)
+    target_data.qpos[:] = data.qpos
+    for joint_id, target in target_by_joint.items():
+        if int(model.jnt_type[joint_id]) in (
+            int(mujoco.mjtJoint.mjJNT_HINGE),
+            int(mujoco.mjtJoint.mjJNT_SLIDE),
+        ):
+            target_data.qpos[model.jnt_qposadr[joint_id]] = target
+    target_data.mocap_pos[:] = data.mocap_pos
+    target_data.mocap_quat[:] = data.mocap_quat
+    mujoco.mj_forward(model, target_data)
+
+    start_by_actuator: Dict[int, float] = {}
     for a_id in range(model.nu):
-        a_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, a_id) or ""
-        if model.actuator_trntype[a_id] == mujoco.mjtTrn.mjTRN_JOINT:
+        if int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_JOINT):
             j_id = int(model.actuator_trnid[a_id, 0])
             if j_id in target_by_joint:
+                start_by_actuator[a_id] = float(
+                    data.qpos[model.jnt_qposadr[j_id]]
+                )
                 target_by_actuator[a_id] = target_by_joint[j_id]
-        else:
-            # Handle tendon actuators (e.g. rh_A_FFJ0 -> rh_FFJ2)
-            if joint_targets:
-                for j_name, val in joint_targets.items():
-                    if j_name in a_name or (j_name.replace("J2", "J0") in a_name) or (j_name.replace("rh_", "rh_A_").replace("J2", "J0") == a_name):
-                        target_by_actuator[a_id] = float(val)
-                        break
+        elif (
+            int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_TENDON)
+            and target_by_joint
+        ):
+            start_by_actuator[a_id] = float(data.actuator_length[a_id])
+            target_by_actuator[a_id] = float(target_data.actuator_length[a_id])
 
-    mujoco.mj_forward(model, data)
+    if len(target_by_actuator) < len(target_by_joint):
+        return DynamicValidation(
+            trajectory_metrics={
+                "mapped_joint_targets": float(len(target_by_joint)),
+                "mapped_actuator_targets": float(len(target_by_actuator)),
+                "uncontrolled_target_dimensions": float(
+                    len(target_by_joint) - len(target_by_actuator)
+                ),
+            },
+            per_finger_loads=np.zeros(
+                (len(fingertip_body_names), 6), dtype=np.float64
+            ),
+            failure_stage="underactuated_targets",
+            passed=False,
+        )
+
+    for a_id, start in start_by_actuator.items():
+        if model.actuator_ctrllimited[a_id]:
+            lo, hi = model.actuator_ctrlrange[a_id]
+            data.ctrl[a_id] = np.clip(start, lo, hi)
+        else:
+            data.ctrl[a_id] = start
 
     # Object & floor geom IDs
     object_geom_ids = {
@@ -210,42 +331,152 @@ def validate_grasp_rollout(
                     max_pen = max(max_pen, abs(float(c.dist)))
         return max_pen
 
+    def object_has_floor_support() -> bool:
+        return any(
+            floor_geom_id in (int(data.contact[idx].geom1), int(data.contact[idx].geom2))
+            and (
+                int(data.contact[idx].geom1) in object_geom_ids
+                or int(data.contact[idx].geom2) in object_geom_ids
+            )
+            for idx in range(int(data.ncon))
+        )
+
+    def tracking_metrics() -> Dict[str, float]:
+        joint_errors = []
+        for joint_id, target in target_by_joint.items():
+            if int(model.jnt_type[joint_id]) in (
+                int(mujoco.mjtJoint.mjJNT_HINGE),
+                int(mujoco.mjtJoint.mjJNT_SLIDE),
+            ):
+                joint_errors.append(
+                    abs(float(data.qpos[model.jnt_qposadr[joint_id]]) - target)
+                )
+        mocap_quat_wxyz = np.asarray(data.mocap_quat[mocap_idx], dtype=np.float64)
+        mocap_rot = Rotation.from_quat(
+            [
+                mocap_quat_wxyz[1],
+                mocap_quat_wxyz[2],
+                mocap_quat_wxyz[3],
+                mocap_quat_wxyz[0],
+            ]
+        ).as_matrix()
+        commanded_palm_pos = data.mocap_pos[mocap_idx] + mocap_rot @ root_to_palm_pos
+        commanded_palm_rot = mocap_rot @ root_to_palm_rot
+        metrics = {
+            "mapped_joint_targets": float(len(target_by_joint)),
+            "mapped_actuator_targets": float(len(target_by_actuator)),
+            "max_joint_tracking_error": float(max(joint_errors, default=0.0)),
+            "palm_position_tracking_error": float(
+                np.linalg.norm(np.asarray(data.xpos[palm_id]) - commanded_palm_pos)
+            ),
+            "root_mocap_position_error": float(
+                np.linalg.norm(np.asarray(data.xpos[root_id]) - data.mocap_pos[mocap_idx])
+            ),
+        }
+        actual_palm_rot = np.asarray(data.xmat[palm_id]).reshape(3, 3)
+        rotation_cosine = np.clip(
+            (np.trace(actual_palm_rot.T @ commanded_palm_rot) - 1.0) * 0.5,
+            -1.0,
+            1.0,
+        )
+        metrics["palm_rotation_tracking_error"] = float(np.arccos(rotation_cosine))
+        if expected_tips is not None:
+            actual_tips = np.asarray(
+                [
+                    data.xpos[body_id]
+                    + np.asarray(data.xmat[body_id]).reshape(3, 3) @ local_offset
+                    for body_id, local_offset in zip(
+                        fingertip_body_ids, local_tip_offsets
+                    )
+                ],
+                dtype=np.float64,
+            )
+            commanded_tips = data.mocap_pos[mocap_idx] + (
+                mocap_rot
+                @ root_start_rot.T
+                @ (expected_tips - root_target_pos).T
+            ).T
+            tip_errors = np.linalg.norm(actual_tips - commanded_tips, axis=1)
+            metrics["mean_fingertip_tracking_error"] = float(np.mean(tip_errors))
+            metrics["max_fingertip_tracking_error"] = float(np.max(tip_errors))
+        return metrics
+
+    def simulation_is_stable() -> bool:
+        state_is_finite = all(
+            np.all(np.isfinite(values))
+            for values in (data.qpos, data.qvel, data.qacc)
+        )
+        warning_count = sum(int(warning.number) for warning in data.warning)
+        return bool(state_is_finite and warning_count == 0)
+
+    def instability_result(stage: str) -> DynamicValidation:
+        return DynamicValidation(
+            trajectory_metrics={
+                "max_penetration": float(overall_max_penetration),
+                "instability_stage": stage,
+                **tracking_metrics(),
+            },
+            per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
+            failure_stage="simulation_instability",
+            passed=False,
+        )
+
     overall_max_penetration = 0.0
 
     # Stage 1: Squeeze (apply closing torque via squeeze bias)
-    for _ in range(squeeze_steps):
+    for squeeze_index in range(squeeze_steps):
+        squeeze_progress = smoothstep((squeeze_index + 1) / max(1, squeeze_steps))
+        data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (
+            root_target_pos - root_pregrasp_pos
+        )
         for a_id in range(model.nu):
             if a_id in target_by_actuator:
-                target_val = target_by_actuator[a_id]
+                target_val = start_by_actuator[a_id] + squeeze_progress * (
+                    target_by_actuator[a_id] - start_by_actuator[a_id]
+                )
                 if model.actuator_ctrllimited[a_id]:
                     lo, hi = model.actuator_ctrlrange[a_id]
-                    # Apply closing squeeze pressure
-                    data.ctrl[a_id] = min(hi, target_val + 0.5)
+                    data.ctrl[a_id] = np.clip(target_val, lo, hi)
                 else:
-                    data.ctrl[a_id] = target_val + 0.5
-            elif model.actuator_ctrllimited[a_id]:
-                lo, hi = model.actuator_ctrlrange[a_id]
-                data.ctrl[a_id] = (lo + hi) * 0.5
+                    data.ctrl[a_id] = target_val
+            elif a_id in start_by_actuator:
+                data.ctrl[a_id] = start_by_actuator[a_id]
         mujoco.mj_step(model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
+        if not simulation_is_stable():
+            return instability_result("squeeze")
 
-    squeeze_loads = extract_contact_loads(model, data, object_geom_ids, fingertip_body_names)
+    palm_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, palm_id) or "palm"
+    squeeze_loads = extract_contact_loads(
+        model,
+        data,
+        object_geom_ids,
+        fingertip_body_names,
+        palm_body_names=(palm_name,),
+    )
 
-    # Check squeeze criteria: at least min_active_fingers must have positive normal force
-    if squeeze_loads["active_fingers_count"] < min_active_fingers:
-        # Also check if any hand contact exists
-        if len(squeeze_loads["contacting_links"]) > 0:
-            active_count = max(squeeze_loads["active_fingers_count"], len(squeeze_loads["contacting_links"]))
-        else:
-            active_count = squeeze_loads["active_fingers_count"]
-
-        if active_count < min_active_fingers:
-            return DynamicValidation(
-                trajectory_metrics={"max_penetration": overall_max_penetration, "squeeze_active_fingers": squeeze_loads["active_fingers_count"], "contacting_links": len(squeeze_loads["contacting_links"])},
-                per_finger_loads=squeeze_loads["per_finger_loads"],
-                failure_stage="squeeze",
-                passed=False
-            )
+    if (
+        squeeze_loads["active_fingers_count"] < min_active_fingers
+        or overall_max_penetration > max_allowed_penetration
+    ):
+        return DynamicValidation(
+            trajectory_metrics={
+                "max_penetration": overall_max_penetration,
+                "squeeze_active_fingers": squeeze_loads["active_fingers_count"],
+                "contacting_links": len(squeeze_loads["contacting_links"]),
+                "has_palm_contact": float(squeeze_loads["has_palm_contact"]),
+                "max_cone_violation": float(np.max(squeeze_loads["cone_violations"])),
+                "measured_fingertip_wrench_norm": float(
+                    np.linalg.norm(squeeze_loads["net_fingertip_wrench"])
+                ),
+                **tracking_metrics(),
+            },
+            per_finger_loads=squeeze_loads["per_finger_loads"],
+            failure_stage="squeeze",
+            passed=False,
+        )
+    if stage_observer is not None:
+        stage_observer("squeeze", model, data)
 
     # Stage 2: Smooth Lift
     init_obj_z = float(data.xpos[obj_body_id][2])
@@ -254,34 +485,39 @@ def validate_grasp_rollout(
         progress = float(s) / max(1, lift_steps)
         s_val = smoothstep(progress)
         data.mocap_pos[mocap_idx][2] = start_mocap_z + lift_height * s_val
-        data.qpos[qpos_adr + 2] = root_start_pos[2] + lift_height * s_val
 
         for a_id in range(model.nu):
             if a_id in target_by_actuator:
                 target_val = target_by_actuator[a_id]
                 if model.actuator_ctrllimited[a_id]:
                     lo, hi = model.actuator_ctrlrange[a_id]
-                    data.ctrl[a_id] = min(hi, target_val + 0.5)
+                    data.ctrl[a_id] = np.clip(target_val, lo, hi)
                 else:
-                    data.ctrl[a_id] = target_val + 0.5
-            elif model.actuator_ctrllimited[a_id]:
-                lo, hi = model.actuator_ctrlrange[a_id]
-                data.ctrl[a_id] = (lo + hi) * 0.5
+                    data.ctrl[a_id] = target_val
+            elif a_id in start_by_actuator:
+                data.ctrl[a_id] = start_by_actuator[a_id]
 
-        mujoco.mj_forward(model, data)
         mujoco.mj_step(model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
+        if not simulation_is_stable():
+            return instability_result("lift")
 
     post_lift_z = float(data.xpos[obj_body_id][2])
     actual_lift = post_lift_z - init_obj_z
 
-    if actual_lift < 0.5 * lift_height:
+    if actual_lift < 0.5 * lift_height or object_has_floor_support():
         return DynamicValidation(
-            trajectory_metrics={"max_penetration": overall_max_penetration, "lift_achieved": actual_lift},
+            trajectory_metrics={
+                "max_penetration": overall_max_penetration,
+                "lift_achieved": actual_lift,
+                **tracking_metrics(),
+            },
             per_finger_loads=squeeze_loads["per_finger_loads"],
             failure_stage="lift",
             passed=False
         )
+    if stage_observer is not None:
+        stage_observer("lift", model, data)
 
     # Stage 3: Perturbation Wrench
     if perturbation_wrench is None:
@@ -301,6 +537,8 @@ def validate_grasp_rollout(
         total_impulse += np.abs(current_wrench) * dt
         mujoco.mj_step(model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
+        if not simulation_is_stable():
+            return instability_result("perturbation")
 
     # Clear applied force
     data.xfrc_applied[obj_body_id] = np.zeros(6)
@@ -308,13 +546,29 @@ def validate_grasp_rollout(
     final_obj_z = float(data.xpos[obj_body_id][2])
     final_lift = final_obj_z - init_obj_z
 
-    final_loads = extract_contact_loads(model, data, object_geom_ids, fingertip_body_names)
+    final_loads = extract_contact_loads(
+        model,
+        data,
+        object_geom_ids,
+        fingertip_body_names,
+        palm_body_names=(palm_name,),
+    )
+    if stage_observer is not None:
+        stage_observer("perturbation", model, data)
 
     passed_penetration = (overall_max_penetration <= max_allowed_penetration)
     passed_lift = (final_lift >= 0.5 * lift_height)
     passed_fingers = (final_loads["active_fingers_count"] >= min_active_fingers)
+    passed_floor = not object_has_floor_support()
+    passed_cone = bool(np.max(final_loads["cone_violations"]) <= 1e-6)
 
-    passed = bool(passed_penetration and passed_lift and passed_fingers)
+    passed = bool(
+        passed_penetration
+        and passed_lift
+        and passed_fingers
+        and passed_floor
+        and passed_cone
+    )
     failure_stage = "none" if passed else ("penetration" if not passed_penetration else "perturbation")
 
     metrics = {
@@ -323,6 +577,11 @@ def validate_grasp_rollout(
         "final_active_fingers": float(final_loads["active_fingers_count"]),
         "impulse_applied": float(np.sum(total_impulse)),
         "has_palm_contact": float(final_loads["has_palm_contact"]),
+        "floor_support": float(not passed_floor),
+        "max_cone_violation": float(np.max(final_loads["cone_violations"])),
+        "measured_hand_wrench": final_loads["net_wrench"].tolist(),
+        "measured_fingertip_wrench": final_loads["net_fingertip_wrench"].tolist(),
+        **tracking_metrics(),
     }
 
     return DynamicValidation(

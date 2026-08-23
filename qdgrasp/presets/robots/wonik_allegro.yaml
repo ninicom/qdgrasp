@@ -9,6 +9,11 @@ fingertip_links:
   - mf_tip
   - rf_tip
   - th_tip
+fingertip_contacts:
+  ff_tip: {offset: [0.0, 0.0, 0.041], approach_axis: [0.0, 0.0, 1.0]}
+  mf_tip: {offset: [0.0, 0.0, 0.041], approach_axis: [0.0, 0.0, 1.0]}
+  rf_tip: {offset: [0.0, 0.0, 0.041], approach_axis: [0.0, 0.0, 1.0]}
+  th_tip: {offset: [0.0, 0.0, 0.055], approach_axis: [0.0, 0.0, 1.0]}
 contact_links:
   - palm
   - ff_base

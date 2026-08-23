@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Optional, Sequence, Set
 import numpy as np
 import mujoco
 
@@ -8,7 +8,7 @@ def extract_contact_loads(
     object_geom_ids: Set[int],
     fingertip_body_names: Sequence[str],
     palm_body_names: Sequence[str] = ("palm", "base_link"),
-    mu: float = 0.5,
+    mu: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Extracts physically accurate contact forces from MuJoCo using mj_contactForce.
@@ -27,15 +27,19 @@ def extract_contact_loads(
     - 'contacting_links': List[str]
     """
     num_fingers = len(fingertip_body_names)
-    palm_body_ids = {
-        mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
-        for name in palm_body_names
-    }
-
     palm_id_set = {
-        b_id for b_id in range(model.nbody)
-        if any(p in (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, b_id) or "").lower() for p in ("palm", "forearm", "wrist", "base_link", "root", "world"))
+        body_id
+        for name in palm_body_names
+        if (body_id := mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)) >= 0
     }
+    # Palm support includes only explicit palm bodies and their ancestors.  A
+    # substring such as "root" or "wrist" is not a reliable semantic label
+    # across robot assets.
+    for body_id in tuple(palm_id_set):
+        current = body_id
+        while current > 0:
+            palm_id_set.add(current)
+            current = int(model.body_parentid[current])
 
     body_to_finger_idx = {}
     for idx, name in enumerate(fingertip_body_names):
@@ -80,7 +84,7 @@ def extract_contact_loads(
         b_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, b_id) or f"body_{b_id}"
         contacting_links.add(b_name)
 
-        if b_id in palm_body_ids:
+        if b_id in palm_id_set:
             has_palm_contact = True
 
         # Extract 6D contact force in contact frame using standard MuJoCo routine
@@ -92,10 +96,10 @@ def extract_contact_loads(
         # In contact frame:
         # force_buf[0] is normal force (along c_rot[0])
         # force_buf[1], force_buf[2] are tangential forces (along c_rot[1], c_rot[2])
-        # Note: force is applied to geom1 by geom2.
-        # If geom1 is object, force on object is +force_buf in contact frame.
-        # If geom2 is object, force on object is -force_buf in contact frame.
-        sign = 1.0 if is_g1_obj else -1.0
+        # MuJoCo's contact force acts from geom1 toward geom2, i.e. the returned
+        # wrench is applied to geom2.  The equal-and-opposite wrench acts on
+        # geom1.
+        sign = -1.0 if is_g1_obj else 1.0
 
         f_normal_mag = force_buf[0]
         f_tan_mag = np.linalg.norm(force_buf[1:3])
@@ -120,12 +124,16 @@ def extract_contact_loads(
             n_world = -c_rot[0] if is_g1_obj else c_rot[0]
             per_finger_normals[f_idx] = n_world
 
-            violation = max(0.0, f_tan_mag - mu * f_normal_mag)
+            contact_mu = float(c.friction[0]) if mu is None else float(mu)
+            violation = max(0.0, f_tan_mag - contact_mu * f_normal_mag)
             cone_violations[f_idx] = max(cone_violations[f_idx], violation)
 
     active_fingers_count = int(np.sum(per_finger_f_normal > 1e-3))
 
     per_finger_loads = np.concatenate([per_finger_forces, per_finger_torques], axis=-1)
+    net_fingertip_wrench = np.concatenate(
+        [per_finger_forces.sum(axis=0), per_finger_torques.sum(axis=0)]
+    )
 
     return {
         "per_finger_loads": per_finger_loads, # [K, 6]
@@ -136,6 +144,7 @@ def extract_contact_loads(
         "per_finger_f_tangential": per_finger_f_tangential, # [K]
         "cone_violations": cone_violations, # [K]
         "net_wrench": np.concatenate([net_force, net_torque]), # [6]
+        "net_fingertip_wrench": net_fingertip_wrench, # [6]
         "active_fingers_count": active_fingers_count,
         "has_palm_contact": has_palm_contact,
         "contacting_links": list(sorted(contacting_links)),

@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.4.0
+version: 1.5.0
 status: active
 date: 2026-08-22
-revises: ROADMAP-001@1.3.0
+revises: ROADMAP-001@1.4.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260822-013-phase2-roadmap-status.md
+latest_revision_record: docs/revisions/REV-20260823-003-shadow-tendon-state-correction.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -78,6 +78,9 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 - Candidate palm/contact sampling, IK hỗ trợ, collision filtering và physics
   validation.
 - `GraspBatch` schema, shards, splits, seed, camera/frame metadata và hashes.
+- P3 vẫn `pending`: remediation P3.1 đã xác nhận LEAP/Allegro dynamic fixtures,
+  nhưng Shadow là hệ underactuated 24-state/20-control và bị release-blocked cho
+  tới khi có solver/control riêng; dataset cũ không được dùng để mở P4.
 - `DGN-Open-Tiny` đủ nhỏ cho CI/overfit và tái tạo từ đầu.
 
 ### P4 — Model MVP

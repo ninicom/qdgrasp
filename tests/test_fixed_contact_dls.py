@@ -64,8 +64,7 @@ def test_fixed_contact_dls_batching(mock_spec):
     target_contacts[2, 0] = [-0.5, 0.0, 0.0]
     target_contacts[2, 1] = [0.0, 0.9, 0.0]
 
-    target_normals = np.zeros((B, K, 3))
-    target_normals[:] = [0.0, 0.0, -1.0] # Achievable normal
+    target_normals = target_contacts / np.linalg.norm(target_contacts, axis=-1, keepdims=True)
 
     sol = solve_dls_ik_batch(
         spec=mock_spec,
@@ -85,3 +84,48 @@ def test_fixed_contact_dls_batching(mock_spec):
 
     # Check values roughly match targets
     np.testing.assert_allclose(sol.achieved_contacts, target_contacts, atol=1e-2)
+
+
+def test_convergence_is_per_candidate_and_requires_every_tip(mock_spec):
+    palm_pos = np.zeros((2, 3))
+    palm_rot = np.stack([np.eye(3)] * 2)
+    targets = np.array(
+        [
+            [[0.4, 0.0, 0.0], [0.0, 0.4, 0.0]],
+            [[0.4, 0.0, 0.0], [0.0, 3.0, 0.0]],
+        ]
+    )
+    normals = targets / np.linalg.norm(targets, axis=-1, keepdims=True)
+
+    sol = solve_dls_ik_batch(
+        mock_spec,
+        palm_pos,
+        palm_rot,
+        targets,
+        normals,
+        max_iter=30,
+    )
+
+    assert sol.converged.tolist() == [True, False]
+    assert np.all(sol.position_residuals[0] < 0.005)
+    assert np.any(sol.position_residuals[1] >= 0.005)
+    assert sol.iterations is not None
+
+
+def test_position_match_does_not_bypass_normal_alignment(mock_spec):
+    targets = np.array([[[0.4, 0.0, 0.0], [0.0, 0.4, 0.0]]])
+    wrong_normals = -targets / np.linalg.norm(targets, axis=-1, keepdims=True)
+
+    sol = solve_dls_ik_batch(
+        mock_spec,
+        np.zeros((1, 3)),
+        np.eye(3)[None],
+        targets,
+        wrong_normals,
+        init_q=np.array([[0.4, 0.4]]),
+        max_iter=3,
+    )
+
+    assert not sol.converged[0]
+    assert np.all(sol.position_residuals[0] < 0.005)
+    assert np.any(sol.normal_residuals[0] > np.deg2rad(30.0))

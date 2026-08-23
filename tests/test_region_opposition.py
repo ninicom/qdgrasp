@@ -45,13 +45,12 @@ def test_region_opposition_thumbs_vs_others(dummy_mesh):
     # The heuristic looks for dot < -0.2, so it should be negative if a valid opposition was found.
     assert dot_product < 0, f"Expected opposition, dot product was {dot_product}"
 
-def test_region_opposition_fallback(dummy_mesh):
+def test_region_opposition_fails_closed(dummy_mesh):
     """
     Test that it falls back gracefully if opposition is impossible (e.g. 1 finger).
     """
     rng = np.random.default_rng(42)
     finger_ids = np.array([0])
 
-    proposal = generate_region_opposition_proposal(dummy_mesh, 1, rng, finger_ids)
-    assert len(proposal.target_points) == 1
-    assert proposal.provenance == "surface_fixed"
+    with pytest.raises(ValueError, match="at least two fingers"):
+        generate_region_opposition_proposal(dummy_mesh, 1, rng, finger_ids)

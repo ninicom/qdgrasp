@@ -3,7 +3,7 @@ document_id: REV-20260823-002
 document_type: revision_record
 revision_schema: 2
 title: Báo cáo Ablation Study 3 Recipe và Đánh giá Định lượng Phase 3.1
-status: in_review
+status: invalidated
 date: 2026-08-23
 record_id: REV-20260823-002
 session_id: SESSION-20260822-022
@@ -15,10 +15,17 @@ revises:
     revision: 07a99408657e5122f26ab8a30c676523f8748601c11499168a397b12215f5607
 reason: "Báo cáo thử nghiệm so sánh 3 recipes (surface_fixed_v1, region_opposition_v1, wrench_guided_v1) theo Module P3.1-13 của Phase 3.1."
 necessity: N1
-impact: "Xác nhận wrench_guided_v1 làm default recipe, chứng minh ưu thế của point-to-region IK so với fixed surface proposal."
+impact: "Kết quả cũ không còn được dùng để chọn recipe; controlled ablation phải chạy lại sau khi đủ correctness fixtures cho ba hand."
 ---
 
 # REV-20260823-002 — Báo cáo Ablation Study 3 Recipe
+
+> **INVALIDATED 2026-08-23:** Run bên dưới được tạo trước các sửa lỗi về physical
+> fingertip anchors, all-tip/normal-aware IK, gravity+GWS certification,
+> actuator transmission, measured contact force và dynamic-only success label.
+> Các tỷ lệ không còn so sánh cùng pipeline hiện tại và quyết định chọn
+> `wrench_guided_v1` bị thu hồi. Giữ bảng chỉ để audit lịch sử; không dùng làm
+> evidence P3.1-13 hay đầu vào regeneration.
 
 ## 1. Liên kết truy vết
 
@@ -38,7 +45,7 @@ Thực hiện yêu cầu định lượng của Phase 3.1 nhằm đối sánh hi
 ## 4. Phạm vi và tác động
 
 - Định lượng tỷ lệ hội tụ IK, tỷ lệ thỏa mãn lực ma sát tĩnh (static pass rate), và phân loại lý do loại bỏ (reason accounting).
-- Chốt `wrench_guided_v1` làm công thức mặc định cho `generate_dgn_open_tiny.py`.
+- Việc từng chốt `wrench_guided_v1` đã bị thu hồi; recipe phát hành đang pending.
 
 ## 5. Nội dung thay đổi đã hoàn tất trong phiên này
 
@@ -60,8 +67,8 @@ Thực hiện yêu cầu định lượng của Phase 3.1 nhằm đối sánh hi
 
 | Verification ID | Phương pháp | Kết quả |
 |---|---|---|
-| V-001 | Chạy `scripts/ablate_recipes.py` | pass (exit code 0) |
-| V-002 | Kiểm tra tính tất định với seed 42 | pass |
+| V-001 | Run lịch sử `scripts/ablate_recipes.py` | invalidated — pipeline logic đã thay đổi |
+| V-002 | Kiểm tra tính tất định với seed 42 | invalidated — không đủ để chứng minh correctness |
 
 ## 7. Ảnh hưởng tới báo cáo và quyết định cũ
 
@@ -72,4 +79,4 @@ Thực hiện yêu cầu định lượng của Phase 3.1 nhằm đối sánh hi
 
 - Tác giả: codex-primary-agent, 2026-08-23 Asia/Bangkok.
 - Người kiểm tra: Independent Review required.
-- Kết luận: Ablation study hoàn tất; `wrench_guided_v1` được phê duyệt làm default recipe.
+- Kết luận: hồ sơ invalidated; chưa có recipe nào được phê duyệt cho release.

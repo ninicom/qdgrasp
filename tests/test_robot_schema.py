@@ -17,12 +17,16 @@ def test_robot_v1_still_loads_dummy_hand() -> None:
 
 
 def test_robot_v2_presets_round_trip() -> None:
-    presets = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
-    for name in presets:
+    presets = {
+        "leap_hand.yaml": 16,
+        "wonik_allegro.yaml": 16,
+        "shadow_hand.yaml": 24,
+    }
+    for name, expected_joints in presets.items():
         cfg = load_robot_config(name)
         assert isinstance(cfg, RobotConfigV2)
         assert cfg.schema_version == ROBOT_SCHEMA_V2
-        assert len(cfg.joints) in (16, 20)
+        assert len(cfg.joints) == expected_joints
 
         dumped = dump_document(cfg)
         reparsed = parse_document(yaml.safe_load(dumped), RobotConfigV2, origin=name)
@@ -100,3 +104,8 @@ def test_provenance_enforcement_and_release_blocked() -> None:
     )
     with pytest.raises(ConfigError, match="release_blocked=True"):
         validate_profile_for_release(blocked)
+
+    shadow = load_robot_config("shadow_hand.yaml")
+    assert isinstance(shadow, RobotConfigV2)
+    with pytest.raises(ConfigError, match="fixed-tendon underactuation"):
+        validate_profile_for_release(shadow)

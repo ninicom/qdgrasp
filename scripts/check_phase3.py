@@ -4,19 +4,18 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import subprocess
 import sys
 from pathlib import Path
 
 import numpy as np
-import torch
 import trimesh
 
 from qdgrasp.api import QDGrasp
-from qdgrasp.dataset.manifest import load_dataset_manifest
 from qdgrasp.dataset.pipeline.filter import filter_grasp_candidate
 from qdgrasp.dataset.pipeline.ik import solve_dls_ik
 from qdgrasp.dataset.pipeline.sample import sample_grasp_candidates
-from qdgrasp.dataset.render import sample_analytic_point_cloud
 from qdgrasp.dataset.rng import get_generator
 from qdgrasp.objects.collision import validate_collision_representation
 from qdgrasp.objects.generate import (
@@ -70,7 +69,14 @@ def verify_pipeline_and_ik() -> None:
             raise AssertionError(f"failed to sample candidates for {preset}")
 
         cand = candidates[0]
-        ik_res = solve_dls_ik(spec, cand.palm_pos, cand.palm_rot, cand.target_contacts, max_iter=20)
+        ik_res = solve_dls_ik(
+            spec,
+            cand.palm_pos,
+            cand.palm_rot,
+            cand.target_contacts,
+            target_normals=cand.target_normals,
+            max_iter=20,
+        )
         # Check joint limits
         for j_idx, j_name in enumerate(spec.actuated_joint_names):
             lo, hi = spec.joint_limits[j_name]
@@ -127,6 +133,62 @@ def verify_recipes_and_contracts() -> None:
             )
             if len(outcomes) != 2:
                 raise AssertionError(f"Failed pipeline run for recipe {recipe_id} with robot {preset}")
+            if sum(reasons.values()) != len(outcomes):
+                raise AssertionError(
+                    f"reason accounting drift for {recipe_id}/{preset}: {reasons}"
+                )
+            for outcome in outcomes:
+                flags = (
+                    outcome.proposal_valid,
+                    outcome.ik_valid,
+                    outcome.collision_valid,
+                    outcome.static_force_valid,
+                    outcome.dynamic_valid,
+                )
+                if any(flags[index] and not flags[index - 1] for index in range(1, 5)):
+                    raise AssertionError(
+                        f"non-monotonic outcome for {recipe_id}/{preset}: {flags}"
+                    )
+                if outcome.dynamic_valid or outcome.failure_reason != "dynamic_skipped" and outcome.static_force_valid:
+                    raise AssertionError(
+                        "run_dynamic=False must never create a positive sample"
+                    )
+
+
+def verify_p31_regression_bundle() -> None:
+    tests = [
+        "tests/test_fixed_contact_dls.py",
+        "tests/test_region_dls.py",
+        "tests/test_contact_force.py",
+        "tests/test_contact_load.py",
+        "tests/test_physics_rollout.py",
+        "tests/test_dataset_generator_logic.py",
+        "tests/test_dataset_manifest_audit.py",
+        "tests/test_ablation_accounting.py",
+    ]
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "OMP_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "PYTHONHASHSEED": "0",
+        }
+    )
+    completed = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", *tests],
+        cwd=REPO_ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise AssertionError(
+            "P3.1 correctness regression failed:\n"
+            f"{completed.stdout}\n{completed.stderr}"
+        )
 
 
 def main() -> None:
@@ -140,11 +202,14 @@ def main() -> None:
     verify_recipes_and_contracts()
     print("  3. 3-Recipe and Staged Pipeline Verification: PASS")
 
+    verify_p31_regression_bundle()
+    print("  4. P3.1 IK/static/dynamic correctness regressions: PASS")
+
     manifest_summary = audit_dataset_manifest("datasets/dgn-open-tiny")
-    print(f"  4. Dataset manifest audit: PASS ({manifest_summary['total_samples']} samples)")
+    print(f"  5. Dataset manifest audit: PASS ({manifest_summary['total_samples']} samples)")
 
     train_metrics = verify_train_step_with_dgn_tiny()
-    print(f"  5. CPU Train step with DGN-Open-Tiny: PASS (loss={train_metrics.get('loss', 0.0):.4f})")
+    print(f"  6. CPU Train step with DGN-Open-Tiny: PASS (loss={train_metrics.get('loss', 0.0):.4f})")
 
     summary = {
         "status": "PASS",

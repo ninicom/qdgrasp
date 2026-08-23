@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..config.schema import ConfigError
 
 DATASET_MANIFEST_SCHEMA_V1 = "qdgrasp/dataset-manifest/v1"
+DATASET_MANIFEST_SCHEMA_V2 = "qdgrasp/dataset-manifest/v2"
 
 
 class ShardMetadata(BaseModel):
@@ -23,6 +24,7 @@ class ShardMetadata(BaseModel):
     positive_samples: int
     robot_name: str
     split: str
+    recipe_id: str = "legacy"
 
 
 class DatasetManifestSpec(BaseModel):
@@ -30,12 +32,21 @@ class DatasetManifestSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    schema_version: str = Field(default=DATASET_MANIFEST_SCHEMA_V1, alias="schema")
+    schema_version: str = Field(default=DATASET_MANIFEST_SCHEMA_V2, alias="schema")
     dataset_id: str
     generator_version: str
+    generator_commit: str = "legacy"
+    generator_worktree_dirty: bool = True
     seed: int
     environment_fingerprint: dict[str, Any]
     robot_profile_hashes: dict[str, str]
+    object_manifest_hashes: dict[str, str] = Field(default_factory=dict)
+    generator_source_hashes: dict[str, str] = Field(default_factory=dict)
+    recipe_id: str = "legacy"
+    proposal_module: str = "legacy"
+    solver_module: str = "legacy"
+    certifier_version: str = "legacy"
+    dynamic_protocol_version: str = "legacy"
     splits: dict[str, list[str]]  # split_name -> list of object_ids
     shards: list[ShardMetadata]
     success_criteria: dict[str, float]
