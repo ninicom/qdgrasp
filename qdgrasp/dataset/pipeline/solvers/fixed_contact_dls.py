@@ -6,6 +6,7 @@ from torch.func import jacrev
 from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.dataset.pipeline import contact_state as contact_state_module
 from qdgrasp.dataset.pipeline.contracts import KinematicSolution
+from qdgrasp.dataset.pipeline.solvers.normal_equations import masked_normal_equations
 
 def solve_dls_ik_batch(
     spec: RobotSpec,
@@ -161,13 +162,12 @@ def solve_dls_ik_batch(
         )
 
         with torch.no_grad():
-            J_t = J_batch.transpose(1, 2) # [B, J, 6K]
-
             damping_matrix = (
                 damping_values.square() + regularization_weight
             )[:, None, None] * I
-            H = torch.bmm(J_t, J_batch) + damping_matrix # [B, J, J]
-            g = torch.bmm(J_t, err).squeeze(-1) # [B, J]
+            # RC-02: inactive fingers must contribute no curvature either, so
+            # the mask is applied to the Jacobian rows, not only to `err`.
+            H, g = masked_normal_equations(J_batch, err, active_flat_mask, damping_matrix)
             g += regularization_weight * (q_reference - q)
 
             joint_span = torch.clamp(q_maxs - q_mins, min=1e-6)

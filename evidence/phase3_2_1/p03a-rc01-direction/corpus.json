@@ -1,0 +1,2402 @@
+{
+  "baseline_comparison": {
+    "baseline_summary": {
+      "candidates_reaching_dynamic_rollout": 0,
+      "cells": 9,
+      "failure_signature": {
+        "ik:max_iter": 18
+      },
+      "pipeline_generated_positives": 0,
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 18,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "total_candidates": 18
+    },
+    "budget_matches": true,
+    "changed_cells": [],
+    "changed_source_files": [
+      "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py",
+      "qdgrasp/dataset/pipeline/solvers/region_dls.py"
+    ],
+    "current_summary": {
+      "candidates_reaching_dynamic_rollout": 0,
+      "cells": 9,
+      "failure_signature": {
+        "ik:max_iter": 18
+      },
+      "pipeline_generated_positives": 0,
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 18,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "total_candidates": 18
+    },
+    "seed_matches": true,
+    "unchanged_cells": 9
+  },
+  "baseline_path": "evidence/phase3_2_1/baseline/corpus.json",
+  "cells_detail": [
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.2069621086120605,
+            "max_position_residual": 0.019706375896930695,
+            "normal_residuals": [
+              2.206962109,
+              0.854157567,
+              0.440328181,
+              1.04390347
+            ],
+            "palm_pos": [
+              -0.008361759,
+              8.0889e-05,
+              0.040188856
+            ],
+            "palm_rot": [
+              0.00270077,
+              0.254975826,
+              -0.966943681,
+              -0.110686243,
+              0.961081862,
+              0.253120929,
+              0.993851721,
+              0.106343739,
+              0.030817976
+            ],
+            "position_residuals": [
+              0.002230283,
+              0.003910152,
+              0.019706376,
+              0.009732092
+            ],
+            "q": [
+              2.105832338,
+              0.69600296,
+              1.586248994,
+              1.955604911,
+              2.178948164,
+              0.555131614,
+              1.175745845,
+              1.820222139,
+              1.967908263,
+              1.047000051,
+              1.88499999,
+              1.350910425,
+              0.959308684,
+              2.094000101,
+              2.347217083,
+              1.879999995
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 0,
+            "face_ids": [
+              9,
+              1,
+              5,
+              3
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "provenance": "surface_fixed",
+            "target_points": [
+              0.023920405,
+              0.025,
+              0.01366392,
+              -0.003880636,
+              -0.025,
+              -0.01181486,
+              0.007628559,
+              -0.025,
+              0.0048078,
+              -0.013465752,
+              0.008289364,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.66865873336792,
+            "max_position_residual": 0.017414286732673645,
+            "normal_residuals": [
+              1.910862565,
+              0.83903265,
+              1.773841262,
+              2.668658733
+            ],
+            "palm_pos": [
+              0.079264328,
+              0.04118127,
+              0.012128914
+            ],
+            "palm_rot": [
+              0.284220457,
+              0.166622058,
+              0.944169402,
+              0.881610274,
+              0.341612995,
+              -0.325674564,
+              -0.376805097,
+              0.924952805,
+              -0.049802318
+            ],
+            "position_residuals": [
+              0.001196832,
+              0.007460984,
+              0.017414287,
+              0.000647767
+            ],
+            "q": [
+              1.983939409,
+              0.686114073,
+              -0.331891626,
+              1.922294617,
+              1.607270122,
+              1.047000051,
+              -0.02838162,
+              2.042000055,
+              1.202649236,
+              1.047000051,
+              1.877614141,
+              0.288428038,
+              1.107651353,
+              1.158386588,
+              1.150511026,
+              1.368354678
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              4,
+              3,
+              0,
+              3
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.009959618,
+              -0.005207629,
+              0.025,
+              -0.005560813,
+              -0.002182817,
+              -0.025,
+              -0.025,
+              -0.016988994,
+              0.000918124,
+              0.004973967,
+              -0.011365119,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 3.129,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "leap_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "surface_fixed",
+        "solver": "fixed_contact_dls"
+      },
+      "recipe_id": "surface_fixed_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.0967297554016113,
+            "max_position_residual": 0.008091104216873646,
+            "normal_residuals": [
+              1.501684308,
+              1.30755353,
+              2.096729755,
+              1.906773686
+            ],
+            "palm_pos": [
+              -0.002000381,
+              0.075702623,
+              0.052482203
+            ],
+            "palm_rot": [
+              0.77817142,
+              -0.457314253,
+              -0.430479914,
+              0.53899461,
+              0.838112831,
+              0.083974279,
+              0.322388113,
+              -0.297372729,
+              0.898685336
+            ],
+            "position_residuals": [
+              0.002143277,
+              0.001996134,
+              0.008091104,
+              0.001134507
+            ],
+            "q": [
+              1.819615841,
+              0.75700897,
+              -0.062994525,
+              1.958897591,
+              1.649834514,
+              0.00376853,
+              0.355616629,
+              1.757237792,
+              1.181815505,
+              1.040027142,
+              1.746742725,
+              0.348115444,
+              0.80136627,
+              1.101360321,
+              2.352835894,
+              -0.144370854
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              3,
+              8,
+              3,
+              4
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              -0.023715823,
+              0.002169673,
+              -0.025,
+              -0.013837422,
+              0.006775893,
+              -0.025,
+              -0.008839157,
+              -0.019820908,
+              -0.025,
+              0.01556545,
+              -0.019423568,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.6636083126068115,
+            "max_position_residual": 0.011227126233279705,
+            "normal_residuals": [
+              0.682804763,
+              0.950078011,
+              1.365021944,
+              1.663608313
+            ],
+            "palm_pos": [
+              0.018982166,
+              0.040043395,
+              0.037078314
+            ],
+            "palm_rot": [
+              0.404698431,
+              -0.71761018,
+              0.566793382,
+              0.811916351,
+              -0.003195235,
+              -0.58376509,
+              0.420726806,
+              0.696437657,
+              0.581346333
+            ],
+            "position_residuals": [
+              0.001984345,
+              0.003361119,
+              0.011227126,
+              0.002474933
+            ],
+            "q": [
+              1.209614992,
+              0.144875973,
+              1.82597208,
+              1.398998022,
+              1.373475552,
+              0.561626196,
+              1.88499999,
+              1.312832713,
+              1.786104679,
+              0.985372245,
+              1.88499999,
+              1.275718093,
+              1.226584792,
+              2.094000101,
+              2.312513828,
+              1.842792153
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              9,
+              9,
+              7,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              -0.006575948,
+              0.025,
+              0.004377136,
+              0.01686852,
+              0.025,
+              0.009156899,
+              0.004281564,
+              0.025,
+              -0.009116389,
+              -0.002403096,
+              -0.025,
+              0.010221408
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 3.22,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "leap_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "region_opposition",
+        "solver": "region_dls"
+      },
+      "recipe_id": "region_opposition_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.5707052946090698,
+            "max_position_residual": 0.009914168156683445,
+            "normal_residuals": [
+              0.877635002,
+              1.025677443,
+              1.570705295,
+              1.397500992
+            ],
+            "palm_pos": [
+              -0.015594445,
+              0.022779679,
+              0.051765595
+            ],
+            "palm_rot": [
+              -0.140546739,
+              0.698166668,
+              -0.702004254,
+              0.189997241,
+              0.714883149,
+              0.672936201,
+              0.971672595,
+              -0.038799882,
+              -0.233124226
+            ],
+            "position_residuals": [
+              0.002328536,
+              0.003164015,
+              0.009914168,
+              0.000988092
+            ],
+            "q": [
+              1.025325656,
+              0.212879658,
+              1.837400079,
+              1.381328821,
+              1.156529903,
+              0.474683166,
+              1.884327173,
+              1.302921057,
+              1.815626621,
+              0.971967638,
+              1.88499999,
+              1.283286929,
+              1.288147926,
+              2.064417124,
+              2.291803837,
+              1.787297726
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              6,
+              6,
+              4,
+              3
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              -0.006387361,
+              -0.015583483,
+              0.025,
+              0.013463534,
+              -0.010201462,
+              0.025,
+              -0.021101211,
+              -0.019729582,
+              0.025,
+              -0.017990613,
+              0.003442135,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.251708507537842,
+            "max_position_residual": 0.013758071698248386,
+            "normal_residuals": [
+              0.40660283,
+              0.555848002,
+              1.106460094,
+              2.251708508
+            ],
+            "palm_pos": [
+              -0.017558457,
+              0.037316978,
+              0.012346809
+            ],
+            "palm_rot": [
+              -0.508428335,
+              0.834624708,
+              -0.211901471,
+              0.804993451,
+              0.548059404,
+              0.227192551,
+              0.305755109,
+              -0.055068154,
+              -0.950516343
+            ],
+            "position_residuals": [
+              0.000958164,
+              0.001325432,
+              0.013758072,
+              0.00242328
+            ],
+            "q": [
+              1.470733166,
+              0.207100704,
+              1.613347054,
+              1.695402622,
+              1.465265155,
+              0.526405692,
+              1.781674504,
+              1.455055833,
+              1.863273501,
+              1.019660592,
+              1.88499999,
+              1.307593942,
+              1.441345572,
+              2.035446405,
+              2.23425293,
+              1.763178825
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              4,
+              6,
+              6,
+              3
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              -0.001443925,
+              0.005633234,
+              0.025,
+              0.013698594,
+              0.017589028,
+              0.025,
+              -0.021228114,
+              -0.01165483,
+              0.025,
+              0.01361046,
+              -0.020026405,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 3.217,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "leap_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "wrench_guided",
+        "solver": "region_dls"
+      },
+      "recipe_id": "wrench_guided_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.2391624450683594,
+            "max_position_residual": 0.0019692692440003157,
+            "normal_residuals": [
+              0.441125572,
+              2.104122162,
+              0.623295665,
+              2.239162445
+            ],
+            "palm_pos": [
+              -0.060604244,
+              -0.003361768,
+              -0.069105171
+            ],
+            "palm_rot": [
+              0.546466827,
+              0.696197927,
+              -0.465491682,
+              0.316947579,
+              0.342558622,
+              0.884419501,
+              0.775189161,
+              -0.630842328,
+              -0.033461325
+            ],
+            "position_residuals": [
+              0.000708739,
+              0.001969269,
+              0.000507627,
+              0.001145699
+            ],
+            "q": [
+              -0.289675117,
+              1.058785439,
+              0.704835832,
+              1.350404501,
+              0.382962465,
+              1.468936443,
+              0.301635861,
+              1.314064741,
+              0.300023586,
+              0.773753941,
+              1.506690025,
+              0.33671546,
+              0.677982688,
+              0.823314846,
+              1.618041754,
+              0.335897326
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              9,
+              10,
+              2,
+              2
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0
+            ],
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.000476221,
+              0.025,
+              -0.016180702,
+              0.025,
+              0.013887318,
+              -0.022128971,
+              -0.025,
+              0.012515014,
+              0.006586959,
+              -0.025,
+              0.015750753,
+              -0.018298514
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.060051441192627,
+            "max_position_residual": 0.0017105210572481155,
+            "normal_residuals": [
+              2.060051441,
+              1.584442973,
+              1.659230471,
+              1.098857522
+            ],
+            "palm_pos": [
+              0.054957278,
+              -0.002724169,
+              0.061922196
+            ],
+            "palm_rot": [
+              -0.720341623,
+              -0.097722158,
+              0.686701,
+              -0.215087444,
+              0.972693682,
+              -0.08720348,
+              -0.659428,
+              -0.210517064,
+              -0.721690536
+            ],
+            "position_residuals": [
+              0.001710521,
+              0.000752312,
+              0.001122666,
+              0.001693543
+            ],
+            "q": [
+              -0.012192532,
+              1.389363647,
+              0.467726439,
+              1.542447209,
+              0.009785734,
+              0.998714805,
+              0.605402648,
+              1.075107574,
+              0.40345189,
+              1.144129515,
+              1.494317293,
+              -0.184682772,
+              0.738578737,
+              0.677304924,
+              1.612313867,
+              0.456790298
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 0,
+            "face_ids": [
+              2,
+              1,
+              4,
+              6
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.025,
+              0.021259761,
+              0.018327919,
+              -0.013206066,
+              -0.025,
+              -0.012031669,
+              -0.024084795,
+              -0.023372364,
+              0.025,
+              0.022801634,
+              -0.014431882,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 3.388,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "wonik_allegro",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "surface_fixed",
+        "solver": "fixed_contact_dls"
+      },
+      "recipe_id": "surface_fixed_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.365949869155884,
+            "max_position_residual": 0.005945652257651091,
+            "normal_residuals": [
+              0.646150112,
+              0.141006872,
+              0.011080922,
+              2.365949869
+            ],
+            "palm_pos": [
+              0.025583098,
+              -0.021622457,
+              0.021615764
+            ],
+            "palm_rot": [
+              -0.659827352,
+              0.643320084,
+              0.388287395,
+              -0.684459448,
+              -0.301337272,
+              -0.663860738,
+              -0.310069501,
+              -0.703800499,
+              0.639157057
+            ],
+            "position_residuals": [
+              0.00271043,
+              0.003645535,
+              0.005945652,
+              0.001747135
+            ],
+            "q": [
+              -0.427036732,
+              1.318757176,
+              1.641085982,
+              1.22291255,
+              0.467954099,
+              1.243842721,
+              1.623122096,
+              1.254059196,
+              0.469999999,
+              1.152544498,
+              1.406703234,
+              1.47112298,
+              1.380727649,
+              1.146511436,
+              1.576802611,
+              1.544183493
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              5,
+              5,
+              1,
+              7
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              0.012032577,
+              -0.025,
+              -0.017709528,
+              0.015672804,
+              -0.025,
+              0.008982133,
+              0.011616123,
+              -0.025,
+              -0.015339305,
+              -0.010330619,
+              0.025,
+              -9.687e-05
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.4690041542053223,
+            "max_position_residual": 0.007552863098680973,
+            "normal_residuals": [
+              0.5202353,
+              0.129247949,
+              0.066557512,
+              2.469004154
+            ],
+            "palm_pos": [
+              -0.031313241,
+              -0.027738716,
+              -0.017804025
+            ],
+            "palm_rot": [
+              0.269250005,
+              0.683138847,
+              -0.678841531,
+              0.587472081,
+              -0.675044894,
+              -0.446308166,
+              -0.76313889,
+              -0.278631955,
+              -0.583080828
+            ],
+            "position_residuals": [
+              0.00217256,
+              0.001624502,
+              0.007552863,
+              0.001963126
+            ],
+            "q": [
+              -0.30234611,
+              1.355663776,
+              1.631649733,
+              1.236516237,
+              0.439075589,
+              1.248552561,
+              1.621886134,
+              1.324800611,
+              0.469999999,
+              1.219443679,
+              1.3337816,
+              1.527498364,
+              1.369335532,
+              1.156152725,
+              1.594936013,
+              1.492730856
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              8,
+              8,
+              3,
+              4
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              3.715e-05,
+              -0.017216331,
+              -0.025,
+              -0.011135121,
+              0.001932316,
+              -0.025,
+              -0.020323302,
+              -0.006170246,
+              -0.025,
+              -0.005547161,
+              -0.008939272,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 3.389,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "wonik_allegro",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "region_opposition",
+        "solver": "region_dls"
+      },
+      "recipe_id": "region_opposition_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.606157064437866,
+            "max_position_residual": 0.00978043768554926,
+            "normal_residuals": [
+              0.602501273,
+              0.047638837,
+              0.18497692,
+              2.606157064
+            ],
+            "palm_pos": [
+              0.040609568,
+              0.013353532,
+              -0.01793766
+            ],
+            "palm_rot": [
+              -0.561474144,
+              0.443440467,
+              0.698646784,
+              0.827475607,
+              0.306545734,
+              0.47044003,
+              -0.005555044,
+              0.842253089,
+              -0.539053679
+            ],
+            "position_residuals": [
+              0.002726713,
+              0.000158871,
+              0.009780438,
+              0.001780812
+            ],
+            "q": [
+              -0.370493948,
+              1.363729477,
+              1.625709414,
+              1.272251606,
+              0.403411388,
+              1.329729438,
+              1.5237602,
+              1.389326215,
+              0.469999999,
+              1.19649899,
+              1.347376585,
+              1.536750793,
+              1.376793146,
+              1.150036693,
+              1.577964425,
+              1.539941192
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              7,
+              9,
+              7,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.022748799,
+              0.025,
+              0.021352014,
+              -0.002685765,
+              0.025,
+              0.017832099,
+              0.021183555,
+              0.025,
+              -0.005360161,
+              -0.015166719,
+              -0.025,
+              -0.016204958
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.565579414367676,
+            "max_position_residual": 0.004000873304903507,
+            "normal_residuals": [
+              0.431196451,
+              0.124972545,
+              0.13852188,
+              2.565579414
+            ],
+            "palm_pos": [
+              -0.023750436,
+              0.014645803,
+              -0.029147977
+            ],
+            "palm_rot": [
+              0.164251894,
+              0.743447244,
+              -0.648311317,
+              0.818260372,
+              0.264355242,
+              0.51045692,
+              0.55088228,
+              -0.614330947,
+              -0.564912558
+            ],
+            "position_residuals": [
+              0.00200601,
+              0.002489769,
+              0.004000873,
+              0.002032096
+            ],
+            "q": [
+              -0.219408125,
+              1.37685585,
+              1.624920726,
+              1.253794432,
+              0.448258698,
+              1.256789565,
+              1.600218177,
+              1.360522509,
+              0.469999999,
+              1.216751695,
+              1.354687452,
+              1.531701803,
+              1.380262733,
+              1.156052113,
+              1.586247563,
+              1.519463778
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              7,
+              7,
+              7,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.009345491,
+              0.025,
+              -0.021471193,
+              0.022767162,
+              0.025,
+              -0.019476154,
+              -0.023226959,
+              0.025,
+              -0.003108035,
+              0.019172762,
+              -0.025,
+              0.009456846
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 3.409,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "wonik_allegro",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "wrench_guided",
+        "solver": "region_dls"
+      },
+      "recipe_id": "wrench_guided_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.414294481277466,
+            "max_position_residual": 0.013010730035603046,
+            "normal_residuals": [
+              0.858126581,
+              2.414294481,
+              0.780415118,
+              1.741129637,
+              1.550531268
+            ],
+            "palm_pos": [
+              -0.047194242,
+              -0.054078624,
+              0.009742765
+            ],
+            "palm_rot": [
+              -0.703201234,
+              -0.350593954,
+              0.618540108,
+              0.627530217,
+              0.102922939,
+              0.77175951,
+              -0.334236175,
+              0.930854857,
+              0.147632763
+            ],
+            "position_residuals": [
+              0.003642581,
+              0.008878648,
+              0.008477339,
+              0.001701157,
+              0.01301073
+            ],
+            "q": [
+              0.104720861,
+              0.370010406,
+              0.934248388,
+              1.221729994,
+              0.209439993,
+              0.397948891,
+              1.476107597,
+              0.33907795,
+              1.290232539,
+              1.330508471,
+              1.529094219,
+              0.062145952,
+              1.570799947,
+              1.513800979,
+              0.602830112,
+              -0.035466969,
+              0.743847489,
+              1.570799947,
+              1.570799947,
+              0.703070998,
+              -0.315857559,
+              1.321444869,
+              1.462220788,
+              1.51809001
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              8,
+              0,
+              11,
+              1,
+              11
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.024476412,
+              0.024764866,
+              -0.025,
+              -0.025,
+              -0.017854509,
+              -0.016286475,
+              0.025,
+              0.001934673,
+              0.007083337,
+              -0.000458275,
+              -0.025,
+              -0.00850973,
+              0.025,
+              0.001475545,
+              0.022245785
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.0934290885925293,
+            "max_position_residual": 0.025035664439201355,
+            "normal_residuals": [
+              1.84341836,
+              1.230535269,
+              1.936950684,
+              2.093429089,
+              0.839312851
+            ],
+            "palm_pos": [
+              0.033022828,
+              -0.115983076,
+              -0.034774184
+            ],
+            "palm_rot": [
+              -0.742857397,
+              0.623672247,
+              0.243301928,
+              -0.315522999,
+              -0.646716893,
+              0.694408,
+              0.590430498,
+              0.439078748,
+              0.67720139
+            ],
+            "position_residuals": [
+              0.004028327,
+              0.025035664,
+              0.014038099,
+              0.001716026,
+              0.002029542
+            ],
+            "q": [
+              -0.069812931,
+              0.073299393,
+              -0.208574086,
+              0.802187204,
+              0.083349489,
+              0.64526087,
+              1.180819631,
+              0.319630742,
+              0.767656207,
+              1.532377243,
+              0.250409722,
+              -0.349065989,
+              0.823877931,
+              1.505018115,
+              0.207811788,
+              -0.349065989,
+              1.151180267,
+              1.437242508,
+              0.053949211,
+              0.624144256,
+              0.34127,
+              0.350905657,
+              1.504905105,
+              0.849589646
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              5,
+              10,
+              1,
+              1,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              1.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.016655099,
+              -0.025,
+              0.017112167,
+              0.025,
+              0.001632576,
+              -0.009990329,
+              -0.002545158,
+              -0.025,
+              -0.009883995,
+              0.006730858,
+              -0.025,
+              -0.014943784,
+              -0.007131038,
+              -0.025,
+              0.015657135
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 4.598,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "shadow_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "surface_fixed",
+        "solver": "fixed_contact_dls"
+      },
+      "recipe_id": "surface_fixed_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.176959276199341,
+            "max_position_residual": 0.003493419848382473,
+            "normal_residuals": [
+              1.485548735,
+              1.658207417,
+              1.663762569,
+              0.874945223,
+              2.176959276
+            ],
+            "palm_pos": [
+              -0.045133077,
+              0.065099016,
+              0.03233844
+            ],
+            "palm_rot": [
+              0.801342726,
+              -0.46032092,
+              0.382039875,
+              0.211471066,
+              -0.379420429,
+              -0.900733113,
+              0.559580028,
+              0.802586317,
+              -0.206701249
+            ],
+            "position_residuals": [
+              0.002834046,
+              0.002363058,
+              0.002590737,
+              0.00349342,
+              0.002219361
+            ],
+            "q": [
+              0.104719371,
+              0.370009482,
+              0.952517211,
+              1.169994473,
+              0.047685333,
+              0.441462845,
+              1.422272325,
+              0.01485972,
+              1.480636239,
+              1.376096964,
+              1.545158267,
+              0.315137148,
+              1.51671648,
+              1.195848703,
+              1.521716833,
+              0.162045196,
+              1.55736506,
+              1.136665463,
+              1.501195431,
+              0.75912112,
+              0.035080858,
+              1.415671706,
+              1.570799947,
+              1.570799947
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              7,
+              9,
+              9,
+              9,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              0.011981682,
+              0.025,
+              0.014142322,
+              -0.012283942,
+              0.025,
+              0.014992621,
+              -0.01825491,
+              0.025,
+              0.004725576,
+              -0.024558852,
+              0.025,
+              -0.013263727,
+              -0.014372195,
+              -0.025,
+              -0.000251125
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.3068461418151855,
+            "max_position_residual": 0.0031160537619143724,
+            "normal_residuals": [
+              2.306846142,
+              2.219886303,
+              2.117400885,
+              1.323045135,
+              1.750260592
+            ],
+            "palm_pos": [
+              -0.07238055,
+              -0.083879188,
+              0.001841911
+            ],
+            "palm_rot": [
+              0.818307877,
+              -0.455911756,
+              0.350023836,
+              -0.511797845,
+              -0.300790817,
+              0.804728448,
+              -0.26160121,
+              -0.837657034,
+              -0.479474157
+            ],
+            "position_residuals": [
+              0.003116054,
+              0.003073239,
+              0.002670363,
+              0.001071842,
+              0.002380047
+            ],
+            "q": [
+              -0.069812275,
+              0.073302805,
+              0.013752142,
+              0.636200309,
+              -0.186290845,
+              0.692793369,
+              0.744919181,
+              -0.046547655,
+              1.264420629,
+              0.438746065,
+              1.20528841,
+              0.150553718,
+              1.201100469,
+              0.460604966,
+              1.263581872,
+              0.079807222,
+              1.100068569,
+              0.561488867,
+              1.454789639,
+              0.668387115,
+              -0.346358448,
+              0.818983495,
+              1.01549542,
+              1.561114311
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              4,
+              4,
+              6,
+              4,
+              8
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              0.01668525,
+              -0.020503614,
+              0.025,
+              -0.018571944,
+              -0.009781236,
+              0.025,
+              0.015363258,
+              -1.505e-06,
+              0.025,
+              -0.02305485,
+              -0.019568109,
+              0.025,
+              0.019364273,
+              0.001421676,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 4.588,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "shadow_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "region_opposition",
+        "solver": "region_dls"
+      },
+      "recipe_id": "region_opposition_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.0665030479431152,
+            "max_position_residual": 0.003744846675544977,
+            "normal_residuals": [
+              1.658301473,
+              1.799229145,
+              1.776198506,
+              1.085224628,
+              2.066503048
+            ],
+            "palm_pos": [
+              -0.012892247,
+              0.043680623,
+              0.071941987
+            ],
+            "palm_rot": [
+              -0.79079473,
+              -0.611270428,
+              -0.031498507,
+              -0.5730142,
+              0.757430553,
+              -0.312975496,
+              0.215170592,
+              -0.229450285,
+              -0.949238718
+            ],
+            "position_residuals": [
+              0.002738942,
+              0.002451624,
+              0.003156569,
+              0.003744847,
+              0.00247679
+            ],
+            "q": [
+              0.104720004,
+              0.370010585,
+              0.95944941,
+              1.16710484,
+              0.043223392,
+              0.412031919,
+              1.400816917,
+              -0.082347497,
+              1.479875565,
+              1.355917215,
+              1.542767525,
+              0.325113207,
+              1.534459114,
+              1.201784253,
+              1.513873696,
+              0.138952851,
+              1.570799947,
+              1.20601058,
+              1.469645619,
+              0.767368078,
+              0.090787262,
+              1.328167915,
+              1.570799947,
+              1.570799947
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 3,
+            "face_ids": [
+              4,
+              4,
+              4,
+              4,
+              8
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.005531528,
+              -0.018932776,
+              0.025,
+              -0.0093155,
+              0.024332851,
+              0.025,
+              0.023141695,
+              0.010728254,
+              0.025,
+              0.017635939,
+              5.5294e-05,
+              0.025,
+              -0.021946107,
+              0.00439839,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.7218925952911377,
+            "max_position_residual": 0.0024027610197663307,
+            "normal_residuals": [
+              1.00367713,
+              1.150594592,
+              1.15816021,
+              0.601839542,
+              2.721892595
+            ],
+            "palm_pos": [
+              0.054907028,
+              0.043113735,
+              -0.033941913
+            ],
+            "palm_rot": [
+              0.534064889,
+              0.561215937,
+              -0.632306397,
+              -0.831934512,
+              0.215690836,
+              -0.511236131,
+              -0.150531173,
+              0.799070776,
+              0.582087815
+            ],
+            "position_residuals": [
+              0.001991351,
+              0.002402761,
+              0.002178735,
+              0.001446232,
+              0.001066496
+            ],
+            "q": [
+              0.104720645,
+              0.370008409,
+              0.951067924,
+              1.165716171,
+              0.062648654,
+              0.529157043,
+              1.267435908,
+              0.015362188,
+              1.508061409,
+              1.316547275,
+              1.521998525,
+              0.234751016,
+              1.478340983,
+              1.195638776,
+              1.532809377,
+              0.15193741,
+              1.523133159,
+              1.136940122,
+              1.512051702,
+              0.68397975,
+              -0.185782209,
+              1.346106529,
+              1.530029416,
+              1.549319506
+            ],
+            "reason": "max_iter",
+            "surface_distances": null
+          },
+          "proposal": {
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              8,
+              3,
+              8,
+              8,
+              4
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.014482955,
+              -0.01784644,
+              -0.025,
+              0.019904929,
+              0.006519632,
+              -0.025,
+              0.014982141,
+              0.014728706,
+              -0.025,
+              0.001557154,
+              0.018867764,
+              -0.025,
+              -0.024258911,
+              -0.017370227,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 4.69,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "shadow_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "wrench_guided",
+        "solver": "region_dls"
+      },
+      "recipe_id": "wrench_guided_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    }
+  ],
+  "expected_signature": "leap and shadow cells move; the 3 allegro cells stay at ik:max_iter (0 deg divergence)",
+  "hypothesis": "RC-01",
+  "intervention": "autodiff residual differentiates the configured contact axis (AUTODIFF_DIRECTION_MODE=configured)",
+  "label": "p03a-rc01-direction",
+  "provenance": {
+    "candidate_budget": 2,
+    "environment": {
+      "cuda_available": false,
+      "cuda_build": null,
+      "cuda_device_count": 0,
+      "cuda_device_name": null,
+      "python": "3.11.15",
+      "torch": "2.11.0+cpu"
+    },
+    "git_commit": "c93c7024a630169820940be536a17f7c9b3bb0bf",
+    "git_worktree_dirty": true,
+    "object_hashes": {
+      "box_50mm": "c4f5436a32b5dfb7db9a6479c5b8f9a5cc4b89fe117828d0afb935bf9a1ef57d"
+    },
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+    "robot_profile_hashes": {
+      "leap_hand": "d99fc45aba47695296797703ef288718ebf66a7a660ff8a73b3168bb582ba0fc",
+      "shadow_hand": "57f8672b6c52bb9771f51f9c68e3c8baf2566173cfa5dfb8d44543c6edfc3395",
+      "wonik_allegro": "b564de72a12ec9dab80bd92fe4b6d92f408efbd4df8933752529efd75e8f4095"
+    },
+    "run_dynamic": true,
+    "seed": 42,
+    "source_hashes": {
+      "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "158096bb4b8798331e654593e939336cdce93e932ae8dca9e064fe413cff10a2",
+      "qdgrasp/dataset/pipeline/certifiers/grasp_wrench.py": "733a1ed6931e7a4dd71564bb6d9ac8e99e5a7c809e5adf7f21e4479985dcfaf5",
+      "qdgrasp/dataset/pipeline/contracts.py": "cdaf75ab015d6cacb400714c70d8e63f4944c421aa3743ecbaab87a178ec51dd",
+      "qdgrasp/dataset/pipeline/filter.py": "609586abe7a78208e4ec77c1bf4ecad3e3c2c3ae3e0c491223e27393516bbfbd",
+      "qdgrasp/dataset/pipeline/observers/contact_load.py": "0132cc994bee2cca79b41fe40c9a4881a9e8594a3944c47eaef285957fc6ce9a",
+      "qdgrasp/dataset/pipeline/orchestrator.py": "fb133e3e013b9f136eac0850daf538a80d64b246106e93b99595c7075abacc04",
+      "qdgrasp/dataset/pipeline/proposals/region_opposition.py": "4e5fd0bc9ff2974bea4e553810b456e63401bf6208a994849a0ef691b1cc5b4f",
+      "qdgrasp/dataset/pipeline/proposals/surface_fixed.py": "2642db8c53bd1a14639762a367c8ad5f465b4cb1f55c8d55a38ebe4fdb90f065",
+      "qdgrasp/dataset/pipeline/proposals/width_mapper.py": "b1d17b62a7583ac6687eda18d7f46899d0aed8ee49ba6ba2c7cc2637d49b804e",
+      "qdgrasp/dataset/pipeline/proposals/wrench_guided.py": "7028aa72a2a05b526261e847462aaaee4a30d6d63babaae634c549648d03daad",
+      "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "75dacfbfef52260bb42e0193b0c4ac924797ae0520f17cf7f380b2e5d513e9ba",
+      "qdgrasp/dataset/pipeline/solvers/region_dls.py": "5eca49cedd92ec294578817d54c8cfb469defcc07cde12ac527d44b2bf7042f7",
+      "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "407d61f35db16fc4ba1571758f76db98aa0e7d812d951bc9fa24d60d771c2a9b",
+      "qdgrasp/dataset/pipeline/validators/scene_dynamic.py": "4008957983e671c1d88233caf2eaa503b927e75964e1c9bd1b66954bac6485c3",
+      "scripts/characterize_pipeline_failures.py": "e934c386694b6080a55f6232e239a3d66def0b9b0d1bb3ad49c184ec0ff5cfcd"
+    }
+  },
+  "schema": "qdgrasp/phase3-2-1-failure-corpus/v1",
+  "summary": {
+    "candidates_reaching_dynamic_rollout": 0,
+    "cells": 9,
+    "failure_signature": {
+      "ik:max_iter": 18
+    },
+    "pipeline_generated_positives": 0,
+    "stage_accounting": {
+      "accepted": 0,
+      "collision_rejected": 0,
+      "dynamic_rejected": 0,
+      "dynamic_skipped": 0,
+      "ik_rejected": 18,
+      "proposal_rejected": 0,
+      "static_force_rejected": 0
+    },
+    "total_candidates": 18
+  },
+  "timestamp": "2026-08-23T16:44:23Z"
+}

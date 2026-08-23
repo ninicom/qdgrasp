@@ -23,13 +23,14 @@ from qdgrasp.robot.spec import RobotSpec
 # "configured": rotate the fingertip's configured approach axis into world frame,
 #   falling back to the parent-to-tip-frame vector when no axis is configured.
 # "parent_to_tip": always the vector from the parent link origin to the contact
-#   point.  Retained only so the P3.2.1-02 extraction is a no-op; RC-01.
+#   point.  This is the convention the autodiff path used before P3.2.1-03; it is
+#   kept so the RC-01 divergence stays measurable, not because anything uses it.
 DirectionMode = Literal["configured", "parent_to_tip"]
 
-# The direction formula the autodiff residual currently differentiates.  Flipping
-# this to "configured" is the RC-01 intervention and is expected to move the
-# frozen failure corpus.
-AUTODIFF_DIRECTION_MODE: DirectionMode = "parent_to_tip"
+# The direction formula the autodiff residual differentiates.  P3.2.1-03 (RC-01)
+# points it at the same "configured" direction the residual is graded against, so
+# the solver descends the gradient of the function it is scored by.
+AUTODIFF_DIRECTION_MODE: DirectionMode = "configured"
 
 
 def _parent_origin(
