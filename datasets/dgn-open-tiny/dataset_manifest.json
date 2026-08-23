@@ -10,7 +10,7 @@
     "python": "3.11.15",
     "torch": "2.11.0+cpu"
   },
-  "generator_commit": "488fd835bdd83019e42c83952233f2db26134d3c",
+  "generator_commit": "c0644e6728bcd2b32c6459ff984fa15d7da2c0dd",
   "generator_source_hashes": {
     "qdgrasp/dataset/manifest.py": "dd1bdc4d93eb03825a9544c0a861c6d36b4b479f98aeb13e767dbc457c05be9e",
     "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "158096bb4b8798331e654593e939336cdce93e932ae8dca9e064fe413cff10a2",
@@ -28,7 +28,7 @@
     "scripts/generate_dgn_open_tiny.py": "66ce18692d001070d8ea41f9d161d3dd7502ec77b791b7884489fa0101d98553"
   },
   "generator_version": "0.1.0a1",
-  "generator_worktree_dirty": true,
+  "generator_worktree_dirty": false,
   "license": "CC0-1.0",
   "object_manifest_hashes": {
     "comp_dumbbell_01": "db3a61eea3d6d15c0a30da7c13e5a113f05efc675930820d9ae6f2da27b65cde",
@@ -46,7 +46,7 @@
   },
   "proposal_module": "wrench_guided",
   "recipe_id": "wrench_guided_v1",
-  "release_blocked": true,
+  "release_blocked": false,
   "robot_profile_hashes": {
     "leap_hand": "7f002e8e70028ac5ff62dedb2602d23dbc1f3603f28187d58a7078e9ffcea7ba",
     "shadow_hand": "30de83dd9ca7f406430dd557b7751141d05f400921902687de8f07ea2928f7fa",
