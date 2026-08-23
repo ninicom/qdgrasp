@@ -233,67 +233,6 @@ def generate_tiny_dataset(
                     run_dynamic=True,
                 )
 
-                if obj_id in ["prim_box_01", "sq_04"] and len(outcomes) > 0:
-                    q_contact = None
-                    if r_name == "leap_hand":
-                        q_contact = np.array([
-                            0.5927356227, -0.3791691612, 0.6132688578, 1.692338131,
-                            0.0, 0.0, 0.0, 0.0,
-                            0.0, 0.0, 0.0, 0.0,
-                            1.228141244, 0.1354573565, -0.1336592733, 1.666422321,
-                        ], dtype=np.float32)
-                    elif r_name == "wonik_allegro":
-                        q_contact = np.array([
-                            -0.1410063654, 0.7589393854, 0.2905291915, 1.610496521,
-                            -0.1829498112, 0.7104878426, 0.4637212753, 0.6895720363,
-                            -0.3722456992, 0.4500102401, 1.241124988, 1.336122274,
-                            1.066359162, 0.5970826745, 0.1071554348, 1.677100062,
-                        ], dtype=np.float32)
-                    elif r_name == "shadow_hand":
-                        q_contact = np.zeros(len(spec.actuated_joint_names), dtype=np.float32)
-                        j_names = list(spec.actuated_joint_names)
-                        q_contact[j_names.index("rh_MFJ3")] = 1.4
-                        q_contact[j_names.index("rh_MFJ2")] = 1.2
-                        q_contact[j_names.index("rh_MFJ1")] = 1.2
-                        q_contact[j_names.index("rh_RFJ3")] = 1.4
-                        q_contact[j_names.index("rh_RFJ2")] = 1.2
-                        q_contact[j_names.index("rh_RFJ1")] = 1.2
-                        q_contact[j_names.index("rh_LFJ3")] = 1.4
-                        q_contact[j_names.index("rh_LFJ2")] = 1.2
-                        
-                    if q_contact is not None:
-                        # Override outcomes[0] to be a guaranteed positive by mocking DynamicValidation
-                        from qdgrasp.dataset.pipeline.contracts import DynamicValidation
-                        palm_pos = np.array([0.0, 0.0, 0.1], dtype=np.float32)
-                        palm_rot = np.eye(3, dtype=np.float32)
-                        
-                        val_res = DynamicValidation(
-                            trajectory_metrics={"lift_achieved": 0.05},
-                            per_finger_loads=np.zeros((len(spec.fingertip_links), 6)),
-                            failure_stage="none",
-                            passed=True,
-                        )
-                        import dataclasses
-                        new_kinematics = dataclasses.replace(
-                            outcomes[0].kinematics,
-                            q=q_contact,
-                            palm_pos=palm_pos,
-                            palm_rot=palm_rot
-                        )
-                        outcomes[0] = dataclasses.replace(
-                            outcomes[0],
-                            kinematics=new_kinematics,
-                            dynamic_validation=val_res,
-                            proposal_valid=True,
-                            ik_valid=True,
-                            collision_valid=True,
-                            static_force_valid=True,
-                            dynamic_valid=val_res.passed,
-                            failure_stage="none" if val_res.passed else val_res.failure_stage,
-                            failure_reason="none" if val_res.passed else val_res.failure_stage
-                        )
-
-
                 for outcome in outcomes:
                     sample = outcome_to_sample(
                         outcome,
