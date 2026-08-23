@@ -178,13 +178,20 @@ giải tích (Analytical Optimization & Physics Simulation).
 
 ## Kế hoạch khắc phục
 
+> **Lưu ý quan trọng:** Các video ghi "PASS" trên Kaggle Kernel Version 14
+> (lift +19cm, +18cm, +10cm) được tạo từ kịch bản thủ công với góc khớp cố
+> định (`hardcoded joint angles`) trong `scripts/render_4view_rollout.py`, KHÔNG
+> phải do lõi pipeline (`orchestrator.py` → `wrench_guided.py` →
+> `fixed_contact_dls.py` → `mujoco_rollout.py`) giải ra. Do đó tất cả 5 lỗi
+> vẫn chưa được khắc phục trong lõi pipeline sinh dữ liệu thực tế.
+
 | STT | Bug | Giải pháp | Module cần sửa | Trạng thái |
 |---|---|---|---|---|
-| 1 | BUG-01 Hướng bàn tay | Spherical Standoff Sampling + SDF collision check | `orchestrator.py`, `proposals/` | Chưa sửa |
-| 2 | BUG-02 Lực kẹp yếu | Antipodal Opposition + contact penetration offset | `solvers/fixed_contact_dls.py`, `proposals/region_opposition.py` | Chưa sửa |
-| 3 | BUG-03 Rung giật | Critical damping `K_d = −0.15` | `validators/mujoco_rollout.py` | **Đã sửa (v14)** |
-| 4 | BUG-04 Nhãn sai | Dùng `lift_achieved > 0.04m` + zero-support | `validators/mujoco_rollout.py`, `build_kaggle_notebook.py` | **Đã sửa (v14)** |
-| 5 | BUG-05 Hiểu lầm loss | Tách rõ CUDA gate benchmark khỏi pipeline output | `kaggle-phase1/` notebook | Chưa sửa |
+| 1 | BUG-01 Hướng bàn tay | Spherical Standoff Sampling + SDF collision check | `orchestrator.py`, `proposals/` | **Chưa sửa** |
+| 2 | BUG-02 Lực kẹp yếu | Antipodal Opposition + contact penetration offset | `solvers/fixed_contact_dls.py`, `proposals/region_opposition.py` | **Chưa sửa** |
+| 3 | BUG-03 Rung giật | Critical damping `K_d = −0.15` trong `build_rollout_scene_model` | `validators/mujoco_rollout.py` | **Chưa sửa** |
+| 4 | BUG-04 Nhãn sai | Dùng `lift_achieved > 0.04m` + zero-support trong validator | `validators/mujoco_rollout.py`, `build_kaggle_notebook.py` | **Chưa sửa** |
+| 5 | BUG-05 Hiểu lầm loss | Tách rõ CUDA gate benchmark khỏi pipeline output | `kaggle-phase1/` notebook | **Chưa sửa** |
 
 ## Bằng chứng
 
@@ -193,12 +200,13 @@ giải tích (Analytical Optimization & Physics Simulation).
 | E-01 | Video rollout Kaggle v12 — bàn tay đâm xuyên vật thể, vật bị bắn đi | Kaggle Kernel v12 output |
 | E-02 | Video rollout Kaggle v12 — ngón tay rung giật liên tục | Kaggle Kernel v12 output |
 | E-03 | Video manifest v12 — nhãn PASS nhưng lift = 0.0m | `video_manifest.json` Kernel v12 |
-| E-04 | Video rollout Kaggle v14 — BUG-03 và BUG-04 đã sửa | Kaggle Kernel v14 output |
-| E-05 | `video_manifest.json` v14 — 3/4 pass có lift > 10cm, fail có lift < 0 | Kaggle Kernel v14 output |
+| E-04 | Video v14 ghi PASS nhưng dùng góc khớp cố định, không phải output pipeline | `scripts/render_4view_rollout.py` hardcoded scenarios |
+| E-05 | Lõi pipeline chưa được sửa đổi — chạy `orchestrator.py` vẫn sinh mẫu lỗi | `qdgrasp/dataset/pipeline/` source code |
 
 ## Kết luận
 
-Đã xác nhận 5 lỗi nền tảng. BUG-03 (rung giật) và BUG-04 (nhãn sai) đã được
-khắc phục và kiểm chứng trên Kaggle Kernel Version 14. BUG-01 (hướng bàn tay),
-BUG-02 (lực kẹp yếu) và BUG-05 (hiểu lầm loss) cần được xử lý trong các
-phiên tiếp theo bằng cách tái cấu trúc lõi pipeline.
+Đã xác nhận 5 lỗi nền tảng. Tất cả 5 lỗi đều chưa được khắc phục trong lõi
+pipeline sinh dữ liệu (`qdgrasp/dataset/pipeline/`). Các kết quả "PASS" trên
+Kaggle Kernel Version 14 chỉ là kịch bản thủ công với góc khớp đặt tay, không
+đại diện cho khả năng của pipeline thực tế. Toàn bộ 5 bug cần được xử lý
+trong các phiên tiếp theo bằng cách tái cấu trúc lõi pipeline.
