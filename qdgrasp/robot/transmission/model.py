@@ -115,16 +115,16 @@ def create_transmission_model_from_spec_and_mjcf(
             if mujoco.mj_name2id(mjcf_model, mujoco.mjtObj.mjOBJ_ACTUATOR, name) >= 0:
                 actuator_names_list.append(name)
             else:
-                    # Try common prefix like rh_A_
-                    prefixed = f"rh_A_{name.replace('rh_', '')}" if name.startswith("rh_") else f"A_{name}"
-                    if mujoco.mj_name2id(mjcf_model, mujoco.mjtObj.mjOBJ_ACTUATOR, prefixed) >= 0:
-                        actuator_names_list.append(prefixed)
-                    else:
-                        raise ConfigError(
-                            f"Cannot resolve spec actuator '{name}' in compiled MuJoCo model. "
-                            f"Tried exact match '{name}' and prefixed '{prefixed}'."
-                        )
-            actuator_names = tuple(actuator_names_list)
+                # Try common prefix like rh_A_
+                prefixed = f"rh_A_{name.replace('rh_', '')}" if name.startswith("rh_") else f"A_{name}"
+                if mujoco.mj_name2id(mjcf_model, mujoco.mjtObj.mjOBJ_ACTUATOR, prefixed) >= 0:
+                    actuator_names_list.append(prefixed)
+                else:
+                    raise ConfigError(
+                        f"Cannot resolve spec actuator '{name}' in compiled MuJoCo model. "
+                        f"Tried exact match '{name}' and prefixed '{prefixed}'."
+                    )
+        actuator_names = tuple(actuator_names_list)
     else:
         actuator_names = tuple(
             mujoco.mj_id2name(mjcf_model, mujoco.mjtObj.mjOBJ_ACTUATOR, a) or f"actuator_{a}"
