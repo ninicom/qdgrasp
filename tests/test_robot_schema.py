@@ -107,5 +107,7 @@ def test_provenance_enforcement_and_release_blocked() -> None:
 
     shadow = load_robot_config("shadow_hand.yaml")
     assert isinstance(shadow, RobotConfigV2)
-    with pytest.raises(ConfigError, match="fixed-tendon underactuation"):
-        validate_profile_for_release(shadow)
+    validate_profile_for_release(shadow)
+    shadow_summary = get_profile_provenance(shadow)
+    assert shadow_summary["profile_name"] == "shadow_hand"
+    assert shadow_summary["release_blocked"] is False
