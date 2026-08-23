@@ -1,23 +1,29 @@
-"""4-Camera Multi-View Grasp Rollout Renderer.
+"""Multi-angle (4-view) grasp rollout recorder with MuJoCo physics simulation.
 
-Renders synchronized 2x2 multi-angle videos (Isometric, Front, Side, Top-down)
-for dexterous hand-object grasp rollouts in MuJoCo physics simulation.
+Renders 4 synchronized virtual camera perspectives:
+  1. Isometric View (45 deg)
+  2. Front View (0 deg)
+  3. Side Profile View (90 deg)
+  4. Top-Down View (-85 deg)
+
+Assembles frames into a 2x2 synchronized grid and encodes to MP4 video with dynamic HUD overlay.
 """
 
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 from pathlib import Path
-from typing import Sequence, Tuple, Any
-import numpy as np
+from typing import Any, Sequence
+
 import mujoco
+import numpy as np
 from scipy.spatial.transform import Rotation
 
-try:
-    import cv2
-    HAS_CV2 = True
-except ImportError:
-    HAS_CV2 = False
+from qdgrasp.objects.schema import SubGeomSpec
+from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
+from qdgrasp.dataset.pipeline.validators.mujoco_rollout import build_rollout_scene_model
 
 try:
     import imageio
@@ -26,22 +32,55 @@ except ImportError:
     HAS_IMAGEIO = False
 
 try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    HAS_CV2 = False
+
+try:
     from PIL import Image, ImageDraw, ImageFont
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
 
-import subprocess
-import shutil
 
-from qdgrasp.objects.schema import SubGeomSpec
-from qdgrasp.dataset.pipeline.validators.mujoco_rollout import build_rollout_scene_model, smoothstep
-from qdgrasp.robot.spec import RobotSpec
-from qdgrasp.robot.assets import resolve_robot_asset
+def smoothstep(t: float) -> float:
+    """Standard smoothstep polynomial: 3*t^2 - 2*t^3 for t in [0, 1]."""
+    t_c = np.clip(t, 0.0, 1.0)
+    return float(3.0 * t_c**2 - 2.0 * t_c**3)
+
+
+def compute_root_pose_for_target_palm(
+    model: mujoco.MjModel,
+    palm_body_name: str,
+    p_palm_target: np.ndarray,
+    R_palm_target: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Compute (p_root, quat_root, R_root) such that the specified palm body is at (p_palm_target, R_palm_target)."""
+    palm_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, palm_body_name)
+    if palm_id < 0:
+        palm_id = 0
+
+    d_temp = mujoco.MjData(model)
+    d_temp.qpos[0:3] = [0.0, 0.0, 0.0]
+    d_temp.qpos[3:7] = [1.0, 0.0, 0.0, 0.0]
+    mujoco.mj_kinematics(model, d_temp)
+
+    p_palm_in_root = d_temp.xpos[palm_id].copy()
+    R_palm_in_root = d_temp.xmat[palm_id].reshape(3, 3).copy()
+
+    # R_root * R_palm_in_root = R_palm_target  =>  R_root = R_palm_target * R_palm_in_root^T
+    R_root = R_palm_target @ R_palm_in_root.T
+    p_root = p_palm_target - R_root @ p_palm_in_root
+
+    rot_obj = Rotation.from_matrix(R_root)
+    q_xyzw = rot_obj.as_quat()
+    quat_root = np.array([q_xyzw[3], q_xyzw[0], q_xyzw[1], q_xyzw[2]], dtype=np.float64)
+    return p_root, quat_root, R_root
 
 
 class MultiViewGraspRenderer:
-    """Renderer that captures 4 synchronized camera viewpoints in MuJoCo and exports 2x2 grid MP4."""
+    """Renders 4 synchronized camera viewports in MuJoCo for dexterous grasp analysis."""
 
     def __init__(
         self,
@@ -55,98 +94,79 @@ class MultiViewGraspRenderer:
         self.height = height
         self.renderer = mujoco.Renderer(model, height=height, width=width)
 
-        # Configure 4 virtual cameras
-        # 1. Isometric (45 deg)
-        self.cam_iso = mujoco.MjvCamera()
-        self.cam_iso.type = mujoco.mjtCamera.mjCAMERA_FREE
-        self.cam_iso.azimuth = 45.0
-        self.cam_iso.elevation = -25.0
-        self.cam_iso.distance = 0.35
+        # 4 Virtual Cameras
+        self.camera_configs = [
+            {"name": "Isometric (45°)", "azimuth": 45.0, "elevation": -22.0, "distance": 0.42, "lookat": [0.0, 0.0, 0.07]},
+            {"name": "Front View (0°)", "azimuth": 0.0, "elevation": -12.0, "distance": 0.40, "lookat": [0.0, 0.0, 0.07]},
+            {"name": "Side Profile (90°)", "azimuth": 90.0, "elevation": -12.0, "distance": 0.40, "lookat": [0.0, 0.0, 0.07]},
+            {"name": "Top-Down (-85°)", "azimuth": 0.0, "elevation": -85.0, "distance": 0.42, "lookat": [0.0, 0.0, 0.05]},
+        ]
 
-        # 2. Front View (0 deg)
-        self.cam_front = mujoco.MjvCamera()
-        self.cam_front.type = mujoco.mjtCamera.mjCAMERA_FREE
-        self.cam_front.azimuth = 0.0
-        self.cam_front.elevation = -15.0
-        self.cam_front.distance = 0.35
+    def render_4views(self) -> list[np.ndarray]:
+        """Render synchronized images from all 4 virtual cameras."""
+        camera = mujoco.MjvCamera()
+        frames = []
+        for cfg in self.camera_configs:
+            camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+            camera.azimuth = cfg["azimuth"]
+            camera.elevation = cfg["elevation"]
+            camera.distance = cfg["distance"]
+            camera.lookat = np.array(cfg["lookat"], dtype=np.float64)
 
-        # 3. Side / Profile View (90 deg)
-        self.cam_side = mujoco.MjvCamera()
-        self.cam_side.type = mujoco.mjtCamera.mjCAMERA_FREE
-        self.cam_side.azimuth = 90.0
-        self.cam_side.elevation = -15.0
-        self.cam_side.distance = 0.35
+            self.renderer.update_scene(self.data, camera=camera)
+            frame = self.renderer.render()
+            frames.append(frame.copy())
+        return frames
 
-        # 4. Top-Down View (-85 deg)
-        self.cam_top = mujoco.MjvCamera()
-        self.cam_top.type = mujoco.mjtCamera.mjCAMERA_FREE
-        self.cam_top.azimuth = 0.0
-        self.cam_top.elevation = -85.0
-        self.cam_top.distance = 0.35
-
-    def _update_camera_lookat(self, target_pos: np.ndarray) -> None:
-        for cam in (self.cam_iso, self.cam_front, self.cam_side, self.cam_top):
-            cam.lookat[:] = target_pos
-
-    def render_4view_frame(
+    def create_2x2_grid(
         self,
-        robot_name: str,
-        object_name: str,
-        phase_label: str,
-        sim_time: float,
+        views: list[np.ndarray],
+        header_title: str = "",
+        sub_info: str = "",
+        phase_badge: str = "",
     ) -> np.ndarray:
-        """Render 4 camera views and stitch into a 2x2 grid with HUD annotations."""
-        obj_bid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "target_object")
-        if obj_bid >= 0:
-            target_pos = self.data.xpos[obj_bid].copy()
-        else:
-            target_pos = np.array([0.0, 0.0, 0.05])
-        self._update_camera_lookat(target_pos)
+        """Compose 4 views into a 2x2 grid with top HUD banner."""
+        top_row = np.hstack([views[0], views[1]])
+        bot_row = np.hstack([views[2], views[3]])
+        grid = np.vstack([top_row, bot_row])
 
-        # Render 4 views
-        self.renderer.update_scene(self.data, camera=self.cam_iso)
-        img_iso = self.renderer.render()
-
-        self.renderer.update_scene(self.data, camera=self.cam_front)
-        img_front = self.renderer.render()
-
-        self.renderer.update_scene(self.data, camera=self.cam_side)
-        img_side = self.renderer.render()
-
-        self.renderer.update_scene(self.data, camera=self.cam_top)
-        img_top = self.renderer.render()
-
-        # Stitch 2x2
-        top_row = np.hstack([img_iso, img_front])
-        bot_row = np.hstack([img_side, img_top])
-        grid = np.vstack([top_row, bot_row])  # (2*H, 2*W, 3)
-
-        # Draw HUD using PIL
         if HAS_PIL:
-            header_h = 44
-            grid_img = Image.fromarray(grid)
-            composite_img = Image.new("RGB", (grid.shape[1], grid.shape[0] + header_h), (25, 25, 28))
-            composite_img.paste(grid_img, (0, header_h))
+            composite_img = Image.fromarray(grid)
             draw = ImageDraw.Draw(composite_img)
 
+            # Top HUD banner
+            banner_h = 44
+            draw.rectangle([(0, 0), (grid.shape[1], banner_h)], fill=(20, 20, 26))
+
+            # Viewport divider lines
+            mid_x = grid.shape[1] // 2
+            mid_y = grid.shape[0] // 2
+            draw.line([(mid_x, banner_h), (mid_x, grid.shape[0])], fill=(60, 60, 75), width=2)
+            draw.line([(0, mid_y), (grid.shape[1], mid_y)], fill=(60, 60, 75), width=2)
+
             # Header text
-            title_text = f"QDGrasp Multi-View Rollout | Robot: {robot_name.upper()} | Object: {object_name} | t={sim_time:.2f}s"
-            draw.text((16, 12), title_text, fill=(255, 255, 255))
+            draw.text((16, 12), header_title, fill=(240, 240, 245))
+            if sub_info:
+                draw.text((mid_x - 80, 12), sub_info, fill=(160, 160, 180))
 
-            status_color = (80, 240, 100) if "PASS" in phase_label or "LIFT" in phase_label else (255, 200, 60)
-            draw.text((grid.shape[1] - 280, 12), f"[{phase_label}]", fill=status_color)
+            # Dynamic Phase Badge
+            badge_color = (34, 197, 94) if "PASS" in phase_badge or "SUCCESS" in phase_badge else (
+                (239, 68, 68) if "FAIL" in phase_badge or "SLIP" in phase_badge else (59, 130, 246)
+            )
+            draw.rectangle([(grid.shape[1] - 220, 8), (grid.shape[1] - 16, 36)], fill=badge_color)
+            draw.text((grid.shape[1] - 210, 14), phase_badge, fill=(255, 255, 255))
 
-            # Viewport Badges
-            w, h = self.width, self.height
-            badges = [
-                ("Cam 1: Isometric (45 deg)", 12, header_h + 12),
-                ("Cam 2: Front View (0 deg)", w + 12, header_h + 12),
-                ("Cam 3: Side Profile (90 deg)", 12, header_h + h + 12),
-                ("Cam 4: Top-Down (-85 deg)", w + 12, header_h + h + 12),
+            # Viewport corner labels
+            labels = ["ISOMETRIC (45°)", "FRONT (0°)", "SIDE (90°)", "TOP-DOWN (-85°)"]
+            positions = [
+                (12, banner_h + 8),
+                (mid_x + 12, banner_h + 8),
+                (12, mid_y + 8),
+                (mid_x + 12, mid_y + 8),
             ]
-            for text, x, y in badges:
-                draw.rectangle([x - 4, y - 2, x + len(text) * 8 + 4, y + 16], fill=(30, 30, 30, 200))
-                draw.text((x, y), text, fill=(230, 230, 230))
+            for pos, lbl in zip(positions, labels):
+                draw.rectangle([(pos[0] - 4, pos[1] - 2), (pos[0] + len(lbl) * 8 + 8, pos[1] + 16)], fill=(0, 0, 0, 180))
+                draw.text(pos, lbl, fill=(220, 220, 230))
 
             return np.array(composite_img)
 
@@ -159,13 +179,15 @@ def record_grasp_rollout_video(
     q_target: np.ndarray,
     palm_pos_target: np.ndarray,
     palm_rot_target: np.ndarray,
+    palm_link_name: str,
     output_video_path: str | Path,
     robot_name: str = "leap_hand",
     object_name: str = "prim_box_01",
     fps: int = 30,
     subsample: int = 8,
+    kp_gain: float = 8.0,
 ) -> bool:
-    """Run full physical pinch & lift simulation and record a 4-view MP4 video."""
+    """Run full physical pinch & lift simulation with zero initial penetration and record a 4-view MP4 video."""
     out_p = Path(output_video_path)
     out_p.parent.mkdir(parents=True, exist_ok=True)
 
@@ -175,106 +197,136 @@ def record_grasp_rollout_video(
         object_pos=(0.0, 0.0, 0.05),
         object_mass=0.08,
     )
+    # Configure firm position actuator stiffness for secure force closure
+    for i in range(model.nu):
+        model.actuator_gainprm[i, 0] = kp_gain
+        model.actuator_biasprm[i, 1] = -kp_gain
+
     renderer = MultiViewGraspRenderer(model, width=480, height=360)
     data = renderer.data
 
     # Setup initial state
     mujoco.mj_resetData(model, data)
-
-    # Identify actuated joints
-    hand_root = model.body(0)
-    actuator_names = [model.actuator(i).name for i in range(model.nu)]
-
-    # Object free joint
     obj_jnt_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "object_freejoint")
     obj_qpos_adr = model.jnt_qposadr[obj_jnt_id]
-
-    # Pre-grasp offset (approach 5cm along approach vector)
-    R_target = Rotation.from_matrix(palm_rot_target)
-    approach_vec = R_target.as_matrix()[:, 0]  # x-axis approach
-    palm_pos_pre = palm_pos_target - 0.05 * approach_vec
-
-    # Mocap body
     mocap_id = model.body("hand_mocap").mocapid[0]
-    data.mocap_pos[mocap_id] = palm_pos_pre
-    data.mocap_quat[mocap_id] = np.array([R_target.as_quat()[3], R_target.as_quat()[0], R_target.as_quat()[1], R_target.as_quat()[2]])
 
-    # Hand free joint
-    data.qpos[0:3] = palm_pos_pre
-    data.qpos[3:7] = data.mocap_quat[mocap_id]
+    # Standoff pose: Retracted 8cm along approach vector away from object center
+    # Approach direction is -X for side grasps, or +Z for top-down
+    approach_vec = palm_pos_target - np.array([0.0, 0.0, 0.05])
+    app_norm = np.linalg.norm(approach_vec)
+    if app_norm < 1e-4:
+        approach_vec = np.array([0.0, 0.0, 1.0])
+        app_norm = 1.0
+    standoff_dir = approach_vec / app_norm
+    palm_pos_standoff = palm_pos_target + 0.08 * standoff_dir
+
+    # Compute exact root poses for standoff and target
+    p_root_standoff, quat_root_standoff, _ = compute_root_pose_for_target_palm(
+        model, palm_link_name, palm_pos_standoff, palm_rot_target
+    )
+    p_root_target, quat_root_target, _ = compute_root_pose_for_target_palm(
+        model, palm_link_name, palm_pos_target, palm_rot_target
+    )
+
+    # Spawn hand in collision-free standby pose at t=0
+    data.mocap_pos[mocap_id] = p_root_standoff
+    data.mocap_quat[mocap_id] = quat_root_standoff
+    data.qpos[0:3] = p_root_standoff
+    data.qpos[3:7] = quat_root_standoff
     data.qpos[obj_qpos_adr : obj_qpos_adr + 3] = [0.0, 0.0, 0.05]
     data.qpos[obj_qpos_adr + 3 : obj_qpos_adr + 7] = [1.0, 0.0, 0.0, 0.0]
+
+    # Initialize open joints
+    q_open = np.zeros(model.nu, dtype=np.float32)
+    for i in range(min(len(q_open), len(data.ctrl))):
+        data.ctrl[i] = 0.0
+
+    mujoco.mj_forward(model, data)
 
     frames = []
 
     # Simulation Phases:
-    # Phase 1: Approach (0 to 0.4s)
-    # Phase 2: Close / Pinch Fingers (0.4 to 0.9s)
-    # Phase 3: Zero-Support Lift Upward (0.9 to 1.5s)
-    # Phase 4: Hold & Certify (1.5 to 1.8s)
+    # Phase 1: Approach (0 to 0.35s) - Mocap smoothly translates to target pose
+    # Phase 2: Finger Pinch (0.35 to 0.85s) - Fingers close with firm grip
+    # Phase 3: Zero-Support Lift (0.85 to 1.45s) - Floor removed, hand lifts 10cm
+    # Phase 4: Hold & Certify (1.45 to 1.8s) - Hold and check retention
 
     total_sim_time = 1.8
     dt = model.opt.timestep
     total_steps = int(total_sim_time / dt)
 
     init_obj_z = 0.05
-    lift_height = 0.08  # 8cm lift
+    lift_height = 0.10
+
+    floor_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
 
     for step in range(total_steps):
         t = step * dt
 
-        # Stage control
-        if t < 0.4:
-            # Approach
-            alpha = smoothstep(t / 0.4)
-            data.mocap_pos[mocap_id] = (1 - alpha) * palm_pos_pre + alpha * palm_pos_target
-            phase = "PHASE 1: APPROACH"
-            # Hand open
-            for i in range(min(len(q_target), model.nu)):
+        if t < 0.35:
+            # Phase 1: Approach
+            alpha = smoothstep(t / 0.35)
+            p_cur = (1 - alpha) * p_root_standoff + alpha * p_root_target
+            data.mocap_pos[mocap_id] = p_cur
+            data.mocap_quat[mocap_id] = quat_root_target
+            for i in range(model.nu):
                 data.ctrl[i] = 0.0
-        elif t < 0.9:
-            # Pinch / close fingers
-            data.mocap_pos[mocap_id] = palm_pos_target
-            alpha = smoothstep((t - 0.4) / 0.5)
-            phase = "PHASE 2: FINGER PINCH"
+            phase = "PHASE 1: APPROACH"
+
+        elif t < 0.85:
+            # Phase 2: Finger Pinch
+            data.mocap_pos[mocap_id] = p_root_target
+            data.mocap_quat[mocap_id] = quat_root_target
+            alpha = smoothstep((t - 0.35) / 0.50)
             for i in range(min(len(q_target), model.nu)):
                 data.ctrl[i] = alpha * q_target[i]
-        elif t < 1.5:
-            # Lift upward (remove floor support, raise palm by 8cm)
-            alpha = smoothstep((t - 0.9) / 0.6)
-            lifted_pos = palm_pos_target.copy()
-            lifted_pos[2] += alpha * lift_height
-            data.mocap_pos[mocap_id] = lifted_pos
-            phase = "PHASE 3: ZERO-SUPPORT LIFT"
+            phase = "PHASE 2: FINGER PINCH"
+
+        elif t < 1.45:
+            # Phase 3: Zero-Support Lift
+            if floor_geom_id >= 0 and model.geom_pos[floor_geom_id][2] > -5.0:
+                model.geom_pos[floor_geom_id][2] = -10.0  # remove floor support
+
+            alpha = smoothstep((t - 0.85) / 0.60)
+            p_cur = p_root_target.copy()
+            p_cur[2] += alpha * lift_height
+            data.mocap_pos[mocap_id] = p_cur
             for i in range(min(len(q_target), model.nu)):
                 data.ctrl[i] = q_target[i]
+            phase = "PHASE 3: ZERO-SUPPORT LIFT"
+
         else:
-            # Hold
-            lifted_pos = palm_pos_target.copy()
-            lifted_pos[2] += lift_height
-            data.mocap_pos[mocap_id] = lifted_pos
+            # Phase 4: Hold & Certify
+            p_cur = p_root_target.copy()
+            p_cur[2] += lift_height
+            data.mocap_pos[mocap_id] = p_cur
+            for i in range(min(len(q_target), model.nu)):
+                data.ctrl[i] = q_target[i]
+
             cur_obj_z = data.qpos[obj_qpos_adr + 2]
             success = cur_obj_z > (init_obj_z + 0.04)
             phase = "PHASE 4: CERTIFIED PASS" if success else "PHASE 4: SLIPPED"
-            for i in range(min(len(q_target), model.nu)):
-                data.ctrl[i] = q_target[i]
 
         mujoco.mj_step(model, data)
 
-        # Capture frame at desired subsample rate (~30 FPS)
+        # Record at specified subsample rate
         if step % subsample == 0:
-            frame = renderer.render_4view_frame(
-                robot_name=robot_name,
-                object_name=object_name,
-                phase_label=phase,
-                sim_time=t,
+            views = renderer.render_4views()
+            header = f"ROBOT: {robot_name.upper()}  |  TARGET: {object_name}"
+            sub = f"Time: {t:4.2f}s | Step: {step:04d}"
+            frame = renderer.create_2x2_grid(
+                views,
+                header_title=header,
+                sub_info=sub,
+                phase_badge=phase,
             )
             frames.append(frame)
 
-    # Save video with fallback priority: imageio -> cv2 -> ffmpeg CLI -> PIL GIF
     if len(frames) == 0:
         return False
 
+    # Video Encoding
     # 1. imageio (mp4)
     if HAS_IMAGEIO:
         try:
@@ -324,7 +376,7 @@ def record_grasp_rollout_video(
         except Exception:
             pass
 
-    # 4. Fallback: Save as animated GIF or webp if MP4 failed
+    # 4. Fallback: Save as animated GIF
     if HAS_PIL:
         try:
             pil_frames = [Image.fromarray(f) for f in frames]
@@ -354,21 +406,23 @@ def run_kaggle_video_suite(
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 6 Representative Test Scenarios
+    # 6 Representative Test Scenarios with Natural Canonical Hand Orientations
     scenarios = [
         {
             "id": "01_leap_hand_box",
             "robot": "leap_hand.yaml",
+            "palm_link": "palm",
             "robot_name": "LEAP Hand (4 DoF)",
             "object_name": "prim_box_01",
             "geoms": [SubGeomSpec(type="box", size=(0.025, 0.025, 0.025), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "palm_pos": np.array([-0.075, 0.0, 0.05]),
-            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
-            "q_target": np.array([0.0, 0.85, 0.85, 0.0,  0.0, 0.85, 0.85, 0.0,  0.0, 0.85, 0.85, 0.0,  0.85, 0.85, 0.0, 0.0], dtype=np.float32),
+            "palm_pos": np.array([-0.09, 0.0, 0.065]),
+            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
+            "q_target": np.array([0.0, 1.3, 1.3, 0.0,  0.0, 1.3, 1.3, 0.0,  0.0, 1.3, 1.3, 0.0,  1.3, 1.1, 1.2, 0.0], dtype=np.float32),
         },
         {
             "id": "02_leap_hand_dumbbell",
             "robot": "leap_hand.yaml",
+            "palm_link": "palm",
             "robot_name": "LEAP Hand (4 DoF)",
             "object_name": "comp_dumbbell_01",
             "geoms": [
@@ -376,52 +430,56 @@ def run_kaggle_video_suite(
                 SubGeomSpec(type="sphere", size=(0.022,), pos=(0.0, 0.0, 0.04), quat=(1.0, 0.0, 0.0, 0.0)),
                 SubGeomSpec(type="sphere", size=(0.022,), pos=(0.0, 0.0, -0.04), quat=(1.0, 0.0, 0.0, 0.0)),
             ],
-            "palm_pos": np.array([-0.072, 0.0, 0.05]),
-            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
-            "q_target": np.array([0.0, 0.9, 0.9, 0.0,  0.0, 0.9, 0.9, 0.0,  0.0, 0.9, 0.9, 0.0,  0.9, 0.9, 0.0, 0.0], dtype=np.float32),
+            "palm_pos": np.array([-0.09, 0.0, 0.065]),
+            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
+            "q_target": np.array([0.0, 1.35, 1.35, 0.0,  0.0, 1.35, 1.35, 0.0,  0.0, 1.35, 1.35, 0.0,  1.3, 1.1, 1.2, 0.0], dtype=np.float32),
         },
         {
             "id": "03_wonik_allegro_superquadric",
             "robot": "wonik_allegro.yaml",
+            "palm_link": "palm",
             "robot_name": "Wonik Allegro (4 DoF)",
             "object_name": "sq_04",
             "geoms": [SubGeomSpec(type="box", size=(0.022, 0.022, 0.03), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "palm_pos": np.array([-0.065, 0.0, 0.05]),
-            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
-            "q_target": np.array([0.0, 0.8, 0.8, 0.8,  0.0, 0.8, 0.8, 0.8,  0.0, 0.8, 0.8, 0.8,  0.8, 0.8, 0.8, 0.0], dtype=np.float32),
+            "palm_pos": np.array([-0.09, 0.0, 0.065]),
+            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
+            "q_target": np.array([0.0, 1.2, 1.3, 1.2,  0.0, 1.2, 1.3, 1.2,  0.0, 1.2, 1.3, 1.2,  1.1, 0.9, 1.2, 1.2], dtype=np.float32),
         },
         {
             "id": "04_wonik_allegro_cylinder",
             "robot": "wonik_allegro.yaml",
+            "palm_link": "palm",
             "robot_name": "Wonik Allegro (4 DoF)",
             "object_name": "prim_cylinder_01",
             "geoms": [SubGeomSpec(type="cylinder", size=(0.018, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "palm_pos": np.array([-0.062, 0.0, 0.05]),
-            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
-            "q_target": np.array([0.0, 0.85, 0.85, 0.85,  0.0, 0.85, 0.85, 0.85,  0.0, 0.85, 0.85, 0.85,  0.85, 0.85, 0.85, 0.0], dtype=np.float32),
+            "palm_pos": np.array([-0.09, 0.0, 0.065]),
+            "palm_rot": np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]]),
+            "q_target": np.array([0.0, 1.25, 1.35, 1.2,  0.0, 1.25, 1.35, 1.2,  0.0, 1.25, 1.35, 1.2,  1.1, 0.9, 1.2, 1.2], dtype=np.float32),
         },
         {
             "id": "05_shadow_hand_t_shape",
             "robot": "shadow_hand.yaml",
+            "palm_link": "rh_palm",
             "robot_name": "Shadow Hand (5 DoF)",
             "object_name": "comp_t_shape_01",
             "geoms": [
                 SubGeomSpec(type="box", size=(0.015, 0.015, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0)),
                 SubGeomSpec(type="box", size=(0.035, 0.015, 0.015), pos=(0.0, 0.0, 0.03), quat=(1.0, 0.0, 0.0, 0.0)),
             ],
-            "palm_pos": np.array([0.0, -0.105, 0.05]),
-            "palm_rot": np.array([[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
-            "q_target": np.full(20, 0.75, dtype=np.float32),
+            "palm_pos": np.array([-0.06, 0.0, 0.065]),
+            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            "q_target": np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.6, 1.2,  0.0, 1.2, 2.0,  0.0, 1.2, 2.0,  0.0, 1.2, 2.0,  0.0, 0.0, 1.2, 2.0], dtype=np.float32),
         },
         {
             "id": "06_shadow_hand_superquadric",
             "robot": "shadow_hand.yaml",
+            "palm_link": "rh_palm",
             "robot_name": "Shadow Hand (5 DoF)",
             "object_name": "sq_01",
             "geoms": [SubGeomSpec(type="sphere", size=(0.024,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
-            "palm_pos": np.array([0.0, -0.102, 0.05]),
-            "palm_rot": np.array([[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
-            "q_target": np.full(20, 0.8, dtype=np.float32),
+            "palm_pos": np.array([-0.06, 0.0, 0.065]),
+            "palm_rot": np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            "q_target": np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.6, 1.2,  0.0, 1.2, 2.0,  0.0, 1.2, 2.0,  0.0, 1.2, 2.0,  0.0, 0.0, 1.2, 2.0], dtype=np.float32),
         },
     ]
 
@@ -439,11 +497,13 @@ def run_kaggle_video_suite(
             q_target=sc["q_target"],
             palm_pos_target=sc["palm_pos"],
             palm_rot_target=sc["palm_rot"],
+            palm_link_name=sc["palm_link"],
             output_video_path=out_vid,
             robot_name=sc["robot_name"],
             object_name=sc["object_name"],
             fps=30,
             subsample=6,
+            kp_gain=8.0,
         )
         file_size = out_vid.stat().st_size if out_vid.exists() else 0
         status = "SUCCESS" if ok and file_size > 0 else "FAILED"
