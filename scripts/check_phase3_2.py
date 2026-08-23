@@ -395,15 +395,21 @@ def verify_multistage_rollouts() -> dict[str, dict[str, float]]:
     return results
 
 def verify_release_blocked_status() -> None:
-    """Verifies that release_blocked is correctly configured for Shadow Hand."""
+    """Verifies Shadow Hand stays release-blocked until the Phase 3.2.1 gate closes.
+
+    REV-20260823-009 withdrew the Phase 3.2 unblock: it rested on hand-built
+    joint-state fixtures, not on a grasp the pipeline generated end to end.
+    """
     import yaml
     logger.info("Verifying release_blocked configuration...")
     shadow_cfg_path = REPO_ROOT / "qdgrasp" / "presets" / "robots" / "shadow_hand.yaml"
     with open(shadow_cfg_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    assert cfg.get("release_blocked") is False, "Shadow Hand release_blocked must be false after Phase 3.2 completion"
-    logger.info("  Shadow Hand release_blocked is False")
+    assert cfg.get("release_blocked") is True, (
+        "Shadow Hand release_blocked must stay true until the Phase 3.2.1 closing revision"
+    )
+    logger.info("  Shadow Hand release_blocked is True (blocked pending Phase 3.2.1)")
 
 def main() -> None:
     t0 = time.time()
@@ -423,7 +429,16 @@ def main() -> None:
         "ranks": rank_results,
         "finite_difference_parity": fd_results,
         "rollout_fixtures": rollout_results,
-        "status": "PASSED",
+        # Evidence scope is split per REV-20260823-009.  Everything this gate
+        # checks runs on hand-built joint states, so it certifies components
+        # only; the full proposal -> IK -> rollout chain is gated by
+        # scripts/check_phase3_2_1.py.
+        "component_fixture_pass": True,
+        "pipeline_generated_pass": False,
+        "pipeline_generated_pass_reason": (
+            "not evaluated by this gate; Phase 3.2.1 owns full-pipeline evidence"
+        ),
+        "status": "COMPONENT_FIXTURE_PASSED",
     }
 
     out_path = Path("runs/phase3_2_verification_report.json")
@@ -432,7 +447,11 @@ def main() -> None:
         json.dump(report, f, indent=2)
 
     logger.info("Report written to %s", out_path)
-    logger.info("=== Phase 3.2 Audit PASSED in %.2f seconds ===", elapsed)
+    logger.info(
+        "=== Phase 3.2 Component-Fixture Audit PASSED in %.2f seconds "
+        "(full-pipeline evidence pending Phase 3.2.1) ===",
+        elapsed,
+    )
 
 
 if __name__ == "__main__":

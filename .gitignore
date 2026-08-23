@@ -32,3 +32,4 @@ dist/
 
 .DS_Store
 Thumbs.db
+MUJOCO_LOG.TXT

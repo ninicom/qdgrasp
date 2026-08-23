@@ -107,11 +107,13 @@ actuators:
   rh_LFJ3: {kp: 1.0, kv: 0.1, type: position}
   rh_LFJ2: {kp: 1.0, kv: 0.1, type: position}
 frame: palm
-release_blocked: false
+release_blocked: true
 provenance:
   license: Apache-2.0
   spdx_identifier: Apache-2.0
   source_repository: https://github.com/google-deepmind/mujoco_menagerie.git
   source_commit: da76818e269b82289eba39808e2fb91d679d6994
   upstream_tree: 8f85903630df9e0738b2df3c3cb0e8b3dd421c63
-  notes: fixed-tendon underactuation fully supported via 24-state/20-control FixedTendonTransmission model (Phase 3.2)
+  restriction_reason: phase3_2_1_full_pipeline_correctness
+  notes: fixed-tendon transmission (24-state/20-control) verified at component level in Phase 3.2;
+    full-pipeline correctness unproven, re-blocked by REV-20260823-009 until the Phase 3.2.1 closing revision.

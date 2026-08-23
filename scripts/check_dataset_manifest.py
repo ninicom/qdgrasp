@@ -39,6 +39,11 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         raise ConfigError(f"unauthorized dataset license: expected 'CC0-1.0', got '{manifest.license}'")
     if manifest.release_blocked:
         raise ConfigError("dataset manifest has release_blocked=True")
+    if manifest.invalidated:
+        raise ConfigError(
+            "dataset manifest is marked invalidated: "
+            f"{manifest.invalidation_reason or 'no reason recorded'}"
+        )
     if manifest.generator_commit == "legacy" or manifest.generator_worktree_dirty:
         raise ConfigError("dataset was not generated from a recorded clean commit")
     if manifest.success_criteria.get("min_contacts", 0.0) < 2.0:

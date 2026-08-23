@@ -52,6 +52,8 @@ class DatasetManifestSpec(BaseModel):
     success_criteria: dict[str, float]
     license: str = "CC0-1.0"
     release_blocked: bool = False
+    invalidated: bool = False
+    invalidation_reason: str = ""
 
 
 def load_dataset_manifest(manifest_path: str | Path) -> DatasetManifestSpec:

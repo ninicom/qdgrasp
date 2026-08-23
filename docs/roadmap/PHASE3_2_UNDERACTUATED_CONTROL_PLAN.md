@@ -2,11 +2,12 @@
 document_id: ROADMAP-P3.2-001
 document_type: plan
 title: Kế hoạch Phase 3.2 — Underactuated Hand Control & Dynamic Parity
-version: 1.0.0
+version: 1.1.0
 status: active
 date: 2026-08-23
-revises: none
+revises: ROADMAP-P3.2-001@1.0.0
 related_plan: ROADMAP-P3.1-001
+latest_revision_record: docs/revisions/REV-20260823-009-phase3-2-1-full-pipeline-correctness.md
 ---
 
 # Kế hoạch Phase 3.2 — Underactuated Hand Control & Dynamic Parity
@@ -20,6 +21,21 @@ không teleport joint state và không hạ physics gate.
 P3.2 không đóng P3 tổng. Khi P3.2 pass, công việc quay lại P3.1-11 để xác nhận
 dynamic fixtures ba hand, rồi mới chạy P3.1-13 controlled ablation, P3.1-14
 regeneration và P3.1-15 release gates.
+
+## Corrective subphase P3.2.1
+
+Audit sau implementation xác nhận gate P3.2 hiện chứng minh transmission và
+rollout component fixtures dựng thủ công, chưa chứng minh full generator path.
+Chạy `run_pipeline_chunk` trên box 5 cm với ba robot, ba recipe và hai candidate
+mỗi recipe cho kết quả 18/18 candidate dừng tại `IK: max_iter`. Generator còn
+thay một outcome thật bằng positive fixture dựng thủ công.
+
+Vì vậy [`ROADMAP-P3.2.1-001`](PHASE3_2_1_FULL_PIPELINE_CORRECTNESS_PLAN.md) là
+corrective gate bắt buộc trước khi P3.2 được xem là đóng cho release. Fixture
+P3.2 vẫn là component evidence hợp lệ nhưng không được gọi là
+`pipeline_generated_pass`, không đủ để gỡ Shadow release block và không đủ để
+regenerate dataset. P3.2.1 sửa solver math, constrained palm initialization,
+task-space command admission, dynamic predicate và full-flow mutation gates.
 
 ## 1. Baseline và blocker
 

@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.9.0
+version: 1.10.0
 status: active
 date: 2026-08-23
-revises: ROADMAP-001@1.8.0
+revises: ROADMAP-001@1.9.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260823-008-phase3-4-contact-rich-plan.md
+latest_revision_record: docs/revisions/REV-20260823-009-phase3-2-1-full-pipeline-correctness.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -78,11 +78,14 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 - Candidate palm/contact sampling, IK hỗ trợ, collision filtering và physics
   validation.
 - `GraspBatch` schema, shards, splits, seed, camera/frame metadata và hashes.
-- P3 vẫn `pending`: Phase 3.2 (`ROADMAP-P3.2-001`, `REV-20260823-005`) đã hoàn tất
-  thành công tầng điều khiển underactuated 24-state/20-control, unblock Shadow Hand
-  (`release_blocked: false`) và chứng minh dynamic parity trên cả 3 bàn tay.
-  P3.1 đã mở lại release gate vì generator còn fabricated positive; sau khi xóa
-  bypass mới được chạy controlled ablation và regeneration.
+- P3 vẫn `pending`: Phase 3.2 đã chứng minh transmission dimensions/rank và
+  component rollout fixtures cho 24-state/20-control, nhưng chưa chứng minh
+  full generator path. Phase 3.2.1
+  ([`ROADMAP-P3.2.1-001`](PHASE3_2_1_FULL_PIPELINE_CORRECTNESS_PLAN.md)) mở
+  corrective gate cho solver math, palm initialization, task-space command,
+  dynamic predicate và generated end-to-end evidence. Shadow release phải bị
+  block lại cho tới closing revision P3.2.1. P3.1 controlled ablation và
+  regeneration tiếp tục bị chặn.
 - Phase 3.3 ([`ROADMAP-P3.3-001`](PHASE3_3_SCENE_GRASP_DATA_PLAN.md)) mở rộng
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object

@@ -105,9 +105,13 @@ def test_provenance_enforcement_and_release_blocked() -> None:
     with pytest.raises(ConfigError, match="release_blocked=True"):
         validate_profile_for_release(blocked)
 
+    # Shadow stays release-blocked until the Phase 3.2.1 gate closes
+    # (REV-20260823-009): its Phase 3.2 unblock rested on hand-built joint
+    # states, not on a pipeline-generated grasp.
     shadow = load_robot_config("shadow_hand.yaml")
     assert isinstance(shadow, RobotConfigV2)
-    validate_profile_for_release(shadow)
     shadow_summary = get_profile_provenance(shadow)
     assert shadow_summary["profile_name"] == "shadow_hand"
-    assert shadow_summary["release_blocked"] is False
+    assert shadow_summary["release_blocked"] is True
+    with pytest.raises(ConfigError, match="release_blocked=True"):
+        validate_profile_for_release(shadow)
