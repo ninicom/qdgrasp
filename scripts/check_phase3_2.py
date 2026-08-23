@@ -267,8 +267,143 @@ def verify_multistage_rollouts() -> dict[str, dict[str, float]]:
                 int(results["shadow_hand"]["final_active_fingers"]),
                 int(results["shadow_hand"]["transmission_rank"]))
 
+    # LEAP Hand
+    leap_spec = RobotSpec.from_config("leap_hand.yaml", sample_anchors=False)
+    q_leap = np.array(
+        [
+            0.5927356227, -0.3791691612, 0.6132688578, 1.692338131,
+            0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0,
+            1.228141244, 0.1354573565, -0.1336592733, 1.666422321,
+        ],
+        dtype=np.float32,
+    )
+    local_leap = leap_spec.fingertip_positions(torch.zeros(1, 3), torch.eye(3)[None], torch.from_numpy(q_leap[None]))[0].numpy()
+    leap_axis = local_leap[3] - local_leap[0]
+    leap_width = 0.5 * float(np.linalg.norm(leap_axis))
+    leap_axis /= np.linalg.norm(leap_axis)
+    leap_rot = Rotation.align_vectors(np.array([[-1.0, 0.0, 0.0]]), leap_axis[None])[0].as_matrix()
+    leap_pos = np.array([0.0, 0.0, 0.02]) - leap_rot @ (0.5 * (local_leap[0] + local_leap[3]))
+
+    palm_pos_b = leap_pos.astype(np.float32)[None]
+    palm_rot_b = leap_rot.astype(np.float32)[None]
+    q_b = q_leap[None]
+    contact_points = leap_spec.fingertip_positions(torch.from_numpy(palm_pos_b), torch.from_numpy(palm_rot_b), torch.from_numpy(q_b))[0].numpy()
+    contact_axes = leap_spec.fingertip_contact_directions(torch.from_numpy(palm_pos_b), torch.from_numpy(palm_rot_b), torch.from_numpy(q_b))[0].numpy()
+
+    open_contacts = contact_points.copy()
+    squeeze_contacts = contact_points.copy()
+    open_contacts[[0, 3]] -= 0.004 * contact_axes[[0, 3]]
+    squeeze_contacts[[0, 3]] += 0.003 * contact_axes[[0, 3]]
+    command_targets = np.stack([open_contacts, squeeze_contacts])
+
+    commands = solve_dls_ik_batch(
+        leap_spec,
+        np.repeat(palm_pos_b, 2, axis=0),
+        np.repeat(palm_rot_b, 2, axis=0),
+        command_targets,
+        np.repeat(contact_axes[None], 2, axis=0),
+        init_q=np.repeat(q_b, 2, axis=0),
+        max_iter=35,
+        pos_tolerance=0.0007,
+        require_normal_alignment=False,
+    )
+
+    res_leap = validate_grasp_rollout(
+        resolve_robot_asset(leap_spec.config.source_asset),
+        [SubGeomSpec(type="box", size=(leap_width, 0.015, 0.02), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+        leap_spec.fingertip_links,
+        palm_pos=tuple(leap_pos),
+        palm_rot=leap_rot,
+        initial_joint_targets=dict(zip(leap_spec.actuated_joint_names, commands.q[0])),
+        joint_targets=dict(zip(leap_spec.actuated_joint_names, commands.q[1])),
+        object_pos=(0.0, 0.0, 0.02),
+        object_mass=0.02,
+        expected_fingertip_positions=contact_points,
+        fingertip_local_offsets=np.stack([leap_spec.fingertip_contact_offsets[name] for name in leap_spec.fingertip_links]),
+        pregrasp_distance=0.0,
+        squeeze_steps=300,
+    )
+    assert res_leap.passed, f"LEAP rollout failed: {res_leap.failure_stage}"
+    results["leap_hand"] = {
+        "lift_achieved": float(res_leap.trajectory_metrics["lift_achieved"]),
+        "transmission_rank": float(res_leap.trajectory_metrics["transmission_rank"]),
+    }
+    logger.info("  LEAP Hand rollout PASSED")
+
+    # Allegro Hand
+    allegro_spec = RobotSpec.from_config("wonik_allegro.yaml", sample_anchors=False)
+    q_al = np.array(
+        [
+            -0.1410063654, 0.7589393854, 0.2905291915, 1.610496521,
+            -0.1829498112, 0.7104878426, 0.4637212753, 0.6895720363,
+            -0.3722456992, 0.4500102401, 1.241124988, 1.336122274,
+            1.066359162, 0.5970826745, 0.1071554348, 1.677100062,
+        ],
+        dtype=np.float32,
+    )
+    local_al = allegro_spec.fingertip_positions(torch.zeros(1, 3), torch.eye(3)[None], torch.from_numpy(q_al[None]))[0].numpy()
+    al_axis = local_al[3] - local_al[0]
+    al_width = 0.5 * float(np.linalg.norm(al_axis))
+    al_axis /= np.linalg.norm(al_axis)
+    al_rot = Rotation.align_vectors(np.array([[-1.0, 0.0, 0.0]]), al_axis[None])[0].as_matrix()
+    al_pos = np.array([0.0, 0.0, 0.02]) - al_rot @ (0.5 * (local_al[0] + local_al[3]))
+
+    palm_pos_b = al_pos.astype(np.float32)[None]
+    palm_rot_b = al_rot.astype(np.float32)[None]
+    q_b = q_al[None]
+    contact_points = allegro_spec.fingertip_positions(torch.from_numpy(palm_pos_b), torch.from_numpy(palm_rot_b), torch.from_numpy(q_b))[0].numpy()
+    contact_axes = allegro_spec.fingertip_contact_directions(torch.from_numpy(palm_pos_b), torch.from_numpy(palm_rot_b), torch.from_numpy(q_b))[0].numpy()
+
+    squeeze_contacts = contact_points.copy()
+    squeeze_contacts[[0, 3]] += 0.0025 * contact_axes[[0, 3]]
+    command = solve_dls_ik_batch(
+        allegro_spec,
+        palm_pos_b,
+        palm_rot_b,
+        squeeze_contacts,
+        contact_axes[None],
+        init_q=q_b,
+        max_iter=35,
+        pos_tolerance=0.0007,
+        require_normal_alignment=False,
+    )
+
+    res_al = validate_grasp_rollout(
+        resolve_robot_asset(allegro_spec.config.source_asset),
+        [SubGeomSpec(type="box", size=(al_width, 0.015, 0.02), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+        allegro_spec.fingertip_links,
+        palm_pos=tuple(al_pos),
+        palm_rot=al_rot,
+        initial_joint_targets=allegro_spec.expand_mimic_joint_targets(dict(zip(allegro_spec.actuated_joint_names, q_al))),
+        joint_targets=allegro_spec.expand_mimic_joint_targets(dict(zip(allegro_spec.actuated_joint_names, command.q[0]))),
+        object_pos=(0.0, 0.0, 0.02),
+        object_mass=0.02,
+        expected_fingertip_positions=contact_points,
+        fingertip_local_offsets=np.stack([allegro_spec.fingertip_contact_offsets[name] for name in allegro_spec.fingertip_links]),
+        pregrasp_distance=0.0,
+        squeeze_steps=250, lift_steps=150, lift_height=0.05, perturbation_steps=40,
+        perturbation_wrench=np.array([0.15, 0.15, 0.0, 0.01, 0.01, 0.01], dtype=np.float64),
+    )
+    assert res_al.passed, f"Allegro rollout failed: {res_al.failure_stage}"
+    results["wonik_allegro"] = {
+        "lift_achieved": float(res_al.trajectory_metrics["lift_achieved"]),
+        "transmission_rank": float(res_al.trajectory_metrics["transmission_rank"]),
+    }
+    logger.info("  Allegro Hand rollout PASSED")
+
     return results
 
+def verify_release_blocked_status() -> None:
+    """Verifies that release_blocked is correctly configured for Shadow Hand."""
+    import yaml
+    logger.info("Verifying release_blocked configuration...")
+    shadow_cfg_path = REPO_ROOT / "qdgrasp" / "presets" / "robots" / "shadow_hand.yaml"
+    with open(shadow_cfg_path, "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+
+    assert cfg.get("release_blocked") is False, "Shadow Hand release_blocked must be false after Phase 3.2 completion"
+    logger.info("  Shadow Hand release_blocked is False")
 
 def main() -> None:
     t0 = time.time()
@@ -279,6 +414,7 @@ def main() -> None:
     verify_controllable_space_projection()
     verify_active_finger_dls_ik()
     rollout_results = verify_multistage_rollouts()
+    verify_release_blocked_status()
 
     elapsed = time.time() - t0
     report = {
