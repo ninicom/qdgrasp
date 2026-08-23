@@ -587,15 +587,21 @@ def generate_tiny_dataset(
         capture_output=True,
         text=True,
     ).stdout.strip()
-    generator_worktree_dirty = bool(
-        subprocess.run(
-            ["git", "status", "--porcelain"],
-            cwd=repo_root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
+    # Check if tracked source files have uncommitted changes
+    dirty_output = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    # Exclude dataset manifest itself from dirty flag
+    source_dirty = any(
+        not line.strip().endswith("dataset_manifest.json")
+        for line in dirty_output.splitlines()
+        if line.strip()
     )
+    generator_worktree_dirty = source_dirty
     release_blocked = release_blocked or generator_worktree_dirty
     dataset_manifest = DatasetManifestSpec(
         dataset_id="dgn-open-tiny-v1",

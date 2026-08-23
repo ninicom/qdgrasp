@@ -1,0 +1,157 @@
+{
+  "dataset_id": "dgn-open-tiny-v1",
+  "recipe_id": "wrench_guided_v1",
+  "generator_version": "0.1.0a1",
+  "seed": 42,
+  "release_blocked": true,
+  "total_samples": 144,
+  "positive_samples": 6,
+  "negative_samples": 138,
+  "success_rate": 0.041666666666666664,
+  "splits": {
+    "train": {
+      "total": 120,
+      "positive": 3,
+      "success_rate": 0.025
+    },
+    "val": {
+      "total": 24,
+      "positive": 3,
+      "success_rate": 0.125
+    }
+  },
+  "robots": {
+    "leap_hand": {
+      "total": 48,
+      "positive": 2,
+      "success_rate": 0.041666666666666664,
+      "avg_quality": 0.0018816712933282058,
+      "avg_palm_dist_m": 0.07343384452785055,
+      "avg_active_fingers": 4.0
+    },
+    "wonik_allegro": {
+      "total": 48,
+      "positive": 2,
+      "success_rate": 0.041666666666666664,
+      "avg_quality": 0.002099527046084404,
+      "avg_palm_dist_m": 0.06175711397857716,
+      "avg_active_fingers": 4.0
+    },
+    "shadow_hand": {
+      "total": 48,
+      "positive": 2,
+      "success_rate": 0.041666666666666664,
+      "avg_quality": 0.0019137336251636345,
+      "avg_palm_dist_m": 0.10345411983629067,
+      "avg_active_fingers": 5.0
+    }
+  },
+  "objects": {
+    "comp_dumbbell_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "compound_convex"
+    },
+    "comp_l_shape_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "compound_convex"
+    },
+    "comp_t_shape_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "compound_convex"
+    },
+    "comp_t_shape_02": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "compound_convex"
+    },
+    "prim_box_01": {
+      "total": 12,
+      "positive": 3,
+      "success_rate": 0.25,
+      "family": "primitive"
+    },
+    "prim_capsule_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "primitive"
+    },
+    "prim_cylinder_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "primitive"
+    },
+    "prim_sphere_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "primitive"
+    },
+    "sq_01": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "superquadric"
+    },
+    "sq_02": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "superquadric"
+    },
+    "sq_03": {
+      "total": 12,
+      "positive": 0,
+      "success_rate": 0.0,
+      "family": "superquadric"
+    },
+    "sq_04": {
+      "total": 12,
+      "positive": 3,
+      "success_rate": 0.25,
+      "family": "superquadric"
+    }
+  },
+  "object_families": {
+    "compound_convex": 48,
+    "primitive": 48,
+    "superquadric": 48
+  },
+  "total_objects": 12,
+  "quality_metrics": {
+    "mean": 0.001964977321525415,
+    "std": 0.009435437489462222,
+    "min": 0.0,
+    "max": 0.050388649106025696
+  },
+  "stage_progression": {
+    "S1_proposal": {
+      "passed": 144,
+      "rate": 1.0
+    },
+    "S2_ik": {
+      "passed": 6,
+      "rate": 0.041666666666666664
+    },
+    "S3_collision": {
+      "passed": 6,
+      "rate": 0.041666666666666664
+    },
+    "S4_static_force": {
+      "passed": 6,
+      "rate": 0.041666666666666664
+    },
+    "S5_dynamic_rollout": {
+      "passed": 6,
+      "rate": 0.041666666666666664
+    }
+  }
+}
