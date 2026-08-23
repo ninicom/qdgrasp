@@ -61,3 +61,44 @@ Two further observations recorded but **not** yet attributed to a root cause:
 Identical invocation with label `baseline-repeat`.  Stage accounting, failure
 signatures and per-candidate telemetry match `baseline/` exactly (verified
 field-by-field, excluding timestamp and wall-clock duration).
+
+## `p02-refactor-parity/` — behaviour-preserving extraction (P3.2.1-02)
+
+Both DLS solvers now call `qdgrasp/dataset/pipeline/contact_state.py` instead of
+carrying private copies of the contact primitives.  The extraction keeps the
+divergent `parent_to_tip` autodiff convention on purpose, so the corpus must not
+move — and it does not: `changed_cells: 0`, and per-candidate telemetry compares
+equal field by field against `baseline/`.  Anything that moves from here on is
+attributable to the intervention that moved it.
+
+## Findings recorded but not yet acted on
+
+### H-04 — the normal task is graded far harder than it is descended
+
+`normal_weight = 0.01` scales the direction block of both the residual and the
+Jacobian, so it enters the normal equations at `1e-4` relative to the position
+block, while convergence tests the raw dot product against `cos(30 deg)`.  The
+corpus shows the consequence directly: `wonik_allegro/surface_fixed_v1` (0.0020 m),
+`shadow_hand/region_opposition_v1` (0.0024 m) and `shadow_hand/wrench_guided_v1`
+(0.0028 m) all satisfy `pos_tolerance = 0.005` and still return `max_iter` — only
+the normal criterion is holding them back.  Per the plan's section 4, no weight
+is retuned before the oracle exists; this is filed as a hypothesis to test after
+RC-01, not a fix to apply now.
+
+### RC-01 is hand-specific
+
+Measured angle between the graded direction (configured contact axis) and the
+differentiated one (parent-to-tip), averaged over interior joint states:
+
+| Hand | divergence |
+| --- | --- |
+| leap_hand | 18.1 deg |
+| wonik_allegro | 0.0 deg |
+| shadow_hand | 22.0 deg |
+
+Allegro's configured axis coincides with its parent-to-tip vector, so the RC-01
+intervention is predicted to move the leap and shadow cells and to leave the
+three Allegro cells unchanged.  Allegro's 2.2-2.6 rad normal residuals therefore
+need a different explanation — H-04 and the palm hypothesis (H-01 / RC-03) are
+the open candidates.  This prediction is pinned in
+`tests/test_contact_state.py::test_rc01_divergence_is_hand_specific`.

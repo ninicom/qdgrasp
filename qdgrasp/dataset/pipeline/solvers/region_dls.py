@@ -4,6 +4,7 @@ import torch
 from torch.func import jacrev
 
 from qdgrasp.robot.spec import RobotSpec
+from qdgrasp.dataset.pipeline import contact_state as contact_state_module
 from qdgrasp.dataset.pipeline.contracts import KinematicSolution
 
 def solve_region_dls_ik_batch(
@@ -75,50 +76,21 @@ def solve_region_dls_ik_batch(
     q_reference = q.clone()
 
     def contact_position(transforms, tip):
-        transform = transforms[tip]
-        offset = getattr(spec, "fingertip_contact_offsets", {}).get(tip)
-        if offset is None:
-            return transform[:, :3, 3]
-        offset_t = torch.as_tensor(offset, dtype=transform.dtype, device=transform.device)
-        return transform[:, :3, 3] + torch.matmul(
-            transform[:, :3, :3], offset_t.view(3, 1)
-        ).squeeze(-1)
+        return contact_state_module.contact_position(spec, transforms, tip)
 
     def contact_direction(transforms, tip):
-        transform = transforms[tip]
-        configured_axis = getattr(spec, "fingertip_contact_axes", {}).get(tip)
-        if configured_axis is not None:
-            axis_t = torch.as_tensor(
-                configured_axis, dtype=transform.dtype, device=transform.device
-            )
-            return torch.nn.functional.normalize(
-                torch.matmul(transform[:, :3, :3], axis_t.view(3, 1)).squeeze(-1),
-                dim=-1,
-                eps=1e-8,
-            )
-        tip_pos = transform[:, :3, 3]
-        link = getattr(spec, "links", {}).get(tip)
-        parent = getattr(link, "parent_link", None)
-        origin = transforms[parent][:, :3, 3] if parent in transforms else t_palm_pos
-        return torch.nn.functional.normalize(tip_pos - origin, dim=-1, eps=1e-8)
+        return contact_state_module.contact_direction(
+            spec, transforms, tip, fallback_origin=t_palm_pos
+        )
 
     def compute_single(q_single, palm_pos_single, palm_rot_single):
-        transforms = spec.forward_kinematics(
-            palm_pos_single.unsqueeze(0),
-            palm_rot_single.unsqueeze(0),
-            q_single.unsqueeze(0),
+        return contact_state_module.contact_residual_features(
+            spec,
+            q_single,
+            palm_pos_single,
+            palm_rot_single,
+            normal_weight=normal_weight,
         )
-        values = []
-        for tip in spec.fingertip_links:
-            tip_pos = contact_position(transforms, tip)[0]
-            link = getattr(spec, "links", {}).get(tip)
-            parent = getattr(link, "parent_link", None)
-            origin = transforms[parent][0, :3, 3] if parent in transforms else palm_pos_single
-            direction = torch.nn.functional.normalize(tip_pos - origin, dim=-1, eps=1e-8)
-            values.extend((tip_pos, direction * normal_weight))
-        positions = torch.stack(values[0::2], dim=0).reshape(-1)
-        directions = torch.stack(values[1::2], dim=0).reshape(-1)
-        return torch.cat((positions, directions), dim=0)
 
     jacobian_single = jacrev(compute_single, argnums=0)
 
