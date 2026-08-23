@@ -75,6 +75,7 @@ def test_region_dls_converges_in_region(mock_spec):
         region_normals=region_normals,
         init_q=init_q,
         max_iter=10,
+        min_active_fingers=1,
     )
 
     # Since 0.51 is within 0.02 of 0.5, the dynamic target should be 0.51 itself (distance 0 to current)
@@ -96,6 +97,7 @@ def test_region_dls_converges_in_region(mock_spec):
         region_normals=region_normals,
         init_q=init_q,
         max_iter=50,
+        min_active_fingers=1,
     )
 
     assert np.all(sol.converged)

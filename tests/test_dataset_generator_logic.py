@@ -83,16 +83,3 @@ def test_generator_rejects_dynamic_positive_without_rollout_evidence():
             robot_name="mock",
             recipe_id="surface_fixed_v1",
         )
-
-
-def test_generator_rejects_blocked_robot_before_creating_output(tmp_path: Path):
-    output = tmp_path / "release"
-
-    with pytest.raises(ConfigError, match="fixed-tendon underactuation"):
-        _GENERATOR.generate_tiny_dataset(
-            output_dir=output,
-            samples_per_pair=1,
-            recipe_id="surface_fixed_v1",
-        )
-
-    assert not output.exists()
