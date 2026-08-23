@@ -450,24 +450,12 @@ def check_mujoco_and_fixtures(problems: list[str], root: Path) -> None:
 
 def check_provenance_and_release_enforcement(problems: list[str]) -> None:
     # Published profiles must pass release validation
-    for name in ("leap_hand.yaml", "wonik_allegro.yaml"):
+    for name in ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"):
         cfg = load_robot_config(name)
         try:
             validate_profile_for_release(cfg)
         except Exception as exc:
             problems.append(f"published profile {name} failed release validation: {exc}")
-
-    # Shadow remains usable for parser/FK research fixtures, but its Menagerie
-    # model has 24 independent joint states and only 20 tendon/joint controls.
-    # Release must remain blocked until an underactuated solver is implemented.
-    shadow_cfg = load_robot_config("shadow_hand.yaml")
-    try:
-        validate_profile_for_release(shadow_cfg)
-    except ConfigError as exc:
-        if "fixed-tendon underactuation" not in str(exc):
-            problems.append(f"Shadow release block has the wrong reason: {exc}")
-    else:
-        problems.append("Shadow profile must be release_blocked pending underactuated control")
 
     # Blocked profile must be rejected
     blocked_cfg = RobotConfigV2(

@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.5.0
+version: 1.7.0
 status: active
-date: 2026-08-22
-revises: ROADMAP-001@1.4.0
+date: 2026-08-23
+revises: ROADMAP-001@1.6.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260823-003-shadow-tendon-state-correction.md
+latest_revision_record: docs/revisions/REV-20260823-005-phase3-2-completion.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -78,9 +78,11 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 - Candidate palm/contact sampling, IK hỗ trợ, collision filtering và physics
   validation.
 - `GraspBatch` schema, shards, splits, seed, camera/frame metadata và hashes.
-- P3 vẫn `pending`: remediation P3.1 đã xác nhận LEAP/Allegro dynamic fixtures,
-  nhưng Shadow là hệ underactuated 24-state/20-control và bị release-blocked cho
-  tới khi có solver/control riêng; dataset cũ không được dùng để mở P4.
+- P3 vẫn `pending`: Phase 3.2 (`ROADMAP-P3.2-001`, `REV-20260823-005`) đã hoàn tất
+  thành công tầng điều khiển underactuated 24-state/20-control, unblock Shadow Hand
+  (`release_blocked: false`) và chứng minh dynamic parity trên cả 3 bàn tay.
+  Các bước cuối của P3.1 (controlled ablation P3.1-13 và regeneration P3.1-14)
+  sẽ tiếp tục thực thi để hoàn tất toàn bộ Phase 3 trước khi mở P4.
 - `DGN-Open-Tiny` đủ nhỏ cho CI/overfit và tái tạo từ đầu.
 
 ### P4 — Model MVP

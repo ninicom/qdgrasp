@@ -15,6 +15,7 @@ def solve_region_dls_ik_batch(
     region_points: Optional[np.ndarray] = None,
     region_normals: Optional[np.ndarray] = None,
     init_q: Optional[np.ndarray] = None,
+    active_fingers: Optional[np.ndarray | torch.Tensor] = None,
     damping: float = 0.01,
     step_size: float = 0.5,
     max_iter: int = 50,
@@ -24,11 +25,11 @@ def solve_region_dls_ik_batch(
     require_normal_alignment: bool = True,
     regularization_weight: float = 1e-5,
     joint_margin_weight: float = 1e-4,
+    min_active_fingers: int = 2,
 ) -> KinematicSolution:
     """
     Batched DLS IK against a finite set of exact mesh-surface samples per
-    finger.  Unlike a tangent disk, every selectable target has a face-derived
-    normal and therefore remains on the object surface.
+    finger. Supports active_fingers boolean mask [B, K] or [K].
     """
     B = palm_pos.shape[0]
     num_joints = len(spec.actuated_joint_names)
@@ -50,6 +51,19 @@ def solve_region_dls_ik_batch(
         t_region_normals = torch.as_tensor(region_normals, dtype=torch.float32, device=device)
         if t_region_points.ndim != 4 or t_region_points.shape[:2] != (B, num_tips):
             raise ValueError("region_points must have shape [B, K, R, 3]")
+
+    if active_fingers is not None:
+        t_active_fingers = torch.as_tensor(active_fingers, dtype=torch.bool, device=device)
+        if t_active_fingers.ndim == 1:
+            t_active_fingers = t_active_fingers.unsqueeze(0).expand(B, num_tips)
+        elif t_active_fingers.ndim != 2 or t_active_fingers.shape != (B, num_tips):
+            raise ValueError(f"active_fingers must have shape ({B}, {num_tips}), got {t_active_fingers.shape}")
+    else:
+        t_active_fingers = torch.ones((B, num_tips), dtype=torch.bool, device=device)
+
+    active_pos_mask = t_active_fingers.unsqueeze(-1).expand(-1, -1, 3).reshape(B, -1)
+    active_norm_mask = t_active_fingers.unsqueeze(-1).expand(-1, -1, 3).reshape(B, -1)
+    active_flat_mask = torch.cat([active_pos_mask, active_norm_mask], dim=1) # [B, 6K]
 
     q_mins = torch.tensor([spec.joint_limits[j][0] for j in spec.actuated_joint_names], dtype=torch.float32, device=device)
     q_maxs = torch.tensor([spec.joint_limits[j][1] for j in spec.actuated_joint_names], dtype=torch.float32, device=device)
@@ -112,6 +126,11 @@ def solve_region_dls_ik_batch(
     reasons = np.array(["max_iter"] * B, dtype=object)
     iterations = torch.zeros(B, dtype=torch.int64, device=device)
 
+    # Check minimum active fingers
+    insufficient_fingers = (t_active_fingers.sum(dim=-1) < min_active_fingers)
+    for idx in torch.where(insufficient_fingers)[0]:
+        reasons[idx.item()] = "insufficient_active_fingers"
+
     achieved_contacts = torch.zeros_like(t_target_anchors)
     achieved_normals = torch.zeros_like(t_target_normal)
     pos_residuals = torch.full((B, num_tips), float('inf'), device=device)
@@ -121,7 +140,7 @@ def solve_region_dls_ik_batch(
     damping_values = torch.full((B,), float(damping), dtype=torch.float32, device=device)
 
     for it in range(max_iter):
-        active_mask = ~converged
+        active_mask = ~converged & ~insufficient_fingers
         if not active_mask.any():
             break
         iterations[active_mask] += 1
@@ -154,9 +173,9 @@ def solve_region_dls_ik_batch(
             n_dots = torch.sum(n_target * n, dim=-1).clamp(-1.0, 1.0)
             norm_residuals = torch.acos(n_dots)
 
-            p_converged = torch.all(p_errs < pos_tolerance, dim=1)
+            p_converged = torch.all((p_errs < pos_tolerance) | ~t_active_fingers, dim=1)
             n_converged = (
-                torch.all(n_dots > normal_tolerance_dot, dim=1)
+                torch.all((n_dots > normal_tolerance_dot) | ~t_active_fingers, dim=1)
                 if require_normal_alignment
                 else torch.ones(B, dtype=torch.bool, device=device)
             )
@@ -167,13 +186,13 @@ def solve_region_dls_ik_batch(
                 for i in torch.where(new_converged)[0]:
                     reasons[i.item()] = "converged"
 
-            active_mask = ~converged
+            active_mask = ~converged & ~insufficient_fingers
             if not active_mask.any():
                 break
 
             cur_flat = torch.cat([p.view(B, -1), (n * normal_weight).view(B, -1)], dim=1)
             target_flat = torch.cat([p_target.view(B, -1), (n_target * normal_weight).view(B, -1)], dim=1)
-            err = (target_flat - cur_flat).unsqueeze(-1)
+            err = ((target_flat - cur_flat) * active_flat_mask).unsqueeze(-1)
 
         J_batch = torch.stack(
             [jacobian_single(q[idx], t_palm_pos[idx], t_palm_rot[idx]) for idx in range(B)],
@@ -224,7 +243,7 @@ def solve_region_dls_ik_batch(
                     ((trial_target_normals - trial_normals) * normal_weight).reshape(B, -1),
                 ],
                 dim=1,
-            )
+            ) * active_flat_mask
             trial_cost = torch.sum(trial_error.square(), dim=1)
             improved = active_mask & torch.isfinite(trial_cost) & (trial_cost <= current_cost)
             q = torch.where(improved.unsqueeze(-1), q_trial, q)
@@ -257,11 +276,15 @@ def solve_region_dls_ik_batch(
         dots = torch.sum(final_normals * achieved_normals, dim=-1).clamp(-1.0, 1.0)
         norm_residuals = torch.acos(dots)
         final_normal_ok = (
-            torch.all(dots > normal_tolerance_dot, dim=1)
+            torch.all((dots > normal_tolerance_dot) | ~t_active_fingers, dim=1)
             if require_normal_alignment
             else torch.ones(B, dtype=torch.bool, device=device)
         )
-        final_converged = torch.all(pos_residuals < pos_tolerance, dim=1) & final_normal_ok
+        final_converged = (
+            torch.all((pos_residuals < pos_tolerance) | ~t_active_fingers, dim=1)
+            & final_normal_ok
+            & ~insufficient_fingers
+        )
         for idx in torch.where(final_converged & ~converged)[0]:
             reasons[idx.item()] = "converged"
         converged |= final_converged

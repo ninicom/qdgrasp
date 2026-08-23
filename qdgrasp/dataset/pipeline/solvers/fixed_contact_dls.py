@@ -13,6 +13,7 @@ def solve_dls_ik_batch(
     target_contacts: np.ndarray,
     target_normals: np.ndarray,
     init_q: Optional[np.ndarray] = None,
+    active_fingers: Optional[np.ndarray | torch.Tensor] = None,
     damping: float = 0.01,
     step_size: float = 0.5,
     max_iter: int = 50,
@@ -22,12 +23,11 @@ def solve_dls_ik_batch(
     require_normal_alignment: bool = True,
     regularization_weight: float = 1e-5,
     joint_margin_weight: float = 1e-4,
+    min_active_fingers: int = 2,
 ) -> KinematicSolution:
     """
     Batched Damped Least Squares IK optimizing both position and normal alignment.
-    Uses batched FK and autodiff.  The morphology-independent contact direction
-    is the parent-to-fingertip distal-link ray (falling back to the palm ray for
-    minimal mock specs); local link Z is not assumed to be a contact axis.
+    Uses batched FK and autodiff. Supports active_fingers boolean mask [B, K] or [K].
     """
     B = palm_pos.shape[0]
     num_joints = len(spec.actuated_joint_names)
@@ -39,6 +39,19 @@ def solve_dls_ik_batch(
     t_palm_rot = torch.as_tensor(palm_rot, dtype=torch.float32, device=device)
     t_target_pos = torch.as_tensor(target_contacts, dtype=torch.float32, device=device)
     t_target_normal = torch.as_tensor(target_normals, dtype=torch.float32, device=device)
+
+    if active_fingers is not None:
+        t_active_fingers = torch.as_tensor(active_fingers, dtype=torch.bool, device=device)
+        if t_active_fingers.ndim == 1:
+            t_active_fingers = t_active_fingers.unsqueeze(0).expand(B, num_tips)
+        elif t_active_fingers.ndim != 2 or t_active_fingers.shape != (B, num_tips):
+            raise ValueError(f"active_fingers must have shape ({B}, {num_tips}), got {t_active_fingers.shape}")
+    else:
+        t_active_fingers = torch.ones((B, num_tips), dtype=torch.bool, device=device)
+
+    active_pos_mask = t_active_fingers.unsqueeze(-1).expand(-1, -1, 3).reshape(B, -1)
+    active_norm_mask = t_active_fingers.unsqueeze(-1).expand(-1, -1, 3).reshape(B, -1)
+    active_flat_mask = torch.cat([active_pos_mask, active_norm_mask], dim=1) # [B, 6K]
 
     q_mins = torch.tensor([spec.joint_limits[j][0] for j in spec.actuated_joint_names], dtype=torch.float32, device=device)
     q_maxs = torch.tensor([spec.joint_limits[j][1] for j in spec.actuated_joint_names], dtype=torch.float32, device=device)
@@ -102,6 +115,11 @@ def solve_dls_ik_batch(
     reasons = np.array(["max_iter"] * B, dtype=object)
     iterations = torch.zeros(B, dtype=torch.int64, device=device)
 
+    # Check minimum active fingers
+    insufficient_fingers = (t_active_fingers.sum(dim=-1) < min_active_fingers)
+    for idx in torch.where(insufficient_fingers)[0]:
+        reasons[idx.item()] = "insufficient_active_fingers"
+
     achieved_contacts = torch.zeros_like(t_target_pos)
     achieved_normals = torch.zeros_like(t_target_normal)
     pos_residuals = torch.full((B, num_tips), float('inf'), device=device)
@@ -115,7 +133,7 @@ def solve_dls_ik_batch(
     damping_values = torch.full((B,), float(damping), dtype=torch.float32, device=device)
 
     for it in range(max_iter):
-        active_mask = ~converged
+        active_mask = ~converged & ~insufficient_fingers
         if not active_mask.any():
             break
         iterations[active_mask] += 1
@@ -143,9 +161,9 @@ def solve_dls_ik_batch(
             norm_residuals = torch.acos(n_dots)
 
             # Check convergence for active ones
-            p_converged = torch.all(p_errs < pos_tolerance, dim=1)
+            p_converged = torch.all((p_errs < pos_tolerance) | ~t_active_fingers, dim=1)
             n_converged = (
-                torch.all(n_dots > normal_tolerance_dot, dim=1)
+                torch.all((n_dots > normal_tolerance_dot) | ~t_active_fingers, dim=1)
                 if require_normal_alignment
                 else torch.ones(B, dtype=torch.bool, device=device)
             )
@@ -156,12 +174,12 @@ def solve_dls_ik_batch(
                 for i in torch.where(new_converged)[0]:
                     reasons[i.item()] = "converged"
 
-            active_mask = ~converged
+            active_mask = ~converged & ~insufficient_fingers
             if not active_mask.any():
                 break
 
             cur_flat = torch.cat([p.view(B, -1), (n * normal_weight).view(B, -1)], dim=1) # [B, 6K]
-            err = (target_flat - cur_flat).unsqueeze(-1) # [B, 6K, 1]
+            err = ((target_flat - cur_flat) * active_flat_mask).unsqueeze(-1) # [B, 6K, 1]
 
         # Per-sample Jacobians avoid materializing cross-batch derivatives
         # [B, output, B, J], which caused severe memory pressure in ablation.
@@ -206,7 +224,7 @@ def solve_dls_ik_batch(
                     ((t_target_normal - trial_normals) * normal_weight).reshape(B, -1),
                 ],
                 dim=1,
-            )
+            ) * active_flat_mask
             trial_cost = torch.sum(trial_error.square(), dim=1)
             improved = active_mask & torch.isfinite(trial_cost) & (trial_cost <= current_cost)
             q = torch.where(improved.unsqueeze(-1), q_trial, q)
@@ -234,11 +252,15 @@ def solve_dls_ik_batch(
         dots = torch.sum(t_target_normal * achieved_normals, dim=-1).clamp(-1.0, 1.0)
         norm_residuals = torch.acos(dots)
         final_normal_ok = (
-            torch.all(dots > normal_tolerance_dot, dim=1)
+            torch.all((dots > normal_tolerance_dot) | ~t_active_fingers, dim=1)
             if require_normal_alignment
             else torch.ones(B, dtype=torch.bool, device=device)
         )
-        final_converged = torch.all(pos_residuals < pos_tolerance, dim=1) & final_normal_ok
+        final_converged = (
+            torch.all((pos_residuals < pos_tolerance) | ~t_active_fingers, dim=1)
+            & final_normal_ok
+            & ~insufficient_fingers
+        )
         for idx in torch.where(final_converged & ~converged)[0]:
             reasons[idx.item()] = "converged"
         converged |= final_converged

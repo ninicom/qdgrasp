@@ -249,55 +249,52 @@ def validate_grasp_rollout(
 
     data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos
 
-    # Set target joint angles and map them through the compiled transmissions.
-    # In particular, a tendon actuator's control target is a tendon length, not
-    # one arbitrarily selected joint angle.
-    target_by_joint: Dict[int, float] = {}
-    target_by_actuator: Dict[int, float] = {}
+    # Identify articulated hand joints and actuators in compiled scene model
+    hand_joint_names = [
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j_id)
+        for j_id in range(model.njnt)
+        if int(model.jnt_type[j_id]) in (int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE))
+        and not (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j_id) or "").startswith("object_")
+    ]
+    hand_actuator_names = [
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, a_id)
+        for a_id in range(model.nu)
+    ]
+
+    has_tendon = any(
+        int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_TENDON)
+        for a_id in range(model.nu)
+    )
+
+    from qdgrasp.robot.transmission.direct import DirectJointTransmission
+    from qdgrasp.robot.transmission.fixed_tendon import FixedTendonTransmission
+
+    if has_tendon:
+        tm = FixedTendonTransmission(hand_joint_names, hand_actuator_names, model)
+    else:
+        tm = DirectJointTransmission(hand_joint_names, hand_actuator_names, model)
+
+    initial_trans_state = tm.extract_state(model, data)
+    q_init = initial_trans_state.joint_position
+    q_target = q_init.copy()
 
     if joint_targets:
-        for j_name, val in joint_targets.items():
-            j_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, j_name)
-            if j_id >= 0:
-                target_by_joint[j_id] = float(val)
+        for idx, j_name in enumerate(hand_joint_names):
+            if j_name in joint_targets:
+                q_target[idx] = float(joint_targets[j_name])
 
-    mujoco.mj_forward(model, data)
-    target_data = mujoco.MjData(model)
-    target_data.qpos[:] = data.qpos
-    for joint_id, target in target_by_joint.items():
-        if int(model.jnt_type[joint_id]) in (
-            int(mujoco.mjtJoint.mjJNT_HINGE),
-            int(mujoco.mjtJoint.mjJNT_SLIDE),
-        ):
-            target_data.qpos[model.jnt_qposadr[joint_id]] = target
-    target_data.mocap_pos[:] = data.mocap_pos
-    target_data.mocap_quat[:] = data.mocap_quat
-    mujoco.mj_forward(model, target_data)
+    dq_desired = q_target - q_init
+    cmd = tm.project_joint_delta(dq_desired, initial_trans_state)
 
-    start_by_actuator: Dict[int, float] = {}
-    for a_id in range(model.nu):
-        if int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_JOINT):
-            j_id = int(model.actuator_trnid[a_id, 0])
-            if j_id in target_by_joint:
-                start_by_actuator[a_id] = float(
-                    data.qpos[model.jnt_qposadr[j_id]]
-                )
-                target_by_actuator[a_id] = target_by_joint[j_id]
-        elif (
-            int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_TENDON)
-            and target_by_joint
-        ):
-            start_by_actuator[a_id] = float(data.actuator_length[a_id])
-            target_by_actuator[a_id] = float(target_data.actuator_length[a_id])
-
-    if len(target_by_actuator) < len(target_by_joint):
+    if cmd.reason == "nullspace_rejection":
         return DynamicValidation(
             trajectory_metrics={
-                "mapped_joint_targets": float(len(target_by_joint)),
-                "mapped_actuator_targets": float(len(target_by_actuator)),
-                "uncontrolled_target_dimensions": float(
-                    len(target_by_joint) - len(target_by_actuator)
-                ),
+                "transmission_rank": float(tm.rank),
+                "joint_state_dimensions": float(tm.num_joints),
+                "control_dimensions": float(tm.num_actuators),
+                "controllable_residual": float(cmd.controllable_residual),
+                "nullspace_residual": float(cmd.nullspace_residual),
+                "actuator_saturation_count": float(np.sum(cmd.saturated)),
             },
             per_finger_loads=np.zeros(
                 (len(fingertip_body_names), 6), dtype=np.float64
@@ -306,12 +303,12 @@ def validate_grasp_rollout(
             passed=False,
         )
 
-    for a_id, start in start_by_actuator.items():
-        if model.actuator_ctrllimited[a_id]:
-            lo, hi = model.actuator_ctrlrange[a_id]
-            data.ctrl[a_id] = np.clip(start, lo, hi)
-        else:
-            data.ctrl[a_id] = start
+    start_controls = initial_trans_state.actuator_coordinate.copy()
+    target_controls = cmd.control_target.copy()
+
+    ctrl_mins = tm.actuator_ctrlrange[:, 0]
+    ctrl_maxs = tm.actuator_ctrlrange[:, 1]
+    data.ctrl[:model.nu] = np.clip(start_controls, ctrl_mins, ctrl_maxs)
 
     # Object & floor geom IDs
     object_geom_ids = {
@@ -342,15 +339,13 @@ def validate_grasp_rollout(
         )
 
     def tracking_metrics() -> Dict[str, float]:
-        joint_errors = []
-        for joint_id, target in target_by_joint.items():
-            if int(model.jnt_type[joint_id]) in (
-                int(mujoco.mjtJoint.mjJNT_HINGE),
-                int(mujoco.mjtJoint.mjJNT_SLIDE),
-            ):
-                joint_errors.append(
-                    abs(float(data.qpos[model.jnt_qposadr[joint_id]]) - target)
-                )
+        current_state = tm.extract_state(model, data)
+        current_q = current_state.joint_position
+        current_coords = current_state.actuator_coordinate
+
+        joint_errors = np.abs(current_q - q_target)
+        actuator_errors = np.abs(current_coords - target_controls)
+
         mocap_quat_wxyz = np.asarray(data.mocap_quat[mocap_idx], dtype=np.float64)
         mocap_rot = Rotation.from_quat(
             [
@@ -363,9 +358,14 @@ def validate_grasp_rollout(
         commanded_palm_pos = data.mocap_pos[mocap_idx] + mocap_rot @ root_to_palm_pos
         commanded_palm_rot = mocap_rot @ root_to_palm_rot
         metrics = {
-            "mapped_joint_targets": float(len(target_by_joint)),
-            "mapped_actuator_targets": float(len(target_by_actuator)),
-            "max_joint_tracking_error": float(max(joint_errors, default=0.0)),
+            "transmission_rank": float(tm.rank),
+            "joint_state_dimensions": float(tm.num_joints),
+            "control_dimensions": float(tm.num_actuators),
+            "controllable_residual": float(cmd.controllable_residual),
+            "nullspace_residual": float(cmd.nullspace_residual),
+            "actuator_saturation_count": float(np.sum(cmd.saturated)),
+            "max_joint_tracking_error": float(np.max(joint_errors) if len(joint_errors) > 0 else 0.0),
+            "max_actuator_coordinate_error": float(np.max(actuator_errors) if len(actuator_errors) > 0 else 0.0),
             "palm_position_tracking_error": float(
                 np.linalg.norm(np.asarray(data.xpos[palm_id]) - commanded_palm_pos)
             ),
@@ -423,24 +423,15 @@ def validate_grasp_rollout(
 
     overall_max_penetration = 0.0
 
-    # Stage 1: Squeeze (apply closing torque via squeeze bias)
+    # Stage 1: Squeeze (apply closing torque via smoothstep trajectory)
     for squeeze_index in range(squeeze_steps):
         squeeze_progress = smoothstep((squeeze_index + 1) / max(1, squeeze_steps))
         data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (
             root_target_pos - root_pregrasp_pos
         )
-        for a_id in range(model.nu):
-            if a_id in target_by_actuator:
-                target_val = start_by_actuator[a_id] + squeeze_progress * (
-                    target_by_actuator[a_id] - start_by_actuator[a_id]
-                )
-                if model.actuator_ctrllimited[a_id]:
-                    lo, hi = model.actuator_ctrlrange[a_id]
-                    data.ctrl[a_id] = np.clip(target_val, lo, hi)
-                else:
-                    data.ctrl[a_id] = target_val
-            elif a_id in start_by_actuator:
-                data.ctrl[a_id] = start_by_actuator[a_id]
+        u_val = start_controls + squeeze_progress * (target_controls - start_controls)
+        data.ctrl[:model.nu] = np.clip(u_val, ctrl_mins, ctrl_maxs)
+
         mujoco.mj_step(model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
         if not simulation_is_stable():
@@ -485,17 +476,7 @@ def validate_grasp_rollout(
         progress = float(s) / max(1, lift_steps)
         s_val = smoothstep(progress)
         data.mocap_pos[mocap_idx][2] = start_mocap_z + lift_height * s_val
-
-        for a_id in range(model.nu):
-            if a_id in target_by_actuator:
-                target_val = target_by_actuator[a_id]
-                if model.actuator_ctrllimited[a_id]:
-                    lo, hi = model.actuator_ctrlrange[a_id]
-                    data.ctrl[a_id] = np.clip(target_val, lo, hi)
-                else:
-                    data.ctrl[a_id] = target_val
-            elif a_id in start_by_actuator:
-                data.ctrl[a_id] = start_by_actuator[a_id]
+        data.ctrl[:model.nu] = np.clip(target_controls, ctrl_mins, ctrl_maxs)
 
         mujoco.mj_step(model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())

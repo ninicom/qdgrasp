@@ -2,10 +2,10 @@
 document_id: ROADMAP-P3.1-001
 document_type: plan
 title: Kế hoạch Phase 3.1 — Data Correctness Remediation
-version: 1.3.0
+version: 1.5.0
 status: active
 date: 2026-08-23
-revises: ROADMAP-P3.1-001@1.2.0
+revises: ROADMAP-P3.1-001@1.4.0
 related_plan: ROADMAP-P3-001
 literature_cutoff: 2026-08-23
 ---
@@ -19,6 +19,11 @@ và artifact phát hành thực sự được Git/provenance gate bảo vệ.
 
 P4 bị chặn cho tới khi toàn bộ gate ở §9 pass. `DGN-Open-Tiny` hiện tại không
 được dùng làm bằng chứng overfit hoặc chất lượng model.
+
+Blocker underactuated của P3.1-11 được tách thành
+[`ROADMAP-P3.2-001`](PHASE3_2_UNDERACTUATED_CONTROL_PLAN.md). P3.1 vẫn active:
+P3.1-11 chỉ được đóng sau khi P3.2 hoàn tất và bàn giao known-positive Shadow;
+P3.1-13/14/15 tiếp tục bị chặn trong thời gian đó.
 
 ## 1. Baseline và kết luận audit
 
@@ -471,7 +476,7 @@ thư mục output cũ.
 | P3.1-08 | Harden mocap-weld initialization và smooth lift trajectory | dynamic validator | P3.1-01 |
 | P3.1-09 | Contact-force observer, cone projection và grasp-wrench/QP certifier | observer/certifier modules | P3.1-01 |
 | P3.1-10 | Dynamic disturbance validator và staged outcome | `validators/mujoco_rollout.py`, `labeling.py` | P3.1-08/09 |
-| P3.1-11 | Known-positive/negative fixtures cho ba hand và ba recipe | tests, fixtures | P3.1-07/10 |
+| P3.1-11 | Known-positive/negative fixtures cho ba hand và ba recipe; phần underactuated Shadow thực hiện trong P3.2 | tests, fixtures | P3.1-07/10 + ROADMAP-P3.2-001 |
 | P3.1-12 | Narrow Git allowlist, recipe provenance và release gate | `.gitignore`, manifest checker, tests | P3.1-01 |
 | P3.1-13 | Chạy controlled ablation, chốt recipe hoặc mixture bằng revision evidence | ablation report | P3.1-11 |
 | P3.1-14 | Regenerate `DGN-Open-Tiny` vào staging, audit class/recipe coverage/hash | `datasets/dgn-open-tiny/` | P3.1-12/13 |
@@ -486,10 +491,10 @@ recipe và static/dynamic validator pass correctness fixture.
 | Module | Trạng thái | Evidence / blocker |
 | --- | --- | --- |
 | P3.1-00…10 | implemented, in review | Typed contracts, surface/normal-aware IK, static GWS+gravity certificate, actuator+mocap rollout và measured contact wrench có unit/integration tests |
-| P3.1-11 | blocked | LEAP và Allegro known-positive pass. Audit chứng minh Shadow phải là 24 joint state/20 actuator, không phải 20 joint + 4 mimic giả: fixed tendon truyền tổng `J1+J2` nhưng không ràng buộc `J1=J2`. Profile Shadow hiện `release_blocked`; validator fail `underactuated_targets` cho tới khi có underactuated command/control solver. Không được hạ physics gate để làm fixture xanh |
+| P3.1-11 | completed | LEAP, Allegro và Shadow Hand known-positive fixtures pass end-to-end multi-stage rollout (squeeze -> lift -> perturbation); Shadow Hand underactuated 24-state/20-control transmission layer hoàn tất trong Phase 3.2 (REV-20260823-005, check_phase3_2.py), mở khóa release_blocked: false |
 | P3.1-12 | implemented, in review | Manifest v2, source/profile hashes, clean-commit flag, exact release-file audit và Git tracked/non-ignored checks đã có test |
 | P3.1-13 | pending rerun | Kết quả cũ trong `REV-20260823-002` bị invalidated vì dùng pipeline trước correctness fixes. Script mặc định dry-run, cần `--execute`, giới hạn tối đa 96 candidates và rate dùng mẫu số theo từng stage |
-| P3.1-14…15 | pending | Không regenerate hoặc đóng P3.1 trước khi P3.1-11 và controlled ablation pass |
+| P3.1-14…15 | pending | Không regenerate hoặc đóng P3.1 trước khi controlled ablation pass |
 
 Do máy development từng bị hard-freeze trong ablation, mọi verification còn lại
 phải chạy tuần tự với `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,
