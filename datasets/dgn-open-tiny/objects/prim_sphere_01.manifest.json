@@ -1,0 +1,47 @@
+{
+  "bounding_box": [
+    -0.016415793181259856,
+    -0.016415793181259856,
+    -0.016415793181259856,
+    0.016415793181259856,
+    0.016415793181259856,
+    0.016415793181259856
+  ],
+  "collision_geoms": [
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.016415793181259856
+      ],
+      "type": "sphere"
+    }
+  ],
+  "family": "primitive",
+  "inertia": [
+    1.997367412971473e-06,
+    1.997367412971473e-06,
+    1.997367412971473e-06
+  ],
+  "license": "CC0-1.0",
+  "mass": 0.018529949041205678,
+  "mesh_filename": "prim_sphere_01.obj",
+  "mesh_sha256": "006ec6ca26885358c354bbba9e0e9206b41ee89247f94a24d8af28b510df9c03",
+  "object_id": "prim_sphere_01",
+  "params": {
+    "density": 1000.0,
+    "radius": 0.016415793181259856
+  },
+  "schema": "qdgrasp/object-manifest/v1",
+  "shape_type": "sphere"
+}

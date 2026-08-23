@@ -27,6 +27,7 @@ from qdgrasp.objects.generate import (
     generate_sphere,
     generate_superquadric,
 )
+from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.robot.spec import RobotSpec
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -95,19 +96,55 @@ def verify_train_step_with_dgn_tiny() -> dict[str, float]:
     return result.metrics
 
 
+def verify_recipes_and_contracts() -> None:
+    test_mesh = trimesh.creation.box(extents=(0.04, 0.04, 0.04))
+    geoms = [
+        SubGeomSpec(
+            type="box",
+            size=(0.02, 0.02, 0.02),
+            pos=(0.0, 0.0, 0.0),
+            quat=(1.0, 0.0, 0.0, 0.0)
+        )
+    ]
+    from qdgrasp.dataset.pipeline.contracts import ALLOWED_RECIPES
+    from qdgrasp.dataset.pipeline.orchestrator import run_pipeline_chunk
+    from qdgrasp.robot.spec import resolve_robot_asset
+
+    for recipe_id in ALLOWED_RECIPES.keys():
+        for preset in ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"):
+            spec = RobotSpec.from_config(preset, sample_anchors=False)
+            xml_path = resolve_robot_asset(spec.config.source_asset)
+            rng = get_generator(42, f"{recipe_id}_{preset}")
+            outcomes, reasons = run_pipeline_chunk(
+                recipe_id=recipe_id,
+                spec=spec,
+                mesh=test_mesh,
+                collision_geoms=geoms,
+                hand_xml_path=xml_path,
+                rng=rng,
+                num_candidates=2,
+                run_dynamic=False,
+            )
+            if len(outcomes) != 2:
+                raise AssertionError(f"Failed pipeline run for recipe {recipe_id} with robot {preset}")
+
+
 def main() -> None:
-    print("Running Phase 3 verification suite...")
+    print("Running Phase 3 / 3.1 verification suite...")
     verify_procedural_generators()
     print("  1. Procedural generators & collision guards: PASS")
 
     verify_pipeline_and_ik()
     print("  2. Candidate sampling & DLS-IK across 3 hands: PASS")
 
+    verify_recipes_and_contracts()
+    print("  3. 3-Recipe and Staged Pipeline Verification: PASS")
+
     manifest_summary = audit_dataset_manifest("datasets/dgn-open-tiny")
-    print(f"  3. Dataset manifest audit: PASS ({manifest_summary['total_samples']} samples)")
+    print(f"  4. Dataset manifest audit: PASS ({manifest_summary['total_samples']} samples)")
 
     train_metrics = verify_train_step_with_dgn_tiny()
-    print(f"  4. CPU Train step with DGN-Open-Tiny: PASS (loss={train_metrics.get('loss', 0.0):.4f})")
+    print(f"  5. CPU Train step with DGN-Open-Tiny: PASS (loss={train_metrics.get('loss', 0.0):.4f})")
 
     summary = {
         "status": "PASS",
@@ -117,7 +154,7 @@ def main() -> None:
         "samples": manifest_summary["total_samples"],
         "train_metrics": train_metrics,
     }
-    print("Phase 3 Data Layer: PASS")
+    print("Phase 3 / 3.1 Data Layer: PASS")
     print(json.dumps(summary, indent=2, sort_keys=True))
 
 

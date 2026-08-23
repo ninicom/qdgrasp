@@ -83,9 +83,31 @@ def sample_grasp_candidates(
     """
     hand_axis = _detect_hand_approach_axis(spec)
 
-    # 1. Sample approach points directly on the surface mesh
-    seed_val = int(rng.integers(0, 2**31 - 1))
-    samples, face_indices = trimesh.sample.sample_surface(mesh, num_candidates, seed=seed_val)
+    # 1. Sample approach points directly on the surface mesh deterministically
+    areas = mesh.area_faces
+    total_area = np.sum(areas)
+    if total_area <= 0:
+        raise ValueError("Mesh has zero surface area")
+    probs = areas / total_area
+    cum_probs = np.cumsum(probs)
+
+    r_faces = rng.random(num_candidates)
+    face_indices = np.searchsorted(cum_probs, r_faces)
+    face_indices = np.clip(face_indices, 0, len(mesh.faces) - 1)
+
+    r1 = rng.random(num_candidates)
+    r2 = rng.random(num_candidates)
+    sqrt_r1 = np.sqrt(r1)
+    u = 1.0 - sqrt_r1
+    v = r2 * sqrt_r1
+    w = 1.0 - u - v
+
+    triangles = mesh.vertices[mesh.faces[face_indices]]
+    samples = (
+        u[:, None] * triangles[:, 0]
+        + v[:, None] * triangles[:, 1]
+        + w[:, None] * triangles[:, 2]
+    )
     normals = mesh.face_normals[face_indices]
 
     candidates: list[GraspCandidate] = []

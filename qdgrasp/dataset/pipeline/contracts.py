@@ -50,7 +50,7 @@ class PipelineOutcome:
     dynamic_valid: bool
     failure_stage: str
     failure_reason: str
-    
+
     proposal: Optional[ContactProposal] = None
     kinematics: Optional[KinematicSolution] = None
     static_certificate: Optional[StaticCertificate] = None

@@ -1,34 +1,71 @@
 ---
 document_id: REV-20260823-001
-document_type: revision
+document_type: revision_record
+revision_schema: 2
 title: Khóa Literature Snapshot và Đánh dấu Data Correctness P3
-version: 1.0.0
-status: active
+status: in_review
 date: 2026-08-23
-revises: SESSION-20260822-022
-related_plan: ROADMAP-P3.1-001
+record_id: REV-20260823-001
+session_id: SESSION-20260822-022
+created_at: 2026-08-23T00:00:00+07:00
+author: codex-primary-agent
+revises:
+  - session_id: ROADMAP-P3.1-001
+    artifact: docs/roadmap/PHASE3_1_DATA_CORRECTNESS_REMEDIATION_PLAN.md
+    revision: 07a99408657e5122f26ab8a30c676523f8748601c11499168a397b12215f5607
+reason: "Khởi động Phase 3.1 nhằm giải quyết các lỗ hổng logic nghiêm trọng được phát hiện tại phiên làm việc SESSION-20260822-022, khóa literature snapshot và đánh dấu dataset cũ bị invalidated."
+necessity: N1
+impact: "Invalidate dataset shards cũ, kích hoạt pipeline typed contracts, batched DLS-IK, static force LP certifier, và dynamic rollout validator."
 ---
 
-# Khóa Literature Snapshot và Đánh dấu Data Correctness P3 (Module P3.1-00)
+# REV-20260823-001 — Khóa Literature Snapshot và Đánh dấu Data Correctness P3
 
-Revision này chính thức khởi động Phase 3.1 nhằm giải quyết các lỗ hổng logic nghiêm trọng được phát hiện tại phiên làm việc `SESSION-20260822-022`.
+## 1. Liên kết truy vết
 
-## 1. Khóa Literature Snapshot
-Literature snapshot được khóa lại ở mức `2026-08-23`. Các lý thuyết/phương pháp sẽ được module hóa và triển khai bao gồm:
-- **EquiDexFlow (06/2026)**: Tuple contact + lực, Coulomb-cone projection, lift mượt (smooth lift).
-- **Transferring Contact, Not Just Motion (06/2026)**: Mô tả lực (N) và mô-men (N·m) theo từng ngón độc lập.
-- **SynManDex (06/2026)**: Cơ chế kiểm định (admission) theo nhiều giai đoạn độc lập.
-- **SECOND-Grasp (05/2026)**: Xác định vùng tiếp xúc (surface region) và point-to-region IK.
-- **BiDexGrasp (04/2026)**: Căn chỉnh (ranking) vùng theo đánh giá wrench (khả năng chịu lực) sơ bộ.
+- Roadmap kế hoạch: `docs/roadmap/PHASE3_1_DATA_CORRECTNESS_REMEDIATION_PLAN.md`.
+- Session ghi nhận: `SESSION-20260822-022`.
+- Tài liệu nghiên cứu: EquiDexFlow (06/2026), SynManDex (06/2026), SECOND-Grasp (05/2026), BiDexGrasp (04/2026).
 
-## 2. Invalidate Dataset Hiện Tại
-Bản sinh dữ liệu hiện tại của `DGN-Open-Tiny` đã vi phạm các nguyên tắc vật lý (Kinematic Teleportation) và sai lệch về Analytical IK. Qua đó, 144 mẫu trong bản phân phối hiện tại bị đánh dấu là **INVALIDATED** (chứa 0 positive samples dù module báo false positive closure).
+## 2. Lý do chỉnh sửa
 
-**Hash của dataset bị invalidated:**
-- `datasets/dgn-open-tiny/dataset_manifest.json`: `dcff16f83f5c397cc2b478efda8f8ac837fcad836c234017d234f4d5548428a1`
-- Toàn bộ 6 shard liên quan.
+Bản sinh dữ liệu trước đó của `DGN-Open-Tiny` chứa các lỗ hổng logic về reachability và static force closure giả mạo (False Positive closure mà không qua DLS-IK hội tụ). Toàn bộ 144 mẫu trước đó cần bị vô hiệu hóa (invalidated) để tái thiết lập tính đúng đắn (correctness) theo Phase 3.1.
 
-Các file sẽ được regenerate (tạo lại hoàn toàn) từ các thư mục staging an toàn sau khi toàn bộ Phase 3.1 pass các Regression Testing Gate.
+## 3. Mức độ cần thiết
 
-## 3. Điều chỉnh Luận điểm P3
-Những công bố về thành tựu của P3 tại `SESSION-20260822-022` tạm thời bị gỡ bỏ giá trị nghiệm thu do không đảm bảo tính toàn vẹn (Correctness). Data Layer sẽ tiếp tục làm nền móng nhưng được siết chặt qua các "Typed Contracts".
+- Mức: `N1` — sửa sai sót nghiêm trọng về tính đúng đắn của dữ liệu và kiến trúc pipeline.
+- Phạm vi: Pipeline sinh dữ liệu `qdgrasp/dataset/pipeline/`, hợp đồng dữ liệu `contracts.py`, và dataset `datasets/dgn-open-tiny/`.
+
+## 4. Phạm vi và tác động
+
+- Invalidate toàn bộ các shard `.pt` và `dataset_manifest.json` cũ.
+- Thiết lập hệ thống Typed Contracts và Allowlist Recipes (`surface_fixed_v1`, `region_opposition_v1`, `wrench_guided_v1`).
+- Bắt buộc kiểm tra 5 tầng độc lập: Proposal → Batched DLS-IK → Collision Guard → Static Force LP → MuJoCo Rollout.
+
+## 5. Nội dung thay đổi đã hoàn tất trong phiên này
+
+| Change ID | Việc đã làm | Artifact |
+|---|---|---|
+| CH-001 | Đánh dấu dataset cũ invalidated | `docs/revisions/REV-20260823-001-p3-data-correctness.md` |
+| CH-002 | Thiết lập hệ thống Typed Contracts | `qdgrasp/dataset/pipeline/contracts.py` |
+| CH-003 | Triển khai batched DLS-IK | `qdgrasp/dataset/pipeline/solvers/` |
+| CH-004 | Triển khai Static Force LP & GWS | `qdgrasp/dataset/pipeline/certifiers/` |
+| CH-005 | Triển khai MuJoCo Dynamic Rollout | `qdgrasp/dataset/pipeline/validators/` |
+
+## 6. Xác minh
+
+| Verification ID | Phương pháp | Kết quả |
+|---|---|---|
+| V-001 | Unit test contract & solvers | pass (`pytest tests/`) |
+| V-002 | Dynamic rollout physics test | pass (`test_physics_rollout.py`) |
+| V-003 | Pipeline orchestrator integration | pass (`test_pipeline_orchestrator.py`) |
+
+## 7. Ảnh hưởng tới báo cáo và quyết định cũ
+
+- Quyết định nghiệm thu Phase 3 tại `SESSION-20260822-022` bị hủy bỏ và chuyển sang quy trình khắc phục Phase 3.1.
+- Toàn bộ dataset phân phối cũ bị thu hồi.
+
+## 8. Xác nhận đóng hồ sơ
+
+- Tác giả: codex-primary-agent, 2026-08-23 Asia/Bangkok.
+- Người kiểm tra: Independent Review required.
+- Kết luận: Hồ sơ mở Phase 3.1 hoàn tất.

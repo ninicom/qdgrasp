@@ -65,6 +65,29 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
             )
         total_samples += shard.num_samples
         total_positives += shard.positive_samples
+        if shard.positive_samples == 0:
+            raise ConfigError(f"shard {shard.filename} has 0 positive samples")
+        if shard.positive_samples == shard.num_samples:
+            raise ConfigError(f"shard {shard.filename} has 0 negative samples")
+
+    if total_positives == 0:
+        raise ConfigError("total_positives is 0 across the entire dataset")
+
+    # Check git tracking if in a git repository
+    import subprocess
+    repo_root = root.parent.parent
+    try:
+        # Verify git check-ignore does not ignore the manifest or shards
+        res_ignore = subprocess.run(
+            ["git", "check-ignore", str(manifest_path)],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True
+        )
+        if res_ignore.returncode == 0:
+            raise ConfigError(f"manifest file {manifest_path} is ignored by .gitignore")
+    except FileNotFoundError:
+        pass
 
     return {
         "dataset_id": manifest.dataset_id,

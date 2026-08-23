@@ -20,8 +20,11 @@ dist/
 /runs/
 /weights/
 /checkpoints/
-/datasets/
+/datasets/*
+!/datasets/dgn-open-tiny/
 *.pt
+!/datasets/dgn-open-tiny/**
+!/datasets/dgn-open-tiny/**/*.pt
 *.pth
 *.ckpt
 *.onnx
