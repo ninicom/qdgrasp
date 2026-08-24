@@ -1,8 +1,12 @@
-import pytest
+from typing import ClassVar
+
 import numpy as np
+import pytest
 import torch
-from qdgrasp.robot.spec import RobotSpec
+
 from qdgrasp.dataset.pipeline.solvers.region_dls import solve_region_dls_ik_batch
+from qdgrasp.robot.spec import RobotSpec
+
 
 @pytest.fixture
 def mock_spec():
@@ -11,11 +15,11 @@ def mock_spec():
         palm_link = "palm"
         base_link = "palm"
         wrist_link = "wrist"
-        fingertip_links = ["tip_0"]
-        contact_links = []
+        fingertip_links = ("tip_0",)
+        contact_links = ()
         joints = ("j_0",)
-        joint_limits = {"j_0": (-2.0, 2.0)}
-        mimic_joints = {}
+        joint_limits: ClassVar = {"j_0": (-2.0, 2.0)}
+        mimic_joints: ClassVar = {}
 
     class MockSpec(RobotSpec):
         def __init__(self):
@@ -41,6 +45,7 @@ def mock_spec():
             return {"tip_0": T0}
 
     return MockSpec()
+
 
 def test_region_dls_converges_in_region(mock_spec):
     """
@@ -84,6 +89,11 @@ def test_region_dls_converges_in_region(mock_spec):
     assert np.all(sol.converged)
     # The joint shouldn't have moved much from 0.51
     np.testing.assert_allclose(sol.q[0, 0], 0.519, atol=1e-3)
+    assert sol.surface_contacts is not None
+    assert sol.surface_normals is not None
+    assert sol.surface_distances is not None
+    np.testing.assert_allclose(sol.surface_contacts[0, 0], [0.52, 0.0, 0.0])
+    np.testing.assert_allclose(sol.surface_distances[0, 0], 0.001, atol=1e-4)
 
     # Now start far away (e.g., 0.8)
     init_q = np.array([[0.8]])

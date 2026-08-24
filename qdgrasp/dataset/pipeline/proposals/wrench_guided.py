@@ -1,10 +1,14 @@
 import numpy as np
 import trimesh
-from qdgrasp.dataset.pipeline.contracts import ContactProposal
-from qdgrasp.dataset.pipeline.proposals.region_opposition import generate_region_opposition_proposal
-from qdgrasp.dataset.pipeline.proposals.identity import stable_candidate_id
 
-def compute_preliminary_wrench_score(target_points: np.ndarray, inward_normals: np.ndarray, centroid: np.ndarray) -> float:
+from qdgrasp.dataset.pipeline.contracts import ContactProposal
+from qdgrasp.dataset.pipeline.proposals.identity import stable_candidate_id
+from qdgrasp.dataset.pipeline.proposals.region_opposition import generate_region_opposition_proposal
+
+
+def compute_preliminary_wrench_score(
+    target_points: np.ndarray, inward_normals: np.ndarray, centroid: np.ndarray
+) -> float:
     """
     Compute a preliminary wrench score based on the Minimum Singular Value
     of the Grasp Matrix (G).
@@ -28,15 +32,16 @@ def compute_preliminary_wrench_score(target_points: np.ndarray, inward_normals: 
     # However, since we often have 4 fingers, we might just look at the singular values we do have,
     # or evaluate the volumetric/sum of singular values as a heuristic.
     # We will use the product of singular values or the minimum non-zero singular value as a proxy score.
-    U, S, Vh = np.linalg.svd(G, full_matrices=False)
+    _, singular_values, _ = np.linalg.svd(G, full_matrices=False)
 
     # A normal-only matrix with fewer than six independent directions cannot
     # span 6D wrench space.  Keep this as a ranking heuristic, but explicitly
     # penalize rank deficiency instead of calling a non-zero subspace volume
     # force closure.
     rank = int(np.linalg.matrix_rank(G, tol=1e-8))
-    score = float(np.prod(S)) * (rank / 6.0)
+    score = float(np.prod(singular_values)) * (rank / 6.0)
     return float(score)
+
 
 def generate_wrench_guided_proposal(
     mesh: trimesh.Trimesh,
@@ -44,6 +49,7 @@ def generate_wrench_guided_proposal(
     rng: np.random.Generator,
     finger_ids: np.ndarray,
     thumb_index: int = 0,
+    opposing_finger_index: int | None = None,
     num_candidates: int = 20,
 ) -> ContactProposal:
     """
@@ -64,14 +70,11 @@ def generate_wrench_guided_proposal(
             rng=rng,
             finger_ids=finger_ids,
             thumb_index=thumb_index,
-            max_retries=5
+            opposing_finger_index=opposing_finger_index,
+            max_retries=5,
         )
 
-        score = compute_preliminary_wrench_score(
-            proposal.target_points,
-            proposal.inward_normals,
-            centroid
-        )
+        score = compute_preliminary_wrench_score(proposal.target_points, proposal.inward_normals, centroid)
 
         if score > best_score:
             best_score = score
@@ -101,7 +104,7 @@ def generate_wrench_guided_proposal(
             region_face_ids=best_proposal.region_face_ids,
             region_normals=best_proposal.region_normals,
             force_hints=best_proposal.force_hints,
-            provenance="wrench_guided"
+            provenance="wrench_guided",
         )
         return best_proposal
 

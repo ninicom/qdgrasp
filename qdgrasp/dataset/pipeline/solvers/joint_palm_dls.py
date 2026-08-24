@@ -20,9 +20,7 @@ from qdgrasp.robot.spec import RobotSpec
 def _skew(vector: torch.Tensor) -> torch.Tensor:
     zero = torch.zeros((), dtype=vector.dtype, device=vector.device)
     x, y, z = vector.unbind()
-    return torch.stack(
-        (zero, -z, y, z, zero, -x, -y, x, zero)
-    ).reshape(3, 3)
+    return torch.stack((zero, -z, y, z, zero, -x, -y, x, zero)).reshape(3, 3)
 
 
 def _pose_from_state(
@@ -63,11 +61,9 @@ def solve_joint_palm_dls_batch(
     target_normal = torch.as_tensor(target_normals, dtype=torch.float32, device=device)
     active = torch.as_tensor(active_fingers, dtype=torch.bool, device=device)
     q0 = torch.as_tensor(init_q, dtype=torch.float32, device=device)
-    batch, tips = active.shape
+    batch, _ = active.shape
     joints = q0.shape[1]
-    state = torch.cat(
-        [q0, torch.zeros((batch, 6), dtype=torch.float32, device=device)], dim=1
-    )
+    state = torch.cat([q0, torch.zeros((batch, 6), dtype=torch.float32, device=device)], dim=1)
     state_reference = state.clone()
     q_min = torch.tensor(
         [spec.joint_limits[name][0] for name in spec.actuated_joint_names],
@@ -77,21 +73,15 @@ def solve_joint_palm_dls_batch(
         [spec.joint_limits[name][1] for name in spec.actuated_joint_names],
         dtype=torch.float32,
     )
-    feature_mask = torch.cat(
-        [active.unsqueeze(-1).expand(-1, -1, 3).reshape(batch, -1)] * 2, dim=1
-    )
+    feature_mask = torch.cat([active.unsqueeze(-1).expand(-1, -1, 3).reshape(batch, -1)] * 2, dim=1)
     target_features = torch.cat(
         [target_pos.reshape(batch, -1), (target_normal * normal_weight).reshape(batch, -1)],
         dim=1,
     )
 
     def features(single_state, single_base_pos, single_base_rot):
-        q, pose_pos, pose_rot = _pose_from_state(
-            single_state, single_base_pos, single_base_rot, joints
-        )
-        return contact_residual_features(
-            spec, q, pose_pos, pose_rot, normal_weight=normal_weight
-        )
+        q, pose_pos, pose_rot = _pose_from_state(single_state, single_base_pos, single_base_rot, joints)
+        return contact_residual_features(spec, q, pose_pos, pose_rot, normal_weight=normal_weight)
 
     derivative = jacrev(features, argnums=0)
     converged = torch.zeros(batch, dtype=torch.bool)
@@ -111,40 +101,27 @@ def solve_joint_palm_dls_batch(
 
     def project(candidate: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         projected = candidate.clone()
-        projected[:, :joints] = torch.clamp(
-            projected[:, :joints], min=q_min, max=q_max
-        )
+        projected[:, :joints] = torch.clamp(projected[:, :joints], min=q_min, max=q_max)
         translation = projected[:, joints : joints + 3]
         translation_norm = torch.linalg.norm(translation, dim=1, keepdim=True)
-        translation_scale = torch.clamp(
-            max_translation / torch.clamp(translation_norm, min=1e-12), max=1.0
-        )
+        translation_scale = torch.clamp(max_translation / torch.clamp(translation_norm, min=1e-12), max=1.0)
         projected[:, joints : joints + 3] = translation * translation_scale
         minimum_delta_z = floor_z + min_palm_floor_clearance - base_pos[:, 2]
-        projected[:, joints + 2] = torch.maximum(
-            projected[:, joints + 2], minimum_delta_z
-        )
+        projected[:, joints + 2] = torch.maximum(projected[:, joints + 2], minimum_delta_z)
         rotation = projected[:, joints + 3 : joints + 6]
         rotation_norm = torch.linalg.norm(rotation, dim=1, keepdim=True)
-        rotation_scale = torch.clamp(
-            max_rotation / torch.clamp(rotation_norm, min=1e-12), max=1.0
-        )
+        rotation_scale = torch.clamp(max_rotation / torch.clamp(rotation_norm, min=1e-12), max=1.0)
         projected[:, joints + 3 : joints + 6] = rotation * rotation_scale
         changed = torch.any(torch.abs(projected - candidate) > 1e-8, dim=1)
         return projected, changed
 
     for _ in range(max_iter):
-        current_features = torch.stack(
-            [features(state[i], base_pos[i], base_rot[i]) for i in range(batch)]
-        )
+        current_features = torch.stack([features(state[i], base_pos[i], base_rot[i]) for i in range(batch)])
         error = (target_features - current_features) * feature_mask
         cost = torch.sum(error.square(), dim=1)
         initial_cost = torch.where(torch.isnan(initial_cost), cost, initial_cost)
         q_now, pos_now, rot_now = zip(
-            *[
-                _pose_from_state(state[i], base_pos[i], base_rot[i], joints)
-                for i in range(batch)
-            ]
+            *[_pose_from_state(state[i], base_pos[i], base_rot[i], joints) for i in range(batch)]
         )
         achieved_pos, achieved_normal = contact_state(
             spec, torch.stack(pos_now), torch.stack(rot_now), torch.stack(q_now)
@@ -160,16 +137,12 @@ def solve_joint_palm_dls_batch(
             break
         iterations[working] += 1
 
-        jacobian = torch.stack(
-            [derivative(state[i], base_pos[i], base_rot[i]) for i in range(batch)]
-        )
+        jacobian = torch.stack([derivative(state[i], base_pos[i], base_rot[i]) for i in range(batch)])
         weighted_jacobian = jacobian * feature_mask.unsqueeze(-1)
         hessian = torch.bmm(weighted_jacobian.transpose(1, 2), weighted_jacobian)
         identity = torch.eye(joints + 6).unsqueeze(0).expand(batch, -1, -1)
         hessian += damping_values.square()[:, None, None] * identity
-        gradient = torch.bmm(
-            weighted_jacobian.transpose(1, 2), error.unsqueeze(-1)
-        ).squeeze(-1)
+        gradient = torch.bmm(weighted_jacobian.transpose(1, 2), error.unsqueeze(-1)).squeeze(-1)
         gradient += 1e-5 * (state_reference - state)
         rank, condition = masked_jacobian_spectrum(jacobian, feature_mask)
         jacobian_rank = torch.where(working, rank, jacobian_rank)
@@ -181,9 +154,7 @@ def solve_joint_palm_dls_batch(
         raw_delta = step_size * delta
         trial, clipped = project(state + raw_delta)
         projected_delta = trial - state
-        trial_features = torch.stack(
-            [features(trial[i], base_pos[i], base_rot[i]) for i in range(batch)]
-        )
+        trial_features = torch.stack([features(trial[i], base_pos[i], base_rot[i]) for i in range(batch)])
         trial_error = (target_features - trial_features) * feature_mask
         trial_cost = torch.sum(trial_error.square(), dim=1)
         improved = working & meaningful_cost_decrease(cost, trial_cost)
@@ -192,14 +163,10 @@ def solve_joint_palm_dls_batch(
         rejected += (working & ~improved).to(torch.int64)
         clipped_steps += (working & clipped).to(torch.int64)
         raw_step_norm = torch.where(working, torch.linalg.norm(raw_delta, dim=1), raw_step_norm)
-        projected_step_norm = torch.where(
-            working, torch.linalg.norm(projected_delta, dim=1), projected_step_norm
-        )
+        projected_step_norm = torch.where(working, torch.linalg.norm(projected_delta, dim=1), projected_step_norm)
         gradient_norm = torch.where(working, torch.linalg.norm(gradient, dim=1), gradient_norm)
         finite &= (~working) | (
-            torch.isfinite(cost)
-            & torch.isfinite(trial_cost)
-            & torch.all(torch.isfinite(jacobian), dim=(1, 2))
+            torch.isfinite(cost) & torch.isfinite(trial_cost) & torch.all(torch.isfinite(jacobian), dim=(1, 2))
         )
         final_cost = torch.where(improved, trial_cost, cost)
         damping_values = torch.where(
@@ -209,10 +176,7 @@ def solve_joint_palm_dls_batch(
         )
 
     q_final, pos_final, rot_final = zip(
-        *[
-            _pose_from_state(state[i], base_pos[i], base_rot[i], joints)
-            for i in range(batch)
-        ]
+        *[_pose_from_state(state[i], base_pos[i], base_rot[i], joints) for i in range(batch)]
     )
     q_out = torch.stack(q_final)
     pos_out = torch.stack(pos_final)
@@ -224,9 +188,10 @@ def solve_joint_palm_dls_batch(
     converged = torch.all((position_error < pos_tolerance) | ~active, dim=1) & torch.all(
         (dots > normal_tolerance_dot) | ~active, dim=1
     )
-    final_error = (target_features - torch.cat(
-        [achieved_pos.reshape(batch, -1), (achieved_normal * normal_weight).reshape(batch, -1)], dim=1
-    )) * feature_mask
+    final_error = (
+        target_features
+        - torch.cat([achieved_pos.reshape(batch, -1), (achieved_normal * normal_weight).reshape(batch, -1)], dim=1)
+    ) * feature_mask
     final_cost = torch.sum(final_error.square(), dim=1)
     reasons = classify_failure_reasons(
         converged=converged.numpy(),

@@ -1,9 +1,7 @@
-from typing import Optional
 import numpy as np
 import torch
 from torch.func import jacrev
 
-from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.dataset.pipeline import contact_state as contact_state_module
 from qdgrasp.dataset.pipeline.contracts import KinematicSolution
 from qdgrasp.dataset.pipeline.solvers.normal_equations import masked_normal_equations
@@ -13,6 +11,8 @@ from qdgrasp.dataset.pipeline.solvers.progress import (
     meaningful_cost_decrease,
     solver_metrics_to_numpy,
 )
+from qdgrasp.robot.spec import RobotSpec
+
 
 def solve_region_dls_ik_batch(
     spec: RobotSpec,
@@ -20,10 +20,10 @@ def solve_region_dls_ik_batch(
     palm_rot: np.ndarray,
     target_contacts: np.ndarray,
     target_normals: np.ndarray,
-    region_points: Optional[np.ndarray] = None,
-    region_normals: Optional[np.ndarray] = None,
-    init_q: Optional[np.ndarray] = None,
-    active_fingers: Optional[np.ndarray | torch.Tensor] = None,
+    region_points: np.ndarray | None = None,
+    region_normals: np.ndarray | None = None,
+    init_q: np.ndarray | None = None,
+    active_fingers: np.ndarray | torch.Tensor | None = None,
     damping: float = 0.01,
     step_size: float = 0.5,
     max_iter: int = 50,
@@ -71,10 +71,14 @@ def solve_region_dls_ik_batch(
 
     active_pos_mask = t_active_fingers.unsqueeze(-1).expand(-1, -1, 3).reshape(B, -1)
     active_norm_mask = t_active_fingers.unsqueeze(-1).expand(-1, -1, 3).reshape(B, -1)
-    active_flat_mask = torch.cat([active_pos_mask, active_norm_mask], dim=1) # [B, 6K]
+    active_flat_mask = torch.cat([active_pos_mask, active_norm_mask], dim=1)  # [B, 6K]
 
-    q_mins = torch.tensor([spec.joint_limits[j][0] for j in spec.actuated_joint_names], dtype=torch.float32, device=device)
-    q_maxs = torch.tensor([spec.joint_limits[j][1] for j in spec.actuated_joint_names], dtype=torch.float32, device=device)
+    q_mins = torch.tensor(
+        [spec.joint_limits[j][0] for j in spec.actuated_joint_names], dtype=torch.float32, device=device
+    )
+    q_maxs = torch.tensor(
+        [spec.joint_limits[j][1] for j in spec.actuated_joint_names], dtype=torch.float32, device=device
+    )
 
     if init_q is not None:
         q = torch.as_tensor(init_q, dtype=torch.float32, device=device).clone()
@@ -86,9 +90,7 @@ def solve_region_dls_ik_batch(
         return contact_state_module.contact_position(spec, transforms, tip)
 
     def contact_direction(transforms, tip):
-        return contact_state_module.contact_direction(
-            spec, transforms, tip, fallback_origin=t_palm_pos
-        )
+        return contact_state_module.contact_direction(spec, transforms, tip, fallback_origin=t_palm_pos)
 
     def compute_single(q_single, palm_pos_single, palm_rot_single):
         return contact_state_module.contact_residual_features(
@@ -106,13 +108,13 @@ def solve_region_dls_ik_batch(
     iterations = torch.zeros(B, dtype=torch.int64, device=device)
 
     # Check minimum active fingers
-    insufficient_fingers = (t_active_fingers.sum(dim=-1) < min_active_fingers)
+    insufficient_fingers = t_active_fingers.sum(dim=-1) < min_active_fingers
     for idx in torch.where(insufficient_fingers)[0]:
         reasons[idx.item()] = "insufficient_active_fingers"
 
     achieved_contacts = torch.zeros_like(t_target_anchors)
     achieved_normals = torch.zeros_like(t_target_normal)
-    pos_residuals = torch.full((B, num_tips), float('inf'), device=device)
+    pos_residuals = torch.full((B, num_tips), float("inf"), device=device)
     norm_residuals = torch.full((B, num_tips), float("inf"), device=device)
 
     I = torch.eye(num_joints, device=device).unsqueeze(0).expand(B, num_joints, num_joints)
@@ -149,9 +151,7 @@ def solve_region_dls_ik_batch(
             achieved_contacts = p
             achieved_normals = n
 
-            distances_sq = torch.sum(
-                (p.unsqueeze(2) - t_region_points) ** 2, dim=-1
-            )
+            distances_sq = torch.sum((p.unsqueeze(2) - t_region_points) ** 2, dim=-1)
             nearest_idx = torch.argmin(distances_sq, dim=2)
             gather_idx = nearest_idx[..., None, None].expand(-1, -1, 1, 3)
             p_target = torch.gather(t_region_points, 2, gather_idx).squeeze(2)
@@ -193,9 +193,7 @@ def solve_region_dls_ik_batch(
         )
 
         with torch.no_grad():
-            damping_matrix = (
-                damping_values.square() + regularization_weight
-            )[:, None, None] * I
+            damping_matrix = (damping_values.square() + regularization_weight)[:, None, None] * I
             # RC-02: inactive fingers must contribute no curvature either, so
             # the mask is applied to the Jacobian rows, not only to `err`.
             H, g = masked_normal_equations(J_batch, err, active_flat_mask, damping_matrix)
@@ -227,28 +225,25 @@ def solve_region_dls_ik_batch(
             clipped_now = torch.any(torch.abs(q_unclipped - q_trial) > 1e-8, dim=1)
             limit_clipped_steps += (active_mask & clipped_now).to(torch.int64)
             trial_transforms = spec.forward_kinematics(t_palm_pos, t_palm_rot, q_trial)
-            trial_pos = torch.stack(
-                [contact_position(trial_transforms, tip) for tip in spec.fingertip_links], dim=1
-            )
+            trial_pos = torch.stack([contact_position(trial_transforms, tip) for tip in spec.fingertip_links], dim=1)
             trial_normals = torch.stack(
                 [contact_direction(trial_transforms, tip) for tip in spec.fingertip_links], dim=1
             )
-            trial_distances_sq = torch.sum(
-                (trial_pos.unsqueeze(2) - t_region_points) ** 2, dim=-1
-            )
+            trial_distances_sq = torch.sum((trial_pos.unsqueeze(2) - t_region_points) ** 2, dim=-1)
             trial_nearest = torch.argmin(trial_distances_sq, dim=2)
             trial_gather = trial_nearest[..., None, None].expand(-1, -1, 1, 3)
             trial_targets = torch.gather(t_region_points, 2, trial_gather).squeeze(2)
-            trial_target_normals = torch.gather(
-                t_region_normals, 2, trial_gather
-            ).squeeze(2)
-            trial_error = torch.cat(
-                [
-                    (trial_targets - trial_pos).reshape(B, -1),
-                    ((trial_target_normals - trial_normals) * normal_weight).reshape(B, -1),
-                ],
-                dim=1,
-            ) * active_flat_mask
+            trial_target_normals = torch.gather(t_region_normals, 2, trial_gather).squeeze(2)
+            trial_error = (
+                torch.cat(
+                    [
+                        (trial_targets - trial_pos).reshape(B, -1),
+                        ((trial_target_normals - trial_normals) * normal_weight).reshape(B, -1),
+                    ],
+                    dim=1,
+                )
+                * active_flat_mask
+            )
             trial_cost = torch.sum(trial_error.square(), dim=1)
             improved = active_mask & meaningful_cost_decrease(current_cost, trial_cost)
             accepted_steps += improved.to(torch.int64)
@@ -270,19 +265,12 @@ def solve_region_dls_ik_batch(
 
     with torch.no_grad():
         transforms = spec.forward_kinematics(t_palm_pos, t_palm_rot, q)
-        achieved_contacts = torch.stack(
-            [contact_position(transforms, tip) for tip in spec.fingertip_links], dim=1
-        )
+        achieved_contacts = torch.stack([contact_position(transforms, tip) for tip in spec.fingertip_links], dim=1)
         achieved_normals = torch.stack(
-            [
-                contact_direction(transforms, tip)
-                for tip in spec.fingertip_links
-            ],
+            [contact_direction(transforms, tip) for tip in spec.fingertip_links],
             dim=1,
         )
-        distances_sq = torch.sum(
-            (achieved_contacts.unsqueeze(2) - t_region_points) ** 2, dim=-1
-        )
+        distances_sq = torch.sum((achieved_contacts.unsqueeze(2) - t_region_points) ** 2, dim=-1)
         nearest_idx = torch.argmin(distances_sq, dim=2)
         gather_idx = nearest_idx[..., None, None].expand(-1, -1, 1, 3)
         final_targets = torch.gather(t_region_points, 2, gather_idx).squeeze(2)
@@ -304,13 +292,16 @@ def solve_region_dls_ik_batch(
             reasons[idx.item()] = "converged"
         converged |= final_converged
 
-        final_error = torch.cat(
-            [
-                (final_targets - achieved_contacts).reshape(B, -1),
-                ((final_normals - achieved_normals) * normal_weight).reshape(B, -1),
-            ],
-            dim=1,
-        ) * active_flat_mask
+        final_error = (
+            torch.cat(
+                [
+                    (final_targets - achieved_contacts).reshape(B, -1),
+                    ((final_normals - achieved_normals) * normal_weight).reshape(B, -1),
+                ],
+                dim=1,
+            )
+            * active_flat_mask
+        )
         final_cost = torch.sum(final_error.square(), dim=1)
         initial_cost = torch.where(torch.isnan(initial_cost), final_cost, initial_cost)
 
@@ -341,6 +332,9 @@ def solve_region_dls_ik_batch(
         converged=converged.cpu().numpy(),
         reason=reasons,
         iterations=iterations.cpu().numpy(),
+        surface_contacts=final_targets.cpu().numpy(),
+        surface_normals=final_normals.cpu().numpy(),
+        surface_distances=pos_residuals.cpu().numpy(),
         solver_metrics=solver_metrics_to_numpy(
             initial_cost=initial_cost,
             final_cost=final_cost,
