@@ -1,0 +1,3766 @@
+{
+  "baseline_comparison": {
+    "baseline_summary": {
+      "candidates_reaching_dynamic_rollout": 0,
+      "cells": 9,
+      "failure_signature": {
+        "ik:max_iter": 18
+      },
+      "pipeline_generated_positives": 0,
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 18,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "total_candidates": 18
+    },
+    "budget_matches": true,
+    "changed_cells": [],
+    "changed_source_files": [
+      "qdgrasp/dataset/pipeline/orchestrator.py"
+    ],
+    "current_summary": {
+      "candidates_reaching_dynamic_rollout": 0,
+      "cells": 9,
+      "failure_signature": {
+        "ik:max_iter": 18
+      },
+      "pipeline_generated_positives": 0,
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 18,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "total_candidates": 18
+    },
+    "seed_matches": true,
+    "unchanged_cells": 9
+  },
+  "baseline_path": "evidence/phase3_2_1/p09-dynamic-predicate/corpus.json",
+  "cells_detail": [
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.650771975517273,
+            "active_max_position_residual": 0.0026030384469777346,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.650771975517273,
+            "max_position_residual": 0.0026030384469777346,
+            "normal_residuals": [
+              1.650771976,
+              1.446561337,
+              0.886714518,
+              1.075037837
+            ],
+            "palm_hypothesis_id": "surface_fixed:c48b7a04a4bb9941186f:seed1:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.07602410852645947,
+              "max_position_error": 0.05402760141960896,
+              "min_normal_alignment": -0.09479306149559093,
+              "refinement_applied_rotation": 0.08908692747354507,
+              "refinement_applied_translation": 0.009999999776482582,
+              "refinement_floor_clearance": 0.06720920652151108,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.08908692747354507,
+              "refinement_requested_translation": 0.009999999776482582
+            },
+            "palm_pos": [
+              -0.117041752,
+              -0.000652495,
+              0.042209208
+            ],
+            "palm_rot": [
+              0.474841475,
+              -0.028333375,
+              -0.879615247,
+              0.199461788,
+              0.97693783,
+              0.076206937,
+              0.857170165,
+              -0.211635828,
+              0.469541967
+            ],
+            "position_residuals": [
+              0.00184378,
+              0.000268546,
+              0.00257558,
+              0.002603038
+            ],
+            "q": [
+              0.76176542,
+              -0.210803062,
+              0.208948955,
+              0.552414656,
+              0.615271509,
+              -0.559860587,
+              1.464503646,
+              -0.365999997,
+              1.113036633,
+              -0.707789779,
+              0.356850088,
+              -0.280036598,
+              1.212509871,
+              0.161974728,
+              0.513072371,
+              0.528807044
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                14.0
+              ],
+              "final_cost": [
+                0.000586544
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.006636435
+              ],
+              "initial_cost": [
+                0.006943933
+              ],
+              "jacobian_condition": [
+                4843.01953125
+              ],
+              "jacobian_rank": [
+                20.0
+              ],
+              "limit_clipped_steps": [
+                41.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.089086927
+              ],
+              "pose_refinement_translation": [
+                0.01
+              ],
+              "projected_step_norm": [
+                0.000177862
+              ],
+              "raw_step_norm": [
+                0.000668297
+              ],
+              "rejected_steps": [
+                66.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "surface_fixed:c48b7a04a4bb9941186f",
+            "duplicate_face_ids": 0,
+            "face_ids": [
+              9,
+              1,
+              5,
+              3
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "opposition_pairs": null,
+            "provenance": "surface_fixed",
+            "target_points": [
+              0.023920405,
+              0.025,
+              0.01366392,
+              -0.003880636,
+              -0.025,
+              -0.01181486,
+              0.007628559,
+              -0.025,
+              0.0048078,
+              -0.013465752,
+              0.008289364,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 2.1515817642211914,
+            "active_max_position_residual": 0.057059116661548615,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 2.1515817642211914,
+            "max_position_residual": 0.057059116661548615,
+            "normal_residuals": [
+              1.394737005,
+              1.407136917,
+              0.35069254,
+              2.151581764
+            ],
+            "palm_hypothesis_id": "surface_fixed:98c4fe87149c7edcff45:seed0:final:direction_fit",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.01658068527085829,
+              "max_position_error": 0.21121296520203905,
+              "min_normal_alignment": -0.08071483376522613,
+              "refinement_applied_rotation": 0.1485692858695984,
+              "refinement_applied_translation": 0.009999998845160007,
+              "refinement_floor_clearance": 0.020686767995357513,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.1485692858695984,
+              "refinement_requested_translation": 0.009999998845160007
+            },
+            "palm_pos": [
+              -0.076584093,
+              -0.044401996,
+              -0.004313232
+            ],
+            "palm_rot": [
+              0.692814231,
+              0.694444358,
+              0.19430761,
+              0.207244739,
+              0.06633988,
+              -0.976037204,
+              -0.690693915,
+              0.716481686,
+              -0.097958714
+            ],
+            "position_residuals": [
+              0.057059117,
+              0.019109314,
+              0.056607217,
+              0.053856898
+            ],
+            "q": [
+              1.164571643,
+              -1.047000051,
+              -0.505999982,
+              -0.365999997,
+              0.535128951,
+              -1.020098567,
+              -0.431264907,
+              0.093852907,
+              -0.018702941,
+              -1.047000051,
+              0.020833628,
+              0.030198673,
+              -0.005945898,
+              0.04582651,
+              1.538363695,
+              -0.144385129
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                46.0
+              ],
+              "final_cost": [
+                0.010380144
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.089737281
+              ],
+              "initial_cost": [
+                0.063010834
+              ],
+              "jacobian_condition": [
+                4139.870117188
+              ],
+              "jacobian_rank": [
+                20.0
+              ],
+              "limit_clipped_steps": [
+                80.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.148569286
+              ],
+              "pose_refinement_translation": [
+                0.009999999
+              ],
+              "projected_step_norm": [
+                0.003723339
+              ],
+              "raw_step_norm": [
+                0.014184209
+              ],
+              "rejected_steps": [
+                34.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "surface_fixed:98c4fe87149c7edcff45",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              4,
+              3,
+              0,
+              3
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "opposition_pairs": null,
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.009959618,
+              -0.005207629,
+              0.025,
+              -0.005560813,
+              -0.002182817,
+              -0.025,
+              -0.025,
+              -0.016988994,
+              0.000918124,
+              0.004973967,
+              -0.011365119,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 8.373,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "leap_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "surface_fixed",
+        "solver": "fixed_contact_dls"
+      },
+      "recipe_id": "surface_fixed_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.3021893501281738,
+            "active_max_position_residual": 0.003049646969884634,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.4187588691711426,
+            "max_position_residual": 0.014644712209701538,
+            "normal_residuals": [
+              1.30218935,
+              1.418758869,
+              1.155681849,
+              0.74685812
+            ],
+            "palm_hypothesis_id": "region_opposition:1ca63667424a69aba39a:seed1:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.04379887684643634,
+              "max_position_error": 0.03631655190250521,
+              "min_normal_alignment": 0.08813627666844256,
+              "refinement_applied_rotation": 0.06559430807828903,
+              "refinement_applied_translation": 0.010000000707805157,
+              "refinement_floor_clearance": 0.03385500609874725,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.06559430807828903,
+              "refinement_requested_translation": 0.010000000707805157
+            },
+            "palm_pos": [
+              -0.100827269,
+              -0.080178179,
+              0.008855006
+            ],
+            "palm_rot": [
+              0.145801157,
+              0.603396177,
+              -0.783999383,
+              -0.277530402,
+              -0.735700607,
+              -0.617836058,
+              -0.949588776,
+              0.307664871,
+              0.060194753
+            ],
+            "position_residuals": [
+              0.003049647,
+              0.014644712,
+              0.002734053,
+              0.001892123
+            ],
+            "q": [
+              0.803387821,
+              -0.194716394,
+              0.128352508,
+              0.947363496,
+              0.703599989,
+              -0.209399998,
+              0.450399995,
+              0.597199976,
+              0.996916652,
+              -0.615857959,
+              0.040731788,
+              0.832227468,
+              0.984581649,
+              0.390296578,
+              0.431550384,
+              0.518021226
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                9.0
+              ],
+              "final_cost": [
+                0.000339853
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.007694672
+              ],
+              "initial_cost": [
+                0.003069195
+              ],
+              "jacobian_condition": [
+                1639.925537109
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                40.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.065594308
+              ],
+              "pose_refinement_translation": [
+                0.010000001
+              ],
+              "projected_step_norm": [
+                0.000218394
+              ],
+              "raw_step_norm": [
+                0.000951943
+              ],
+              "rejected_steps": [
+                71.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              false,
+              true,
+              true
+            ],
+            "candidate_id": "region_opposition:1ca63667424a69aba39a",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              8,
+              3,
+              3,
+              4
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                0
+              ]
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              -0.010888622,
+              0.003543838,
+              -0.025,
+              -0.024820797,
+              0.010741346,
+              -0.025,
+              -0.024330691,
+              -0.020764797,
+              -0.025,
+              -0.005772342,
+              -0.01618355,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.5707899332046509,
+            "active_max_position_residual": 0.003626419696956873,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.5999221801757812,
+            "max_position_residual": 0.052553609013557434,
+            "normal_residuals": [
+              0.61327374,
+              0.791761637,
+              1.59992218,
+              1.570789933
+            ],
+            "palm_hypothesis_id": "region_opposition:66e96d01ad53ab304ea9:seed3:final:grasp_frame:-1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.016926283683298293,
+              "max_position_error": 0.013909966827237535,
+              "min_normal_alignment": -0.2135409632656726,
+              "refinement_applied_rotation": 0.17453305423259735,
+              "refinement_applied_translation": 0.007852689363062382,
+              "refinement_floor_clearance": 0.023571182042360306,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.17453305423259735,
+              "refinement_requested_translation": 0.007852689363062382
+            },
+            "palm_pos": [
+              0.021170471,
+              -0.066948526,
+              -0.001428819
+            ],
+            "palm_rot": [
+              0.550501466,
+              0.17094481,
+              -0.81714505,
+              -0.829944074,
+              0.217850611,
+              -0.513550222,
+              0.090226822,
+              0.960894823,
+              0.26180172
+            ],
+            "position_residuals": [
+              0.000748712,
+              0.001600917,
+              0.052553609,
+              0.00362642
+            ],
+            "q": [
+              1.258969545,
+              0.295906782,
+              1.862318397,
+              1.396596432,
+              1.211908937,
+              0.613271892,
+              1.845913649,
+              1.208992958,
+              1.975600004,
+              0.837599993,
+              1.645900011,
+              1.801200032,
+              1.859631538,
+              2.094000101,
+              2.158002377,
+              1.854491591
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                18.0
+              ],
+              "final_cost": [
+                0.000312201
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.00169167
+              ],
+              "initial_cost": [
+                0.001122328
+              ],
+              "jacobian_condition": [
+                1050.719970703
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                43.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.174533054
+              ],
+              "pose_refinement_translation": [
+                0.007852689
+              ],
+              "projected_step_norm": [
+                0.00021319
+              ],
+              "raw_step_norm": [
+                0.000240012
+              ],
+              "rejected_steps": [
+                62.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "candidate_id": "region_opposition:66e96d01ad53ab304ea9",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              10,
+              11,
+              10,
+              0
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                0
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              0.025,
+              -0.022643024,
+              0.002767699,
+              0.025,
+              -0.017713636,
+              -0.022654943,
+              0.025,
+              -0.01616556,
+              0.024508081,
+              -0.025,
+              -0.001718376,
+              0.007047636
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 9.086,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "leap_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "region_opposition",
+        "solver": "region_dls"
+      },
+      "recipe_id": "region_opposition_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.1796611547470093,
+            "active_max_position_residual": 0.0015487093478441238,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.3346151113510132,
+            "max_position_residual": 0.020929738879203796,
+            "normal_residuals": [
+              1.334615111,
+              1.179661155,
+              0.994191766,
+              0.923947394
+            ],
+            "palm_hypothesis_id": "wrench_guided:a4663fe9dbd13c3d6e95:seed1:final:grasp_frame:-1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.01306518715067083,
+              "max_position_error": 0.044140399078665196,
+              "min_normal_alignment": 0.18129756510760578,
+              "refinement_applied_rotation": 0.0538814440369606,
+              "refinement_applied_translation": 0.010000000707805157,
+              "refinement_floor_clearance": 0.022867601364850998,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.0538814440369606,
+              "refinement_requested_translation": 0.010000000707805157
+            },
+            "palm_pos": [
+              -0.128588557,
+              -0.028021377,
+              -0.0021324
+            ],
+            "palm_rot": [
+              -0.094082639,
+              -0.223152757,
+              -0.970232606,
+              0.451754332,
+              0.858876944,
+              -0.241347283,
+              0.887167692,
+              -0.461013287,
+              0.020004801
+            ],
+            "position_residuals": [
+              0.020929739,
+              0.001548709,
+              0.001267193,
+              0.001524525
+            ],
+            "q": [
+              0.703599989,
+              -0.209399998,
+              0.450399995,
+              0.597199976,
+              0.888891518,
+              -0.297046632,
+              0.106774151,
+              0.891794682,
+              0.973263979,
+              -0.630095124,
+              -0.00730682,
+              0.972973347,
+              1.079135656,
+              0.305635929,
+              0.588184595,
+              0.30243662
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                9.0
+              ],
+              "final_cost": [
+                0.00030051
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.004059622
+              ],
+              "initial_cost": [
+                0.003772057
+              ],
+              "jacobian_condition": [
+                1736.966308594
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                39.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.053881444
+              ],
+              "pose_refinement_translation": [
+                0.010000001
+              ],
+              "projected_step_norm": [
+                0.000224025
+              ],
+              "raw_step_norm": [
+                0.000508313
+              ],
+              "rejected_steps": [
+                71.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              false,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "wrench_guided:a4663fe9dbd13c3d6e95",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              6,
+              4,
+              6,
+              8
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                2
+              ]
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.003871397,
+              -0.015151079,
+              0.025,
+              -0.014427624,
+              -0.004114072,
+              0.025,
+              0.019902328,
+              -0.014297768,
+              0.025,
+              -0.009897401,
+              0.022172631,
+              -0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.2685555219650269,
+            "active_max_position_residual": 0.009340913966298103,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.3485292196273804,
+            "max_position_residual": 0.027513397857546806,
+            "normal_residuals": [
+              1.268555522,
+              1.34852922,
+              1.068113089,
+              1.003945231
+            ],
+            "palm_hypothesis_id": "wrench_guided:4aeac8fa03fa04c66031:seed1:final:grasp_frame:+1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.030190708545765135,
+              "max_position_error": 0.04985755224389614,
+              "min_normal_alignment": 0.17272250529636773,
+              "refinement_applied_rotation": 0.17453305423259735,
+              "refinement_applied_translation": 0.010000000707805157,
+              "refinement_floor_clearance": 0.023021448403596878,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.17453305423259735,
+              "refinement_requested_translation": 0.010000000707805157
+            },
+            "palm_pos": [
+              -0.036195021,
+              0.136395127,
+              -0.001978552
+            ],
+            "palm_rot": [
+              -0.49205637,
+              -0.862431943,
+              -0.118708335,
+              -0.064108178,
+              -0.100091286,
+              0.992910743,
+              -0.868199766,
+              0.49617824,
+              -0.006038381
+            ],
+            "position_residuals": [
+              0.009340914,
+              0.027513398,
+              0.005331952,
+              0.004780557
+            ],
+            "q": [
+              0.874245524,
+              0.296487719,
+              0.301743895,
+              0.80498457,
+              0.703599989,
+              -0.209399998,
+              0.450399995,
+              0.597199976,
+              1.22992754,
+              -0.417095006,
+              0.057630461,
+              0.640251637,
+              1.168631554,
+              0.46816045,
+              0.43367517,
+              0.334362805
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                29.0
+              ],
+              "final_cost": [
+                0.000475253
+              ],
+              "final_damping": [
+                0.358727545
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.015985306
+              ],
+              "initial_cost": [
+                0.004068359
+              ],
+              "jacobian_condition": [
+                2108.87109375
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                40.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.174533054
+              ],
+              "pose_refinement_translation": [
+                0.010000001
+              ],
+              "projected_step_norm": [
+                0.000543848
+              ],
+              "raw_step_norm": [
+                0.002503895
+              ],
+              "rejected_steps": [
+                51.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              false,
+              true,
+              true
+            ],
+            "candidate_id": "wrench_guided:4aeac8fa03fa04c66031",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              8,
+              3,
+              3,
+              6
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                0
+              ]
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              -0.006258119,
+              0.008502002,
+              -0.025,
+              -0.021225018,
+              -0.015757617,
+              -0.025,
+              0.014589693,
+              -0.02171819,
+              -0.025,
+              -0.020177744,
+              -0.001999446,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 9.278,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "leap_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "wrench_guided",
+        "solver": "region_dls"
+      },
+      "recipe_id": "wrench_guided_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.7730072736740112,
+            "active_max_position_residual": 0.0056292093358933926,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.7730072736740112,
+            "max_position_residual": 0.0056292093358933926,
+            "normal_residuals": [
+              0.23164539,
+              1.773007274,
+              1.591150761,
+              0.116560198
+            ],
+            "palm_hypothesis_id": "surface_fixed:0817b6f108c6eb4be007:seed1:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.06014745371690116,
+              "max_position_error": 0.08522349365283968,
+              "min_normal_alignment": -0.22744022384768098,
+              "refinement_applied_rotation": 0.17453305423259735,
+              "refinement_applied_translation": 0.009999998845160007,
+              "refinement_floor_clearance": 0.05109772831201553,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.17453305423259735,
+              "refinement_requested_translation": 0.009999998845160007
+            },
+            "palm_pos": [
+              -0.08066535,
+              0.084999233,
+              0.026097728
+            ],
+            "palm_rot": [
+              0.364312977,
+              0.049475882,
+              0.929961324,
+              -0.899063408,
+              0.279054672,
+              0.337362409,
+              -0.242818788,
+              -0.958999813,
+              0.146145195
+            ],
+            "position_residuals": [
+              0.00434683,
+              0.005629209,
+              0.004466537,
+              0.004642548
+            ],
+            "q": [
+              -0.255511999,
+              0.45211041,
+              0.976481915,
+              0.74220556,
+              0.24229233,
+              0.874954224,
+              0.144711897,
+              0.723280311,
+              0.449350148,
+              0.589981496,
+              1.623486996,
+              -0.226999998,
+              1.396000028,
+              0.171875373,
+              1.067063928,
+              0.045727037
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                16.0
+              ],
+              "final_cost": [
+                0.000543023
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.018653003
+              ],
+              "initial_cost": [
+                0.014469813
+              ],
+              "jacobian_condition": [
+                5165.578613281
+              ],
+              "jacobian_rank": [
+                20.0
+              ],
+              "limit_clipped_steps": [
+                48.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.174533054
+              ],
+              "pose_refinement_translation": [
+                0.009999999
+              ],
+              "projected_step_norm": [
+                0.000206017
+              ],
+              "raw_step_norm": [
+                0.001854583
+              ],
+              "rejected_steps": [
+                64.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "surface_fixed:0817b6f108c6eb4be007",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              9,
+              10,
+              2,
+              2
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0
+            ],
+            "opposition_pairs": null,
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.000476221,
+              0.025,
+              -0.016180702,
+              0.025,
+              0.013887318,
+              -0.022128971,
+              -0.025,
+              0.012515014,
+              0.006586959,
+              -0.025,
+              0.015750753,
+              -0.018298514
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.337182879447937,
+            "active_max_position_residual": 0.018693216145038605,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.337182879447937,
+            "max_position_residual": 0.018693216145038605,
+            "normal_residuals": [
+              1.122865677,
+              0.671893954,
+              1.337182879,
+              0.587669551
+            ],
+            "palm_hypothesis_id": "surface_fixed:6c032012fc4f7f49d5ee:seed3:final:direction_fit",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.012183298652965401,
+              "max_position_error": 0.043103259762606684,
+              "min_normal_alignment": 0.4768640247661959,
+              "refinement_applied_rotation": 0.17453236877918243,
+              "refinement_applied_translation": 0.008471166715025902,
+              "refinement_floor_clearance": 0.005000000819563866,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.17453236877918243,
+              "refinement_requested_translation": 0.008471166715025902
+            },
+            "palm_pos": [
+              -0.028686604,
+              -0.019227147,
+              -0.02
+            ],
+            "palm_rot": [
+              -0.118704468,
+              -0.803985476,
+              -0.582680643,
+              -0.379662991,
+              0.578988612,
+              -0.721545815,
+              0.917477608,
+              0.13557151,
+              -0.373971999
+            ],
+            "position_residuals": [
+              0.010189273,
+              0.01284331,
+              0.018693216,
+              0.008941706
+            ],
+            "q": [
+              -0.343922466,
+              1.46043551,
+              1.651827216,
+              0.678021252,
+              -0.469999999,
+              1.223327875,
+              1.708999991,
+              1.48873508,
+              0.469999999,
+              1.273462653,
+              0.919428051,
+              1.614326596,
+              1.163998008,
+              1.162999988,
+              1.069692969,
+              1.708549261
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                31.0
+              ],
+              "final_cost": [
+                0.001042267
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.030853385
+              ],
+              "initial_cost": [
+                0.004973761
+              ],
+              "jacobian_condition": [
+                1420.591064453
+              ],
+              "jacobian_rank": [
+                20.0
+              ],
+              "limit_clipped_steps": [
+                80.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.174532369
+              ],
+              "pose_refinement_translation": [
+                0.008471167
+              ],
+              "projected_step_norm": [
+                0.000197777
+              ],
+              "raw_step_norm": [
+                0.003142661
+              ],
+              "rejected_steps": [
+                49.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "surface_fixed:6c032012fc4f7f49d5ee",
+            "duplicate_face_ids": 0,
+            "face_ids": [
+              2,
+              1,
+              4,
+              6
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "opposition_pairs": null,
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.025,
+              0.021259761,
+              0.018327919,
+              -0.013206066,
+              -0.025,
+              -0.012031669,
+              -0.024084795,
+              -0.023372364,
+              0.025,
+              0.022801634,
+              -0.014431882,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 9.518,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "wonik_allegro",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "surface_fixed",
+        "solver": "fixed_contact_dls"
+      },
+      "recipe_id": "surface_fixed_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 0.9154475331306458,
+            "active_max_position_residual": 0.008141056634485722,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.6114027500152588,
+            "max_position_residual": 0.017971128225326538,
+            "normal_residuals": [
+              1.61140275,
+              0.915447533,
+              0.883419812,
+              0.52213937
+            ],
+            "palm_hypothesis_id": "region_opposition:9e38f39096d04d14617e:seed1:final:grasp_frame:-1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.039570368256984435,
+              "max_position_error": 0.0589982899278811,
+              "min_normal_alignment": -0.1266963372783733,
+              "refinement_applied_rotation": 0.09627566486597061,
+              "refinement_applied_translation": 0.009999999776482582,
+              "refinement_floor_clearance": 0.039547305554151535,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.09627566486597061,
+              "refinement_requested_translation": 0.009999999776482582
+            },
+            "palm_pos": [
+              -0.097335823,
+              0.040863097,
+              0.014547305
+            ],
+            "palm_rot": [
+              0.920915604,
+              0.386673123,
+              0.048973504,
+              -0.052896135,
+              0.248477772,
+              -0.967192233,
+              -0.386156023,
+              0.88811183,
+              0.249280527
+            ],
+            "position_residuals": [
+              0.017971128,
+              0.00577037,
+              0.005658726,
+              0.008141057
+            ],
+            "q": [
+              -0.093999997,
+              0.52640003,
+              0.579200029,
+              0.510999978,
+              -0.024773045,
+              0.639938116,
+              0.262393504,
+              1.409612536,
+              0.344144136,
+              0.725605965,
+              0.246877804,
+              1.292740703,
+              1.199711919,
+              0.158285365,
+              0.927702308,
+              0.221385002
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                11.0
+              ],
+              "final_cost": [
+                0.000309455
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.019593909
+              ],
+              "initial_cost": [
+                0.006452617
+              ],
+              "jacobian_condition": [
+                2901.431884766
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                40.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.096275665
+              ],
+              "pose_refinement_translation": [
+                0.01
+              ],
+              "projected_step_norm": [
+                0.000256247
+              ],
+              "raw_step_norm": [
+                0.002434049
+              ],
+              "rejected_steps": [
+                69.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              false,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "region_opposition:9e38f39096d04d14617e",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              1,
+              1,
+              5,
+              7
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              0.000242665,
+              -0.025,
+              0.02341823,
+              -0.013184743,
+              -0.025,
+              -0.001981048,
+              0.009007378,
+              -0.025,
+              -0.012216029,
+              0.006862724,
+              0.025,
+              0.024776547
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 0.9132259488105774,
+            "active_max_position_residual": 0.00438341498374939,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.4502302408218384,
+            "max_position_residual": 0.06931120902299881,
+            "normal_residuals": [
+              0.913225949,
+              0.763352692,
+              1.450230241,
+              0.623061299
+            ],
+            "palm_hypothesis_id": "region_opposition:de49a6b52e5b1223449e:seed1:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.04846091883061911,
+              "max_position_error": 0.039774742730384345,
+              "min_normal_alignment": 0.02299632522952736,
+              "refinement_applied_rotation": 0.08403748273849487,
+              "refinement_applied_translation": 0.009999999776482582,
+              "refinement_floor_clearance": 0.047522976994514465,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.08403748273849487,
+              "refinement_requested_translation": 0.009999999776482582
+            },
+            "palm_pos": [
+              -0.023321973,
+              -0.10316582,
+              0.022522977
+            ],
+            "palm_rot": [
+              -0.079757825,
+              -0.136005268,
+              0.987492383,
+              0.814230859,
+              0.562590599,
+              0.143248245,
+              -0.575036466,
+              0.815471828,
+              0.065868676
+            ],
+            "position_residuals": [
+              0.002308511,
+              0.002148928,
+              0.069311209,
+              0.004383415
+            ],
+            "q": [
+              -0.044982456,
+              0.622523308,
+              0.241129443,
+              1.313574314,
+              0.163857639,
+              0.652365088,
+              0.266597062,
+              1.365267634,
+              -0.093999997,
+              0.52640003,
+              0.579200029,
+              0.510999978,
+              1.05756402,
+              0.143677965,
+              0.856323659,
+              0.270768762
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                9.0
+              ],
+              "final_cost": [
+                0.000199999
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.008752871
+              ],
+              "initial_cost": [
+                0.00305828
+              ],
+              "jacobian_condition": [
+                3450.290771484
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                40.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.084037483
+              ],
+              "pose_refinement_translation": [
+                0.01
+              ],
+              "projected_step_norm": [
+                0.000200575
+              ],
+              "raw_step_norm": [
+                0.001095209
+              ],
+              "rejected_steps": [
+                71.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "candidate_id": "region_opposition:de49a6b52e5b1223449e",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              11,
+              10,
+              10,
+              0
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                0
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              0.025,
+              -0.02014463,
+              -0.017467551,
+              0.025,
+              0.021439794,
+              0.006273028,
+              0.025,
+              -0.020410538,
+              -0.009236286,
+              -0.025,
+              0.011120116,
+              0.024100263
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 9.675,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "wonik_allegro",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "region_opposition",
+        "solver": "region_dls"
+      },
+      "recipe_id": "region_opposition_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 0.9108456373214722,
+            "active_max_position_residual": 0.002533916849642992,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.3572226762771606,
+            "max_position_residual": 0.02382303774356842,
+            "normal_residuals": [
+              0.910845637,
+              1.357222676,
+              0.61672014,
+              0.675721526
+            ],
+            "palm_hypothesis_id": "wrench_guided:a9fb83affcd11ad2efbe:seed1:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.04377408060498794,
+              "max_position_error": 0.05389029165416175,
+              "min_normal_alignment": 0.12956922202949223,
+              "refinement_applied_rotation": 0.08041031658649445,
+              "refinement_applied_translation": 0.009999999776482582,
+              "refinement_floor_clearance": 0.03467744588851929,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.08041031658649445,
+              "refinement_requested_translation": 0.009999999776482582
+            },
+            "palm_pos": [
+              -0.096962079,
+              -0.024226645,
+              0.009677446
+            ],
+            "palm_rot": [
+              0.847559512,
+              0.448128611,
+              0.284295112,
+              0.494756579,
+              -0.86100924,
+              -0.117809735,
+              0.191986799,
+              0.240507632,
+              -0.95147109
+            ],
+            "position_residuals": [
+              0.002024189,
+              0.023823038,
+              0.001729068,
+              0.002533917
+            ],
+            "q": [
+              -0.144330785,
+              0.627348542,
+              0.24241741,
+              1.259704232,
+              -0.093999997,
+              0.52640003,
+              0.579200029,
+              0.510999978,
+              0.400988102,
+              0.741311431,
+              0.274595618,
+              1.271570325,
+              1.176335692,
+              0.134760678,
+              0.842565656,
+              0.365942746
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                10.0
+              ],
+              "final_cost": [
+                0.000171685
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.00618665
+              ],
+              "initial_cost": [
+                0.006133727
+              ],
+              "jacobian_condition": [
+                1583.301147461
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                39.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.080410317
+              ],
+              "pose_refinement_translation": [
+                0.01
+              ],
+              "projected_step_norm": [
+                0.000154936
+              ],
+              "raw_step_norm": [
+                0.000774312
+              ],
+              "rejected_steps": [
+                70.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              false,
+              true,
+              true
+            ],
+            "candidate_id": "wrench_guided:a9fb83affcd11ad2efbe",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              3,
+              8,
+              8,
+              6
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                0
+              ]
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.000673968,
+              -0.021536272,
+              -0.025,
+              -0.010839866,
+              0.007756856,
+              -0.025,
+              0.010604108,
+              0.009688648,
+              -0.025,
+              0.008845456,
+              -0.02458716,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.3180205821990967,
+            "active_max_position_residual": 0.00741542736068368,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.940126657485962,
+            "max_position_residual": 0.05091647803783417,
+            "normal_residuals": [
+              1.940126657,
+              1.286962986,
+              1.318020582,
+              0.356669158
+            ],
+            "palm_hypothesis_id": "wrench_guided:5da00cf2cc5de6239bb1:seed1:final:grasp_frame:+1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.012457601432896027,
+              "max_position_error": 0.05272822690644296,
+              "min_normal_alignment": -0.4403803571850653,
+              "refinement_applied_rotation": 0.09606710076332092,
+              "refinement_applied_translation": 0.010000000707805157,
+              "refinement_floor_clearance": 0.011954650282859802,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.09606710076332092,
+              "refinement_requested_translation": 0.010000000707805157
+            },
+            "palm_pos": [
+              0.078096271,
+              0.069622144,
+              -0.01304535
+            ],
+            "palm_rot": [
+              -0.81957978,
+              -0.516209781,
+              0.248629302,
+              -0.38088727,
+              0.166688129,
+              -0.909472346,
+              0.428034961,
+              -0.84008491,
+              -0.333231956
+            ],
+            "position_residuals": [
+              0.050916478,
+              0.007415427,
+              0.006697822,
+              0.007052137
+            ],
+            "q": [
+              -0.093999997,
+              0.52640003,
+              0.579200029,
+              0.510999978,
+              -0.077448905,
+              0.69409126,
+              0.223665148,
+              1.347192764,
+              0.421705335,
+              0.740623772,
+              0.200860038,
+              1.216318846,
+              1.144466162,
+              0.160786644,
+              0.968734801,
+              0.076518856
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                20.0
+              ],
+              "final_cost": [
+                0.000456143
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.020104179
+              ],
+              "initial_cost": [
+                0.00616813
+              ],
+              "jacobian_condition": [
+                2382.627929688
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                40.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.096067101
+              ],
+              "pose_refinement_translation": [
+                0.010000001
+              ],
+              "projected_step_norm": [
+                0.000289718
+              ],
+              "raw_step_norm": [
+                0.002499515
+              ],
+              "rejected_steps": [
+                60.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              false,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "wrench_guided:5da00cf2cc5de6239bb1",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              1,
+              5,
+              1,
+              7
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "inward_normals": [
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                1
+              ]
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.019606405,
+              -0.025,
+              0.002116846,
+              0.012839586,
+              -0.025,
+              -0.019473291,
+              0.009877124,
+              -0.025,
+              0.018763855,
+              -0.016413698,
+              0.025,
+              -0.011047682
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 9.731,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "wonik_allegro",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "wrench_guided",
+        "solver": "region_dls"
+      },
+      "recipe_id": "wrench_guided_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.7471985816955566,
+            "active_max_position_residual": 0.061335042119026184,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.7471985816955566,
+            "max_position_residual": 0.061335042119026184,
+            "normal_residuals": [
+              0.822426558,
+              1.066713333,
+              1.747198582,
+              0.816593111,
+              0.849456847
+            ],
+            "palm_hypothesis_id": "surface_fixed:fecf915be17675d9485f:seed3:final:direction_fit",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.07176062746612027,
+              "max_position_error": 0.08025683235936655,
+              "min_normal_alignment": -0.2615577976784355,
+              "refinement_applied_rotation": 0.13802024722099304,
+              "refinement_applied_translation": 0.010000001639127731,
+              "refinement_floor_clearance": 0.07356660068035126,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.13802024722099304,
+              "refinement_requested_translation": 0.010000001639127731
+            },
+            "palm_pos": [
+              0.02232201,
+              0.04574395,
+              0.048566598
+            ],
+            "palm_rot": [
+              0.204533651,
+              -0.729526341,
+              -0.652654111,
+              -0.778728008,
+              0.28270945,
+              -0.560051739,
+              0.593083978,
+              0.622789502,
+              -0.510279
+            ],
+            "position_residuals": [
+              0.061335042,
+              0.014406255,
+              0.010488212,
+              0.019968905,
+              0.044964582
+            ],
+            "q": [
+              0.104716226,
+              0.370005339,
+              -0.569613874,
+              1.221729994,
+              0.209439993,
+              0.698131979,
+              1.570799947,
+              -0.349065989,
+              1.365041018,
+              1.440876842,
+              1.433470249,
+              0.041330788,
+              0.35163483,
+              1.57003653,
+              1.442743659,
+              -0.349065989,
+              1.570799947,
+              0.858455837,
+              1.288502216,
+              0.785398006,
+              0.349065989,
+              -0.192493975,
+              1.435751557,
+              1.569123268
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                27.0
+              ],
+              "final_cost": [
+                0.007033489
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.098256379
+              ],
+              "initial_cost": [
+                0.017763484
+              ],
+              "jacobian_condition": [
+                2072.893554688
+              ],
+              "jacobian_rank": [
+                25.0
+              ],
+              "limit_clipped_steps": [
+                80.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.138020247
+              ],
+              "pose_refinement_translation": [
+                0.010000002
+              ],
+              "projected_step_norm": [
+                0.000805695
+              ],
+              "raw_step_norm": [
+                0.008320685
+              ],
+              "rejected_steps": [
+                53.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "surface_fixed:fecf915be17675d9485f",
+            "duplicate_face_ids": 1,
+            "face_ids": [
+              8,
+              0,
+              11,
+              1,
+              11
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "opposition_pairs": null,
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.024476412,
+              0.024764866,
+              -0.025,
+              -0.025,
+              -0.017854509,
+              -0.016286475,
+              0.025,
+              0.001934673,
+              0.007083337,
+              -0.000458275,
+              -0.025,
+              -0.00850973,
+              0.025,
+              0.001475545,
+              0.022245785
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.302181363105774,
+            "active_max_position_residual": 0.030937135219573975,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.302181363105774,
+            "max_position_residual": 0.030937135219573975,
+            "normal_residuals": [
+              0.823751807,
+              1.302181363,
+              0.641265154,
+              0.386113793,
+              0.870019257
+            ],
+            "palm_hypothesis_id": "surface_fixed:b228a450f899ab3dc257:seed3:final:direction_fit",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.07098569297706893,
+              "max_position_error": 0.054801455642204996,
+              "min_normal_alignment": 0.6255976707881618,
+              "refinement_applied_rotation": 0.10304979234933853,
+              "refinement_applied_translation": 0.009999999776482582,
+              "refinement_floor_clearance": 0.06703130900859833,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.10304979234933853,
+              "refinement_requested_translation": 0.009999999776482582
+            },
+            "palm_pos": [
+              -0.041507296,
+              0.019531455,
+              0.042031307
+            ],
+            "palm_rot": [
+              -0.795740962,
+              -0.216213986,
+              0.565727711,
+              -0.381995201,
+              0.904043972,
+              -0.191792384,
+              -0.469974428,
+              -0.36872229,
+              -0.801977456
+            ],
+            "position_residuals": [
+              0.011979446,
+              0.026270315,
+              0.013202781,
+              0.025899516,
+              0.030937135
+            ],
+            "q": [
+              0.104720518,
+              0.370012701,
+              -0.135640204,
+              1.221729994,
+              0.072208397,
+              0.698131979,
+              1.570799947,
+              -0.349065989,
+              1.570799947,
+              1.055672646,
+              0.974470735,
+              -0.349065989,
+              1.501761556,
+              1.509482741,
+              1.491876125,
+              -0.349065989,
+              1.409056187,
+              1.246312976,
+              1.518073559,
+              0.785398006,
+              -0.349065989,
+              0.513975203,
+              1.570799947,
+              1.570799947
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                29.0
+              ],
+              "final_cost": [
+                0.002972361
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.056797441
+              ],
+              "initial_cost": [
+                0.010772593
+              ],
+              "jacobian_condition": [
+                1918.914428711
+              ],
+              "jacobian_rank": [
+                25.0
+              ],
+              "limit_clipped_steps": [
+                80.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.103049792
+              ],
+              "pose_refinement_translation": [
+                0.01
+              ],
+              "projected_step_norm": [
+                0.000323228
+              ],
+              "raw_step_norm": [
+                0.004792807
+              ],
+              "rejected_steps": [
+                51.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "candidate_id": "surface_fixed:b228a450f899ab3dc257",
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              5,
+              10,
+              1,
+              1,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              1.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "opposition_pairs": null,
+            "provenance": "surface_fixed",
+            "target_points": [
+              -0.016655099,
+              -0.025,
+              0.017112167,
+              0.025,
+              0.001632576,
+              -0.009990329,
+              -0.002545158,
+              -0.025,
+              -0.009883995,
+              0.006730858,
+              -0.025,
+              -0.014943784,
+              -0.007131038,
+              -0.025,
+              0.015657135
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 12.614,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "shadow_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "surface_fixed",
+        "solver": "fixed_contact_dls"
+      },
+      "recipe_id": "surface_fixed_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 0.9945422410964966,
+            "active_max_position_residual": 0.004154574126005173,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.3524847030639648,
+            "max_position_residual": 0.037401232868433,
+            "normal_residuals": [
+              0.994542241,
+              1.352484703,
+              1.340338349,
+              0.302292556,
+              0.396084517
+            ],
+            "palm_hypothesis_id": "region_opposition:a0ce89b9438f93fb9ad2:seed1:final:grasp_frame:-1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.03623262405848564,
+              "max_position_error": 0.0328058351893837,
+              "min_normal_alignment": 0.052260709484142256,
+              "refinement_applied_rotation": 0.17453305423259735,
+              "refinement_applied_translation": 0.010000000707805157,
+              "refinement_floor_clearance": 0.04342828691005707,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.17453305423259735,
+              "refinement_requested_translation": 0.010000000707805157
+            },
+            "palm_pos": [
+              0.110321984,
+              -0.065344252,
+              0.018428285
+            ],
+            "palm_rot": [
+              -0.694308221,
+              0.509528935,
+              -0.508248329,
+              -0.542570412,
+              0.093374319,
+              0.834804475,
+              0.472814351,
+              0.855372131,
+              0.211624742
+            ],
+            "position_residuals": [
+              0.004154574,
+              0.020219984,
+              0.037401233,
+              0.003330539,
+              0.003220603
+            ],
+            "q": [
+              -0.244345307,
+              -0.223402992,
+              -0.034893744,
+              0.715365589,
+              -0.065163389,
+              -0.040906336,
+              1.195344448,
+              0.068090864,
+              0.552090466,
+              0.342535943,
+              1.241647601,
+              -0.069813199,
+              0.47124061,
+              0.628319979,
+              0.628319979,
+              -0.069813199,
+              0.47124061,
+              0.628319979,
+              0.628319979,
+              0.705120802,
+              -0.11857006,
+              -0.143831983,
+              0.761235058,
+              1.570799947
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                10.0
+              ],
+              "final_cost": [
+                0.000154301
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.010628193
+              ],
+              "initial_cost": [
+                0.0022128
+              ],
+              "jacobian_condition": [
+                535.510742188
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                40.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.174533054
+              ],
+              "pose_refinement_translation": [
+                0.010000001
+              ],
+              "projected_step_norm": [
+                0.000188033
+              ],
+              "raw_step_norm": [
+                0.001317817
+              ],
+              "rejected_steps": [
+                70.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true,
+              true
+            ],
+            "candidate_id": "region_opposition:a0ce89b9438f93fb9ad2",
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              9,
+              9,
+              7,
+              7,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                3
+              ]
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              -0.020390385,
+              0.025,
+              -0.007776121,
+              -0.006044058,
+              0.025,
+              0.023841338,
+              0.000883924,
+              0.025,
+              -0.005372193,
+              -0.019177654,
+              0.025,
+              0.003483008,
+              -0.016560478,
+              -0.025,
+              -0.000846514
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.819541335105896,
+            "active_max_position_residual": 0.004540549125522375,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.819541335105896,
+            "max_position_residual": 0.030523136258125305,
+            "normal_residuals": [
+              1.45647347,
+              1.727592945,
+              1.434560895,
+              1.4227736,
+              1.819541335
+            ],
+            "palm_hypothesis_id": "region_opposition:ada65c9e2a803cd7a1d7:seed3:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.0176434167989905,
+              "max_position_error": 0.009887487150295032,
+              "min_normal_alignment": -0.36629769103341114,
+              "refinement_applied_rotation": 0.17453236877918243,
+              "refinement_applied_translation": 0.002995388815179467,
+              "refinement_floor_clearance": 0.017566554248332977,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.17453236877918243,
+              "refinement_requested_translation": 0.002995388815179467
+            },
+            "palm_pos": [
+              0.035700202,
+              0.074709788,
+              -0.007433447
+            ],
+            "palm_rot": [
+              -0.506619215,
+              0.81551826,
+              -0.279762298,
+              0.010578861,
+              -0.318581969,
+              -0.94783628,
+              -0.862105012,
+              -0.483151644,
+              0.152772471
+            ],
+            "position_residuals": [
+              0.001937184,
+              0.010408747,
+              0.003115713,
+              0.030523136,
+              0.004540549
+            ],
+            "q": [
+              0.104720302,
+              0.370008826,
+              1.047199965,
+              1.015986204,
+              -0.070847452,
+              0.578027189,
+              1.429588079,
+              0.094388209,
+              1.570799947,
+              1.360188484,
+              1.570799947,
+              0.279252797,
+              1.387540102,
+              1.413720012,
+              1.413720012,
+              -0.001410078,
+              1.570799947,
+              1.382782936,
+              1.570799947,
+              0.706858218,
+              0.279252797,
+              1.387540102,
+              1.413720012,
+              1.413720012
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                12.0
+              ],
+              "final_cost": [
+                0.000633337
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.001609801
+              ],
+              "initial_cost": [
+                0.001039221
+              ],
+              "jacobian_condition": [
+                4250.011230469
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                42.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.174532369
+              ],
+              "pose_refinement_translation": [
+                0.002995389
+              ],
+              "projected_step_norm": [
+                0.000195683
+              ],
+              "raw_step_norm": [
+                0.000247655
+              ],
+              "rejected_steps": [
+                68.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              false,
+              true,
+              false,
+              true
+            ],
+            "candidate_id": "region_opposition:ada65c9e2a803cd7a1d7",
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              9,
+              9,
+              7,
+              7,
+              1
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                4,
+                2
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "provenance": "region_opposition",
+            "target_points": [
+              -0.004739455,
+              0.025,
+              0.006969865,
+              0.004002057,
+              0.025,
+              0.01215602,
+              -0.006389829,
+              0.025,
+              -0.014418507,
+              -0.004119451,
+              0.025,
+              0.021048977,
+              0.022733633,
+              -0.025,
+              -0.000951876
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 12.128,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "shadow_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "region_opposition",
+        "solver": "region_dls"
+      },
+      "recipe_id": "region_opposition_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    },
+    {
+      "candidates": [
+        {
+          "candidate_index": 0,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 1.1076393127441406,
+            "active_max_position_residual": 0.005704186391085386,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 1.4631446599960327,
+            "max_position_residual": 0.03676972538232803,
+            "normal_residuals": [
+              1.107639313,
+              1.030092716,
+              1.46314466,
+              1.208658338,
+              0.431121558
+            ],
+            "palm_hypothesis_id": "wrench_guided:00588b3ad4c626912281:seed1:final:kabsch",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.08864490491812499,
+              "max_position_error": 0.02612406110273211,
+              "min_normal_alignment": -0.026795412171846514,
+              "refinement_applied_rotation": 0.13522110879421234,
+              "refinement_applied_translation": 0.009999999776482582,
+              "refinement_floor_clearance": 0.0955914855003357,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.13522110879421234,
+              "refinement_requested_translation": 0.009999999776482582
+            },
+            "palm_pos": [
+              0.091405645,
+              -0.099505119,
+              0.070591487
+            ],
+            "palm_rot": [
+              -0.943270564,
+              0.067173727,
+              -0.325158954,
+              -0.328374922,
+              -0.043925084,
+              0.943525553,
+              0.049097493,
+              0.996773958,
+              0.063491389
+            ],
+            "position_residuals": [
+              0.005704186,
+              0.004566299,
+              0.036769725,
+              0.035976075,
+              0.004735403
+            ],
+            "q": [
+              -0.244346544,
+              -0.22340782,
+              -0.027246188,
+              0.620513916,
+              -0.051333096,
+              -0.031760339,
+              0.832180262,
+              -0.054351203,
+              0.556820095,
+              0.2452389,
+              1.320101261,
+              -0.279369205,
+              0.525987208,
+              0.32044524,
+              1.459143281,
+              -0.069813199,
+              0.47124061,
+              0.628319979,
+              0.628319979,
+              0.314159214,
+              -0.069813199,
+              0.47124061,
+              0.628319979,
+              0.628319979
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                11.0
+              ],
+              "final_cost": [
+                0.00030181
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.01471555
+              ],
+              "initial_cost": [
+                0.001582093
+              ],
+              "jacobian_condition": [
+                1138.915649414
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                78.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.135221109
+              ],
+              "pose_refinement_translation": [
+                0.01
+              ],
+              "projected_step_norm": [
+                0.000238638
+              ],
+              "raw_step_norm": [
+                0.001813602
+              ],
+              "rejected_steps": [
+                69.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              false,
+              false,
+              true
+            ],
+            "candidate_id": "wrench_guided:00588b3ad4c626912281",
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              9,
+              7,
+              7,
+              9,
+              5
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              -1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0
+            ],
+            "opposition_pairs": [
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              -0.008135583,
+              0.025,
+              0.010200609,
+              0.012259061,
+              0.025,
+              0.020337684,
+              -0.014122098,
+              0.025,
+              -0.020605082,
+              0.024277284,
+              0.025,
+              -0.017090694,
+              -0.014771857,
+              -0.025,
+              0.02046939
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        },
+        {
+          "candidate_index": 1,
+          "collision_valid": false,
+          "dynamic_valid": false,
+          "failure_reason": "max_iter",
+          "failure_stage": "ik",
+          "ik_valid": false,
+          "kinematics": {
+            "active_max_normal_residual": 0.9332929253578186,
+            "active_max_position_residual": 0.004288382362574339,
+            "converged": false,
+            "iterations": 80,
+            "max_normal_residual": 0.9332929253578186,
+            "max_position_residual": 0.05088357627391815,
+            "normal_residuals": [
+              0.672375083,
+              0.756905675,
+              0.910472751,
+              0.625526547,
+              0.933292925
+            ],
+            "palm_hypothesis_id": "wrench_guided:35df7f7c63d2fe953b8f:seed1:final:grasp_frame:+1",
+            "palm_hypothesis_metrics": {
+              "floor_clearance": 0.04876797519979345,
+              "max_position_error": 0.021706493079650235,
+              "min_normal_alignment": 0.10256791915603322,
+              "refinement_applied_rotation": 0.13217514753341675,
+              "refinement_applied_translation": 0.010000001639127731,
+              "refinement_floor_clearance": 0.057182393968105316,
+              "refinement_floor_rejected": 0.0,
+              "refinement_requested_rotation": 0.13217514753341675,
+              "refinement_requested_translation": 0.010000001639127731
+            },
+            "palm_pos": [
+              0.130264923,
+              -0.07566651,
+              0.032182392
+            ],
+            "palm_rot": [
+              -0.034938246,
+              0.823110402,
+              -0.566805542,
+              0.899212837,
+              0.273385286,
+              0.341579854,
+              0.436114222,
+              -0.49774462,
+              -0.74970305
+            ],
+            "position_residuals": [
+              0.0022431,
+              0.004288382,
+              0.042297866,
+              0.050883576,
+              0.003371159
+            ],
+            "q": [
+              -0.24434264,
+              -0.223402098,
+              0.054382127,
+              0.674625754,
+              -0.183921814,
+              -0.194044486,
+              0.973302722,
+              0.071443923,
+              0.478473634,
+              0.342062652,
+              1.190738797,
+              -0.27803579,
+              0.431578875,
+              0.519365072,
+              1.126537204,
+              -0.069813199,
+              0.47124061,
+              0.628319979,
+              0.628319979,
+              0.314159214,
+              -0.069813199,
+              0.47124061,
+              0.628319979,
+              0.628319979
+            ],
+            "reason": "max_iter",
+            "solver_metrics": {
+              "accepted_steps": [
+                9.0
+              ],
+              "final_cost": [
+                0.000213886
+              ],
+              "final_damping": [
+                1.0
+              ],
+              "finite": [
+                1.0
+              ],
+              "gradient_norm": [
+                0.009321268
+              ],
+              "initial_cost": [
+                0.001247801
+              ],
+              "jacobian_condition": [
+                1046.638549805
+              ],
+              "jacobian_rank": [
+                15.0
+              ],
+              "limit_clipped_steps": [
+                79.0
+              ],
+              "pose_refinement_applied": [
+                1.0
+              ],
+              "pose_refinement_rotation": [
+                0.132175148
+              ],
+              "pose_refinement_translation": [
+                0.010000002
+              ],
+              "projected_step_norm": [
+                0.000219442
+              ],
+              "raw_step_norm": [
+                0.001150079
+              ],
+              "rejected_steps": [
+                71.0
+              ]
+            },
+            "surface_distances": null
+          },
+          "proposal": {
+            "active_fingers": [
+              true,
+              true,
+              false,
+              false,
+              true
+            ],
+            "candidate_id": "wrench_guided:35df7f7c63d2fe953b8f",
+            "duplicate_face_ids": 2,
+            "face_ids": [
+              8,
+              3,
+              3,
+              8,
+              6
+            ],
+            "finger_ids": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "inward_normals": [
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              1.0,
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "opposition_pairs": [
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                0
+              ]
+            ],
+            "provenance": "wrench_guided",
+            "target_points": [
+              0.009495619,
+              0.004458824,
+              -0.025,
+              0.002694788,
+              -0.021612706,
+              -0.025,
+              -0.012652372,
+              0.012974872,
+              -0.025,
+              0.008837118,
+              0.021198776,
+              -0.025,
+              0.019864087,
+              0.01419733,
+              0.025
+            ]
+          },
+          "proposal_valid": true,
+          "static_force_valid": false
+        }
+      ],
+      "elapsed_seconds": 12.217,
+      "failure_signature": {
+        "ik:max_iter": 2
+      },
+      "hand": "shadow_hand",
+      "num_candidates": 2,
+      "num_outcomes": 2,
+      "object": "box_50mm",
+      "recipe": {
+        "proposal": "wrench_guided",
+        "solver": "region_dls"
+      },
+      "recipe_id": "wrench_guided_v1",
+      "stage_accounting": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      }
+    }
+  ],
+  "expected_signature": "ik_max_iter_count_reduced_without_weight_tolerance_or_total_iteration_change",
+  "hypothesis": "H-04_P06-contract-gap",
+  "intervention": "bounded_joint_palm_se3_dls_second_pass",
+  "label": "p10-joint-palm",
+  "provenance": {
+    "candidate_budget": 2,
+    "environment": {
+      "cuda_available": false,
+      "cuda_build": null,
+      "cuda_device_count": 0,
+      "cuda_device_name": null,
+      "python": "3.11.15",
+      "torch": "2.11.0+cpu"
+    },
+    "git_commit": "52412d76975b54d7ed77696c40f92e60c08ef933",
+    "git_worktree_dirty": true,
+    "object_hashes": {
+      "box_50mm": "c4f5436a32b5dfb7db9a6479c5b8f9a5cc4b89fe117828d0afb935bf9a1ef57d"
+    },
+    "platform": "Linux-7.0.0-30-generic-x86_64-with-glibc2.43",
+    "robot_profile_hashes": {
+      "leap_hand": "d99fc45aba47695296797703ef288718ebf66a7a660ff8a73b3168bb582ba0fc",
+      "shadow_hand": "57f8672b6c52bb9771f51f9c68e3c8baf2566173cfa5dfb8d44543c6edfc3395",
+      "wonik_allegro": "b564de72a12ec9dab80bd92fe4b6d92f408efbd4df8933752529efd75e8f4095"
+    },
+    "run_dynamic": true,
+    "seed": 42,
+    "source_hashes": {
+      "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "158096bb4b8798331e654593e939336cdce93e932ae8dca9e064fe413cff10a2",
+      "qdgrasp/dataset/pipeline/certifiers/grasp_wrench.py": "733a1ed6931e7a4dd71564bb6d9ac8e99e5a7c809e5adf7f21e4479985dcfaf5",
+      "qdgrasp/dataset/pipeline/contact_state.py": "de8134da9e5f6a934ad119f0782973fb5e1736a1285f1375c9fb25efde87aec7",
+      "qdgrasp/dataset/pipeline/contracts.py": "f9d5a0bc734091f3b264565bd9d8395ac79a9e6985919a63fe9c66d8b4796da3",
+      "qdgrasp/dataset/pipeline/filter.py": "609586abe7a78208e4ec77c1bf4ecad3e3c2c3ae3e0c491223e27393516bbfbd",
+      "qdgrasp/dataset/pipeline/observers/contact_load.py": "0132cc994bee2cca79b41fe40c9a4881a9e8594a3944c47eaef285957fc6ce9a",
+      "qdgrasp/dataset/pipeline/orchestrator.py": "4ebdfe501ab412abdd7fcf6bc0f605c925e4eba960c7834175ef3b03a2d2865a",
+      "qdgrasp/dataset/pipeline/palm_hypotheses.py": "6e1892f9c4e48f3e51a795c8432ce942a63f51a949f91aeb46ee1a792f908583",
+      "qdgrasp/dataset/pipeline/proposals/identity.py": "7324f455bc9eb94c4c8622f609a0a3c55291287a7984dba2d94c191596dbdc36",
+      "qdgrasp/dataset/pipeline/proposals/region_opposition.py": "65e5fc13d8bcdeae5876ea5c4db3f4561e9924e8524c8a92c432d0adfa1b83e6",
+      "qdgrasp/dataset/pipeline/proposals/surface_fixed.py": "ca5d202fc3b136775249de64e6b5a7cb30c4069787b26de3fc6391fcec828e97",
+      "qdgrasp/dataset/pipeline/proposals/width_mapper.py": "b1d17b62a7583ac6687eda18d7f46899d0aed8ee49ba6ba2c7cc2637d49b804e",
+      "qdgrasp/dataset/pipeline/proposals/wrench_guided.py": "95a5a6b609aaf578468997fc455ce347c14d7d74d4e8a055d8ad89e6d690d08b",
+      "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "797eb0356467906baf53fcb12585ebe35d2ba5d775afdfce306ac951209c70ea",
+      "qdgrasp/dataset/pipeline/solvers/normal_equations.py": "a7505f684e697b6b7d8a5ed39bb1963a87d464763ea939d58e394a6ce33525bb",
+      "qdgrasp/dataset/pipeline/solvers/progress.py": "3d4309a5b5e79fcbaaab4737a7fa1045935d9f566b62539b6e824f0e2df0eaca",
+      "qdgrasp/dataset/pipeline/solvers/region_dls.py": "2c19e294f9b693a8bd31d498668ada56cffe046359a879476711fa03be9b91c8",
+      "qdgrasp/dataset/pipeline/validators/collision_admission.py": "8f706422524f8d9c8504720fdc1bd0647836f1ebe7f945e046b9857f6eaf02f5",
+      "qdgrasp/dataset/pipeline/validators/dynamic_predicate.py": "c152c785e966b94cd24d7e156e0844ef5a52faab2a96f5f52bcd83a10443f8b5",
+      "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "895fc138415e753c75dbc35ad3c95ab7d8d706c3714f16077c95f993d610c12d",
+      "qdgrasp/dataset/pipeline/validators/scene_dynamic.py": "4008957983e671c1d88233caf2eaa503b927e75964e1c9bd1b66954bac6485c3",
+      "qdgrasp/robot/transmission/command.py": "6b8a039f03d76dd3071d66fa84e450596b2f677d3d1382e88d0928415eaf6e06",
+      "qdgrasp/robot/transmission/contracts.py": "492e7c12b7516ace98882fa8a3b90d90ebec74628854862d55ba7a32f5d9bd4c",
+      "scripts/characterize_pipeline_failures.py": "0a0f768b783a6c7a3ed81a9c20449ab9919c90dca6111518b7c150fadef6519c"
+    }
+  },
+  "schema": "qdgrasp/phase3-2-1-failure-corpus/v1",
+  "summary": {
+    "candidates_reaching_dynamic_rollout": 0,
+    "cells": 9,
+    "failure_signature": {
+      "ik:max_iter": 18
+    },
+    "pipeline_generated_positives": 0,
+    "stage_accounting": {
+      "accepted": 0,
+      "collision_rejected": 0,
+      "dynamic_rejected": 0,
+      "dynamic_skipped": 0,
+      "ik_rejected": 18,
+      "proposal_rejected": 0,
+      "static_force_rejected": 0
+    },
+    "total_candidates": 18
+  },
+  "timestamp": "2026-08-24T04:03:26Z"
+}

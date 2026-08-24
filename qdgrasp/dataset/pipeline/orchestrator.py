@@ -17,11 +17,22 @@ from qdgrasp.dataset.pipeline.contracts import (
 from qdgrasp.dataset.pipeline.proposals.surface_fixed import generate_surface_fixed_proposal
 from qdgrasp.dataset.pipeline.proposals.region_opposition import generate_region_opposition_proposal
 from qdgrasp.dataset.pipeline.proposals.wrench_guided import generate_wrench_guided_proposal
+from qdgrasp.dataset.pipeline.proposals.identity import normalize_active_fingers
+from qdgrasp.dataset.pipeline.proposals.width_mapper import WidthMapper
+from qdgrasp.dataset.pipeline.palm_hypotheses import (
+    PalmHypothesisError,
+    best_palm_hypothesis,
+    generate_palm_hypotheses,
+)
 from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
 from qdgrasp.dataset.pipeline.solvers.region_dls import solve_region_dls_ik_batch
+from qdgrasp.dataset.pipeline.solvers.joint_palm_dls import solve_joint_palm_dls_batch
 from qdgrasp.dataset.pipeline.certifiers.contact_force import certify_force_closure
 from qdgrasp.dataset.pipeline.filter import filter_grasp_candidate
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
+from qdgrasp.dataset.pipeline.validators.collision_admission import (
+    admit_mujoco_collision_pose,
+)
 
 
 def _fit_palm_pose(
@@ -64,11 +75,19 @@ def sample_region_opposition_proposals(spec: RobotSpec, mesh: trimesh.Trimesh, r
             thumb_idx = idx
             break
     proposals: List[ContactProposal] = []
-    for _ in range(num_candidates):
+    opposing_fingers = [index for index in range(num_fingers) if index != thumb_idx]
+    for candidate_index in range(num_candidates):
         try:
             proposals.append(
                 generate_region_opposition_proposal(
-                    mesh, num_fingers, rng, finger_ids, thumb_index=thumb_idx
+                    mesh,
+                    num_fingers,
+                    rng,
+                    finger_ids,
+                    thumb_index=thumb_idx,
+                    opposing_finger_index=opposing_fingers[
+                        candidate_index % len(opposing_fingers)
+                    ],
                 )
             )
         except ValueError:
@@ -174,87 +193,252 @@ def run_pipeline_chunk(
         return outcomes, reasons_accounting
 
     # Compute approach palm poses and candidate arrays
-    B = len(proposals)
     palm_poses = []
     palm_rots = []
     target_contacts = []
     target_normals = []
+    active_finger_masks = []
+    prepared_proposals: List[ContactProposal] = []
+    palm_hypothesis_ids: List[str] = []
+    palm_hypothesis_metrics: List[Dict[str, float]] = []
 
     # Fit the complete fingertip constellation at the midpoint pose to each
     # proposal.  A single averaged surface normal cannot initialize an opposing
     # grasp whose normals intentionally cancel.
     zero_pos = torch.zeros(1, 3, dtype=torch.float32)
     zero_rot = torch.eye(3, dtype=torch.float32).unsqueeze(0)
-    seed_data = []
-    for fraction in (0.15, 0.4, 0.65, 0.9):
-        q_seed = torch.tensor(
-            [[
+    mapper = WidthMapper(spec)
+    canonical_seed = mapper.get_canonical_open_qpos()
+    target_grasp_width = float(np.min(mesh.extents))
+    fractional_seeds = [
+        np.asarray(
+            [
                 spec.joint_limits[name][0]
                 + fraction * (spec.joint_limits[name][1] - spec.joint_limits[name][0])
                 for name in spec.actuated_joint_names
-            ]],
-            dtype=torch.float32,
+            ],
+            dtype=np.float32,
         )
-        tips = spec.fingertip_positions(zero_pos, zero_rot, q_seed)[0].numpy()
-        directions = spec.fingertip_contact_directions(zero_pos, zero_rot, q_seed)[0].numpy()
-        seed_data.append((q_seed[0].numpy(), tips, directions))
+        for fraction in (0.4, 0.65)
+    ]
+    opposition_seed_cache: Dict[tuple[bool, ...], np.ndarray] = {}
 
     initial_q = []
     for prop in proposals:
+        active_fingers = normalize_active_fingers(
+            prop.active_fingers, len(spec.fingertip_links)
+        )
+        active_key = tuple(bool(value) for value in active_fingers)
+        if active_key not in opposition_seed_cache:
+            opposition_seed_cache[active_key] = mapper.map_width_to_opposition_qpos(
+                target_grasp_width,
+                active_fingers=active_fingers,
+            )
+        seed_data = []
+        for seed_q in (
+            canonical_seed,
+            opposition_seed_cache[active_key],
+            *fractional_seeds,
+        ):
+            q_seed = torch.from_numpy(np.asarray(seed_q, dtype=np.float32)[None])
+            tips = spec.fingertip_positions(zero_pos, zero_rot, q_seed)[0].numpy()
+            directions = spec.fingertip_contact_directions(
+                zero_pos, zero_rot, q_seed
+            )[0].numpy()
+            seed_data.append((q_seed[0].numpy(), tips, directions))
         best = None
-        for q_seed, tip_offsets, tip_directions_np in seed_data:
+        for seed_index, (q_seed, tip_offsets, tip_directions_np) in enumerate(seed_data):
             selected_points = prop.target_points
             selected_normals = prop.inward_normals
-            if prop.region_points is not None and prop.region_normals is not None:
-                for _ in range(5):
-                    palm_pos, R_palm = _fit_palm_pose(
-                        tip_offsets, selected_points, tip_directions_np, selected_normals
+            try:
+                if prop.region_points is not None and prop.region_normals is not None:
+                    for refine_index in range(3):
+                        hypothesis = best_palm_hypothesis(
+                            source_tips=tip_offsets,
+                            source_directions=tip_directions_np,
+                            target_tips=selected_points,
+                            target_normals=selected_normals,
+                            active_fingers=active_fingers,
+                            opposition_pairs=prop.opposition_pairs,
+                            object_centroid=mesh.centroid,
+                            floor_z=-float(object_pos[2]),
+                            hypothesis_prefix=(
+                                f"{prop.candidate_id}:seed{seed_index}:region{refine_index}"
+                            ),
+                        )
+                        palm_pos, R_palm = hypothesis.palm_pos, hypothesis.palm_rot
+                        transformed_tips = (R_palm @ tip_offsets.T).T + palm_pos
+                        nearest = np.argmin(
+                            np.sum(
+                                (prop.region_points - transformed_tips[:, None, :]) ** 2,
+                                axis=-1,
+                            ),
+                            axis=1,
+                        )
+                        finger_index = np.arange(len(spec.fingertip_links))
+                        selected_points = prop.region_points[finger_index, nearest]
+                        selected_normals = prop.region_normals[finger_index, nearest]
+                final_hypotheses = generate_palm_hypotheses(
+                    source_tips=tip_offsets,
+                    source_directions=tip_directions_np,
+                    target_tips=selected_points,
+                    target_normals=selected_normals,
+                    active_fingers=active_fingers,
+                    opposition_pairs=prop.opposition_pairs,
+                    object_centroid=mesh.centroid,
+                    floor_z=-float(object_pos[2]),
+                    hypothesis_prefix=f"{prop.candidate_id}:seed{seed_index}:final",
+                )
+            except PalmHypothesisError:
+                continue
+            for hypothesis in final_hypotheses:
+                palm_pos, R_palm = hypothesis.palm_pos, hypothesis.palm_rot
+                hypothesis_collision = None
+                if hand_xml_path is not None:
+                    seed_joint_targets = spec.expand_mimic_joint_targets(
+                        {
+                            name: float(q_seed[index])
+                            for index, name in enumerate(spec.actuated_joint_names)
+                        }
                     )
-                    transformed_tips = (R_palm @ tip_offsets.T).T + palm_pos
-                    nearest = np.argmin(
-                        np.sum(
-                            (prop.region_points - transformed_tips[:, None, :]) ** 2,
-                            axis=-1,
-                        ),
-                        axis=1,
-                    )
-                    finger_index = np.arange(len(spec.fingertip_links))
-                    selected_points = prop.region_points[finger_index, nearest]
-                    selected_normals = prop.region_normals[finger_index, nearest]
-            palm_pos, R_palm = _fit_palm_pose(
-                tip_offsets, selected_points, tip_directions_np, selected_normals
-            )
-            transformed_tips = (R_palm @ tip_offsets.T).T + palm_pos
-            geometric_score = float(
-                np.max(np.linalg.norm(transformed_tips - selected_points, axis=1))
-            )
-            score = geometric_score
-            candidate = (
-                score, q_seed, palm_pos, R_palm, selected_points, selected_normals
-            )
-            if best is None or score < best[0]:
-                best = candidate
 
-        assert best is not None
-        _, q_seed, palm_pos, R_palm, selected_points, selected_normals = best
+                    def check_hypothesis_collision(candidate_palm_pos):
+                        return admit_mujoco_collision_pose(
+                            hand_xml_path,
+                            collision_geoms,
+                            palm_body_name=spec.palm_link,
+                            fingertip_body_names=spec.fingertip_links,
+                            active_fingers=active_fingers,
+                            palm_pos=candidate_palm_pos
+                            + np.asarray(object_pos, dtype=np.float64),
+                            palm_rot=R_palm,
+                            joint_targets=seed_joint_targets,
+                            object_pos=object_pos,
+                            object_mass=object_mass,
+                        )
 
+                    hypothesis_collision = check_hypothesis_collision(palm_pos)
+                    if (
+                        hypothesis_collision.reason == "hand_floor_contact"
+                        and hypothesis_collision.min_hand_floor_clearance >= -0.01
+                    ):
+                        floor_lift = (
+                            -hypothesis_collision.min_hand_floor_clearance + 0.001
+                        )
+                        palm_pos = palm_pos + np.array([0.0, 0.0, floor_lift])
+                        transformed_tips = (R_palm @ tip_offsets.T).T + palm_pos
+                        lifted_error = np.linalg.norm(
+                            transformed_tips[active_fingers]
+                            - selected_points[active_fingers],
+                            axis=1,
+                        )
+                        hypothesis = dataclasses.replace(
+                            hypothesis,
+                            palm_pos=palm_pos,
+                            max_position_error=float(np.max(lifted_error)),
+                            floor_clearance=hypothesis.floor_clearance + floor_lift,
+                        )
+                        hypothesis_collision = check_hypothesis_collision(palm_pos)
+                    # Active fingertip overlap is a refinable seed condition;
+                    # every non-tip/object, self, and floor collision remains
+                    # a hard initializer rejection, and final admission below
+                    # applies the strict penetration limit again after IK.
+                    if (
+                        not hypothesis_collision.passed
+                        and hypothesis_collision.reason
+                        != "active_tip_excessive_penetration"
+                    ):
+                        continue
+                score = hypothesis.sort_key
+                candidate = (
+                    score,
+                    hypothesis,
+                    hypothesis_collision,
+                    q_seed,
+                    palm_pos,
+                    R_palm,
+                    selected_points,
+                    selected_normals,
+                )
+                if best is None or score < best[0]:
+                    best = candidate
+
+        if best is None:
+            reasons_accounting["proposal_rejected"] += 1
+            outcomes.append(
+                PipelineOutcome(
+                    proposal_valid=False,
+                    ik_valid=False,
+                    collision_valid=False,
+                    static_force_valid=False,
+                    dynamic_valid=False,
+                    failure_stage="proposal",
+                    failure_reason="palm_hypothesis_unavailable",
+                    recipe_id=recipe_id,
+                    proposal=prop,
+                )
+            )
+            continue
+        (
+            _,
+            selected_hypothesis,
+            selected_hypothesis_collision,
+            q_seed,
+            palm_pos,
+            R_palm,
+            selected_points,
+            selected_normals,
+        ) = best
+
+        prepared_proposals.append(prop)
         palm_poses.append(palm_pos)
         palm_rots.append(R_palm)
         initial_q.append(q_seed)
-        target_contacts.append(selected_points)
+        # Proposal points remain exact mesh samples.  The configured FK point
+        # is a fingertip contact anchor, while the compiled rounded fingertip
+        # geom has a support surface outside that anchor for oblique normals.
+        # Keep the anchor one half-position-tolerance outside the mesh; final
+        # surface projection and exact MuJoCo admission remain authoritative.
+        target_contacts.append(selected_points - 0.0005 * selected_normals)
         target_normals.append(selected_normals)
+        active_finger_masks.append(active_fingers)
+        palm_hypothesis_ids.append(selected_hypothesis.hypothesis_id)
+        palm_hypothesis_metrics.append(
+            {
+                "max_position_error": selected_hypothesis.max_position_error,
+                "min_normal_alignment": selected_hypothesis.min_normal_alignment,
+                "floor_clearance": selected_hypothesis.floor_clearance,
+                "exact_min_hand_floor_clearance": (
+                    float("nan")
+                    if selected_hypothesis_collision is None
+                    else selected_hypothesis_collision.min_hand_floor_clearance
+                ),
+                "exact_max_penetration": (
+                    float("nan")
+                    if selected_hypothesis_collision is None
+                    else selected_hypothesis_collision.max_penetration
+                ),
+            }
+        )
+
+    proposals = prepared_proposals
+    B = len(proposals)
+    if B == 0:
+        return outcomes, reasons_accounting
 
     palm_pos_b = np.array(palm_poses, dtype=np.float32)
     palm_rot_b = np.array(palm_rots, dtype=np.float32)
     target_contacts_b = np.array(target_contacts, dtype=np.float32)
     target_normals_b = np.array(target_normals, dtype=np.float32)
+    active_fingers_b = np.array(active_finger_masks, dtype=bool)
 
     # STAGE 2: KINEMATICS (BATCHED DLS-IK)
     solver_kwargs: Dict[str, Any] = {
         "init_q": np.asarray(initial_q, dtype=np.float32),
-        "max_iter": 80,
-        "pos_tolerance": 0.005,
+        "max_iter": 40,
+        "pos_tolerance": 0.001,
         "normal_tolerance_dot": 0.866,
+        "active_fingers": active_fingers_b,
     }
     if solver_name == "region_dls":
         solver_kwargs["region_points"] = np.stack(
@@ -263,7 +447,7 @@ def run_pipeline_chunk(
         solver_kwargs["region_normals"] = np.stack(
             [prop.region_normals for prop in proposals], axis=0
         )
-    kinematic_solutions = solver_fn(
+    first_kinematic_pass = solver_fn(
         spec,
         palm_pos_b,
         palm_rot_b,
@@ -272,10 +456,120 @@ def run_pipeline_chunk(
         **solver_kwargs,
     )
 
+    # Keep the pinned total budget at 80 iterations, but make the second half
+    # the plan's actual joint+palm trust-region solve.  The previous point-only
+    # Kabsch correction could improve positions while rotating configured
+    # contact axes away from their target normals.
+    kinematic_solutions = solve_joint_palm_dls_batch(
+        spec,
+        palm_pos_b,
+        palm_rot_b,
+        target_contacts_b,
+        target_normals_b,
+        init_q=np.asarray(first_kinematic_pass.q, dtype=np.float32),
+        active_fingers=active_fingers_b,
+        max_iter=40,
+        pos_tolerance=0.001,
+        normal_tolerance_dot=0.866,
+        floor_z=-float(object_pos[2]),
+    )
+    refinement_metrics: List[Dict[str, float]] = []
+    for candidate_index in range(B):
+        translation = float(
+            np.linalg.norm(
+                kinematic_solutions.palm_pos[candidate_index]
+                - palm_pos_b[candidate_index]
+            )
+        )
+        relative_rotation = (
+            kinematic_solutions.palm_rot[candidate_index]
+            @ palm_rot_b[candidate_index].T
+        )
+        rotation_cosine = np.clip(
+            (np.trace(relative_rotation) - 1.0) * 0.5, -1.0, 1.0
+        )
+        rotation = float(np.arccos(rotation_cosine))
+        refinement_metrics.append(
+            {
+                "requested_translation": translation,
+                "applied_translation": translation,
+                "requested_rotation": rotation,
+                "applied_rotation": rotation,
+                "floor_clearance": float(
+                    kinematic_solutions.palm_pos[candidate_index, 2]
+                    + object_pos[2]
+                ),
+                "floor_rejected": 0.0,
+            }
+        )
+    combined_metrics: Dict[str, np.ndarray] = {}
+    if kinematic_solutions.solver_metrics is not None:
+        combined_metrics = {
+            name: np.asarray(values).copy()
+            for name, values in kinematic_solutions.solver_metrics.items()
+        }
+    if first_kinematic_pass.solver_metrics is not None:
+        second_observed_linearization = (
+            np.asarray(kinematic_solutions.solver_metrics["accepted_steps"])
+            + np.asarray(kinematic_solutions.solver_metrics["rejected_steps"])
+        ) > 0
+        for name in ("accepted_steps", "rejected_steps", "limit_clipped_steps"):
+            combined_metrics[name] = (
+                np.asarray(first_kinematic_pass.solver_metrics[name])
+                + np.asarray(kinematic_solutions.solver_metrics[name])
+            )
+        combined_metrics["initial_cost"] = np.asarray(
+            first_kinematic_pass.solver_metrics["initial_cost"]
+        )
+        # A second pass can satisfy convergence at its initial-state check and
+        # therefore never build a Jacobian.  Preserve the last actually
+        # observed linearization instead of reporting the solver's zero-filled
+        # allocation as rank/gradient evidence.
+        for name in (
+            "jacobian_rank",
+            "jacobian_condition",
+            "gradient_norm",
+            "raw_step_norm",
+            "projected_step_norm",
+            "final_damping",
+        ):
+            combined_metrics[name] = np.where(
+                second_observed_linearization,
+                np.asarray(kinematic_solutions.solver_metrics[name]),
+                np.asarray(first_kinematic_pass.solver_metrics[name]),
+            )
+        combined_metrics["finite"] = (
+            np.asarray(first_kinematic_pass.solver_metrics["finite"], dtype=bool)
+            & np.asarray(kinematic_solutions.solver_metrics["finite"], dtype=bool)
+        )
+    combined_metrics["pose_refinement_applied"] = np.asarray(
+        [metrics["applied_translation"] > 0.0 or metrics["applied_rotation"] > 0.0 for metrics in refinement_metrics],
+        dtype=bool,
+    )
+    combined_metrics["pose_refinement_translation"] = np.asarray(
+        [metrics["applied_translation"] for metrics in refinement_metrics],
+        dtype=np.float64,
+    )
+    combined_metrics["pose_refinement_rotation"] = np.asarray(
+        [metrics["applied_rotation"] for metrics in refinement_metrics],
+        dtype=np.float64,
+    )
+    kinematic_solutions = dataclasses.replace(
+        kinematic_solutions,
+        iterations=(
+            np.asarray(first_kinematic_pass.iterations)
+            + np.asarray(kinematic_solutions.iterations)
+        ),
+        solver_metrics=combined_metrics,
+    )
+    palm_pos_b = np.asarray(kinematic_solutions.palm_pos, dtype=np.float32)
+    palm_rot_b = np.asarray(kinematic_solutions.palm_rot, dtype=np.float32)
+
     # PROCESS EACH CANDIDATE THROUGH THE REMAINING STAGES
     for i in range(B):
         prop = proposals[i]
         q_i = kinematic_solutions.q[i]
+        active_i = active_fingers_b[i]
         converged_i = bool(kinematic_solutions.converged[i])
         ik_reason_i = str(kinematic_solutions.reason[i])
 
@@ -294,6 +588,22 @@ def run_pipeline_chunk(
                 if kinematic_solutions.iterations is None
                 else np.asarray(kinematic_solutions.iterations[i])
             ),
+            solver_metrics=(
+                None
+                if kinematic_solutions.solver_metrics is None
+                else {
+                    name: np.asarray(values[i])
+                    for name, values in kinematic_solutions.solver_metrics.items()
+                }
+            ),
+            palm_hypothesis_id=palm_hypothesis_ids[i],
+            palm_hypothesis_metrics={
+                **palm_hypothesis_metrics[i],
+                **{
+                    f"refinement_{name}": float(value)
+                    for name, value in refinement_metrics[i].items()
+                },
+            },
         )
 
         if not converged_i:
@@ -318,7 +628,7 @@ def run_pipeline_chunk(
             trimesh.proximity.closest_point_naive(mesh, single_kinematics.achieved_contacts)
         )
         surface_normals = -mesh.face_normals[surface_face_ids]
-        if np.any(surface_distances > 0.005):
+        if np.any(surface_distances[active_i] > 0.001):
             reasons_accounting["ik_rejected"] += 1
             outcomes.append(
                 PipelineOutcome(
@@ -369,10 +679,65 @@ def run_pipeline_chunk(
             )
             continue
 
+        if hand_xml_path is None:
+            reasons_accounting["collision_rejected"] += 1
+            outcomes.append(
+                PipelineOutcome(
+                    proposal_valid=True,
+                    ik_valid=True,
+                    collision_valid=False,
+                    static_force_valid=False,
+                    dynamic_valid=False,
+                    failure_stage="collision",
+                    failure_reason="exact_collision_model_unavailable",
+                    recipe_id=recipe_id,
+                    proposal=prop,
+                    kinematics=single_kinematics,
+                )
+            )
+            continue
+
+        collision_joint_targets = spec.expand_mimic_joint_targets(
+            {
+                name: float(q_i[index])
+                for index, name in enumerate(spec.actuated_joint_names)
+            }
+        )
+        collision_admission = admit_mujoco_collision_pose(
+            hand_xml_path,
+            collision_geoms,
+            palm_body_name=spec.palm_link,
+            fingertip_body_names=spec.fingertip_links,
+            active_fingers=active_i,
+            palm_pos=palm_pos_b[i] + np.asarray(object_pos, dtype=np.float32),
+            palm_rot=palm_rot_b[i],
+            joint_targets=collision_joint_targets,
+            object_pos=object_pos,
+            object_mass=object_mass,
+        )
+        if not collision_admission.passed:
+            reasons_accounting["collision_rejected"] += 1
+            outcomes.append(
+                PipelineOutcome(
+                    proposal_valid=True,
+                    ik_valid=True,
+                    collision_valid=False,
+                    static_force_valid=False,
+                    dynamic_valid=False,
+                    failure_stage="collision",
+                    failure_reason=collision_admission.reason,
+                    recipe_id=recipe_id,
+                    proposal=prop,
+                    kinematics=single_kinematics,
+                    collision_admission=collision_admission,
+                )
+            )
+            continue
+
         # STAGE 4: STATIC CERTIFIER (Force Closure / GWS)
         static_cert = certify_force_closure(
-            target_points=single_kinematics.surface_contacts,
-            inward_normals=single_kinematics.surface_normals,
+            target_points=single_kinematics.surface_contacts[active_i],
+            inward_normals=single_kinematics.surface_normals[active_i],
             centroid=mesh.centroid,
             mass=object_mass,
         )
@@ -391,6 +756,7 @@ def run_pipeline_chunk(
                     recipe_id=recipe_id,
                     proposal=prop,
                     kinematics=single_kinematics,
+                    collision_admission=collision_admission,
                     static_certificate=static_cert,
                 )
             )
@@ -411,80 +777,25 @@ def run_pipeline_chunk(
                     recipe_id=recipe_id,
                     proposal=prop,
                     kinematics=single_kinematics,
+                    collision_admission=collision_admission,
                     static_certificate=static_cert,
                 )
             )
             continue
 
-        # Solve explicit actuator-control poses around the nominal on-surface
-        # contact. q_open is a valid initial condition; q_squeeze commands a
-        # small inward preload through actuators. Neither replaces the nominal
-        # contact evidence stored in the dataset.
+        # P3.2.1-08: command the active contact displacement directly through
+        # the compiled transmission task planner.  A second joint-space IK
+        # gate here would reintroduce the global-q feasibility decision that
+        # the task-space command contract replaced.
         command_axes = np.asarray(single_kinematics.achieved_normals, dtype=np.float32)
-        command_targets = np.stack(
-            [
-                single_kinematics.achieved_contacts - 0.004 * command_axes,
-                single_kinematics.achieved_contacts + 0.003 * command_axes,
-            ],
-            axis=0,
+        desired_preload_displacement = np.zeros_like(
+            single_kinematics.achieved_contacts, dtype=np.float64
         )
-        command_solution = solve_dls_ik_batch(
-            spec,
-            np.repeat(palm_pos_b[i : i + 1], 2, axis=0),
-            np.repeat(palm_rot_b[i : i + 1], 2, axis=0),
-            command_targets,
-            np.repeat(command_axes[None, :, :], 2, axis=0),
-            init_q=np.repeat(q_i[None, :], 2, axis=0),
-            max_iter=35,
-            pos_tolerance=0.0007,
-            normal_tolerance_dot=0.8,
-            require_normal_alignment=False,
+        desired_preload_displacement[active_i] = (
+            0.0015 * command_axes[active_i]
         )
-        if not bool(np.all(command_solution.converged)):
-            reasons_accounting["dynamic_rejected"] += 1
-            dyn_val = DynamicValidation(
-                trajectory_metrics={
-                    "open_command_max_error": float(
-                        np.max(command_solution.position_residuals[0])
-                    ),
-                    "squeeze_command_max_error": float(
-                        np.max(command_solution.position_residuals[1])
-                    ),
-                },
-                per_finger_loads=np.zeros((len(spec.fingertip_links), 6)),
-                failure_stage="command_ik",
-                passed=False,
-            )
-            outcomes.append(
-                PipelineOutcome(
-                    proposal_valid=True,
-                    ik_valid=True,
-                    collision_valid=True,
-                    static_force_valid=True,
-                    dynamic_valid=False,
-                    failure_stage="dynamic_command_ik",
-                    failure_reason="rollout_command_ik_failed",
-                    recipe_id=recipe_id,
-                    proposal=prop,
-                    kinematics=single_kinematics,
-                    static_certificate=static_cert,
-                    dynamic_validation=dyn_val,
-                )
-            )
-            continue
-
-        initial_targets = spec.expand_mimic_joint_targets(
-            {
-                name: float(command_solution.q[0, index])
-                for index, name in enumerate(spec.actuated_joint_names)
-            }
-        )
-        squeeze_targets = spec.expand_mimic_joint_targets(
-            {
-                name: float(command_solution.q[1, index])
-                for index, name in enumerate(spec.actuated_joint_names)
-            }
-        )
+        initial_targets = collision_joint_targets
+        squeeze_targets = collision_joint_targets
 
         palm_pos_world = palm_pos_b[i] + np.array(object_pos, dtype=np.float32)
         expected_tips_world = single_kinematics.achieved_contacts + np.asarray(
@@ -498,6 +809,9 @@ def run_pipeline_chunk(
             palm_rot=palm_rot_b[i],
             joint_targets=squeeze_targets,
             initial_joint_targets=initial_targets,
+            contact_joint_targets=collision_joint_targets,
+            active_fingers=active_i,
+            desired_fingertip_displacement=desired_preload_displacement,
             object_pos=object_pos,
             object_mass=object_mass,
             expected_fingertip_positions=expected_tips_world,
@@ -523,6 +837,7 @@ def run_pipeline_chunk(
                     recipe_id=recipe_id,
                     proposal=prop,
                     kinematics=single_kinematics,
+                    collision_admission=collision_admission,
                     static_certificate=static_cert,
                     dynamic_validation=dyn_val,
                 )
@@ -541,6 +856,7 @@ def run_pipeline_chunk(
                     recipe_id=recipe_id,
                     proposal=prop,
                     kinematics=single_kinematics,
+                    collision_admission=collision_admission,
                     static_certificate=static_cert,
                     dynamic_validation=dyn_val,
                 )

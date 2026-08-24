@@ -67,6 +67,22 @@ class ActuatorCommand:
     reason: np.ndarray  # [B] or str ("converged", "nullspace_rejection", "actuator_saturation")
 
 
+@dataclass(frozen=True)
+class GraspCommandPlan:
+    """A contact-task command solved inside the transmission's controllable space."""
+
+    q_pregrasp: np.ndarray
+    q_contact: np.ndarray
+    q_preload: np.ndarray
+    active_fingers: np.ndarray
+    control_start: np.ndarray
+    control_target: np.ndarray
+    task_residual: float
+    nullspace_residual: float
+    saturated: np.ndarray
+    rejection_reason: str
+
+
 class TransmissionModel(ABC):
     """Abstract interface for robot transmission mapping between joint states and actuators."""
 

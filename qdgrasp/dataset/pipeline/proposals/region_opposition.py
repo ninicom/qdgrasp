@@ -1,6 +1,7 @@
 import numpy as np
 import trimesh
 from qdgrasp.dataset.pipeline.contracts import ContactProposal
+from qdgrasp.dataset.pipeline.proposals.identity import stable_candidate_id
 
 
 def _sample_face_points(
@@ -24,6 +25,7 @@ def generate_region_opposition_proposal(
     rng: np.random.Generator,
     finger_ids: np.ndarray,
     thumb_index: int = 0,
+    opposing_finger_index: int | None = None,
     max_retries: int = 10,
     region_size: int = 32,
 ) -> ContactProposal:
@@ -44,10 +46,22 @@ def generate_region_opposition_proposal(
         raise ValueError("Mesh has zero or negative surface area.")
 
     probabilities = areas / total_area
+    floor_z = float(mesh.bounds[0, 2])
+    face_centers = mesh.triangles.mean(axis=1)
+    floor_support_faces = (
+        (
+            face_centers[:, 2]
+            <= floor_z + max(float(np.linalg.norm(mesh.extents)) * 1e-6, 1e-9)
+        )
+        & (mesh.face_normals[:, 2] < 0.0)
+    )
+    probabilities = np.where(floor_support_faces, 0.0, probabilities)
+    if float(np.sum(probabilities)) <= 0.0:
+        raise ValueError("region_opposition has no floor-accessible faces")
+    probabilities /= np.sum(probabilities)
     cumulative_probs = np.cumsum(probabilities)
 
     # Pre-calculate face centers and inward normals
-    face_centers = mesh.triangles.mean(axis=1)
     inward_normals = -mesh.face_normals
 
     # Bounding box scale to normalize distance checks
@@ -74,14 +88,64 @@ def generate_region_opposition_proposal(
         # Check opposition
         dots = np.sum(inward_normals * thumb_normal, axis=1)
 
-        valid_mask = (dots < -0.2) & (distances > min_dist) & (distances < max_dist)
+        valid_mask = (
+            (dots < -0.2)
+            & (distances > min_dist)
+            & (distances < max_dist)
+            & ~floor_support_faces
+        )
         valid_indices = np.where(valid_mask)[0]
 
         if len(valid_indices) > 0:
+            non_thumb_fingers = np.array(
+                [index for index in range(num_fingers) if index != thumb_index],
+                dtype=np.int64,
+            )
+            # The proposal contract requires two opposing finger groups, not
+            # an arbitrary three-fingertip task.  Use one thumb and one opposing
+            # finger; force closure and sustained-contact gates independently
+            # decide whether that pinch is physically sufficient.
+            active_opposing_count = 1
+            if opposing_finger_index is None:
+                opposing_finger_index = int(non_thumb_fingers[0])
+            if opposing_finger_index not in non_thumb_fingers:
+                raise ValueError(
+                    "opposing_finger_index must identify a non-thumb fingertip"
+                )
+            active_opposing_fingers = np.array(
+                [opposing_finger_index], dtype=np.int64
+            )
+            active_fingers = np.zeros(num_fingers, dtype=bool)
+            active_fingers[thumb_index] = True
+            active_fingers[active_opposing_fingers] = True
+
             # We found opposing faces! Pick (num_fingers - 1) faces from them
-            # We can re-weight probabilities among valid_indices, or just sample uniformly from valid for simplicity
-            # We'll use uniform sampling among valid for simplicity of anchor generation
-            opposing_face_ids = rng.choice(valid_indices, size=num_fingers - 1, replace=True)
+            # Active fingers need distinct, spatially separated anchors.  Inactive
+            # fingers still receive a surface target to keep the dense contract,
+            # but those targets are not part of the task.
+            min_active_spacing = max(scale * 0.05, 1e-6)
+            ordered_faces = np.asarray(rng.permutation(valid_indices), dtype=np.int64)
+            active_faces: list[int] = []
+            for face_id in ordered_faces:
+                if all(
+                    np.linalg.norm(face_centers[face_id] - face_centers[chosen])
+                    >= min_active_spacing
+                    for chosen in active_faces
+                ):
+                    active_faces.append(int(face_id))
+                    if len(active_faces) == active_opposing_count:
+                        break
+            if len(active_faces) < active_opposing_count:
+                continue
+
+            inactive_opposing_fingers = np.array(
+                [
+                    index
+                    for index in non_thumb_fingers
+                    if index not in set(active_opposing_fingers.tolist())
+                ],
+                dtype=np.int64,
+            )
 
             # Combine
             final_face_ids = np.zeros(num_fingers, dtype=int)
@@ -89,12 +153,15 @@ def generate_region_opposition_proposal(
             # Assign thumb
             final_face_ids[thumb_index] = thumb_face_id
 
-            # Assign opposing
-            opposing_idx = 0
-            for i in range(num_fingers):
-                if i != thumb_index:
-                    final_face_ids[i] = opposing_face_ids[opposing_idx]
-                    opposing_idx += 1
+            for finger_index, face_id in zip(active_opposing_fingers, active_faces):
+                final_face_ids[finger_index] = face_id
+            if len(inactive_opposing_fingers):
+                inactive_faces = rng.choice(
+                    valid_indices,
+                    size=len(inactive_opposing_fingers),
+                    replace=len(valid_indices) < len(inactive_opposing_fingers),
+                )
+                final_face_ids[inactive_opposing_fingers] = inactive_faces
 
             # 4. Build fixed-size regions from nearby, similarly oriented faces.
             # Every region sample remains an exact barycentric point on the mesh.
@@ -121,11 +188,31 @@ def generate_region_opposition_proposal(
             norms = np.linalg.norm(final_inward_normals, axis=1, keepdims=True)
             final_inward_normals = final_inward_normals / np.clip(norms, a_min=1e-12, a_max=None)
 
+            opposition_pairs = np.stack(
+                [
+                    np.full(active_opposing_count, thumb_index, dtype=np.int64),
+                    active_opposing_fingers,
+                ],
+                axis=1,
+            )
+            candidate_id = stable_candidate_id(
+                "region_opposition",
+                target_points=target_points,
+                inward_normals=final_inward_normals,
+                face_ids=final_face_ids,
+                finger_ids=finger_ids,
+                active_fingers=active_fingers,
+                opposition_pairs=opposition_pairs,
+            )
+
             return ContactProposal(
                 target_points=target_points,
                 face_ids=final_face_ids,
                 inward_normals=final_inward_normals,
                 finger_ids=finger_ids,
+                active_fingers=active_fingers,
+                opposition_pairs=opposition_pairs,
+                candidate_id=candidate_id,
                 region_points=region_points,
                 region_face_ids=region_face_ids,
                 region_normals=region_normals,

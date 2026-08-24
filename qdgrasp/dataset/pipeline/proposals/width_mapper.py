@@ -44,13 +44,13 @@ ROBOT_CANONICAL_METAS: Dict[str, RobotCanonicalMeta] = {
     "wonik_allegro": RobotCanonicalMeta(
         name="wonik_allegro",
         canonical_qpos={
-            "joint_0.0": 0.0, "joint_1.0": 0.0, "joint_2.0": 0.0, "joint_3.0": 0.0,
-            "joint_4.0": 0.0, "joint_5.0": 0.0, "joint_6.0": 0.0, "joint_7.0": 0.0,
-            "joint_8.0": 0.0, "joint_9.0": 0.0, "joint_10.0": 0.0, "joint_11.0": 0.0,
-            "joint_12.0": 0.8, "joint_13.0": 0.0, "joint_14.0": 0.0, "joint_15.0": 0.0,
+            "ffj0": 0.0, "ffj1": 0.0, "ffj2": 0.0, "ffj3": 0.0,
+            "mfj0": 0.0, "mfj1": 0.0, "mfj2": 0.0, "mfj3": 0.0,
+            "rfj0": 0.0, "rfj1": 0.0, "rfj2": 0.0, "rfj3": 0.0,
+            "thj0": 0.8, "thj1": 0.0, "thj2": 0.0, "thj3": 0.0,
         },
-        thumb_link="link_15.0_tip",
-        other_links=("link_3.0_tip", "link_7.0_tip", "link_11.0_tip"),
+        thumb_link="th_tip",
+        other_links=("ff_tip", "mf_tip", "rf_tip"),
         opposition_axis_local=(0.0, 1.0, 0.0),
         wrist_axis_local=(0.0, 0.0, -1.0),
     ),
@@ -114,7 +114,11 @@ class WidthMapper:
         # Determine open fingertip positions
         with torch.no_grad():
             open_tips = self.spec.fingertip_positions(palm_pos, palm_rot, q_tensor)[0]
-            thumb_idx = 3 if len(open_tips) >= 4 else (len(open_tips) - 1)
+            thumb_idx = (
+                list(self.spec.fingertip_links).index(self.meta.thumb_link)
+                if self.meta and self.meta.thumb_link in self.spec.fingertip_links
+                else len(open_tips) - 1
+            )
             other_indices = [i for i in range(len(open_tips)) if i != thumb_idx]
 
             thumb_pos = open_tips[thumb_idx]
@@ -154,6 +158,124 @@ class WidthMapper:
             final_tips = self.spec.fingertip_positions(palm_pos, palm_rot, q_tensor)[0].numpy()
 
         return q_final, final_tips
+
+    def map_width_to_opposition_qpos(
+        self,
+        target_width: float,
+        active_fingers: np.ndarray | None = None,
+        max_steps: int = 300,
+        lr: float = 0.05,
+    ) -> np.ndarray:
+        """Generate a morphology-only seed with antipodal contact axes.
+
+        The object contributes only its target width.  No oracle palm pose,
+        contact point, or solution q enters this optimization.
+        """
+        q_init = self.get_canonical_open_qpos()
+        q_tensor = torch.tensor(
+            q_init[None], dtype=torch.float32, requires_grad=True
+        )
+        palm_pos = torch.zeros((1, 3), dtype=torch.float32)
+        palm_rot = torch.eye(3, dtype=torch.float32)[None]
+        thumb_index = (
+            list(self.spec.fingertip_links).index(self.meta.thumb_link)
+            if self.meta and self.meta.thumb_link in self.spec.fingertip_links
+            else len(self.spec.fingertip_links) - 1
+        )
+        if active_fingers is None:
+            active_mask = np.ones(len(self.spec.fingertip_links), dtype=bool)
+        else:
+            active_mask = np.asarray(active_fingers, dtype=bool)
+            if active_mask.shape != (len(self.spec.fingertip_links),):
+                raise ValueError(
+                    "active_fingers must have one entry per configured fingertip"
+                )
+        active_other_indices = [
+            index
+            for index in range(len(self.spec.fingertip_links))
+            if index != thumb_index and active_mask[index]
+        ]
+        if not active_other_indices:
+            raise ValueError("opposition seed requires an active non-thumb fingertip")
+        # The complete hand objective finds a coordinated morphology basin;
+        # inactive-only coordinates are parked again after optimization using
+        # the active-tip kinematic Jacobian below.  Directly optimizing a lone
+        # pinch from canonical-open is underconstrained and loses this basin on
+        # coupled hands such as Shadow.
+        other_indices = [
+            index
+            for index in range(len(self.spec.fingertip_links))
+            if index != thumb_index
+        ]
+        lower = torch.tensor(
+            [self.spec.joint_limits[name][0] for name in self.actuated_names]
+        )
+        upper = torch.tensor(
+            [self.spec.joint_limits[name][1] for name in self.actuated_names]
+        )
+        optimizer = torch.optim.Adam([q_tensor], lr=lr)
+        target_width_t = torch.tensor(float(target_width), dtype=torch.float32)
+
+        for _ in range(max_steps):
+            optimizer.zero_grad()
+            tips = self.spec.fingertip_positions(palm_pos, palm_rot, q_tensor)[0]
+            directions = self.spec.fingertip_contact_directions(
+                palm_pos, palm_rot, q_tensor
+            )[0]
+            thumb = tips[thumb_index]
+            other_center = torch.mean(tips[other_indices], dim=0)
+            opposition = F.normalize(other_center - thumb, dim=0, eps=1e-8)
+            width = torch.linalg.norm(other_center - thumb)
+            width_loss = (width - target_width_t).square()
+            thumb_direction_loss = torch.sum(
+                (directions[thumb_index] - opposition).square()
+            )
+            other_direction_loss = torch.mean(
+                torch.sum((directions[other_indices] + opposition).square(), dim=1)
+            )
+            # Convert the dimensionless direction discrepancy to the same
+            # length scale as the width objective instead of an arbitrary
+            # unit-mixing weight.
+            direction_loss = target_width_t.square() * (
+                thumb_direction_loss + other_direction_loss
+            )
+            # Select the minimum-norm coordinated morphology solution.  The
+            # active-Jacobian projection below, not this basin objective, is
+            # responsible for parking inactive finger coordinates.
+            regularization = 1e-5 * torch.sum(q_tensor.square())
+            (width_loss + direction_loss + regularization).backward()
+            optimizer.step()
+            with torch.no_grad():
+                q_tensor.clamp_(lower, upper)
+
+        if active_fingers is None or np.all(active_mask):
+            return q_tensor.detach()[0].numpy()
+
+        # Reset every coordinate that cannot affect an active fingertip.  This
+        # is derived from FK rather than robot-name conventions, so coupled or
+        # shared wrist coordinates remain intact while inactive finger chains
+        # return to canonical-open.
+        active_indices = [thumb_index, *active_other_indices]
+        tips = self.spec.fingertip_positions(palm_pos, palm_rot, q_tensor)[0]
+        directions = self.spec.fingertip_contact_directions(
+            palm_pos, palm_rot, q_tensor
+        )[0]
+        active_outputs = torch.cat(
+            [tips[active_indices].reshape(-1), directions[active_indices].reshape(-1)]
+        )
+        sensitivity = torch.zeros_like(q_tensor)
+        for output_index in range(active_outputs.numel()):
+            gradient = torch.autograd.grad(
+                active_outputs[output_index],
+                q_tensor,
+                retain_graph=True,
+                allow_unused=False,
+            )[0]
+            sensitivity = torch.maximum(sensitivity, torch.abs(gradient))
+        active_coordinates = sensitivity.detach()[0].numpy() > 1e-8
+        q_final = q_tensor.detach()[0].numpy()
+        q_final[~active_coordinates] = q_init[~active_coordinates]
+        return q_final
 
 
 def compute_canonical_grasp_frame(

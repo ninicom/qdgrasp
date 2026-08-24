@@ -57,3 +57,15 @@ def test_single_support_contact_is_not_force_closure():
 
     assert not cert.passed
     assert cert.quality_margin == 0.0
+
+
+def test_antipodal_soft_finger_pinch_matches_condim4_rollout_model():
+    cert = certify_force_closure(
+        target_points=np.array([[0.04, 0.0, 0.0], [-0.04, 0.0, 0.0]]),
+        inward_normals=np.array([[-1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]),
+        centroid=np.zeros(3),
+        mass=0.02,
+        torsional_friction=0.005,
+    )
+    assert cert.passed
+    assert cert.quality_margin > 0.0

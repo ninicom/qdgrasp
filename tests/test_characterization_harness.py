@@ -104,6 +104,59 @@ def test_a_cell_is_reproducible_from_the_same_seed(harness) -> None:
     assert first["candidates"] == second["candidates"]
 
 
+def test_current_harness_records_solver_progress_metrics(harness) -> None:
+    cell = harness.run_cell(
+        hand="leap_hand",
+        recipe_id="surface_fixed_v1",
+        object_name="box_50mm",
+        object_spec=harness.OBJECT_BUILDERS["box_50mm"](),
+        seed=42,
+        candidates=4,
+        run_dynamic=False,
+    )
+    characterized = next(
+        candidate for candidate in cell["candidates"] if "kinematics" in candidate
+    )
+    metrics = characterized["kinematics"]["solver_metrics"]
+    assert metrics is not None
+    assert {
+        "initial_cost",
+        "final_cost",
+        "accepted_steps",
+        "rejected_steps",
+        "jacobian_rank",
+        "jacobian_condition",
+        "final_damping",
+        "finite",
+    } <= set(metrics)
+
+
+def test_current_harness_reports_active_and_dense_residual_maxima(harness) -> None:
+    cell = harness.run_cell(
+        hand="leap_hand",
+        recipe_id="region_opposition_v1",
+        object_name="box_50mm",
+        object_spec=harness.OBJECT_BUILDERS["box_50mm"](),
+        seed=42,
+        candidates=1,
+        run_dynamic=False,
+    )
+    record = cell["candidates"][0]
+    active = record["proposal"]["active_fingers"]
+    position = record["kinematics"]["position_residuals"]
+    normal = record["kinematics"]["normal_residuals"]
+    active_indices = [index for index, enabled in enumerate(active) if enabled]
+
+    assert record["kinematics"]["active_max_position_residual"] == pytest.approx(
+        max(position[index] for index in active_indices)
+    )
+    assert record["kinematics"]["active_max_normal_residual"] == pytest.approx(
+        max(normal[index] for index in active_indices)
+    )
+    assert record["kinematics"]["max_position_residual"] == pytest.approx(max(position))
+    assert record["kinematics"]["max_normal_residual"] == pytest.approx(max(normal))
+
+
 def test_comparison_reports_a_moved_failure_signature(harness) -> None:
     def corpus(signature: dict[str, int]) -> dict:
         return {

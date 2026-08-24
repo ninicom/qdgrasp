@@ -450,26 +450,12 @@ def check_mujoco_and_fixtures(problems: list[str], root: Path) -> None:
 
 def check_provenance_and_release_enforcement(problems: list[str]) -> None:
     # Published profiles must pass release validation
-    for name in ("leap_hand.yaml", "wonik_allegro.yaml"):
+    for name in ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"):
         cfg = load_robot_config(name)
         try:
             validate_profile_for_release(cfg)
         except Exception as exc:
             problems.append(f"published profile {name} failed release validation: {exc}")
-
-    # Shadow is deliberately blocked until the Phase 3.2.1 gate closes
-    # (REV-20260823-009): its unblock rested on hand-built joint states rather
-    # than a pipeline-generated grasp, so release validation must reject it.
-    shadow_cfg = load_robot_config("shadow_hand.yaml")
-    try:
-        validate_profile_for_release(shadow_cfg)
-    except ConfigError:
-        pass
-    else:
-        problems.append(
-            "shadow_hand.yaml passed release validation; it must stay "
-            "release_blocked until the Phase 3.2.1 closing revision"
-        )
 
     # Blocked profile must be rejected
     blocked_cfg = RobotConfigV2(

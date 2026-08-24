@@ -27,7 +27,6 @@ def shadow_spec():
     return RobotSpec.from_config("shadow_hand.yaml", sample_anchors=False)
 
 
-@pytest.mark.xfail(strict=True, reason="H-05: the corrected RC-01 Jacobian changes the null-space posture this fixture solves for, and the LEAP thumb loses contact entirely (3.62 N -> 0.00 N) while the index finger still carries 2.37 N. The fixture asserts a two-finger grasp built from a solver-derived squeeze command, so its verdict tracks posture the task never constrained. Recorded in evidence/phase3_2_1/README.md; the sustained-contact predicate that replaces this single-frame count is P3.2.1-09.")
 def test_leap_known_positive_fixture(leap_spec):
     q_contact = np.array(
         [
@@ -355,3 +354,48 @@ def test_shadow_nullspace_uncontrollable_target_rejected(shadow_spec):
     assert result.trajectory_metrics["joint_state_dimensions"] == 24.0
     assert result.trajectory_metrics["control_dimensions"] == 20.0
     assert result.trajectory_metrics["nullspace_residual"] > 0.1
+
+
+def test_shadow_task_command_uses_physical_24_by_20_mapping(shadow_spec):
+    initial_targets = {name: 0.0 for name in shadow_spec.actuated_joint_names}
+    active = np.zeros(len(shadow_spec.fingertip_links), dtype=bool)
+    active[[0, -1]] = True
+    result = validate_grasp_rollout(
+        resolve_robot_asset(shadow_spec.config.source_asset),
+        [
+            SubGeomSpec(
+                type="box",
+                size=(0.01, 0.01, 0.01),
+                pos=(0.0, 0.0, 0.0),
+                quat=(1.0, 0.0, 0.0, 0.0),
+            )
+        ],
+        shadow_spec.fingertip_links,
+        palm_pos=(0.5, 0.5, 0.5),
+        object_pos=(0.0, 0.0, 0.01),
+        initial_joint_targets=initial_targets,
+        contact_joint_targets=initial_targets,
+        active_fingers=active,
+        desired_fingertip_displacement=np.zeros(
+            (len(shadow_spec.fingertip_links), 3), dtype=np.float64
+        ),
+        fingertip_local_offsets=np.stack(
+            [
+                shadow_spec.fingertip_contact_offsets[name]
+                for name in shadow_spec.fingertip_links
+            ]
+        ),
+        squeeze_steps=1,
+        lift_steps=1,
+        perturbation_steps=1,
+    )
+
+    assert result.failure_stage not in {
+        "task_uncontrollable",
+        "actuator_saturation",
+        "invalid_state",
+    }
+    assert result.trajectory_metrics["task_residual"] == pytest.approx(0.0)
+    assert result.trajectory_metrics["transmission_rank"] == 20.0
+    assert result.trajectory_metrics["joint_state_dimensions"] == 24.0
+    assert result.trajectory_metrics["control_dimensions"] == 20.0

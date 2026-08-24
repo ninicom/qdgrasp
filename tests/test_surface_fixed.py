@@ -20,6 +20,8 @@ def test_surface_fixed_deterministic(dummy_mesh):
     np.testing.assert_allclose(proposal1.target_points, proposal2.target_points)
     np.testing.assert_allclose(proposal1.inward_normals, proposal2.inward_normals)
     assert np.array_equal(proposal1.face_ids, proposal2.face_ids)
+    assert proposal1.candidate_id == proposal2.candidate_id
+    assert np.all(proposal1.active_fingers)
 
 def test_surface_fixed_no_trimesh_sample(dummy_mesh, monkeypatch):
     """Ensure it does not rely on trimesh.sample.sample_surface."""
@@ -50,3 +52,8 @@ def test_surface_fixed_points_on_surface_and_normals_unit_length(dummy_mesh):
     # Dot product should be -1
     dots = np.sum(proposal.inward_normals * outward_normals, axis=1)
     np.testing.assert_allclose(dots, -1.0, atol=1e-6)
+    centers = dummy_mesh.triangles.mean(axis=1)[proposal.face_ids]
+    assert not np.any(
+        (centers[:, 2] <= dummy_mesh.bounds[0, 2] + 1e-8)
+        & (outward_normals[:, 2] < 0.0)
+    )

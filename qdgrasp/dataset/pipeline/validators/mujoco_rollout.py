@@ -8,6 +8,11 @@ from qdgrasp.config.schema import ConfigError
 from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.dataset.pipeline.contracts import DynamicValidation
 from qdgrasp.dataset.pipeline.observers.contact_load import extract_contact_loads
+from qdgrasp.dataset.pipeline.validators.dynamic_predicate import (
+    DynamicPredicateEvidence,
+    RolloutProtocol,
+    evaluate_dynamic_success,
+)
 
 
 def build_rollout_scene_model(
@@ -119,6 +124,10 @@ def validate_grasp_rollout(
     pregrasp_distance: float = 0.03,
     expected_fingertip_positions: Optional[np.ndarray] = None,
     fingertip_local_offsets: Optional[np.ndarray] = None,
+    active_fingers: Optional[np.ndarray] = None,
+    desired_fingertip_displacement: Optional[np.ndarray] = None,
+    contact_joint_targets: Optional[Mapping[str, float]] = None,
+    rollout_protocol: Optional[RolloutProtocol] = None,
     stage_observer: Optional[
         Callable[[str, mujoco.MjModel, mujoco.MjData], None]
     ] = None,
@@ -139,6 +148,17 @@ def validate_grasp_rollout(
     )
     data = mujoco.MjData(model)
     mujoco.mj_resetData(model, data)
+    protocol = rollout_protocol or RolloutProtocol()
+    protocol_error = protocol.validation_error()
+    if protocol_error is not None:
+        return DynamicValidation(
+            trajectory_metrics={"protocol_error": protocol_error},
+            per_finger_loads=np.zeros(
+                (len(fingertip_body_names), 6), dtype=np.float64
+            ),
+            failure_stage="controller_protocol",
+            passed=False,
+        )
 
     fingertip_body_ids = [
         mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
@@ -167,6 +187,15 @@ def validate_grasp_rollout(
                 "fingertip_local_offsets must have shape "
                 f"({len(fingertip_body_names)}, 3), got {local_tip_offsets.shape}"
             )
+    task_active_fingers = (
+        np.ones(len(fingertip_body_names), dtype=bool)
+        if active_fingers is None
+        else np.asarray(active_fingers, dtype=bool)
+    )
+    if task_active_fingers.shape != (len(fingertip_body_names),):
+        raise ConfigError(
+            f"active_fingers must have shape ({len(fingertip_body_names)},)"
+        )
 
     palm_candidates = [
         b_id
@@ -261,6 +290,32 @@ def validate_grasp_rollout(
         for a_id in range(model.nu)
     ]
 
+    actuated_damping = []
+    for joint_name in hand_joint_names:
+        joint_id = mujoco.mj_name2id(
+            model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
+        )
+        dof_address = int(model.jnt_dofadr[joint_id])
+        actuated_damping.append(float(model.dof_damping[dof_address]))
+    if (
+        not actuated_damping
+        or not np.all(np.isfinite(actuated_damping))
+        or np.any(np.asarray(actuated_damping) <= 0.0)
+    ):
+        return DynamicValidation(
+            trajectory_metrics={
+                "protocol_error": "nonpositive_actuated_damping",
+                "minimum_actuated_damping": min(
+                    actuated_damping, default=float("nan")
+                ),
+            },
+            per_finger_loads=np.zeros(
+                (len(fingertip_body_names), 6), dtype=np.float64
+            ),
+            failure_stage="controller_protocol",
+            passed=False,
+        )
+
     has_tendon = any(
         int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_TENDON)
         for a_id in range(model.nu)
@@ -274,19 +329,130 @@ def validate_grasp_rollout(
     else:
         tm = DirectJointTransmission(hand_joint_names, hand_actuator_names, model)
 
+    mujoco.mj_forward(model, data)
     initial_trans_state = tm.extract_state(model, data)
     q_init = initial_trans_state.joint_position
     q_target = q_init.copy()
 
-    if joint_targets:
+    command_plan = None
+    task_command_requested = desired_fingertip_displacement is not None
+    if task_command_requested:
+        from qdgrasp.robot.transmission.command import plan_controllable_task_command
+
+        task_active = task_active_fingers
+        desired_tip_delta = np.asarray(
+            desired_fingertip_displacement, dtype=np.float64
+        )
+        if task_active.shape != (len(fingertip_body_names),) or desired_tip_delta.shape != (
+            len(fingertip_body_names),
+            3,
+        ):
+            raise ConfigError(
+                "task command active_fingers/displacement must have shapes [K] and [K,3]"
+            )
+        active_count = int(np.sum(task_active))
+        if active_count < min_active_fingers:
+            return DynamicValidation(
+                trajectory_metrics={
+                    "active_finger_count": float(active_count),
+                    "minimum_active_fingers": float(min_active_fingers),
+                },
+                per_finger_loads=np.zeros(
+                    (len(fingertip_body_names), 6), dtype=np.float64
+                ),
+                failure_stage="insufficient_active_fingers",
+                passed=False,
+            )
+
+        task_rows = []
+        desired_rows = []
+        for tip_index in np.where(task_active)[0]:
+            body_id = fingertip_body_ids[int(tip_index)]
+            body_rotation = np.asarray(data.xmat[body_id]).reshape(3, 3)
+            contact_point = np.asarray(data.xpos[body_id]) + (
+                body_rotation @ local_tip_offsets[int(tip_index)]
+            )
+            jacobian_position = np.zeros((3, model.nv), dtype=np.float64)
+            jacobian_rotation = np.zeros((3, model.nv), dtype=np.float64)
+            mujoco.mj_jac(
+                model,
+                data,
+                jacobian_position,
+                jacobian_rotation,
+                contact_point,
+                body_id,
+            )
+            task_rows.append(
+                np.stack(
+                    [
+                        jacobian_position[:, int(model.jnt_dofadr[
+                            mujoco.mj_name2id(
+                                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
+                            )
+                        ])]
+                        for joint_name in hand_joint_names
+                    ],
+                    axis=1,
+                )
+            )
+            desired_rows.append(desired_tip_delta[int(tip_index)])
+
+        task_jacobian = np.concatenate(task_rows, axis=0)
+        task_delta = np.concatenate(desired_rows, axis=0)
+        joint_limits = np.empty((len(hand_joint_names), 2), dtype=np.float64)
+        for joint_index, joint_name in enumerate(hand_joint_names):
+            joint_id = mujoco.mj_name2id(
+                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
+            )
+            joint_limits[joint_index] = (
+                np.asarray(model.jnt_range[joint_id], dtype=np.float64)
+                if bool(model.jnt_limited[joint_id])
+                else np.array([-np.inf, np.inf])
+            )
+        q_contact = q_init.copy()
+        if contact_joint_targets:
+            for index, joint_name in enumerate(hand_joint_names):
+                if joint_name in contact_joint_targets:
+                    q_contact[index] = float(contact_joint_targets[joint_name])
+
+        command_plan = plan_controllable_task_command(
+            current_state=initial_trans_state,
+            task_jacobian=task_jacobian,
+            desired_task_delta=task_delta,
+            joint_limits=joint_limits,
+            actuator_ctrlrange=tm.actuator_ctrlrange,
+            active_fingers=task_active,
+            q_contact=q_contact,
+        )
+        if command_plan.rejection_reason != "converged":
+            return DynamicValidation(
+                trajectory_metrics={
+                    "transmission_rank": float(tm.rank),
+                    "joint_state_dimensions": float(tm.num_joints),
+                    "control_dimensions": float(tm.num_actuators),
+                    "task_residual": float(command_plan.task_residual),
+                    "nullspace_residual": float(command_plan.nullspace_residual),
+                    "actuator_saturation_count": float(np.sum(command_plan.saturated)),
+                },
+                per_finger_loads=np.zeros(
+                    (len(fingertip_body_names), 6), dtype=np.float64
+                ),
+                failure_stage=command_plan.rejection_reason,
+                passed=False,
+            )
+        q_target = command_plan.q_preload.copy()
+
+    if joint_targets and not task_command_requested:
         for idx, j_name in enumerate(hand_joint_names):
             if j_name in joint_targets:
                 q_target[idx] = float(joint_targets[j_name])
 
     dq_desired = q_target - q_init
-    cmd = tm.project_joint_delta(dq_desired, initial_trans_state)
+    cmd = None if command_plan is not None else tm.project_joint_delta(
+        dq_desired, initial_trans_state
+    )
 
-    if cmd.reason == "nullspace_rejection":
+    if cmd is not None and cmd.reason in ("nullspace_rejection", "actuator_saturation"):
         return DynamicValidation(
             trajectory_metrics={
                 "transmission_rank": float(tm.rank),
@@ -299,12 +465,20 @@ def validate_grasp_rollout(
             per_finger_loads=np.zeros(
                 (len(fingertip_body_names), 6), dtype=np.float64
             ),
-            failure_stage="underactuated_targets",
+            failure_stage=(
+                "underactuated_targets"
+                if cmd.reason == "nullspace_rejection"
+                else "actuator_saturation"
+            ),
             passed=False,
         )
 
     start_controls = initial_trans_state.actuator_coordinate.copy()
-    target_controls = cmd.control_target.copy()
+    target_controls = (
+        command_plan.control_target.copy()
+        if command_plan is not None
+        else cmd.control_target.copy()
+    )
 
     ctrl_mins = tm.actuator_ctrlrange[:, 0]
     ctrl_maxs = tm.actuator_ctrlrange[:, 1]
@@ -317,6 +491,68 @@ def validate_grasp_rollout(
     }
     floor_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
     obj_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "target_object")
+
+    # Calibrate the contact observer on the same compiled scene with the hand
+    # translated far from the object.  This measures numerical force noise
+    # without changing timestep, gains, solver, or object/floor contacts.
+    noise_data = mujoco.MjData(model)
+    mujoco.mj_resetData(model, noise_data)
+    noise_data.qpos[:] = data.qpos
+    noise_data.qpos[qpos_adr : qpos_adr + 3] = np.array([10.0, 10.0, 10.0])
+    noise_data.qpos[qpos_adr + 3 : qpos_adr + 7] = quat_wxyz
+    noise_data.mocap_pos[mocap_idx] = np.array([10.0, 10.0, 10.0])
+    noise_data.mocap_quat[mocap_idx] = quat_wxyz
+    noise_data.ctrl[: model.nu] = np.clip(start_controls, ctrl_mins, ctrl_maxs)
+    contact_noise_floor = 0.0
+    for _ in range(4):
+        mujoco.mj_step(model, noise_data)
+        noise_loads = extract_contact_loads(
+            model,
+            noise_data,
+            object_geom_ids,
+            fingertip_body_names,
+        )
+        contact_noise_floor = max(
+            contact_noise_floor,
+            float(np.max(noise_loads["per_finger_f_normal"], initial=0.0)),
+        )
+    contact_force_threshold = max(1e-6, 10.0 * contact_noise_floor)
+    dt = float(model.opt.timestep)
+
+    def summarize_contact_window(samples: list[Dict[str, object]]) -> Dict[str, object]:
+        if not samples:
+            return {
+                "sustained_count": 0,
+                "duty_cycle": np.zeros(len(fingertip_body_names)),
+                "normal_impulse": np.zeros(len(fingertip_body_names)),
+                "palm_support": False,
+                "max_cone_violation": float("inf"),
+            }
+        normal_forces = np.stack(
+            [np.asarray(sample["per_finger_f_normal"], dtype=np.float64) for sample in samples]
+        )
+        duty_cycle = np.mean(normal_forces > contact_force_threshold, axis=0)
+        normal_impulse = np.sum(normal_forces, axis=0) * dt
+        minimum_impulse = (
+            contact_force_threshold
+            * dt
+            * len(samples)
+            * protocol.minimum_contact_impulse_ratio
+        )
+        sustained = (
+            (duty_cycle >= protocol.minimum_contact_duty_cycle)
+            & (normal_impulse >= minimum_impulse)
+            & task_active_fingers
+        )
+        return {
+            "sustained_count": int(np.sum(sustained)),
+            "duty_cycle": duty_cycle,
+            "normal_impulse": normal_impulse,
+            "palm_support": any(bool(sample["has_palm_contact"]) for sample in samples),
+            "max_cone_violation": max(
+                float(np.max(sample["cone_violations"])) for sample in samples
+            ),
+        }
 
     def get_max_penetration() -> float:
         max_pen = 0.0
@@ -345,6 +581,22 @@ def validate_grasp_rollout(
 
         joint_errors = np.abs(current_q - q_target)
         actuator_errors = np.abs(current_coords - target_controls)
+        joint_ranges = np.empty(len(hand_joint_names), dtype=np.float64)
+        for index, joint_name in enumerate(hand_joint_names):
+            joint_id = mujoco.mj_name2id(
+                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
+            )
+            joint_ranges[index] = (
+                float(np.diff(model.jnt_range[joint_id])[0])
+                if bool(model.jnt_limited[joint_id])
+                else max(abs(float(q_target[index] - q_init[index])), 1.0)
+            )
+        control_ranges = ctrl_maxs - ctrl_mins
+        control_scales = np.where(
+            np.isfinite(control_ranges) & (control_ranges > 1e-12),
+            control_ranges,
+            np.maximum(np.abs(target_controls - start_controls), 1.0),
+        )
 
         mocap_quat_wxyz = np.asarray(data.mocap_quat[mocap_idx], dtype=np.float64)
         mocap_rot = Rotation.from_quat(
@@ -357,15 +609,37 @@ def validate_grasp_rollout(
         ).as_matrix()
         commanded_palm_pos = data.mocap_pos[mocap_idx] + mocap_rot @ root_to_palm_pos
         commanded_palm_rot = mocap_rot @ root_to_palm_rot
+        command_controllable_residual = (
+            float(command_plan.task_residual)
+            if command_plan is not None
+            else float(cmd.controllable_residual)
+        )
+        command_nullspace_residual = (
+            float(command_plan.nullspace_residual)
+            if command_plan is not None
+            else float(cmd.nullspace_residual)
+        )
+        command_saturation_count = (
+            float(np.sum(command_plan.saturated))
+            if command_plan is not None
+            else float(np.sum(cmd.saturated))
+        )
         metrics = {
             "transmission_rank": float(tm.rank),
             "joint_state_dimensions": float(tm.num_joints),
             "control_dimensions": float(tm.num_actuators),
-            "controllable_residual": float(cmd.controllable_residual),
-            "nullspace_residual": float(cmd.nullspace_residual),
-            "actuator_saturation_count": float(np.sum(cmd.saturated)),
+            "controllable_residual": command_controllable_residual,
+            "task_residual": command_controllable_residual,
+            "nullspace_residual": command_nullspace_residual,
+            "actuator_saturation_count": command_saturation_count,
             "max_joint_tracking_error": float(np.max(joint_errors) if len(joint_errors) > 0 else 0.0),
             "max_actuator_coordinate_error": float(np.max(actuator_errors) if len(actuator_errors) > 0 else 0.0),
+            "max_normalized_joint_tracking_error": float(
+                np.max(joint_errors / np.maximum(joint_ranges, 1e-12), initial=0.0)
+            ),
+            "max_normalized_actuator_tracking_error": float(
+                np.max(actuator_errors / control_scales, initial=0.0)
+            ),
             "palm_position_tracking_error": float(
                 np.linalg.norm(np.asarray(data.xpos[palm_id]) - commanded_palm_pos)
             ),
@@ -422,8 +696,15 @@ def validate_grasp_rollout(
         )
 
     overall_max_penetration = 0.0
+    tracking_history: list[Dict[str, float]] = []
 
     # Stage 1: Squeeze (apply closing torque via smoothstep trajectory)
+    squeeze_contact_samples: list[Dict[str, object]] = []
+    squeeze_window_start = max(
+        0,
+        squeeze_steps
+        - max(1, int(np.ceil(squeeze_steps * protocol.contact_window_fraction))),
+    )
     for squeeze_index in range(squeeze_steps):
         squeeze_progress = smoothstep((squeeze_index + 1) / max(1, squeeze_steps))
         data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (
@@ -436,6 +717,21 @@ def validate_grasp_rollout(
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
         if not simulation_is_stable():
             return instability_result("squeeze")
+        if squeeze_index >= squeeze_window_start:
+            squeeze_contact_samples.append(
+                extract_contact_loads(
+                    model,
+                    data,
+                    object_geom_ids,
+                    fingertip_body_names,
+                    palm_body_names=(
+                        mujoco.mj_id2name(
+                            model, mujoco.mjtObj.mjOBJ_BODY, palm_id
+                        )
+                        or "palm",
+                    ),
+                )
+            )
 
     palm_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, palm_id) or "palm"
     squeeze_loads = extract_contact_loads(
@@ -445,25 +741,46 @@ def validate_grasp_rollout(
         fingertip_body_names,
         palm_body_names=(palm_name,),
     )
+    squeeze_window = summarize_contact_window(squeeze_contact_samples)
+    squeeze_tracking = tracking_metrics()
+    tracking_history.append(squeeze_tracking)
 
     if (
-        squeeze_loads["active_fingers_count"] < min_active_fingers
+        int(squeeze_window["sustained_count"]) < min_active_fingers
+        or bool(squeeze_window["palm_support"])
         or overall_max_penetration > max_allowed_penetration
     ):
+        squeeze_stage = (
+            "palm_support"
+            if bool(squeeze_window["palm_support"])
+            else (
+                "penetration"
+                if overall_max_penetration > max_allowed_penetration
+                else "active_contact"
+            )
+        )
         return DynamicValidation(
             trajectory_metrics={
                 "max_penetration": overall_max_penetration,
-                "squeeze_active_fingers": squeeze_loads["active_fingers_count"],
+                "squeeze_active_fingers": int(squeeze_window["sustained_count"]),
+                "contact_noise_floor": contact_noise_floor,
+                "contact_force_threshold": contact_force_threshold,
+                "squeeze_contact_duty_cycle": np.asarray(
+                    squeeze_window["duty_cycle"]
+                ).tolist(),
+                "squeeze_normal_impulse": np.asarray(
+                    squeeze_window["normal_impulse"]
+                ).tolist(),
                 "contacting_links": len(squeeze_loads["contacting_links"]),
-                "has_palm_contact": float(squeeze_loads["has_palm_contact"]),
+                "has_palm_contact": float(bool(squeeze_window["palm_support"])),
                 "max_cone_violation": float(np.max(squeeze_loads["cone_violations"])),
                 "measured_fingertip_wrench_norm": float(
                     np.linalg.norm(squeeze_loads["net_fingertip_wrench"])
                 ),
-                **tracking_metrics(),
+                **squeeze_tracking,
             },
             per_finger_loads=squeeze_loads["per_finger_loads"],
-            failure_stage="squeeze",
+            failure_stage=squeeze_stage,
             passed=False,
         )
     if stage_observer is not None:
@@ -485,8 +802,13 @@ def validate_grasp_rollout(
 
     post_lift_z = float(data.xpos[obj_body_id][2])
     actual_lift = post_lift_z - init_obj_z
+    floor_support_after_lift = object_has_floor_support()
+    tracking_history.append(tracking_metrics())
 
-    if actual_lift < 0.5 * lift_height or object_has_floor_support():
+    if (
+        actual_lift < protocol.lift_success_fraction * lift_height
+        or floor_support_after_lift
+    ):
         return DynamicValidation(
             trajectory_metrics={
                 "max_penetration": overall_max_penetration,
@@ -494,7 +816,7 @@ def validate_grasp_rollout(
                 **tracking_metrics(),
             },
             per_finger_loads=squeeze_loads["per_finger_loads"],
-            failure_stage="lift",
+            failure_stage=("floor_support" if floor_support_after_lift else "lift"),
             passed=False
         )
     if stage_observer is not None:
@@ -502,13 +824,33 @@ def validate_grasp_rollout(
 
     # Stage 3: Perturbation Wrench
     if perturbation_wrench is None:
-        # Default perturbation wrench (shaking force + torque)
-        applied_wrench = np.array([0.5, 0.5, 0.0, 0.05, 0.05, 0.05], dtype=np.float64)
+        gravity_magnitude = float(np.linalg.norm(model.opt.gravity))
+        object_weight = float(object_mass) * gravity_magnitude
+        characteristic_length = max(
+            (
+                2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64)))
+                for geom in collision_geoms
+            ),
+            default=0.05,
+        )
+        force_amplitude = 0.5 * object_weight
+        torque_amplitude = 0.25 * object_weight * characteristic_length
+        applied_wrench = np.array(
+            [
+                force_amplitude,
+                force_amplitude,
+                0.0,
+                torque_amplitude,
+                torque_amplitude,
+                torque_amplitude,
+            ],
+            dtype=np.float64,
+        )
     else:
         applied_wrench = np.asarray(perturbation_wrench, dtype=np.float64)
 
     total_impulse = np.zeros(6, dtype=np.float64)
-    dt = float(model.opt.timestep)
+    perturbation_contact_samples: list[Dict[str, object]] = []
 
     for step_p in range(perturbation_steps):
         # Alternate perturbation direction periodically
@@ -520,6 +862,16 @@ def validate_grasp_rollout(
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
         if not simulation_is_stable():
             return instability_result("perturbation")
+        floor_support_after_lift |= object_has_floor_support()
+        perturbation_contact_samples.append(
+            extract_contact_loads(
+                model,
+                data,
+                object_geom_ids,
+                fingertip_body_names,
+                palm_body_names=(palm_name,),
+            )
+        )
 
     # Clear applied force
     data.xfrc_applied[obj_body_id] = np.zeros(6)
@@ -534,32 +886,82 @@ def validate_grasp_rollout(
         fingertip_body_names,
         palm_body_names=(palm_name,),
     )
+    perturbation_window = summarize_contact_window(perturbation_contact_samples)
+    final_tracking = tracking_metrics()
+    tracking_history.append(final_tracking)
     if stage_observer is not None:
         stage_observer("perturbation", model, data)
 
     passed_penetration = (overall_max_penetration <= max_allowed_penetration)
-    passed_lift = (final_lift >= 0.5 * lift_height)
-    passed_fingers = (final_loads["active_fingers_count"] >= min_active_fingers)
-    passed_floor = not object_has_floor_support()
-    passed_cone = bool(np.max(final_loads["cone_violations"]) <= 1e-6)
-
-    passed = bool(
-        passed_penetration
-        and passed_lift
-        and passed_fingers
-        and passed_floor
-        and passed_cone
+    passed_lift = final_lift >= protocol.lift_success_fraction * lift_height
+    passed_fingers = int(perturbation_window["sustained_count"]) >= min_active_fingers
+    passed_floor = not floor_support_after_lift
+    passed_cone = bool(
+        float(perturbation_window["max_cone_violation"])
+        <= protocol.cone_tolerance
     )
-    failure_stage = "none" if passed else ("penetration" if not passed_penetration else "perturbation")
+    max_normalized_actuator_error = max(
+        snapshot["max_normalized_actuator_tracking_error"]
+        for snapshot in tracking_history
+    )
+    max_normalized_joint_error = max(
+        snapshot["max_normalized_joint_tracking_error"] for snapshot in tracking_history
+    )
+    max_palm_position_error = max(
+        snapshot["palm_position_tracking_error"] for snapshot in tracking_history
+    )
+    max_palm_rotation_error = max(
+        snapshot["palm_rotation_tracking_error"] for snapshot in tracking_history
+    )
+    max_root_mocap_error = max(
+        snapshot["root_mocap_position_error"] for snapshot in tracking_history
+    )
+    actuator_tracking_pass = (
+        max_normalized_actuator_error
+        <= protocol.actuator_tracking_range_fraction
+        and max_normalized_joint_error <= protocol.joint_tracking_range_fraction
+    )
+    palm_tracking_pass = (
+        max_palm_position_error <= protocol.palm_position_tolerance
+        and max_palm_rotation_error <= protocol.palm_rotation_tolerance
+        and max_root_mocap_error <= protocol.root_mocap_position_tolerance
+    )
+    predicate = DynamicPredicateEvidence(
+        stable=simulation_is_stable(),
+        actuator_tracking_pass=actuator_tracking_pass,
+        palm_tracking_pass=palm_tracking_pass,
+        active_contact_sustained=passed_fingers,
+        palm_support=bool(perturbation_window["palm_support"]),
+        floor_support_after_lift=not passed_floor,
+        penetration_pass=passed_penetration,
+        lift_pass=passed_lift,
+        disturbance_survival_pass=passed_lift and passed_fingers,
+        friction_cone_pass=passed_cone,
+    )
+    passed, failure_stage = evaluate_dynamic_success(predicate)
 
     metrics = {
         "max_penetration": float(overall_max_penetration),
         "lift_achieved": float(final_lift),
-        "final_active_fingers": float(final_loads["active_fingers_count"]),
+        "final_active_fingers": float(perturbation_window["sustained_count"]),
+        "contact_noise_floor": contact_noise_floor,
+        "contact_force_threshold": contact_force_threshold,
+        "contact_duty_cycle": np.asarray(perturbation_window["duty_cycle"]).tolist(),
+        "normal_impulse": np.asarray(perturbation_window["normal_impulse"]).tolist(),
         "impulse_applied": float(np.sum(total_impulse)),
-        "has_palm_contact": float(final_loads["has_palm_contact"]),
+        "has_palm_contact": float(bool(perturbation_window["palm_support"])),
         "floor_support": float(not passed_floor),
-        "max_cone_violation": float(np.max(final_loads["cone_violations"])),
+        "max_cone_violation": float(perturbation_window["max_cone_violation"]),
+        "actuator_tracking_pass": float(actuator_tracking_pass),
+        "palm_tracking_pass": float(palm_tracking_pass),
+        "active_contact_sustained": float(passed_fingers),
+        "max_window_normalized_actuator_tracking_error": max_normalized_actuator_error,
+        "max_window_normalized_joint_tracking_error": max_normalized_joint_error,
+        "max_window_palm_position_tracking_error": max_palm_position_error,
+        "max_window_palm_rotation_tracking_error": max_palm_rotation_error,
+        "max_window_root_mocap_position_error": max_root_mocap_error,
+        "protocol_gains_source": protocol.gains_source,
+        "protocol_timestep_source": protocol.timestep_source,
         "measured_hand_wrench": final_loads["net_wrench"].tolist(),
         "measured_fingertip_wrench": final_loads["net_fingertip_wrench"].tolist(),
         **tracking_metrics(),

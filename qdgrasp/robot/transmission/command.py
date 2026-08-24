@@ -5,7 +5,145 @@ from __future__ import annotations
 from typing import Sequence, Tuple
 import numpy as np
 
-from .contracts import ActuatorCommand, TransmissionState
+from .contracts import ActuatorCommand, GraspCommandPlan, TransmissionState
+
+
+def plan_controllable_task_command(
+    *,
+    current_state: TransmissionState,
+    task_jacobian: np.ndarray,
+    desired_task_delta: np.ndarray,
+    joint_limits: np.ndarray,
+    actuator_ctrlrange: np.ndarray,
+    active_fingers: np.ndarray,
+    q_contact: np.ndarray | None = None,
+    max_joint_step: float = 0.25,
+    max_task_residual: float = 1e-3,
+    alpha: float = 1e-8,
+    beta: float = 1e-8,
+    saturation_tolerance: float = 1e-8,
+) -> GraspCommandPlan:
+    """Solve an active contact displacement in ``range(M.T)``.
+
+    The optimization variable is actuator-space ``z`` and ``dq = M.T z`` by
+    construction.  Joint and step constraints are enforced by one global scale,
+    preserving controllability.  A command that would exceed a control range is
+    reported as saturation and is never silently accepted after clipping.
+    """
+    q_start = np.asarray(current_state.joint_position, dtype=np.float64)
+    controls = np.asarray(current_state.actuator_coordinate, dtype=np.float64)
+    moment = np.asarray(current_state.moment_matrix, dtype=np.float64)
+    jacobian = np.asarray(task_jacobian, dtype=np.float64)
+    desired = np.asarray(desired_task_delta, dtype=np.float64).reshape(-1)
+    limits = np.asarray(joint_limits, dtype=np.float64)
+    control_range = np.asarray(actuator_ctrlrange, dtype=np.float64)
+    contact = q_start.copy() if q_contact is None else np.asarray(q_contact, dtype=np.float64)
+
+    valid_shapes = (
+        q_start.ndim == 1
+        and controls.ndim == 1
+        and moment.shape == (len(controls), len(q_start))
+        and jacobian.ndim == 2
+        and jacobian.shape == (len(desired), len(q_start))
+        and limits.shape == (len(q_start), 2)
+        and control_range.shape == (len(controls), 2)
+        and contact.shape == q_start.shape
+    )
+    finite_state_and_task = all(
+        np.all(np.isfinite(value))
+        for value in (q_start, controls, moment, jacobian, desired, contact)
+    )
+    valid_bounds = (
+        not np.any(np.isnan(limits))
+        and not np.any(np.isnan(control_range))
+        and np.all(limits[:, 0] <= limits[:, 1])
+        and np.all(control_range[:, 0] <= control_range[:, 1])
+    )
+    state_in_range = (
+        valid_shapes
+        and np.all(q_start >= limits[:, 0])
+        and np.all(q_start <= limits[:, 1])
+        and np.all(controls >= control_range[:, 0])
+        and np.all(controls <= control_range[:, 1])
+    )
+
+    zero_saturation = np.zeros(len(controls), dtype=bool)
+    if not valid_shapes or not finite_state_and_task or not valid_bounds or not state_in_range:
+        return GraspCommandPlan(
+            q_pregrasp=q_start.copy(),
+            q_contact=contact.copy(),
+            q_preload=q_start.copy(),
+            active_fingers=np.asarray(active_fingers, dtype=bool).copy(),
+            control_start=controls.copy(),
+            control_target=controls.copy(),
+            task_residual=float("inf"),
+            nullspace_residual=float("inf"),
+            saturated=zero_saturation,
+            rejection_reason="invalid_state",
+        )
+
+    controllable_basis = moment.T
+    task_map = jacobian @ controllable_basis
+    gram = moment @ moment.T
+    hessian = (
+        task_map.T @ task_map
+        + alpha * (controllable_basis.T @ controllable_basis)
+        + beta * (gram.T @ gram)
+    )
+    gradient = task_map.T @ desired
+    try:
+        actuator_coordinate_step = np.linalg.solve(hessian, gradient)
+    except np.linalg.LinAlgError:
+        actuator_coordinate_step = np.linalg.pinv(hessian) @ gradient
+    dq = controllable_basis @ actuator_coordinate_step
+
+    scale = 1.0
+    largest_step = float(np.max(np.abs(dq), initial=0.0))
+    if largest_step > max_joint_step > 0.0:
+        scale = min(scale, max_joint_step / largest_step)
+    for index, delta in enumerate(dq):
+        if delta > 0.0:
+            scale = min(scale, (limits[index, 1] - q_start[index]) / delta)
+        elif delta < 0.0:
+            scale = min(scale, (limits[index, 0] - q_start[index]) / delta)
+    scale = float(np.clip(scale, 0.0, 1.0))
+    dq *= scale
+
+    q_preload = q_start + dq
+    control_unclipped = controls + moment @ dq
+    saturated = (control_unclipped < control_range[:, 0] - saturation_tolerance) | (
+        control_unclipped > control_range[:, 1] + saturation_tolerance
+    )
+    control_target = np.clip(
+        control_unclipped, control_range[:, 0], control_range[:, 1]
+    )
+    task_residual = float(np.linalg.norm(jacobian @ dq - desired))
+
+    unconstrained_joint_step = np.linalg.pinv(jacobian) @ desired
+    projector = np.linalg.pinv(moment) @ moment
+    nullspace_residual = float(
+        np.linalg.norm((np.eye(len(q_start)) - projector) @ unconstrained_joint_step)
+    )
+
+    if np.any(saturated):
+        reason = "actuator_saturation"
+    elif task_residual > max_task_residual:
+        reason = "task_uncontrollable"
+    else:
+        reason = "converged"
+
+    return GraspCommandPlan(
+        q_pregrasp=q_start.copy(),
+        q_contact=contact.copy(),
+        q_preload=q_preload,
+        active_fingers=np.asarray(active_fingers, dtype=bool).copy(),
+        control_start=controls.copy(),
+        control_target=control_target,
+        task_residual=task_residual,
+        nullspace_residual=nullspace_residual,
+        saturated=saturated,
+        rejection_reason=reason,
+    )
 
 
 def project_joint_delta_to_actuator_command(

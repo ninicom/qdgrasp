@@ -2,12 +2,12 @@
 document_id: ROADMAP-P3.2-001
 document_type: plan
 title: Kế hoạch Phase 3.2 — Underactuated Hand Control & Dynamic Parity
-version: 1.1.0
-status: active
-date: 2026-08-23
-revises: ROADMAP-P3.2-001@1.0.0
+version: 1.2.0
+status: complete
+date: 2026-08-24
+revises: ROADMAP-P3.2-001@1.1.0
 related_plan: ROADMAP-P3.1-001
-latest_revision_record: docs/revisions/REV-20260823-009-phase3-2-1-full-pipeline-correctness.md
+latest_revision_record: docs/revisions/REV-20260824-001-phase3-2-1-closure.md
 ---
 
 # Kế hoạch Phase 3.2 — Underactuated Hand Control & Dynamic Parity
@@ -30,23 +30,24 @@ Chạy `run_pipeline_chunk` trên box 5 cm với ba robot, ba recipe và hai can
 mỗi recipe cho kết quả 18/18 candidate dừng tại `IK: max_iter`. Generator còn
 thay một outcome thật bằng positive fixture dựng thủ công.
 
-Vì vậy [`ROADMAP-P3.2.1-001`](PHASE3_2_1_FULL_PIPELINE_CORRECTNESS_PLAN.md) là
-corrective gate bắt buộc trước khi P3.2 được xem là đóng cho release. Fixture
-P3.2 vẫn là component evidence hợp lệ nhưng không được gọi là
-`pipeline_generated_pass`, không đủ để gỡ Shadow release block và không đủ để
-regenerate dataset. P3.2.1 sửa solver math, constrained palm initialization,
-task-space command admission, dynamic predicate và full-flow mutation gates.
+Vì vậy [`ROADMAP-P3.2.1-001`](PHASE3_2_1_FULL_PIPELINE_CORRECTNESS_PLAN.md) được
+mở làm corrective gate bắt buộc. Gate này đã hoàn tất ngày 2026-08-24 theo
+`TPR-20260824-001` và `REV-20260824-001`: generated-reachable full flow pass cho
+cả ba hand, mutation/determinism gates pass và Shadow được gỡ release block.
+Fixture P3.2 vẫn chỉ là component evidence; canonical-independent matrix P3.2.1
+hiện `0/12`, nên closure không phải claim canonical yield hay dataset release.
 
 ## 1. Baseline và blocker
 
 - Baseline implementation: commit `58cafe5` trên `feature/phase3-data-layer`.
 - Revision phát hiện: `REV-20260823-003`.
-- Shadow profile hiện đúng là **24 joint states / 20 actuator controls** và có
-  `release_blocked=true`.
-- Dynamic validator hiện fail closed bằng `underactuated_targets` khi một full
+- Tại thời điểm mở corrective plan, Shadow profile đúng là **24 joint states /
+  20 actuator controls** và được đặt `release_blocked=true`; closing revision
+  P3.2.1 đã chuyển cờ này sang `false`.
+- Dynamic validator baseline fail closed bằng `underactuated_targets` khi một full
   24-joint target chỉ map được sang 20 transmissions.
-- LEAP known-positive pass với disturbance mặc định; Allegro known-positive
-  pass với disturbance đã pin theo fixture. Shadow chưa có known-positive.
+- LEAP/Allegro component fixtures pass ở baseline; Shadow generated full-flow
+  positive được xác nhận trong P3.2.1.
 
 ### 1.1 Kết luận vật lý không được đảo ngược
 

@@ -2,12 +2,12 @@
 document_id: ROADMAP-P3.2.1-001
 document_type: plan
 title: Kế hoạch Phase 3.2.1 — Full-Pipeline Correctness & Causal Remediation
-version: 1.0.0
-status: active
-date: 2026-08-23
-revises: none
+version: 1.2.0
+status: complete
+date: 2026-08-24
+revises: ROADMAP-P3.2.1-001@1.1.0
 related_plan: ROADMAP-P3.2-001
-latest_revision_record: docs/revisions/REV-20260823-009-phase3-2-1-full-pipeline-correctness.md
+latest_revision_record: docs/revisions/REV-20260824-001-phase3-2-1-closure.md
 ---
 
 # Kế hoạch Phase 3.2.1 — Full-Pipeline Correctness & Causal Remediation
@@ -218,23 +218,35 @@ name. No-contact rollout dùng để đo numerical noise floor trước khi pin 
 
 ## 4. Work breakdown và thứ tự bắt buộc
 
-| ID | Hạng mục | Output | Gate cục bộ |
-| --- | --- | --- | --- |
-| P3.2.1-00 | Thu hồi false-positive evidence và re-block release | profile, generator, manifest status, revision | no-substitution regression |
-| P3.2.1-01 | Tạo characterization harness và frozen failure corpus | JSON evidence của 3 hand x 3 recipe | tái lập 18-candidate baseline |
-| P3.2.1-02 | Hợp nhất contact-state primitive | shared FK contact primitive | residual parity tests |
-| P3.2.1-03 | Sửa normal Jacobian và weighted active mask | fixed/region DLS | FD Jacobian + metamorphic mask |
-| P3.2.1-04 | Harden solver reason/telemetry/line search | solver contracts | reachable/unreachable oracle |
-| P3.2.1-05 | Sửa proposal active set, opposition và identity | proposal modules | surface/spacing/determinism tests |
-| P3.2.1-06 | Thay palm initialization bằng grasp-frame hypotheses | initializer + local refinement | pose/collision equivariance tests |
-| P3.2.1-07 | Tích hợp exact MuJoCo collision admission | collision validator | allowed/forbidden geom tests |
-| P3.2.1-08 | Implement task-space transmission command plan | command layer | controllability/saturation tests |
-| P3.2.1-09 | Tách controller protocol và dynamic predicate | rollout/observer contracts | tracking/palm/floor/stability mutations |
-| P3.2.1-10 | Generated-reachable full-flow fixtures | tests + raw telemetry | positive không nhận oracle q/palm/contact |
-| P3.2.1-11 | Canonical object full-flow matrix | box/cylinder/superquadric/compound evidence | mỗi hand có generated positive |
-| P3.2.1-12 | Negative mutation gate | mutation suite | từng mutation fail đúng stage |
-| P3.2.1-13 | Clean deterministic regeneration | new staging dataset | two-run hash/stage parity |
-| P3.2.1-14 | Independent review và release decision | review + closing revision | reviewer chấp thuận claim scope |
+| ID | Hạng mục | Output | Gate cục bộ | Trạng thái 2026-08-24 |
+| --- | --- | --- | --- | --- |
+| P3.2.1-00 | Thu hồi false-positive evidence và re-block release | profile, generator, manifest status, revision | no-substitution regression | complete |
+| P3.2.1-01 | Tạo characterization harness và frozen failure corpus | JSON evidence của 3 hand x 3 recipe | tái lập 18-candidate baseline | complete |
+| P3.2.1-02 | Hợp nhất contact-state primitive | shared FK contact primitive | residual parity tests | complete |
+| P3.2.1-03 | Sửa normal Jacobian và weighted active mask | fixed/region DLS | FD Jacobian + metamorphic mask | complete |
+| P3.2.1-04 | Harden solver reason/telemetry/line search | solver contracts | reachable/unreachable oracle | complete |
+| P3.2.1-05 | Sửa proposal active set, opposition và identity | proposal modules | surface/spacing/determinism tests | complete |
+| P3.2.1-06 | Thay palm initialization bằng grasp-frame hypotheses | initializer + local refinement | pose/collision equivariance tests | complete |
+| P3.2.1-07 | Tích hợp exact MuJoCo collision admission | collision validator | allowed/forbidden geom tests | complete |
+| P3.2.1-08 | Implement task-space transmission command plan | command layer | controllability/saturation tests | complete |
+| P3.2.1-09 | Tách controller protocol và dynamic predicate | rollout/observer contracts | tracking/palm/floor/stability mutations | complete |
+| P3.2.1-10 | Generated-reachable full-flow fixtures | tests + raw telemetry | positive không nhận oracle q/palm/contact | complete, 3/3 hand positive |
+| P3.2.1-11 | Canonical object full-flow matrix | box/cylinder/superquadric/compound evidence | mỗi hand có generated positive | complete, 12/12 cell measured; 0 canonical positive |
+| P3.2.1-12 | Negative mutation gate | mutation suite | từng mutation fail đúng stage | complete, including zero-damping pre-step rejection |
+| P3.2.1-13 | Clean deterministic regeneration | new staging dataset | two-run hash/stage parity | complete, byte-identical manifests |
+| P3.2.1-14 | Independent review và release decision | review + closing revision | reviewer chấp thuận claim scope | complete; TPR-20260824-001 pass |
+
+P10–P13 evidence nằm tại
+`evidence/phase3_2_1/p10-p13-release-gate/`. Hai generated manifests có
+canonical JSON payload SHA-256 giống nhau
+`5a34f9d8e7f6568c7dc28e1b5f70c0421b1910ef9fe038d75e33efec55b3c563`;
+canonical manifest payload có SHA-256
+`20450c16e2bc74ca6079a7407b9d2573c05784335dcdac3c88f0a6531c3a8eaa`.
+Kết quả `0/12` canonical positive được giữ như measured limitation, không thay
+bằng P10 fixture pass. Review độc lập `TPR-20260824-001` đã chấp thuận claim
+scope sau khi finding active-count fail-closed được sửa và review lại sạch.
+Closing revision `REV-20260824-001` chuyển Shadow sang `release_blocked: false`;
+việc này không phải claim canonical yield hoặc hoàn tất toàn bộ P3.
 
 Thứ tự bắt buộc:
 

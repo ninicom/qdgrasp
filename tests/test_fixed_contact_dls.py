@@ -72,6 +72,14 @@ def test_fixed_contact_dls_batching(mock_spec):
         palm_rot=palm_rot,
         target_contacts=target_contacts,
         target_normals=target_normals,
+        # q=0 places both mock tips exactly at their fallback parent origin,
+        # where normalize(parent->tip) has an undefined direction derivative.
+        # Production profiles use configured contact axes; seed this fallback
+        # mock inside the target ray so the test exercises batching, not that
+        # artificial normalization singularity.
+        init_q=np.stack(
+            [target_contacts[:, 0, 0], target_contacts[:, 1, 1]], axis=1
+        ) * 0.1,
         max_iter=30
     )
 
@@ -103,6 +111,7 @@ def test_convergence_is_per_candidate_and_requires_every_tip(mock_spec):
         palm_rot,
         targets,
         normals,
+        init_q=np.array([[0.04, 0.04], [0.04, 0.3]]),
         max_iter=30,
     )
 

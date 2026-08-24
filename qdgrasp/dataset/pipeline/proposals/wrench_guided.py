@@ -2,6 +2,7 @@ import numpy as np
 import trimesh
 from qdgrasp.dataset.pipeline.contracts import ContactProposal
 from qdgrasp.dataset.pipeline.proposals.region_opposition import generate_region_opposition_proposal
+from qdgrasp.dataset.pipeline.proposals.identity import stable_candidate_id
 
 def compute_preliminary_wrench_score(target_points: np.ndarray, inward_normals: np.ndarray, centroid: np.ndarray) -> float:
     """
@@ -79,11 +80,23 @@ def generate_wrench_guided_proposal(
     # Modify provenance to reflect the wrapper module
     if best_proposal is not None:
         # We must create a new dataclass instance to change provenance since it's frozen
+        candidate_id = stable_candidate_id(
+            "wrench_guided",
+            target_points=best_proposal.target_points,
+            inward_normals=best_proposal.inward_normals,
+            face_ids=best_proposal.face_ids,
+            finger_ids=best_proposal.finger_ids,
+            active_fingers=best_proposal.active_fingers,
+            opposition_pairs=best_proposal.opposition_pairs,
+        )
         best_proposal = ContactProposal(
             target_points=best_proposal.target_points,
             face_ids=best_proposal.face_ids,
             inward_normals=best_proposal.inward_normals,
             finger_ids=best_proposal.finger_ids,
+            active_fingers=best_proposal.active_fingers,
+            opposition_pairs=best_proposal.opposition_pairs,
+            candidate_id=candidate_id,
             region_points=best_proposal.region_points,
             region_face_ids=best_proposal.region_face_ids,
             region_normals=best_proposal.region_normals,

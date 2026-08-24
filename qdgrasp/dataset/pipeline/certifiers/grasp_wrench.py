@@ -9,6 +9,7 @@ def compute_grasp_wrench_space_quality(
     mu: float = 0.5,
     num_edges: int = 8,
     torque_scale: float = 1.0, # scale factor for torque vs force units
+    torsional_friction: float = 0.005,
 ) -> StaticCertificate:
     """
     Computes Ferrari-Canny epsilon-metric on the Grasp Wrench Space (GWS).
@@ -39,8 +40,12 @@ def compute_grasp_wrench_space_quality(
             # Normalize edge vector or keep unit normal component
             # Here we keep normal component = 1.0
             torque = np.cross(r, v_edge)
-            wrench = np.concatenate([v_edge, torque])
-            wrenches.append(wrench)
+            torsional_radius = torsional_friction * torque_scale
+            for torsion_sign in (-1.0, 1.0):
+                wrench = np.concatenate(
+                    [v_edge, torque + torsion_sign * torsional_radius * n]
+                )
+                wrenches.append(wrench)
 
     wrenches = np.array(wrenches) # [K * num_edges, 6]
 

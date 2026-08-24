@@ -395,21 +395,17 @@ def verify_multistage_rollouts() -> dict[str, dict[str, float]]:
     return results
 
 def verify_release_blocked_status() -> None:
-    """Verifies Shadow Hand stays release-blocked until the Phase 3.2.1 gate closes.
-
-    REV-20260823-009 withdrew the Phase 3.2 unblock: it rested on hand-built
-    joint-state fixtures, not on a grasp the pipeline generated end to end.
-    """
+    """Verifies the reviewed Phase 3.2.1 closure unblocks Shadow Hand."""
     import yaml
     logger.info("Verifying release_blocked configuration...")
     shadow_cfg_path = REPO_ROOT / "qdgrasp" / "presets" / "robots" / "shadow_hand.yaml"
     with open(shadow_cfg_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    assert cfg.get("release_blocked") is True, (
-        "Shadow Hand release_blocked must stay true until the Phase 3.2.1 closing revision"
+    assert cfg.get("release_blocked") is False, (
+        "Shadow Hand release_blocked must be false after the Phase 3.2.1 closing revision"
     )
-    logger.info("  Shadow Hand release_blocked is True (blocked pending Phase 3.2.1)")
+    logger.info("  Shadow Hand release_blocked is False (unblocked by Phase 3.2.1 closure)")
 
 def main() -> None:
     t0 = time.time()
@@ -449,7 +445,7 @@ def main() -> None:
     logger.info("Report written to %s", out_path)
     logger.info(
         "=== Phase 3.2 Component-Fixture Audit PASSED in %.2f seconds "
-        "(full-pipeline evidence pending Phase 3.2.1) ===",
+        "(full-pipeline evidence is owned by the completed Phase 3.2.1 gate) ===",
         elapsed,
     )
 

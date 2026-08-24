@@ -66,18 +66,30 @@ ROBOT_CONFIGS = {
 PIPELINE_SOURCES = (
     "qdgrasp/dataset/pipeline/orchestrator.py",
     "qdgrasp/dataset/pipeline/contracts.py",
+    "qdgrasp/dataset/pipeline/canonical_full_flow.py",
+    "qdgrasp/dataset/pipeline/generated_reachable.py",
+    "qdgrasp/dataset/pipeline/contact_state.py",
     "qdgrasp/dataset/pipeline/filter.py",
+    "qdgrasp/dataset/pipeline/palm_hypotheses.py",
+    "qdgrasp/dataset/pipeline/proposals/identity.py",
     "qdgrasp/dataset/pipeline/proposals/surface_fixed.py",
     "qdgrasp/dataset/pipeline/proposals/region_opposition.py",
     "qdgrasp/dataset/pipeline/proposals/wrench_guided.py",
     "qdgrasp/dataset/pipeline/proposals/width_mapper.py",
     "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py",
+    "qdgrasp/dataset/pipeline/solvers/joint_palm_dls.py",
+    "qdgrasp/dataset/pipeline/solvers/normal_equations.py",
+    "qdgrasp/dataset/pipeline/solvers/progress.py",
     "qdgrasp/dataset/pipeline/solvers/region_dls.py",
     "qdgrasp/dataset/pipeline/certifiers/contact_force.py",
     "qdgrasp/dataset/pipeline/certifiers/grasp_wrench.py",
     "qdgrasp/dataset/pipeline/observers/contact_load.py",
     "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py",
+    "qdgrasp/dataset/pipeline/validators/collision_admission.py",
+    "qdgrasp/dataset/pipeline/validators/dynamic_predicate.py",
     "qdgrasp/dataset/pipeline/validators/scene_dynamic.py",
+    "qdgrasp/robot/transmission/command.py",
+    "qdgrasp/robot/transmission/contracts.py",
     "scripts/characterize_pipeline_failures.py",
 )
 
@@ -189,11 +201,25 @@ def outcome_record(outcome: PipelineOutcome, index: int) -> dict[str, Any]:
     proposal = outcome.proposal
     if proposal is not None:
         record["proposal"] = {
+            "candidate_id": proposal.candidate_id,
             "provenance": proposal.provenance,
             "target_points": _floats(proposal.target_points),
             "inward_normals": _floats(proposal.inward_normals),
             "face_ids": [int(f) for f in np.asarray(proposal.face_ids).reshape(-1)],
             "finger_ids": [int(f) for f in np.asarray(proposal.finger_ids).reshape(-1)],
+            "active_fingers": (
+                None
+                if proposal.active_fingers is None
+                else [bool(v) for v in np.asarray(proposal.active_fingers).reshape(-1)]
+            ),
+            "opposition_pairs": (
+                None
+                if proposal.opposition_pairs is None
+                else [
+                    [int(v) for v in pair]
+                    for pair in np.asarray(proposal.opposition_pairs).reshape(-1, 2)
+                ]
+            ),
             "duplicate_face_ids": int(
                 len(np.asarray(proposal.face_ids).reshape(-1))
                 - len(np.unique(np.asarray(proposal.face_ids)))
@@ -202,6 +228,13 @@ def outcome_record(outcome: PipelineOutcome, index: int) -> dict[str, Any]:
 
     kin = outcome.kinematics
     if kin is not None:
+        active_mask = (
+            np.ones_like(np.asarray(kin.position_residuals), dtype=bool)
+            if proposal is None or proposal.active_fingers is None
+            else np.asarray(proposal.active_fingers, dtype=bool)
+        )
+        active_position_residuals = np.asarray(kin.position_residuals)[active_mask]
+        active_normal_residuals = np.asarray(kin.normal_residuals)[active_mask]
         record["kinematics"] = {
             "converged": bool(kin.converged),
             "reason": str(kin.reason),
@@ -213,7 +246,23 @@ def outcome_record(outcome: PipelineOutcome, index: int) -> dict[str, Any]:
             "normal_residuals": _floats(kin.normal_residuals),
             "max_position_residual": float(np.max(np.abs(kin.position_residuals))),
             "max_normal_residual": float(np.max(np.abs(kin.normal_residuals))),
+            "active_max_position_residual": float(
+                np.max(np.abs(active_position_residuals))
+            ),
+            "active_max_normal_residual": float(
+                np.max(np.abs(active_normal_residuals))
+            ),
             "surface_distances": _floats(kin.surface_distances),
+            "solver_metrics": (
+                None
+                if kin.solver_metrics is None
+                else {
+                    name: _floats(value)
+                    for name, value in sorted(kin.solver_metrics.items())
+                }
+            ),
+            "palm_hypothesis_id": kin.palm_hypothesis_id,
+            "palm_hypothesis_metrics": kin.palm_hypothesis_metrics,
         }
 
     cert = outcome.static_certificate
@@ -224,6 +273,18 @@ def outcome_record(outcome: PipelineOutcome, index: int) -> dict[str, Any]:
             "quality_margin": float(cert.quality_margin),
             "object_wrench": _floats(cert.object_wrench),
             "force_solution": _floats(cert.force_solution),
+        }
+
+    collision = outcome.collision_admission
+    if collision is not None:
+        record["collision_admission"] = {
+            "passed": bool(collision.passed),
+            "reason": collision.reason,
+            "contact_pairs": list(collision.contact_pairs),
+            "max_penetration": float(collision.max_penetration),
+            "min_hand_floor_clearance": float(
+                collision.min_hand_floor_clearance
+            ),
         }
 
     dyn = outcome.dynamic_validation

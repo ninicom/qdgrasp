@@ -7,6 +7,12 @@ from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.dataset.pipeline import contact_state as contact_state_module
 from qdgrasp.dataset.pipeline.contracts import KinematicSolution
 from qdgrasp.dataset.pipeline.solvers.normal_equations import masked_normal_equations
+from qdgrasp.dataset.pipeline.solvers.progress import (
+    classify_failure_reasons,
+    masked_jacobian_spectrum,
+    meaningful_cost_decrease,
+    solver_metrics_to_numpy,
+)
 
 def solve_dls_ik_batch(
     spec: RobotSpec,
@@ -104,6 +110,17 @@ def solve_dls_ik_batch(
     # destabilize every other member of the batch.
     I = torch.eye(num_joints, device=device).unsqueeze(0).expand(B, num_joints, num_joints)
     damping_values = torch.full((B,), float(damping), dtype=torch.float32, device=device)
+    initial_cost = torch.full((B,), float("nan"), dtype=torch.float32, device=device)
+    final_cost = torch.full((B,), float("nan"), dtype=torch.float32, device=device)
+    accepted_steps = torch.zeros(B, dtype=torch.int64, device=device)
+    rejected_steps = torch.zeros(B, dtype=torch.int64, device=device)
+    limit_clipped_steps = torch.zeros(B, dtype=torch.int64, device=device)
+    raw_step_norm = torch.zeros(B, dtype=torch.float32, device=device)
+    projected_step_norm = torch.zeros(B, dtype=torch.float32, device=device)
+    gradient_norm = torch.zeros(B, dtype=torch.float32, device=device)
+    jacobian_rank = torch.zeros(B, dtype=torch.int64, device=device)
+    jacobian_condition = torch.full((B,), float("inf"), dtype=torch.float32, device=device)
+    finite_progress = torch.ones(B, dtype=torch.bool, device=device)
 
     for it in range(max_iter):
         active_mask = ~converged & ~insufficient_fingers
@@ -153,6 +170,9 @@ def solve_dls_ik_batch(
 
             cur_flat = torch.cat([p.view(B, -1), (n * normal_weight).view(B, -1)], dim=1) # [B, 6K]
             err = ((target_flat - cur_flat) * active_flat_mask).unsqueeze(-1) # [B, 6K, 1]
+            current_cost = torch.sum(err.squeeze(-1).square(), dim=1)
+            first_observation = torch.isnan(initial_cost)
+            initial_cost = torch.where(first_observation, current_cost, initial_cost)
 
         # Per-sample Jacobians avoid materializing cross-batch derivatives
         # [B, output, B, J], which caused severe memory pressure in ablation.
@@ -169,6 +189,9 @@ def solve_dls_ik_batch(
             # the mask is applied to the Jacobian rows, not only to `err`.
             H, g = masked_normal_equations(J_batch, err, active_flat_mask, damping_matrix)
             g += regularization_weight * (q_reference - q)
+            rank_now, condition_now = masked_jacobian_spectrum(J_batch, active_flat_mask)
+            jacobian_rank = torch.where(active_mask, rank_now, jacobian_rank)
+            jacobian_condition = torch.where(active_mask, condition_now, jacobian_condition)
 
             joint_span = torch.clamp(q_maxs - q_mins, min=1e-6)
             margin = 0.05 * joint_span
@@ -181,7 +204,17 @@ def solve_dls_ik_batch(
             except RuntimeError:
                 dq = torch.bmm(torch.linalg.pinv(H), g.unsqueeze(-1)).squeeze(-1)
 
-            q_trial = torch.clamp(q + step_size * dq, min=q_mins, max=q_maxs)
+            raw_delta = step_size * dq
+            q_unclipped = q + raw_delta
+            q_trial = torch.clamp(q_unclipped, min=q_mins, max=q_maxs)
+            projected_delta = q_trial - q
+            raw_step_norm = torch.where(active_mask, torch.linalg.norm(raw_delta, dim=1), raw_step_norm)
+            projected_step_norm = torch.where(
+                active_mask, torch.linalg.norm(projected_delta, dim=1), projected_step_norm
+            )
+            gradient_norm = torch.where(active_mask, torch.linalg.norm(g, dim=1), gradient_norm)
+            clipped_now = torch.any(torch.abs(q_unclipped - q_trial) > 1e-8, dim=1)
+            limit_clipped_steps += (active_mask & clipped_now).to(torch.int64)
             trial_transforms = spec.forward_kinematics(t_palm_pos, t_palm_rot, q_trial)
             trial_pos = torch.stack(
                 [contact_position(trial_transforms, tip) for tip in spec.fingertip_links], dim=1
@@ -189,7 +222,6 @@ def solve_dls_ik_batch(
             trial_normals = torch.stack(
                 [contact_direction(trial_transforms, tip) for tip in spec.fingertip_links], dim=1
             )
-            current_cost = torch.sum(err.squeeze(-1).square(), dim=1)
             trial_error = torch.cat(
                 [
                     (t_target_pos - trial_pos).reshape(B, -1),
@@ -198,7 +230,17 @@ def solve_dls_ik_batch(
                 dim=1,
             ) * active_flat_mask
             trial_cost = torch.sum(trial_error.square(), dim=1)
-            improved = active_mask & torch.isfinite(trial_cost) & (trial_cost <= current_cost)
+            improved = active_mask & meaningful_cost_decrease(current_cost, trial_cost)
+            accepted_steps += improved.to(torch.int64)
+            rejected_steps += (active_mask & ~improved).to(torch.int64)
+            finite_now = (
+                torch.isfinite(current_cost)
+                & torch.isfinite(trial_cost)
+                & torch.all(torch.isfinite(J_batch), dim=(1, 2))
+                & torch.all(torch.isfinite(dq), dim=1)
+            )
+            finite_progress &= (~active_mask) | finite_now
+            final_cost = torch.where(improved, trial_cost, current_cost)
             q = torch.where(improved.unsqueeze(-1), q_trial, q)
             damping_values = torch.where(
                 improved,
@@ -237,6 +279,32 @@ def solve_dls_ik_batch(
             reasons[idx.item()] = "converged"
         converged |= final_converged
 
+        final_error = torch.cat(
+            [
+                (t_target_pos - achieved_contacts).reshape(B, -1),
+                ((t_target_normal - achieved_normals) * normal_weight).reshape(B, -1),
+            ],
+            dim=1,
+        ) * active_flat_mask
+        final_cost = torch.sum(final_error.square(), dim=1)
+        initial_cost = torch.where(torch.isnan(initial_cost), final_cost, initial_cost)
+
+    reasons = classify_failure_reasons(
+        converged=converged.cpu().numpy(),
+        insufficient_fingers=insufficient_fingers.cpu().numpy(),
+        iterations=iterations.cpu().numpy(),
+        accepted_steps=accepted_steps.cpu().numpy(),
+        rejected_steps=rejected_steps.cpu().numpy(),
+        initial_cost=initial_cost.cpu().numpy(),
+        final_cost=final_cost.cpu().numpy(),
+        raw_step_norm=raw_step_norm.cpu().numpy(),
+        projected_step_norm=projected_step_norm.cpu().numpy(),
+        limit_clipped_steps=limit_clipped_steps.cpu().numpy(),
+        jacobian_rank=jacobian_rank.cpu().numpy(),
+        finite=finite_progress.cpu().numpy(),
+        max_iter=max_iter,
+    )
+
     return KinematicSolution(
         q=q.cpu().numpy(),
         palm_pos=t_palm_pos.cpu().numpy(),
@@ -248,4 +316,18 @@ def solve_dls_ik_batch(
         converged=converged.cpu().numpy(),
         reason=reasons,
         iterations=iterations.cpu().numpy(),
+        solver_metrics=solver_metrics_to_numpy(
+            initial_cost=initial_cost,
+            final_cost=final_cost,
+            accepted_steps=accepted_steps,
+            rejected_steps=rejected_steps,
+            limit_clipped_steps=limit_clipped_steps,
+            raw_step_norm=raw_step_norm,
+            projected_step_norm=projected_step_norm,
+            gradient_norm=gradient_norm,
+            jacobian_rank=jacobian_rank,
+            jacobian_condition=jacobian_condition,
+            final_damping=damping_values,
+            finite=finite_progress,
+        ),
     )

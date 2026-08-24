@@ -8,6 +8,7 @@ def certify_force_closure(
     centroid: np.ndarray,
     mass: float = 1.0,
     mu: float = 0.5,
+    torsional_friction: float = 0.005,
     gravity: np.ndarray | None = None,
 ) -> StaticCertificate:
     """
@@ -64,6 +65,7 @@ def certify_force_closure(
         centroid,
         mu=mu,
         torque_scale=1.0 / object_scale,
+        torsional_friction=torsional_friction,
     )
     if not gws.passed:
         return gws
@@ -101,8 +103,14 @@ def certify_force_closure(
 
             # Wrench produced by this edge
             torque = np.cross(r, v_edge)
-            wrench = np.concatenate([v_edge, torque])
-            V_cols.append(wrench)
+            for torsion_sign in (-1.0, 1.0):
+                wrench = np.concatenate(
+                    [
+                        v_edge,
+                        torque + torsion_sign * torsional_friction * n,
+                    ]
+                )
+                V_cols.append(wrench)
 
     # V is [6, K * 8]
     V = np.column_stack(V_cols)
@@ -113,7 +121,7 @@ def certify_force_closure(
 
     # We want V @ lam = -w_ext
     # Objective: minimize sum(lam)
-    c = np.ones(K * num_edges)
+    c = np.ones(K * num_edges * 2)
 
     res = linprog(
         c,
@@ -129,7 +137,6 @@ def certify_force_closure(
         for i in range(K):
             f_i = np.zeros(3)
             for j in range(num_edges):
-                idx = i * num_edges + j
                 n = normals[i]
                 if np.abs(n[0]) > 0.9:
                     v_temp = np.array([0.0, 1.0, 0.0])
@@ -141,7 +148,9 @@ def certify_force_closure(
 
                 theta = 2.0 * np.pi * j / num_edges
                 v_edge = n + mu * (np.cos(theta) * t1 + np.sin(theta) * t2)
-                f_i += lam[idx] * v_edge
+                for torsion_index in range(2):
+                    idx = (i * num_edges + j) * 2 + torsion_index
+                    f_i += lam[idx] * v_edge
             f_opt[i] = f_i
 
         return StaticCertificate(

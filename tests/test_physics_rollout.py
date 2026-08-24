@@ -65,10 +65,67 @@ def test_validate_grasp_rollout_no_contact():
     )
 
     assert not result.passed
-    assert result.failure_stage == "squeeze"
+    assert result.failure_stage == "active_contact"
 
 
-def test_shadow_underactuated_joint_targets_fail_before_rollout():
+def test_zero_actuated_damping_fails_before_mujoco_step(tmp_path, monkeypatch):
+    xml_path = tmp_path / "zero_damping_hand.xml"
+    xml_path.write_text(
+        """
+<mujoco model="zero_damping_hand">
+  <worldbody>
+    <body name="hand_root">
+      <geom type="sphere" size="0.005" mass="0.01" contype="0" conaffinity="0"/>
+      <body name="palm">
+        <joint name="finger_joint" type="hinge" damping="0"/>
+        <geom type="sphere" size="0.01"/>
+        <body name="tip" pos="0 0 -0.03">
+          <geom type="sphere" size="0.005"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator><position name="finger_actuator" joint="finger_joint" kp="10"/></actuator>
+</mujoco>
+""".strip(),
+        encoding="utf-8",
+    )
+    step_calls = 0
+    original_step = mujoco.mj_step
+
+    def counted_step(model, data):
+        nonlocal step_calls
+        step_calls += 1
+        return original_step(model, data)
+
+    monkeypatch.setattr(mujoco, "mj_step", counted_step)
+    result = validate_grasp_rollout(
+        xml_path,
+        [SubGeomSpec(type="box", size=(0.01, 0.01, 0.01))],
+        ["tip"],
+        palm_pos=(0.5, 0.5, 0.5),
+        object_pos=(0.0, 0.0, 0.01),
+        squeeze_steps=1,
+        lift_steps=1,
+        perturbation_steps=1,
+    )
+
+    assert not result.passed
+    assert result.failure_stage == "controller_protocol"
+    assert result.trajectory_metrics["protocol_error"] == "nonpositive_actuated_damping"
+    assert step_calls == 0
+
+
+def test_shadow_underactuated_joint_targets_fail_before_rollout(monkeypatch):
+    step_calls = 0
+    original_step = mujoco.mj_step
+
+    def counted_step(model, data):
+        nonlocal step_calls
+        step_calls += 1
+        return original_step(model, data)
+
+    monkeypatch.setattr(mujoco, "mj_step", counted_step)
     spec = RobotSpec.from_config("shadow_hand.yaml", sample_anchors=False)
     initial_targets = {name: 0.0 for name in spec.actuated_joint_names}
     # Create an uncontrollable null-space target: FFJ2 +0.5, FFJ1 -0.5 (tendon length unchanged)
@@ -101,9 +158,46 @@ def test_shadow_underactuated_joint_targets_fail_before_rollout():
     assert result.trajectory_metrics["control_dimensions"] == 20.0
     assert result.trajectory_metrics["transmission_rank"] == 20.0
     assert result.trajectory_metrics["nullspace_residual"] > 0.1
+    assert step_calls == 0
 
 
-@pytest.mark.xfail(strict=True, reason="H-05: the corrected RC-01 Jacobian changes the null-space posture this fixture solves for, and the LEAP thumb loses contact entirely (3.62 N -> 0.00 N) while the index finger still carries 2.37 N. The fixture asserts a two-finger grasp built from a solver-derived squeeze command, so its verdict tracks posture the task never constrained. Recorded in evidence/phase3_2_1/README.md; the sustained-contact predicate that replaces this single-frame count is P3.2.1-09.")
+@pytest.mark.parametrize("active_count", [0, 1])
+def test_task_command_with_too_few_active_fingers_fails_before_step(
+    monkeypatch, active_count
+):
+    step_calls = 0
+    original_step = mujoco.mj_step
+
+    def counted_step(model, data):
+        nonlocal step_calls
+        step_calls += 1
+        return original_step(model, data)
+
+    monkeypatch.setattr(mujoco, "mj_step", counted_step)
+    spec = RobotSpec.from_config("shadow_hand.yaml", sample_anchors=False)
+    active = np.zeros(len(spec.fingertip_links), dtype=bool)
+    active[:active_count] = True
+    result = validate_grasp_rollout(
+        resolve_robot_asset(spec.config.source_asset),
+        [SubGeomSpec(type="box", size=(0.01, 0.01, 0.01))],
+        spec.fingertip_links,
+        palm_pos=(0.5, 0.5, 0.5),
+        object_pos=(0.0, 0.0, 0.01),
+        active_fingers=active,
+        desired_fingertip_displacement=np.zeros(
+            (len(spec.fingertip_links), 3), dtype=np.float64
+        ),
+        squeeze_steps=1,
+        lift_steps=1,
+        perturbation_steps=1,
+    )
+
+    assert not result.passed
+    assert result.failure_stage == "insufficient_active_fingers"
+    assert result.trajectory_metrics["active_finger_count"] == active_count
+    assert step_calls == 0
+
+
 def test_known_leap_pinch_lifts_box_without_teleportation():
     spec = RobotSpec.from_config("leap_hand.yaml", sample_anchors=False)
     q_contact = np.array(
