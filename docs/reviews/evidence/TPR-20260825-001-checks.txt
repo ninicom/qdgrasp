@@ -1,0 +1,103 @@
+TPR-20260825-001 INDEPENDENT REVIEW EVIDENCE
+Reviewer: Codex reviewer subagent Faraday, agent 01a037b8-f437-7e60-8418-ce7346603e11
+Independence: internal_independent; ephemeral read-only reviewer; no implementation contribution
+Reviewed revision: 870ef91acfb9feab7d3b10935430d06cc2c878e2
+Dataset revision: e9c87b8ed1a408504c6289fc6a81f272241b90da
+Verdict: pass
+Maximum severity: INFO
+Repository writes by reviewer: none
+
+ENVIRONMENT BOUND
+TMPDIR=/dev/shm
+MUJOCO_GL=egl
+OMP_NUM_THREADS=1
+MKL_NUM_THREADS=1
+OPENBLAS_NUM_THREADS=1
+PYTHONHASHSEED=0
+
+COMMAND E2-001
+timeout 240s .venv/bin/python scripts/check_phase3_3.py --profile micro
+
+OBSERVED E2-001
+- 63 tests passed.
+- Two clean regeneration runs were byte-identical.
+- Positive and all required negative classes passed coverage.
+- worker_count=1, full_root_scan=false, source_copy=false.
+- Initial GLFW attempt aborted; rerun on the same immutable revision with
+  MUJOCO_GL=egl passed. No artifact changed between attempts.
+
+COMMAND E2-002
+timeout 240s .venv/bin/python scripts/check_phase3_3.py --profile release --dataset-root datasets/qdgrasp-scene-tiny
+
+OBSERVED E2-002
+- 12 scenes.
+- 24 observations.
+- 33 scene-state records.
+- 17 grasp records.
+- 3 measured positives.
+- 108 artifact hashes.
+- Negative classes: collision, occlusion, non_target_disturbance.
+
+COMMAND E2-003
+.venv/bin/python -m pytest tests/scenes -k 'not stage_evidence'
+
+OBSERVED E2-003
+- 43 passed, 1 skipped.
+
+COMMAND E2-004
+.venv/bin/python scripts/check_docs.py --root .
+
+OBSERVED E2-004
+- Documentation checker passed 99 files.
+
+READ-ONLY MUTATION/FAlL-CLOSED PROBES E2-005
+- A positive record, even after recomputing its record hash, was rejected when
+  source_class was changed to test_fixture_only.
+- A positive was rejected when squeeze, lift or perturbation evidence was
+  removed.
+- Empty dynamic evidence and a failing static certificate were rejected.
+- worker_count=2 was rejected.
+
+SOURCE/SEMANTIC INSPECTION E2-006
+- Official-layout micro fixtures cover GraspNet-1Billion, DexGraspNet2 and
+  GraspClutter6D adapters, frame direction, camera matching, rigid transforms,
+  calibration and fail-closed provenance.
+- Native table/bin/shelf identities are recomputed from source artifacts.
+- Swept translation/rotation checks inspect the whole scene and restore state.
+- Rollout evidence contains stage states, contact owners, per-finger loads,
+  target lift, non-target impulses and state/identity hashes.
+- Source records prohibit redistribution unless their pinned policy permits it;
+  no external real-source or source-scale compatibility claim is made.
+- Twelve QA stage images cover LEAP, Allegro and Shadow across pregrasp,
+  squeeze, lift and perturbation. Reviewer inspected representative images for
+  all three hands.
+
+REQUIREMENT VERDICT
+1 adapter/frame math: PASS
+2 native deterministic builders: PASS
+3 three-hand whole-scene collision/disturbance: PASS
+4 no fabricated-positive bypass: PASS
+5 deterministic regeneration/hash coverage: PASS
+6 three-hand rendered QA: PASS
+7 resource/I/O safety: PASS
+8 independent confirmation: PASS
+
+FINDINGS
+S0 NONE
+S1 NONE
+S2 NONE
+S3 NONE
+INFO-001 Real external roots were not configured; this is opt-in and no
+         source-scale claim is accepted by this verdict.
+INFO-002 This is internal-independent Codex review, not external or human.
+INFO-003 Reviewer did not rerun the 340-second full repository suite; only
+         scoped P3.3 E2 evidence contributes to this verdict.
+INFO-004 The first GLFW micro attempt aborted; EGL rerun passed on the same
+         immutable subject.
+
+RE-REVIEW CONDITION
+Delta or full review is required if runtime, checker, dataset, protocol,
+threshold, completion criteria or real source-scale compatibility claims change.
+
+This evidence file was materialized by the primary agent from the completed,
+read-only reviewer response. The reviewer did not edit repository files.

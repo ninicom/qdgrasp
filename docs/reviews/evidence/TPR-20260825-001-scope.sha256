@@ -1,0 +1,18 @@
+# TPR-20260825-001 immutable subject identity
+reviewed_commit 870ef91acfb9feab7d3b10935430d06cc2c878e2
+reviewed_tree 3ec44f8af21377fade2a47856df118a4d04e913a
+dataset_commit e9c87b8ed1a408504c6289fc6a81f272241b90da
+dataset_tree_listing_sha256 0054dcbca03b110a36bfd16077582e99e64d53a93bd13708e3cf499b55c0f50b
+dataset_manifest_sha256 2ec852759fa6c32bc42475e8ffd24149063b169d94f08f1178924da745990db9
+phase_plan_sha256 389fa6c2ca54f36c09d9c76a5d286befc3b64b28b07d503601e110c7f0fd120b
+candidate_revision_sha256 3475d8b97b8c54cf7856cc50a13e92344adb4060b380b8e3779554e1da8e230a
+checker_sha256 41e9f5bf95a3dd96ad73cf217f38f2f2d4dbd3ed4b3968630607ad7dda1289d6
+
+The dataset tree digest is SHA-256 over the exact output of:
+  git ls-tree -r 870ef91 datasets/qdgrasp-scene-tiny
+
+The three pre-existing user-owned untracked paths below are excluded from the
+review subject and were unchanged by the reviewer:
+  evidence/kaggle-phase3-pass/
+  kaggle-phase1/kernel-metadata.json
+  kaggle-phase3/
