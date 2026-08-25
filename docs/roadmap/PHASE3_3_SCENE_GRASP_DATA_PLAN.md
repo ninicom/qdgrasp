@@ -2,16 +2,16 @@
 document_id: ROADMAP-P3.3-001
 document_type: plan
 title: Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
-version: 1.4.0
+version: 1.5.0
 status: active
 date: 2026-08-25
-revises: ROADMAP-P3.3-001@1.3.0
+revises: ROADMAP-P3.3-001@1.4.0
 related_plan: ROADMAP-P3.1-001
 depends_on:
   - ROADMAP-P3.1-001
   - ROADMAP-P3.2-001
 literature_cutoff: 2026-08-23
-latest_revision_record: docs/revisions/REV-20260825-004-phase3-3-adapters.md
+latest_revision_record: docs/revisions/REV-20260825-005-phase3-3-render-rollout.md
 ---
 
 # Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
@@ -408,7 +408,7 @@ Thứ tự bắt buộc:
 Mỗi source và mỗi strategy là module riêng. Orchestrator chỉ gọi contract; không
 chứa branch theo tên dataset, hand hoặc environment.
 
-### Trạng thái thực thi tại checkpoint `a6d067e` (2026-08-25)
+### Trạng thái thực thi tại checkpoint `3e47ca2` (2026-08-25)
 
 | Work package | Trạng thái | Bằng chứng / blocker |
 | --- | --- | --- |
@@ -418,19 +418,19 @@ chứa branch theo tên dataset, hand hoặc environment.
 | P3.3-03…05 | implementation complete; source-scale audit pending | GraspNet-1Billion, DexGraspNet2 và GraspClutter6D load scene/pose/camera/observation/external label thật; source manifest/license/hash và audit fail closed tại `a6d067e`; chưa claim full-dataset replay |
 | P3.3-06 | implemented, audit pending | table/bin/shelf support specs đã có test; transform compile được builder kiểm fail-closed |
 | P3.3-07 | complete | verified object manifests được compile thành MuJoCo geoms; replay giữ pose; settle finite/velocity/timeout gate tại `3a2c6a9` |
-| P3.3-08 | remediation required | camera render RGB/depth/segmentation có thật nhưng visibility vẫn map geom ID thô và được ghi chú mock; chưa pack observation evidence |
-| P3.3-09 | implemented, audit pending | ba target selector deterministic có micro tests; context crop module theo plan chưa tách riêng |
+| P3.3-08 | complete | canonical object mask/visibility, centered-intrinsics gate, atomic RGB/depth/mask pack và observation shard record tại `2cd1e65` |
+| P3.3-09 | complete | ba target selector và deterministic target-local depth crop trong object frame tại `3e47ca2` |
 | P3.3-10 | complete | swept translation/rotation samples, target-at-goal policy, whole-scene rejection, state restore và MuJoCo micro fixtures tại `5276232` |
-| P3.3-11 | validator complete; rollout integration pending | stage/hash/load/lift/contact/non-target displacement/rotation/impulse fail-closed tại `fd5f46e`; chưa instrument multi-object hand rollout để sinh evidence đầu vào |
+| P3.3-11 | complete | rollout compile non-target vật lý, snapshot bốn stage, hand/object contact và measured impulse; genuine LEAP sparse-scene pass và wrong-object rejection tại `9465af0` |
 | P3.3-12 | complete | sequential revalidation, exact-target removal và parent/child lineage hash tại `e266ed7` |
 | P3.3-13 | complete | canonical JSONL shards, manifest, loader, positive admission và cross-shard audit tại `6639c5f` |
-| P3.3-14…15 | pending | bị chặn bởi renderer 08, multi-object rollout 11, external source-scale smoke và genuine rendered release evidence |
+| P3.3-14…15 | pending | runtime blocker đã đóng; còn bounded 12-scene/three-hand generation, rendered QA, external source smoke và final independent review |
 
-Checkpoint adapter: 35/35 test trong `tests/scenes` pass tuần tự, giới hạn một
-BLAS/OpenMP thread. Bốn adapter dùng fixture theo layout nguồn, kiểm pose/frame,
-visibility, external-label boundary, file provenance và negative fail-closed.
-Kết quả xác nhận implementation 02–05 nhưng không thay thế smoke trên dataset
-nguồn đầy đủ, multi-object rollout hoặc evidence `QDGrasp-Scene-Tiny`.
+Checkpoint runtime: 40/40 scene tests và gate tổng 82/82 pass tuần tự, giới hạn
+một BLAS/OpenMP thread. Renderer/observation, target crop và measured
+multi-object rollout đã có implementation thật; genuine LEAP fixture pass với
+non-target vật lý. Kết quả chưa thay thế 12-scene/three-hand release generation,
+external source smoke hoặc visual/independent review của `QDGrasp-Scene-Tiny`.
 
 ## 11. Test matrix bắt buộc
 
