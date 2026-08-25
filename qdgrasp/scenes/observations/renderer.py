@@ -165,6 +165,21 @@ def _png_bytes(array: np.ndarray) -> bytes:
     return output.getvalue()
 
 
+def _depth_to_camera_points(depth: np.ndarray, intrinsics: np.ndarray) -> np.ndarray:
+    depth_array = np.asarray(depth, dtype=np.float64)
+    rows, columns = np.indices(depth_array.shape)
+    valid = np.isfinite(depth_array) & (depth_array > 0.0)
+    z = depth_array[valid]
+    return np.stack(
+        [
+            (columns[valid] - intrinsics[0, 2]) * z / intrinsics[0, 0],
+            (rows[valid] - intrinsics[1, 2]) * z / intrinsics[1, 1],
+            z,
+        ],
+        axis=1,
+    ).astype(np.float32)
+
+
 def build_scene_observation(
     spec: SceneSpec,
     model: mujoco.MjModel,
@@ -201,11 +216,19 @@ def build_scene_observation(
     rgb_path = output_dir / "rgb.png"
     depth_path = output_dir / "depth.npy"
     mask_path = output_dir / "instance_mask.png"
+    point_cloud_path = output_dir / "point_cloud.npy"
     depth_buffer = io.BytesIO()
     np.save(depth_buffer, rendered["depth"], allow_pickle=False)
+    point_cloud_buffer = io.BytesIO()
+    np.save(
+        point_cloud_buffer,
+        _depth_to_camera_points(rendered["depth"], np.asarray(camera.intrinsics, dtype=np.float64)),
+        allow_pickle=False,
+    )
     _atomic_write(rgb_path, _png_bytes(rendered["rgb"]))
     _atomic_write(depth_path, depth_buffer.getvalue())
     _atomic_write(mask_path, _png_bytes(rendered["instance_mask"]))
+    _atomic_write(point_cloud_path, point_cloud_buffer.getvalue())
     return SceneObservation(
         scene_id=spec.scene_id,
         camera_id=camera_id,
@@ -215,6 +238,8 @@ def build_scene_observation(
         calibration_hash=_calibration_hash(camera),
         rgb_ref=rgb_path.relative_to(dataset_root).as_posix(),
         depth_ref=depth_path.relative_to(dataset_root).as_posix(),
+        point_cloud_ref=point_cloud_path.relative_to(dataset_root).as_posix(),
+        point_cloud_frame="camera",
         instance_mask_ref=mask_path.relative_to(dataset_root).as_posix(),
         visibility_by_object=rendered["visibility"],
     )
@@ -233,6 +258,7 @@ def scene_observation_record(observation: SceneObservation) -> dict[str, Any]:
         "rgb_ref": observation.rgb_ref,
         "depth_ref": observation.depth_ref,
         "point_cloud_ref": observation.point_cloud_ref,
+        "point_cloud_frame": observation.point_cloud_frame,
         "instance_mask_ref": observation.instance_mask_ref,
         "normal_ref": observation.normal_ref,
         "visibility_by_object": observation.visibility_by_object,

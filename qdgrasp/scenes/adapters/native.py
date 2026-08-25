@@ -207,6 +207,7 @@ class NativeAdapter:
             rgb_ref=optional_ref("rgb_ref"),
             depth_ref=optional_ref("depth_ref"),
             point_cloud_ref=optional_ref("point_cloud_ref"),
+            point_cloud_frame=(str(record["point_cloud_frame"]) if record.get("point_cloud_frame") else None),
             instance_mask_ref=optional_ref("instance_mask_ref"),
             normal_ref=optional_ref("normal_ref"),
             visibility_by_object={

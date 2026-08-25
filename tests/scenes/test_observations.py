@@ -94,6 +94,8 @@ def test_build_scene_observation_packs_references_and_visibility(tmp_path, monke
     observation = build_scene_observation(spec, model, data, "cam_1", "0000", tmp_path, width=4, height=2)
     assert observation.visibility_by_object == {"prim_box_01": 0.25}
     assert np.load(tmp_path / observation.depth_ref, allow_pickle=False).shape == (2, 4)
+    assert np.load(tmp_path / observation.point_cloud_ref, allow_pickle=False).shape == (8, 3)
+    assert observation.point_cloud_frame == "camera"
     assert (
         np.asarray(Image.open(tmp_path / observation.instance_mask_ref)).tolist() == rendered["instance_mask"].tolist()
     )

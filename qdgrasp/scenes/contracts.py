@@ -1,5 +1,6 @@
-from typing import Any, Optional, Protocol, runtime_checkable
 from dataclasses import dataclass, field
+from typing import Any, Protocol, runtime_checkable
+
 import numpy as np
 
 
@@ -9,8 +10,8 @@ class SceneObjectSpec:
     asset_ref: str
     T_world_object: np.ndarray  # [4, 4] homogeneous transform
     scale: float = 1.0
-    mass: Optional[float] = None
-    friction: Optional[tuple[float, ...]] = None
+    mass: float | None = None
+    friction: tuple[float, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -25,7 +26,7 @@ class SupportGeometrySpec:
 class CameraSpec:
     camera_id: str
     intrinsics: np.ndarray  # [3, 3] matrix
-    distortion: Optional[np.ndarray] = None
+    distortion: np.ndarray | None = None
     T_world_camera: np.ndarray = field(default_factory=lambda: np.eye(4))
 
 
@@ -46,8 +47,8 @@ class SceneSpec:
     solver_profile: str = "default"
     settle_seed: int = 0
 
-    source_record_hash: Optional[str] = None
-    license_record: Optional[str] = None
+    source_record_hash: str | None = None
+    license_record: str | None = None
     redistributable: bool = False
 
 
@@ -61,11 +62,12 @@ class SceneObservation:
     T_world_camera: np.ndarray  # [4, 4] matrix
     calibration_hash: str
 
-    rgb_ref: Optional[str] = None
-    depth_ref: Optional[str] = None
-    point_cloud_ref: Optional[str] = None
-    instance_mask_ref: Optional[str] = None
-    normal_ref: Optional[str] = None
+    rgb_ref: str | None = None
+    depth_ref: str | None = None
+    point_cloud_ref: str | None = None
+    point_cloud_frame: str | None = None
+    instance_mask_ref: str | None = None
+    normal_ref: str | None = None
 
     visibility_by_object: dict[str, float] = field(default_factory=dict)
 
@@ -84,7 +86,7 @@ class SceneGraspOutcome:
     palm_T_command: np.ndarray
     active_fingers: np.ndarray
 
-    approach_path: Optional[np.ndarray] = None
+    approach_path: np.ndarray | None = None
     swept_clearance_metrics: dict[str, float] = field(default_factory=dict)
 
     static_certificate: dict[str, Any] = field(default_factory=dict)
@@ -139,20 +141,15 @@ class SceneAdapter(Protocol):
     """
     Interface for third-party dataset adapters to load scene specifications and observations.
     """
-    def probe(self, root: str) -> SourceDatasetInfo:
-        ...
 
-    def index(self, root: str, split: str, limit: Optional[int] = None) -> SceneIndex:
-        ...
+    def probe(self, root: str) -> SourceDatasetInfo: ...
 
-    def load_scene(self, root: str, scene_key: str) -> SceneSpec:
-        ...
+    def index(self, root: str, split: str, limit: int | None = None) -> SceneIndex: ...
 
-    def load_observation(self, root: str, scene_key: str, camera_key: str, frame_key: str) -> SceneObservation:
-        ...
+    def load_scene(self, root: str, scene_key: str) -> SceneSpec: ...
 
-    def load_external_grasps(self, root: str, scene_key: str) -> ExternalGraspSet:
-        ...
+    def load_observation(self, root: str, scene_key: str, camera_key: str, frame_key: str) -> SceneObservation: ...
 
-    def audit(self, root: str, scene_key: str) -> SourceEvidence:
-        ...
+    def load_external_grasps(self, root: str, scene_key: str) -> ExternalGraspSet: ...
+
+    def audit(self, root: str, scene_key: str) -> SourceEvidence: ...
