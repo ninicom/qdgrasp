@@ -1,0 +1,53 @@
+{
+  "bounding_box": [
+    -0.019035764336586,
+    -0.015,
+    -0.1,
+    0.019035764336586,
+    0.015,
+    0.1
+  ],
+  "collision_geoms": [
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.019035764336586,
+        0.015,
+        0.1
+      ],
+      "type": "box"
+    }
+  ],
+  "family": "primitive",
+  "inertia": [
+    6.816666666666668e-05,
+    6.908240215918695e-05,
+    3.915735492520263e-06
+  ],
+  "license": "CC0-1.0",
+  "mass": 0.02,
+  "mesh_filename": "table-shadow-dense-object-00.obj",
+  "mesh_sha256": "aac5764ee9240216658616c7e8a16e6ce77709e59f1b811ce13cdfe03bb8bed1",
+  "object_id": "table-shadow-dense-object-00",
+  "params": {
+    "extents": [
+      0.038071528673172,
+      0.03,
+      0.2
+    ],
+    "release_recipe": "scene_pinch_shadow_v1"
+  },
+  "schema": "qdgrasp/object-manifest/v1",
+  "shape_type": "box"
+}

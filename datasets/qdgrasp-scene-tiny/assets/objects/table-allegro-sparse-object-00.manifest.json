@@ -1,0 +1,53 @@
+{
+  "bounding_box": [
+    -0.031550366431474686,
+    -0.015,
+    -0.02,
+    0.031550366431474686,
+    0.015,
+    0.02
+  ],
+  "collision_geoms": [
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.031550366431474686,
+        0.015,
+        0.02
+      ],
+      "type": "box"
+    }
+  ],
+  "family": "primitive",
+  "inertia": [
+    4.166666666666667e-06,
+    9.302837479735498e-06,
+    8.136170813068832e-06
+  ],
+  "license": "CC0-1.0",
+  "mass": 0.02,
+  "mesh_filename": "table-allegro-sparse-object-00.obj",
+  "mesh_sha256": "66f0d4f23503233b0c1f563bb937252ceb5802ccdd57662637ce742c757a04ec",
+  "object_id": "table-allegro-sparse-object-00",
+  "params": {
+    "extents": [
+      0.06310073286294937,
+      0.03,
+      0.04
+    ],
+    "release_recipe": "scene_pinch_allegro_v1"
+  },
+  "schema": "qdgrasp/object-manifest/v1",
+  "shape_type": "box"
+}

@@ -1,0 +1,53 @@
+{
+  "bounding_box": [
+    -0.013676886446774006,
+    -0.015,
+    -0.02,
+    0.013676886446774006,
+    0.015,
+    0.02
+  ],
+  "collision_geoms": [
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.013676886446774006,
+        0.015,
+        0.02
+      ],
+      "type": "box"
+    }
+  ],
+  "family": "primitive",
+  "inertia": [
+    4.166666666666667e-06,
+    3.913714819186336e-06,
+    2.74704815251967e-06
+  ],
+  "license": "CC0-1.0",
+  "mass": 0.02,
+  "mesh_filename": "table-leap-sparse-object-00.obj",
+  "mesh_sha256": "fe54e9a3ac70fe97aeb098f7fed1154ee73d491757a24daeda8d73d57e2ae4a1",
+  "object_id": "table-leap-sparse-object-00",
+  "params": {
+    "extents": [
+      0.027353772893548012,
+      0.03,
+      0.04
+    ],
+    "release_recipe": "scene_pinch_leap_v1"
+  },
+  "schema": "qdgrasp/object-manifest/v1",
+  "shape_type": "box"
+}

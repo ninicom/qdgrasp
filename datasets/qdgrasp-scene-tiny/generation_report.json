@@ -1,0 +1,28 @@
+{
+  "counts": {
+    "grasp": 17,
+    "observation": 24,
+    "positive_grasp": 3,
+    "scene_state": 33
+  },
+  "dataset_id": "QDGrasp-Scene-Tiny",
+  "frame_limit": 2,
+  "full_root_scan": false,
+  "scene_count": 12,
+  "scene_ids": [
+    "table-leap-sparse",
+    "table-allegro-sparse",
+    "table-shadow-dense",
+    "table-single-val",
+    "bin-single",
+    "bin-sparse",
+    "bin-dense",
+    "bin-sparse-val",
+    "shelf-single",
+    "shelf-sparse",
+    "shelf-dense",
+    "shelf-sparse-val"
+  ],
+  "source_copy": false,
+  "worker_count": 1
+}
