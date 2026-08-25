@@ -15,6 +15,7 @@ from qdgrasp.dataset.pipeline.validators.dynamic_predicate import (
     evaluate_dynamic_success,
 )
 from qdgrasp.objects.schema import SubGeomSpec
+from qdgrasp.scenes.clearance import ClearanceError, check_approach_clearance
 
 
 @dataclass(frozen=True)
@@ -191,6 +192,7 @@ def validate_grasp_rollout(
     contact_joint_targets: Mapping[str, float] | None = None,
     rollout_protocol: RolloutProtocol | None = None,
     non_target_objects: Sequence[RolloutSceneObject] = (),
+    require_scene_clearance: bool = False,
     initial_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
     stage_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
     step_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
@@ -494,6 +496,41 @@ def validate_grasp_rollout(
     }
     floor_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
     obj_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "target_object")
+
+    if require_scene_clearance:
+        hand_body_ids: set[int] = set()
+        for body_id in range(model.nbody):
+            ancestor = body_id
+            while ancestor > 0:
+                if ancestor == root_id:
+                    hand_body_ids.add(body_id)
+                    break
+                ancestor = int(model.body_parentid[ancestor])
+        hand_geom_ids = [geom_id for geom_id in range(model.ngeom) if int(model.geom_bodyid[geom_id]) in hand_body_ids]
+        approach_path = np.repeat(np.eye(4, dtype=np.float64)[None], 2, axis=0)
+        approach_path[:, :3, :3] = root_start_rot
+        approach_path[0, :3, 3] = root_pregrasp_pos
+        approach_path[1, :3, 3] = root_target_pos
+        try:
+            check_approach_clearance(
+                model,
+                data,
+                "target_object",
+                approach_path,
+                hand_geom_ids,
+                target_geom_ids=object_geom_ids,
+            )
+        except ClearanceError as exc:
+            return DynamicValidation(
+                trajectory_metrics={
+                    "swept_clearance_passed": 0.0,
+                    "clearance_reason": exc.reason,
+                    "clearance_telemetry": exc.telemetry,
+                },
+                per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
+                failure_stage=exc.reason,
+                passed=False,
+            )
 
     # Calibrate the contact observer on the same compiled scene with the hand
     # translated far from the object.  This measures numerical force noise
@@ -882,6 +919,7 @@ def validate_grasp_rollout(
     passed, failure_stage = evaluate_dynamic_success(predicate)
 
     metrics = {
+        "swept_clearance_passed": float(require_scene_clearance),
         "max_penetration": float(overall_max_penetration),
         "lift_achieved": float(final_lift),
         "final_active_fingers": float(perturbation_window["sustained_count"]),

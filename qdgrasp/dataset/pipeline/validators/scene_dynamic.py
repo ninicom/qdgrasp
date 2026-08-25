@@ -149,6 +149,7 @@ class SceneDynamicValidator:
             )
         base_loads = np.asarray(base_validation.per_finger_loads, dtype=np.float64)
         active_fingers = base_validation.trajectory_metrics.get("final_active_fingers")
+        swept_clearance = base_validation.trajectory_metrics.get("swept_clearance_passed")
         if (
             base_validation.failure_stage != "none"
             or base_loads.ndim != 2
@@ -159,6 +160,7 @@ class SceneDynamicValidator:
             or not isinstance(active_fingers, (int, float, np.integer, np.floating))
             or not math.isfinite(float(active_fingers))
             or float(active_fingers) <= 0.0
+            or swept_clearance != 1.0
         ):
             return self._result(
                 base_validation,

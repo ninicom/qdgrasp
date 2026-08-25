@@ -361,6 +361,7 @@ def test_known_leap_pinch_lifts_box_without_teleportation():
         )
     }
     assert scene_result.failure_stage == "none"
+    assert scene_result.trajectory_metrics["swept_clearance_passed"] == 1.0
     assert scene_result.trajectory_metrics["non_target_motion"]["obstacle"]["impulse"] == 0.0
 
 

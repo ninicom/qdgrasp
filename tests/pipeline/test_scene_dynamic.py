@@ -31,7 +31,11 @@ def _evidence():
         "perturbation": {"target": _pose(z=0.05), "obstacle": _pose(y=1.01)},
     }
     base = DynamicValidation(
-        trajectory_metrics={"lift_achieved": 0.045, "final_active_fingers": 2.0},
+        trajectory_metrics={
+            "lift_achieved": 0.045,
+            "final_active_fingers": 2.0,
+            "swept_clearance_passed": 1.0,
+        },
         per_finger_loads=np.ones((2, 6)),
         failure_stage="none",
         passed=True,
@@ -80,12 +84,25 @@ def test_failed_base_rollout_cannot_be_promoted_by_scene_evidence():
 def test_passed_flag_without_measured_base_evidence_fails_closed():
     evidence = _evidence()
     evidence["base_validation"] = DynamicValidation(
-        trajectory_metrics={"lift_achieved": 0.05, "final_active_fingers": 2.0},
+        trajectory_metrics={
+            "lift_achieved": 0.05,
+            "final_active_fingers": 2.0,
+            "swept_clearance_passed": 1.0,
+        },
         per_finger_loads=np.empty((0, 6)),
         failure_stage="none",
         passed=True,
     )
     result = SceneDynamicValidator().validate(**evidence)
+    assert result.failure_stage == "evidence_incomplete"
+    assert result.trajectory_metrics["evidence_error"] == "invalid_base_dynamic_evidence"
+
+
+def test_base_rollout_without_swept_clearance_evidence_fails_closed():
+    evidence = _evidence()
+    del evidence["base_validation"].trajectory_metrics["swept_clearance_passed"]
+    result = SceneDynamicValidator().validate(**evidence)
+    assert not result.passed
     assert result.failure_stage == "evidence_incomplete"
     assert result.trajectory_metrics["evidence_error"] == "invalid_base_dynamic_evidence"
 

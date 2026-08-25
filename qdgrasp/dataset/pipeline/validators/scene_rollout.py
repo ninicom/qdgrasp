@@ -125,7 +125,13 @@ def validate_scene_grasp_rollout(
     """Run one physical multi-object rollout and validate only its measured evidence."""
     options = dict(rollout_kwargs or {})
     forbidden = sorted(
-        {"non_target_objects", "initial_observer", "stage_observer", "step_observer"}.intersection(options)
+        {
+            "non_target_objects",
+            "require_scene_clearance",
+            "initial_observer",
+            "stage_observer",
+            "step_observer",
+        }.intersection(options)
     )
     if forbidden:
         raise ConfigError(f"scene rollout options cannot override evidence hooks: {forbidden}")
@@ -138,6 +144,7 @@ def validate_scene_grasp_rollout(
         collision_geoms,
         fingertip_body_names,
         non_target_objects=non_target_objects,
+        require_scene_clearance=True,
         initial_observer=collector.observe_stage,
         stage_observer=collector.observe_stage,
         step_observer=collector.observe_step,

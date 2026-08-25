@@ -70,7 +70,11 @@ def test_scene_rollout_wrapper_feeds_only_observed_evidence(monkeypatch):
             (initial_observer if stage == "initial" else stage_observer)(stage, model, data)
             step_observer(stage, model, data)
         return DynamicValidation(
-            trajectory_metrics={"lift_achieved": 0.045, "final_active_fingers": 2.0},
+            trajectory_metrics={
+                "lift_achieved": 0.045,
+                "final_active_fingers": 2.0,
+                "swept_clearance_passed": 1.0,
+            },
             per_finger_loads=np.ones((2, 6)),
             failure_stage="none",
             passed=True,
