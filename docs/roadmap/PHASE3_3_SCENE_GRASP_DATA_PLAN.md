@@ -2,16 +2,16 @@
 document_id: ROADMAP-P3.3-001
 document_type: plan
 title: Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
-version: 1.6.0
-status: active
+version: 1.7.0
+status: complete
 date: 2026-08-25
-revises: ROADMAP-P3.3-001@1.5.0
+revises: ROADMAP-P3.3-001@1.6.0
 related_plan: ROADMAP-P3.1-001
 depends_on:
   - ROADMAP-P3.1-001
   - ROADMAP-P3.2-001
 literature_cutoff: 2026-08-23
-latest_revision_record: docs/revisions/REV-20260825-006-phase3-3-release-candidate.md
+latest_revision_record: docs/revisions/REV-20260825-007-phase3-3-closure.md
 ---
 
 # Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
@@ -408,7 +408,7 @@ Thứ tự bắt buộc:
 Mỗi source và mỗi strategy là module riêng. Orchestrator chỉ gọi contract; không
 chứa branch theo tên dataset, hand hoặc environment.
 
-### Trạng thái thực thi tại release candidate `a28f210` (2026-08-25)
+### Trạng thái hoàn tất tại candidate `870ef91` (2026-08-25)
 
 | Work package | Trạng thái | Bằng chứng / blocker |
 | --- | --- | --- |
@@ -425,7 +425,7 @@ chứa branch theo tên dataset, hand hoặc environment.
 | P3.3-12 | complete | sequential revalidation, exact-target removal và parent/child lineage hash tại `e266ed7` |
 | P3.3-13 | complete | canonical JSONL shards, manifest, loader, positive admission và cross-shard audit tại `6639c5f` |
 | P3.3-14 | complete | `QDGrasp-Scene-Tiny`: 12 scene, 24 observation, 33 scene-state, 17 grasp, 3 measured positive cho ba hand và 108 artifact hash tại `e9c87b8`; rendered QA đã kiểm trực quan |
-| P3.3-15 | implementation/gates complete; acceptance pending | micro gate 63 test + byte parity, release audit và identity recomputation pass tại `f18b4a1`/`a28f210`; còn independent review theo GOV-REVIEW-001 |
+| P3.3-15 | complete | micro gate 63 test + byte parity, release audit và identity recomputation pass tại `f18b4a1`/`a28f210`; independent review `TPR-20260825-001` pass, không có S0–S3 |
 
 Release candidate chạy tuần tự, giới hạn một BLAS/OpenMP thread. Micro checker
 chạy 63 test, hai clean regeneration byte-identical và đủ positive/negative
@@ -435,7 +435,10 @@ từ dữ liệu gốc và xác nhận 12 scene, 24 observation, 33 scene-state,
 bin và shelf đã được maintainer kiểm trực quan. Ba external real roots chưa cấu
 hình; không có tuyên bố source-scale replay. Theo GOV-REVIEW-001, tác giả không
 được tự phát hành independent-review verdict, nên acceptance P3.3 còn đúng một
-gate độc lập dù implementation và bộ bàn giao đã đóng băng.
+gate độc lập dù implementation và bộ bàn giao đã đóng băng. Gate này sau đó đã
+được reviewer `internal_independent` tái lập trên exact candidate `870ef91`:
+`TPR-20260825-001` có verdict `pass`, không có finding S0–S3. Vì vậy toàn bộ
+P3.3-00…15 và tám điều kiện hoàn tất đã đóng.
 
 ## 11. Test matrix bắt buộc
 
@@ -526,10 +529,13 @@ P3.3 chỉ complete khi:
 8. Independent review xác nhận frame math, collision semantics, license boundary
    và không có synthetic-positive bypass.
 
-Tại release candidate `a28f210`, điều kiện 1–7 đã đạt. Điều kiện 8 vẫn mở và
-không được thay bằng self-review của tác giả. Revision sau independent verdict
-phải pin exact candidate commit/artifact; nếu reviewer yêu cầu sửa runtime hoặc
-dataset thì phải tạo candidate mới và delta/full review theo GOV-REVIEW-001.
+Tại candidate `870ef91`, điều kiện 1–7 đã đạt. Điều kiện 8 được đóng bởi
+`TPR-20260825-001`: reviewer nội bộ độc lập tái chạy micro/release gates, scene
+tests, mutation probes và kiểm frame/collision/license/visual evidence; verdict
+`pass`, không có finding S0–S3. Review không phải external/human và không xác
+nhận source-scale compatibility khi external real roots chưa cấu hình. Mọi thay
+đổi runtime, checker, dataset, protocol, threshold hoặc claim source-scale sau
+candidate này bắt buộc delta/full review theo GOV-REVIEW-001.
 
 P3.3 tạo dữ liệu scene và target-local views tương thích với P4 hiện tại. Việc
 đổi P4 sang full scene-conditioned architecture phải có revision P4 riêng; plan

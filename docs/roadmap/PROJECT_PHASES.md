@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.16.0
+version: 1.17.0
 status: active
 date: 2026-08-25
-revises: ROADMAP-001@1.15.0
+revises: ROADMAP-001@1.16.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260825-006-phase3-3-release-candidate.md
+latest_revision_record: docs/revisions/REV-20260825-007-phase3-3-closure.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -98,10 +98,12 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   `QDGrasp-Scene-Tiny` tại `e9c87b8` có 12 scene/24 observation/33 scene-state,
   17 grasp, ba measured positive cho LEAP/Allegro/Shadow, ba negative class và
   108 artifact hash. Micro regeneration byte parity, release audit, resource
-  policy và rendered QA đã pass. P3.3 vẫn `active` chỉ vì independent acceptance
-  review theo GOV-REVIEW-001 chưa được một reviewer khác phát hành; external
-  real-source roots chưa cấu hình nên không có source-scale claim
-  (`REV-20260825-006`).
+  policy và rendered QA đã pass. Independent review `TPR-20260825-001` tái lập
+  scoped gates, mutation probes và frame/collision/license/visual evidence trên
+  exact candidate `870ef91`; verdict `pass`, không có S0–S3. P3.3 vì vậy
+  `complete` (`REV-20260825-007`). External real-source roots chưa cấu hình nên
+  closure không tạo source-scale compatibility claim. P3 tổng thể vẫn `pending`
+  vì P3.1 release closure và P3.4 contact-rich trajectory còn độc lập chưa đóng.
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
   thêm contact-rich trajectory search trực tiếp trong scene: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety
