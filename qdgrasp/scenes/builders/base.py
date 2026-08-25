@@ -14,6 +14,15 @@ from qdgrasp.objects.manifest import load_object_asset
 from qdgrasp.objects.schema import ObjectManifestSpec
 from qdgrasp.scenes.contracts import SceneObjectSpec, SceneSpec
 
+_OBJECT_COLORS = (
+    (0.85, 0.25, 0.18, 1.0),
+    (0.20, 0.55, 0.90, 1.0),
+    (0.25, 0.75, 0.35, 1.0),
+    (0.90, 0.65, 0.18, 1.0),
+    (0.65, 0.35, 0.85, 1.0),
+    (0.20, 0.75, 0.75, 1.0),
+)
+
 
 def _transform_parts(transform: np.ndarray, label: str) -> tuple[np.ndarray, np.ndarray]:
     value = np.asarray(transform, dtype=np.float64)
@@ -27,9 +36,7 @@ def _transform_parts(transform: np.ndarray, label: str) -> tuple[np.ndarray, np.
     ):
         raise ConfigError(f"{label} transform has invalid rotation")
     quat_xyzw = Rotation.from_matrix(rotation).as_quat()
-    return value[:3, 3], np.array(
-        [quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]]
-    )
+    return value[:3, 3], np.array([quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]])
 
 
 def _numbers(values) -> str:
@@ -46,14 +53,10 @@ def _object_manifest(scene_object: SceneObjectSpec) -> ObjectManifestSpec:
         None,
     )
     if manifest_path is None or not manifest_path.is_file():
-        raise ConfigError(
-            f"scene object asset_ref must resolve to an object manifest or paired OBJ: {asset}"
-        )
+        raise ConfigError(f"scene object asset_ref must resolve to an object manifest or paired OBJ: {asset}")
     _, manifest = load_object_asset(manifest_path)
     if manifest.object_id != scene_object.object_id:
-        raise ConfigError(
-            f"scene object ID {scene_object.object_id} does not match manifest {manifest.object_id}"
-        )
+        raise ConfigError(f"scene object ID {scene_object.object_id} does not match manifest {manifest.object_id}")
     return manifest
 
 
@@ -82,26 +85,25 @@ def build_scene_mujoco_model(
         xml.extend(
             [
                 f'    <body name="{escape(support.support_id)}" pos="{_numbers(pos)}" quat="{_numbers(quat)}">',
-                f'      <geom name="{escape(support.support_id)}::geom" type="box" size="{_numbers(size / 2.0)}" friction="{_numbers(friction)}"/>',
+                (
+                    f'      <geom name="{escape(support.support_id)}::geom" type="box" '
+                    f'size="{_numbers(size / 2.0)}" friction="{_numbers(friction)}" '
+                    'rgba="0.3 0.3 0.34 1"/>'
+                ),
                 "    </body>",
             ]
         )
     if include_objects:
-        for scene_object in spec.objects:
+        for object_index, scene_object in enumerate(spec.objects):
             if not math_is_positive_finite(scene_object.scale):
                 raise ConfigError(f"object {scene_object.object_id} scale must be finite and positive")
             manifest = _object_manifest(scene_object)
-            pos, quat = _transform_parts(
-                scene_object.T_world_object, f"object {scene_object.object_id}"
-            )
-            mass = (
-                float(scene_object.mass)
-                if scene_object.mass is not None
-                else manifest.mass * scene_object.scale**3
-            )
+            pos, quat = _transform_parts(scene_object.T_world_object, f"object {scene_object.object_id}")
+            mass = float(scene_object.mass) if scene_object.mass is not None else manifest.mass * scene_object.scale**3
             if not math_is_positive_finite(mass):
                 raise ConfigError(f"object {scene_object.object_id} mass must be finite and positive")
             friction = scene_object.friction or (1.0, 0.005, 0.0001)
+            rgba = _OBJECT_COLORS[object_index % len(_OBJECT_COLORS)]
             xml.append(
                 f'    <body name="{escape(scene_object.object_id)}" pos="{_numbers(pos)}" quat="{_numbers(quat)}">'
             )
@@ -114,7 +116,7 @@ def build_scene_mujoco_model(
                     f'type="{geom.type}" size="{_numbers(np.asarray(geom.size) * scene_object.scale)}" '
                     f'pos="{_numbers(np.asarray(geom.pos) * scene_object.scale)}" '
                     f'quat="{_numbers(geom.quat)}" mass="{geom_mass:.17g}" '
-                    f'friction="{_numbers(friction)}" condim="4"/>'
+                    f'friction="{_numbers(friction)}" rgba="{_numbers(rgba)}" condim="4"/>'
                 )
             xml.append("    </body>")
     for camera in spec.cameras:

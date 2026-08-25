@@ -149,12 +149,12 @@ def _cameras(width: int, height: int, target_height: float) -> list[CameraSpec]:
         CameraSpec(
             camera_id="cam_top",
             intrinsics=intrinsics.copy(),
-            T_world_camera=_look_at(np.array([0.0, 0.0, 0.65]), target),
+            T_world_camera=_look_at(np.array([0.0, 0.0, target_height + 0.6]), target),
         ),
         CameraSpec(
             camera_id="cam_oblique",
             intrinsics=intrinsics.copy(),
-            T_world_camera=_look_at(np.array([0.38, -0.38, 0.34]), target),
+            T_world_camera=_look_at(np.array([0.38, -0.38, target_height + 0.45]), target),
         ),
     ]
 
@@ -642,7 +642,8 @@ def generate_scene_tiny(
                 )
                 geom_height = max(float(geom.pos[2] + geom.size[-1]) for geom in manifest.collision_geoms)
                 x, y, _ = positions[object_index]
-                position = (x, y, geom_height)
+                support_surface = 0.61 if blueprint.environment == "shelf" else 0.0
+                position = (x, y, support_surface + geom_height)
             transform = np.eye(4, dtype=np.float64)
             transform[:3, 3] = position
             manifests[object_id] = manifest
