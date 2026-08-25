@@ -234,13 +234,18 @@ class SceneDynamicValidator:
         lift_stage_pos = np.asarray(stage_states["lift"][target_object_id]["pos"], dtype=np.float64)
         lift_stage_height = float(lift_stage_pos[2] - target_initial[2])
         measured_lift_phase = float(lift_stage_pos[2] - squeeze_stage_pos[2])
+        measured_final_lift_phase = float(target_final[2] - squeeze_stage_pos[2])
         base_lift = base_validation.trajectory_metrics.get("lift_achieved")
         if (
             not isinstance(base_lift, (int, float, np.integer, np.floating))
             or not math.isfinite(float(base_lift))
             or measured_lift < self.minimum_target_lift
             or lift_stage_height < self.minimum_target_lift
-            or abs(float(base_lift) - measured_lift_phase) > self.lift_consistency_tolerance
+            # ``lift_achieved`` is measured from the end of squeeze to the
+            # end of perturbation. Compare identical endpoints; comparing it
+            # with the end-of-lift pose rejects valid disturbance survival
+            # whenever perturbation causes a small vertical displacement.
+            or abs(float(base_lift) - measured_final_lift_phase) > self.lift_consistency_tolerance
         ):
             return self._result(
                 base_validation,
@@ -248,10 +253,11 @@ class SceneDynamicValidator:
                 {
                     "measured_target_lift": measured_lift,
                     "measured_lift_phase": measured_lift_phase,
+                    "measured_final_lift_phase": measured_final_lift_phase,
                     "lift_stage_height": lift_stage_height,
                     "base_target_lift": base_lift,
                     "lift_consistency_error": (
-                        abs(float(base_lift) - measured_lift_phase)
+                        abs(float(base_lift) - measured_final_lift_phase)
                         if isinstance(base_lift, (int, float, np.integer, np.floating))
                         else None
                     ),
@@ -321,8 +327,9 @@ class SceneDynamicValidator:
             {
                 "measured_target_lift": measured_lift,
                 "measured_lift_phase": measured_lift_phase,
+                "measured_final_lift_phase": measured_final_lift_phase,
                 "lift_stage_height": lift_stage_height,
-                "lift_consistency_error": abs(float(base_lift) - measured_lift_phase),
+                "lift_consistency_error": abs(float(base_lift) - measured_final_lift_phase),
                 "non_target_motion": non_target_metrics,
                 "scene_state_hashes": measured_hashes,
                 "protocol_hash": protocol_hash,

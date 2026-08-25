@@ -71,15 +71,9 @@ def _resolve_target_geoms(
     else:
         target_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, target_object_id)
         if target_body_id < 0:
-            raise ClearanceError(
-                "source_frame_invalid", f"target body is absent from scene: {target_object_id}"
-            )
+            raise ClearanceError("source_frame_invalid", f"target body is absent from scene: {target_object_id}")
         target_bodies = _descendant_body_ids(model, target_body_id)
-        target_geoms = {
-            geom_id
-            for geom_id in range(model.ngeom)
-            if int(model.geom_bodyid[geom_id]) in target_bodies
-        }
+        target_geoms = {geom_id for geom_id in range(model.ngeom) if int(model.geom_bodyid[geom_id]) in target_bodies}
     invalid = sorted(g for g in target_geoms if not 0 <= g < model.ngeom)
     if invalid or not target_geoms:
         raise ClearanceError(
@@ -92,20 +86,14 @@ def _resolve_target_geoms(
 
 def _validate_transform(transform: np.ndarray, index: int) -> None:
     if transform.shape != (4, 4) or not np.all(np.isfinite(transform)):
-        raise ClearanceError(
-            "source_frame_invalid", f"approach transform {index} must be finite and 4x4"
-        )
+        raise ClearanceError("source_frame_invalid", f"approach transform {index} must be finite and 4x4")
     if not np.allclose(transform[3], [0.0, 0.0, 0.0, 1.0], atol=1e-8):
-        raise ClearanceError(
-            "source_frame_invalid", f"approach transform {index} has invalid homogeneous row"
-        )
+        raise ClearanceError("source_frame_invalid", f"approach transform {index} has invalid homogeneous row")
     rotation = transform[:3, :3]
     if not np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-6) or not np.isclose(
         np.linalg.det(rotation), 1.0, atol=1e-6
     ):
-        raise ClearanceError(
-            "source_frame_invalid", f"approach transform {index} has invalid rotation"
-        )
+        raise ClearanceError("source_frame_invalid", f"approach transform {index} has invalid rotation")
 
 
 def _swept_samples(
@@ -128,9 +116,7 @@ def _swept_samples(
             alpha = substep / subdivisions
             transform = np.eye(4, dtype=np.float64)
             transform[:3, 3] = (1.0 - alpha) * start[:3, 3] + alpha * end[:3, 3]
-            transform[:3, :3] = start[:3, :3] @ Rotation.from_rotvec(
-                alpha * rotation_vector
-            ).as_matrix()
+            transform[:3, :3] = start[:3, :3] @ Rotation.from_rotvec(alpha * rotation_vector).as_matrix()
             samples.append((transform, (segment + alpha) / segment_count))
     return samples
 
@@ -192,9 +178,7 @@ def check_approach_clearance(
         for sample_index, (transform, progress) in enumerate(samples):
             data.qpos[qpos_address : qpos_address + 3] = transform[:3, 3]
             quat_xyzw = Rotation.from_matrix(transform[:3, :3]).as_quat()
-            data.qpos[qpos_address + 3 : qpos_address + 7] = [
-                quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]
-            ]
+            data.qpos[qpos_address + 3 : qpos_address + 7] = [quat_xyzw[3], quat_xyzw[0], quat_xyzw[1], quat_xyzw[2]]
             mujoco.mj_forward(model, data)
             for contact_index in range(int(data.ncon)):
                 contact = data.contact[contact_index]
@@ -204,6 +188,11 @@ def check_approach_clearance(
                 if geom1 not in hand_geoms and geom2 not in hand_geoms:
                     continue
                 other_geom = geom2 if geom1 in hand_geoms else geom1
+                # Self-contact belongs to the hand's internal collision state;
+                # it is not an obstacle in the acquisition path.  Some hand
+                # assets intentionally retain adjacent-link contact pairs.
+                if geom1 in hand_geoms and geom2 in hand_geoms:
+                    continue
                 is_target = other_geom in target_geoms
                 at_goal = sample_index == len(samples) - 1
                 if is_target and allow_target_contact_at_goal and at_goal:

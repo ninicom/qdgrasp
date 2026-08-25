@@ -68,6 +68,16 @@ def test_complete_measured_evidence_passes_without_fabricated_metrics():
     np.testing.assert_array_equal(result.per_finger_loads, np.ones((2, 6)))
 
 
+def test_lift_consistency_uses_final_perturbation_endpoint():
+    evidence = _evidence()
+    evidence["stage_scene_states"]["lift"]["target"]["pos"][2] = 0.055
+    evidence["state_hashes"]["lift"] = hash_scene_state(evidence["stage_scene_states"]["lift"])
+    result = SceneDynamicValidator().validate(**evidence)
+    assert result.passed
+    assert result.trajectory_metrics["measured_lift_phase"] == pytest.approx(0.05)
+    assert result.trajectory_metrics["measured_final_lift_phase"] == pytest.approx(0.045)
+
+
 def test_failed_base_rollout_cannot_be_promoted_by_scene_evidence():
     evidence = _evidence()
     evidence["base_validation"] = DynamicValidation(

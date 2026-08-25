@@ -145,7 +145,6 @@ def build_rollout_scene_model(
             quat=item.quat,
             mass=item.mass,
         )
-
     spec.worldbody.add_geom(
         name="floor",
         type=mujoco.mjtGeom.mjGEOM_PLANE,
@@ -177,6 +176,7 @@ def validate_grasp_rollout(
     initial_joint_targets: Mapping[str, float] | None = None,
     object_pos: tuple[float, float, float] = (0.0, 0.0, 0.05),
     object_mass: float = 0.1,
+    approach_steps: int = 0,
     squeeze_steps: int = 150,
     lift_steps: int = 150,
     lift_height: float = 0.05,
@@ -185,6 +185,7 @@ def validate_grasp_rollout(
     max_allowed_penetration: float = 0.002,
     min_active_fingers: int = 2,
     pregrasp_distance: float = 0.03,
+    pregrasp_direction: np.ndarray | None = None,
     expected_fingertip_positions: np.ndarray | None = None,
     fingertip_local_offsets: np.ndarray | None = None,
     active_fingers: np.ndarray | None = None,
@@ -205,6 +206,8 @@ def validate_grasp_rollout(
 
     Returns a DynamicValidation contract instance.
     """
+    if not isinstance(approach_steps, (int, np.integer)) or approach_steps < 0:
+        raise ConfigError("approach_steps must be a non-negative integer")
     model = build_rollout_scene_model(
         hand_xml_path=hand_xml_path,
         collision_geoms=collision_geoms,
@@ -305,10 +308,16 @@ def validate_grasp_rollout(
 
     root_start_rot = requested_palm_rot @ root_to_palm_rot.T
     root_target_pos = np.asarray(palm_pos, dtype=np.float64) - root_start_rot @ root_to_palm_pos
-    outward = np.asarray(palm_pos, dtype=np.float64) - np.asarray(object_pos, dtype=np.float64)
+    outward = (
+        np.asarray(pregrasp_direction, dtype=np.float64)
+        if pregrasp_direction is not None
+        else np.asarray(palm_pos, dtype=np.float64) - np.asarray(object_pos, dtype=np.float64)
+    )
+    if outward.shape != (3,) or not np.all(np.isfinite(outward)):
+        raise ConfigError("pregrasp direction must be a finite 3-vector")
     outward_norm = float(np.linalg.norm(outward))
     if outward_norm < 1e-8:
-        raise ConfigError("target palm position coincides with object center")
+        raise ConfigError("pregrasp direction has zero norm")
     root_pregrasp_pos = root_target_pos + pregrasp_distance * outward / outward_norm
 
     jnt_id = model.body_jntadr[root_id]
@@ -707,6 +716,20 @@ def validate_grasp_rollout(
     if initial_observer is not None:
         initial_observer("initial", model, data)
 
+    # Optional explicit acquisition stage.  Holding the hand open until the
+    # root reaches the certified goal prevents the target from being swept by
+    # fingers that are already closing during approach.
+    for approach_index in range(approach_steps):
+        approach_progress = smoothstep((approach_index + 1) / max(1, approach_steps))
+        data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + approach_progress * (root_target_pos - root_pregrasp_pos)
+        data.ctrl[: model.nu] = np.clip(start_controls, ctrl_mins, ctrl_maxs)
+        mujoco.mj_step(model, data)
+        if step_observer is not None:
+            step_observer("approach", model, data)
+        overall_max_penetration = max(overall_max_penetration, get_max_penetration())
+        if not simulation_is_stable():
+            return instability_result("approach")
+
     # Stage 1: Squeeze (apply closing torque via smoothstep trajectory)
     squeeze_contact_samples: list[dict[str, object]] = []
     squeeze_window_start = max(
@@ -715,7 +738,10 @@ def validate_grasp_rollout(
     )
     for squeeze_index in range(squeeze_steps):
         squeeze_progress = smoothstep((squeeze_index + 1) / max(1, squeeze_steps))
-        data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (root_target_pos - root_pregrasp_pos)
+        if approach_steps > 0:
+            data.mocap_pos[mocap_idx][:3] = root_target_pos
+        else:
+            data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (root_target_pos - root_pregrasp_pos)
         u_val = start_controls + squeeze_progress * (target_controls - start_controls)
         data.ctrl[: model.nu] = np.clip(u_val, ctrl_mins, ctrl_maxs)
 
