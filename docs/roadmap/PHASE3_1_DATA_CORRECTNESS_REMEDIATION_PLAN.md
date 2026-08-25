@@ -2,13 +2,13 @@
 document_id: ROADMAP-P3.1-001
 document_type: plan
 title: Kế hoạch Phase 3.1 — Data Correctness Remediation
-version: 1.7.0
+version: 1.8.0
 status: active
-date: 2026-08-24
-revises: ROADMAP-P3.1-001@1.6.0
+date: 2026-08-25
+revises: ROADMAP-P3.1-001@1.7.0
 related_plan: ROADMAP-P3-001
 literature_cutoff: 2026-08-23
-latest_revision_record: docs/revisions/REV-20260824-001-phase3-2-1-closure.md
+latest_revision_record: docs/revisions/REV-20260825-001-p3-1-13-controlled-ablation.md
 ---
 
 # Kế hoạch Phase 3.1 — Data Correctness Remediation
@@ -494,15 +494,16 @@ Thứ tự bắt buộc: `00 → 01 → (02 → 03 → 04) || (05 → 06) || (08
 → 07 → 11 → (12 || 13) → 14 → 15`. Không regenerate release trước khi cả ba
 recipe và static/dynamic validator pass correctness fixture.
 
-### Trạng thái triển khai tại 2026-08-24
+### Trạng thái triển khai tại 2026-08-25
 
 | Module | Trạng thái | Evidence / blocker |
 | --- | --- | --- |
 | P3.1-00…10 | implemented, in review | Typed contracts, surface/normal-aware IK, static GWS+gravity certificate, actuator+mocap rollout và measured contact wrench có unit/integration tests |
 | P3.1-11 | completed | Component fixtures pass trong Phase 3.2; P3.2.1 bổ sung generated-reachable full flow cho LEAP, Allegro và Shadow, transmission Shadow 24-state/20-control, measured rollout và independent review (`REV-20260824-001`), mở khóa `release_blocked: false` |
 | P3.1-12 | completed | Fabricated positive substitution đã bị xóa; `tests/test_no_positive_substitution.py` pass 6/6 và P3.2.1 gate pin source/profile/protocol hashes cùng raw trajectory evidence |
-| P3.1-13 | ready, pending execution | Blocker P3.1-12 đã đóng. Kết quả cũ trong `REV-20260823-002` vẫn invalidated; lần rerun phải dùng `--execute`, giới hạn tối đa 96 candidates, rate theo mẫu số từng stage và resource limits tuần tự |
-| P3.1-14…15 | pending | Không regenerate hoặc đóng P3.1 trước khi P3.1-12 và controlled ablation pass |
+| P3.1-13 | completed | Official positive-control matrix chạy `84/84` candidates từ commit `79a997b`, chọn duy nhất `region_opposition_v1`: dynamic positive `3/3` hand, 3 accepted contact signatures. Canonical matrix 72 candidates vẫn inconclusive và được giữ như giới hạn generalization; xem `REV-20260825-001` |
+| P3.1-14 | ready | Recipe release trong scope validated envelope đã được khóa là `region_opposition_v1`; regeneration phải giữ provenance recipe, measured rollout và audit class/hand/object coverage |
+| P3.1-15 | pending | Chỉ đóng P3.1 sau khi staging dataset P3.1-14 qua regression, hash và release-evidence gate |
 
 Do máy development từng bị hard-freeze trong ablation, mọi verification còn lại
 phải chạy tuần tự với `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,

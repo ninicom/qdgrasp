@@ -1,0 +1,1560 @@
+{
+  "cells": [
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 15.060121,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 12.703527,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 11.30779,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 14.064785,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 12.474652,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 12.098698,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 11.729638,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 0,
+        "proposal_rejected": 2,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 7.953759,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 0,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 17.446883,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 19.231365,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 0,
+        "proposal_rejected": 2,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 15.575888,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 0,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 14.765683,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 20.858052,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 21.143592,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 18.235726,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 21.315229,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 15.651412,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 16.681847,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 15.669929,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 16.37084,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 0,
+        "proposal_rejected": 2,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 19.171703,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 0,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 22.620556,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 26.166912,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 26.687758,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 0,
+        "proposal_rejected": 2,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 0.008268,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 0,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 15.283587,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 15.207803,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 17.062396,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 9.811451,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 12.500164,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [
+          "324fe2842054b5a74d4a"
+        ],
+        "max_penetration": 0.00038913441482970636,
+        "median_penetration": 0.00038913441482970636,
+        "penetration_observations": 1,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 1,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 13.040865,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 1,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.5,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 8.653128,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "box",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 0,
+        "proposal_rejected": 2,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 0.015851,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 0,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.0,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "sphere",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 11.166701,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "cylinder",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 11.095494,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 1,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 2,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "capsule",
+      "observed_candidates": 2,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 2,
+        "proposal_rejected": 0,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 13.844311,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 2,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.0
+      }
+    }
+  ],
+  "decision": {
+    "criterion": "require all three hands to have measured dynamic positives; require at least two distinct accepted contact signatures; then maximize (accepted_cells, accepted, distinct_accepted_contacts, static_passed, collision_passed, ik_passed, proposal_passed); exact ties are inconclusive",
+    "reason": "no_recipe_has_three_hand_dynamic_evidence",
+    "status": "inconclusive",
+    "winner": null
+  },
+  "protocol": {
+    "candidates_per_cell": 2,
+    "hands": [
+      "leap_hand",
+      "wonik_allegro",
+      "shadow_hand"
+    ],
+    "objects": [
+      "box",
+      "sphere",
+      "cylinder",
+      "capsule"
+    ],
+    "planned_candidates": 72,
+    "recipes": [
+      "surface_fixed_v1",
+      "region_opposition_v1",
+      "wrench_guided_v1"
+    ],
+    "run_dynamic": true,
+    "seed": 42
+  },
+  "provenance": {
+    "git_commit": "c7f406137bcaee77af0c8ca9d525869b3b3d35ee",
+    "object_mesh_hashes": {
+      "box": "46b8fc7e59d5e15bc2bcf2b004b8368ba689e23c0718f8c39b5ff9363890e7d9",
+      "capsule": "b7e45fd5f4a391cfa61ecaf7431959a39d4fa85ba1d42a3b39645bc9fda01d17",
+      "cylinder": "77ada4bcb6138c88fe469465007388132383177787adda2dba0ab56cbc40c05d",
+      "sphere": "3157e770f8f8a5206bd3bb9e9e46a8e166ccc8e88c24cd03878678f1b7b9f9e8"
+    },
+    "robot_profile_hashes": {
+      "leap_hand": "d99fc45aba47695296797703ef288718ebf66a7a660ff8a73b3168bb582ba0fc",
+      "shadow_hand": "6be6a224771c4e3d996f9a71e4d931b8913127b3c070a7cab4ee8296b73fb4fc",
+      "wonik_allegro": "b564de72a12ec9dab80bd92fe4b6d92f408efbd4df8933752529efd75e8f4095"
+    },
+    "rollout_protocol_sha256": "b32594d421acc37ba1c1e32ea3463b6e0955756fa931f04e3c2557c9c83f202e",
+    "source_hashes": {
+      "qdgrasp/dataset/pipeline/contracts.py": "f9d5a0bc734091f3b264565bd9d8395ac79a9e6985919a63fe9c66d8b4796da3",
+      "qdgrasp/dataset/pipeline/orchestrator.py": "a15a056337e07d1a6caa56dfe87da19dc8891e2b7042e11616a5510d22e65545",
+      "qdgrasp/dataset/pipeline/proposals/region_opposition.py": "5e1638008672b50f04ba8168ab6222fa8563d4fc63e752edeb60426f826e4024",
+      "qdgrasp/dataset/pipeline/proposals/surface_fixed.py": "6f970888eacb1ad2f23075c43c925d1b2e75431638440aa411847e22a554c726",
+      "qdgrasp/dataset/pipeline/proposals/wrench_guided.py": "95a5a6b609aaf578468997fc455ce347c14d7d74d4e8a055d8ad89e6d690d08b",
+      "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "797eb0356467906baf53fcb12585ebe35d2ba5d775afdfce306ac951209c70ea",
+      "qdgrasp/dataset/pipeline/solvers/region_dls.py": "2c19e294f9b693a8bd31d498668ada56cffe046359a879476711fa03be9b91c8",
+      "qdgrasp/dataset/pipeline/validators/collision_admission.py": "f9f8e7ec02454c8ec5ca531644db65f581d53b91809bc8e5b374754224608285",
+      "qdgrasp/dataset/pipeline/validators/dynamic_predicate.py": "4376f041b52bf8590a94e05149cc0ba03c41e7c63ed2689f7a7451972cd8ed0a",
+      "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "e81e1a04e34336e853f78c881d83e8186164477d93039aeae58be91c58e2ae4c",
+      "scripts/ablate_recipes.py": "c304dda78632dc47fe4913f53786df940cd8e42e091d03e57043874674542387"
+    }
+  },
+  "recipes": {
+    "region_opposition_v1": {
+      "accepted_cell_count": 0,
+      "accepted_hands": [],
+      "collision_pass_rate": 0.0,
+      "distinct_accepted_contact_count": 0,
+      "distinct_ik_contact_count": 0,
+      "distinct_wrench_count": 0,
+      "dynamic_pass_rate": 0.0,
+      "ik_convergence_rate": 0.0,
+      "proposal_yield": 0.6666666666666666,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 16,
+        "proposal_rejected": 8,
+        "static_force_rejected": 0
+      },
+      "runtime_seconds": 240.696835,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 16,
+        "static_passed": 0
+      },
+      "static_pass_rate": 0.0,
+      "total_candidates": 24
+    },
+    "surface_fixed_v1": {
+      "accepted_cell_count": 0,
+      "accepted_hands": [],
+      "collision_pass_rate": 0.0,
+      "distinct_accepted_contact_count": 0,
+      "distinct_ik_contact_count": 0,
+      "distinct_wrench_count": 0,
+      "dynamic_pass_rate": 0.0,
+      "ik_convergence_rate": 0.0,
+      "proposal_yield": 0.5833333333333334,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 14,
+        "proposal_rejected": 10,
+        "static_force_rejected": 0
+      },
+      "runtime_seconds": 164.955559,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 14,
+        "static_passed": 0
+      },
+      "static_pass_rate": 0.0,
+      "total_candidates": 24
+    },
+    "wrench_guided_v1": {
+      "accepted_cell_count": 0,
+      "accepted_hands": [],
+      "collision_pass_rate": 0.0,
+      "distinct_accepted_contact_count": 0,
+      "distinct_ik_contact_count": 1,
+      "distinct_wrench_count": 0,
+      "dynamic_pass_rate": 0.0,
+      "ik_convergence_rate": 0.0625,
+      "proposal_yield": 0.6666666666666666,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 1,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 15,
+        "proposal_rejected": 8,
+        "static_force_rejected": 0
+      },
+      "runtime_seconds": 127.817917,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 1,
+        "proposal_passed": 16,
+        "static_passed": 0
+      },
+      "static_pass_rate": 0.0,
+      "total_candidates": 24
+    }
+  },
+  "schema": "qdgrasp/controlled-ablation/v1",
+  "status": "COMPLETE"
+}

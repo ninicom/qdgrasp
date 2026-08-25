@@ -1,0 +1,1731 @@
+{
+  "cells": [
+    {
+      "candidate_budget": 4,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:5548425d203e691559ab"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.0506343841552734,
+            "max_active_position_residual": 0.028152281418442726,
+            "proposal_id": "surface_fixed:0948ebd630e328765648",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.6864052414894104,
+            "max_active_position_residual": 0.002167432103306055,
+            "proposal_id": "surface_fixed:0238c8d3743c78104c56",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.0227428674697876,
+            "max_active_position_residual": 0.003170470241457224,
+            "proposal_id": "surface_fixed:d5dfbe185f991cee738e",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 3,
+          "proposal:palm_hypothesis_unavailable": 1
+        },
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 4,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 3,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 11.220317,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 3,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.75,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 14,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:952b0c65b821d68d772a"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:ff577bf3f86f432e2005"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:2e62959f3b37e81437f5"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:c16d48cdc8aa693a775c"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:c9224c0af42a019c5a19"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.8019498586654663,
+            "max_active_position_residual": 0.010125423781573772,
+            "proposal_id": "surface_fixed:cd53950fe737f3a03ab8",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.0326919555664062,
+            "max_active_position_residual": 0.016872607171535492,
+            "proposal_id": "surface_fixed:6463a503d32ac52a77a5",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.0425570011138916,
+            "max_active_position_residual": 0.007839578203856945,
+            "proposal_id": "surface_fixed:16b365c22c20d56c425e",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.0060558319091797,
+            "max_active_position_residual": 0.017262650653719902,
+            "proposal_id": "surface_fixed:d88c3e8630d0a4788fbc",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.0424116849899292,
+            "max_active_position_residual": 0.04806957766413689,
+            "proposal_id": "surface_fixed:12b12ebb686b36b5f11c",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.8143092393875122,
+            "max_active_position_residual": 0.024037547409534454,
+            "proposal_id": "surface_fixed:56f948e326c2a98c8572",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.6617143154144287,
+            "max_active_position_residual": 0.04572218284010887,
+            "proposal_id": "surface_fixed:842eae50872412f75464",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.9567570686340332,
+            "max_active_position_residual": 0.003976774401962757,
+            "proposal_id": "surface_fixed:a48f3bb3ffa684e234ab",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.9028952717781067,
+            "max_active_position_residual": 0.011880500242114067,
+            "proposal_id": "surface_fixed:751aa1190b5355d74b79",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 9,
+          "proposal:palm_hypothesis_unavailable": 5
+        },
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 14,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 9,
+        "proposal_rejected": 5,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 21.857491,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 9,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.6428571428571429,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 10,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:3c92d20836e8a06e378e"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:92d78b37d8352c73eada"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "surface_fixed:34f8912f3d50b7ece0b4"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.7495218515396118,
+            "max_active_position_residual": 0.024648787453770638,
+            "proposal_id": "surface_fixed:0d9b47db9d6075f1b04a",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.2332053184509277,
+            "max_active_position_residual": 0.013258657418191433,
+            "proposal_id": "surface_fixed:4ed9281ced9c72992dc5",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.1629974842071533,
+            "max_active_position_residual": 0.04171861708164215,
+            "proposal_id": "surface_fixed:7d4501f7024fa1e59f15",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.8277511596679688,
+            "max_active_position_residual": 0.041864167898893356,
+            "proposal_id": "surface_fixed:8f830dad2491b3c79a60",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.45924711227417,
+            "max_active_position_residual": 0.016228290274739265,
+            "proposal_id": "surface_fixed:d02156cb5153affe933b",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.29559063911438,
+            "max_active_position_residual": 0.034951772540807724,
+            "proposal_id": "surface_fixed:9fdf22465619bcc0be64",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.4621520042419434,
+            "max_active_position_residual": 0.01932932622730732,
+            "proposal_id": "surface_fixed:8db7b00ffcf2bd82feb4",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 7,
+          "proposal:palm_hypothesis_unavailable": 3
+        },
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 10,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 7,
+        "proposal_rejected": 3,
+        "static_force_rejected": 0
+      },
+      "recipe": "surface_fixed_v1",
+      "runtime_seconds": 25.007408,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 7,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.7,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 4,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [
+          "9cad3814b248b93cce62"
+        ],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "force_closure_failed",
+            "failure_stage": "static_force",
+            "max_active_normal_residual": 0.29677802324295044,
+            "max_active_position_residual": 0.0008114427328109741,
+            "proposal_id": "region_opposition:8b1caea08d4144559c88",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "collision_reason": "forbidden_object_contact:if_bs:target_object",
+            "failure_reason": "forbidden_object_contact:if_bs:target_object",
+            "failure_stage": "collision",
+            "max_active_normal_residual": 0.14878174662590027,
+            "max_active_position_residual": 0.0008574716630391777,
+            "proposal_id": "region_opposition:de59e5fd8d81f77a7bf5",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "passed",
+            "failure_stage": "none",
+            "max_active_normal_residual": 0.1912291944026947,
+            "max_active_position_residual": 0.000602463202085346,
+            "proposal_id": "region_opposition:91d9baf6466608307288",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.8721799850463867,
+            "max_active_position_residual": 0.007045994978398085,
+            "proposal_id": "region_opposition:c6ccdd271a2e0a0bd7ba",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "collision:forbidden_object_contact:if_bs:target_object": 1,
+          "ik:max_iter": 1,
+          "none:passed": 1,
+          "static_force:force_closure_failed": 1
+        },
+        "ik_contact_signatures": [
+          "58290d3e4f872bec3283",
+          "762199849eecfcfb51a4",
+          "9cad3814b248b93cce62"
+        ],
+        "max_penetration": 0.0067591436549103295,
+        "median_penetration": 0.0011364952606854912,
+        "penetration_observations": 3,
+        "wrench_signatures": [
+          "17b0761f87b081d5cf10",
+          "7af342878c60c8c6e158"
+        ]
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 4,
+      "reasons": {
+        "accepted": 1,
+        "collision_rejected": 1,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 1,
+        "proposal_rejected": 0,
+        "static_force_rejected": 1
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 32.938527,
+      "stage_counts": {
+        "collision_passed": 2,
+        "dynamic_attempted": 1,
+        "ik_passed": 3,
+        "proposal_passed": 4,
+        "static_passed": 1
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.6666666666666666,
+        "dynamic_pass_rate": 1.0,
+        "ik_convergence_rate": 0.75,
+        "proposal_yield": 1.0,
+        "static_pass_rate": 0.5
+      }
+    },
+    {
+      "candidate_budget": 14,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [
+          "a5da42abcda773d0895d"
+        ],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:c472c740dec8a0a51414"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:200881b2c396570060ec"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:77d3de2523f013ec561f"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:6cc6879de6191f7bd9e7"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:f5ade5cc35e01021e94e"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:420e916ad290a2295734"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.4500022530555725,
+            "max_active_position_residual": 0.0011651708045974374,
+            "proposal_id": "region_opposition:b67eea866439f86aa48a",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.6944490671157837,
+            "max_active_position_residual": 0.0034806474577635527,
+            "proposal_id": "region_opposition:19c0d98a431f496c0d45",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.8025163412094116,
+            "max_active_position_residual": 0.0017142401775345206,
+            "proposal_id": "region_opposition:b7213851b3cddbde08fa",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "force_closure_failed",
+            "failure_stage": "static_force",
+            "max_active_normal_residual": 0.3597273528575897,
+            "max_active_position_residual": 0.0009138818713836372,
+            "proposal_id": "region_opposition:0451eb9fe4db69c91f77",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.36821478605270386,
+            "max_active_position_residual": 0.002171366009861231,
+            "proposal_id": "region_opposition:a0d33bfcc7b052462511",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.34570571780204773,
+            "max_active_position_residual": 0.0019849231466650963,
+            "proposal_id": "region_opposition:62008fc0906bae036953",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "passed",
+            "failure_stage": "none",
+            "max_active_normal_residual": 0.49066030979156494,
+            "max_active_position_residual": 0.0003939525631722063,
+            "proposal_id": "region_opposition:79193ab394c6c84fd9dc",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.3222097158432007,
+            "max_active_position_residual": 0.0030529899522662163,
+            "proposal_id": "region_opposition:799b31cba37bcb246755",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 6,
+          "none:passed": 1,
+          "proposal:palm_hypothesis_unavailable": 6,
+          "static_force:force_closure_failed": 1
+        },
+        "ik_contact_signatures": [
+          "a5da42abcda773d0895d",
+          "bf5f42940558ad2ad19f"
+        ],
+        "max_penetration": 0.001161039084475065,
+        "median_penetration": 0.0007780433450560896,
+        "penetration_observations": 2,
+        "wrench_signatures": [
+          "10eae9aff5e767056444",
+          "17b0761f87b081d5cf10"
+        ]
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 14,
+      "reasons": {
+        "accepted": 1,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 6,
+        "proposal_rejected": 6,
+        "static_force_rejected": 1
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 44.003456,
+      "stage_counts": {
+        "collision_passed": 2,
+        "dynamic_attempted": 1,
+        "ik_passed": 2,
+        "proposal_passed": 8,
+        "static_passed": 1
+      },
+      "stage_rates": {
+        "collision_pass_rate": 1.0,
+        "dynamic_pass_rate": 1.0,
+        "ik_convergence_rate": 0.25,
+        "proposal_yield": 0.5714285714285714,
+        "static_pass_rate": 0.5
+      }
+    },
+    {
+      "candidate_budget": 10,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [
+          "5583c90a9ae09a8d2703"
+        ],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:c70edc77f7ff9cd513b2"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:3d38144cfdec165168c6"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:7f8d34683184b8adb6c8"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:15d2651e391f6832c627"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:485e912c9085dededad3"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "region_opposition:824991f6ed2e625be9bc"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.9080737233161926,
+            "max_active_position_residual": 0.008627582341432571,
+            "proposal_id": "region_opposition:c62314d8c4ec5860fded",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              false,
+              true,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "passed",
+            "failure_stage": "none",
+            "max_active_normal_residual": 0.22638988494873047,
+            "max_active_position_residual": 0.0004235251690261066,
+            "proposal_id": "region_opposition:37460433c5da418464ff",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.6544368267059326,
+            "max_active_position_residual": 0.0037270234897732735,
+            "proposal_id": "region_opposition:6db52a890e07f4cda520",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.5655462741851807,
+            "max_active_position_residual": 0.005205318331718445,
+            "proposal_id": "region_opposition:5643437da6d2a2377806",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 3,
+          "none:passed": 1,
+          "proposal:palm_hypothesis_unavailable": 6
+        },
+        "ik_contact_signatures": [
+          "5583c90a9ae09a8d2703"
+        ],
+        "max_penetration": 0.0006671151288166512,
+        "median_penetration": 0.0006671151288166512,
+        "penetration_observations": 1,
+        "wrench_signatures": [
+          "10eae9aff5e767056444"
+        ]
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 10,
+      "reasons": {
+        "accepted": 1,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 3,
+        "proposal_rejected": 6,
+        "static_force_rejected": 0
+      },
+      "recipe": "region_opposition_v1",
+      "runtime_seconds": 52.28241,
+      "stage_counts": {
+        "collision_passed": 1,
+        "dynamic_attempted": 1,
+        "ik_passed": 1,
+        "proposal_passed": 4,
+        "static_passed": 1
+      },
+      "stage_rates": {
+        "collision_pass_rate": 1.0,
+        "dynamic_pass_rate": 1.0,
+        "ik_convergence_rate": 0.25,
+        "proposal_yield": 0.4,
+        "static_pass_rate": 1.0
+      }
+    },
+    {
+      "candidate_budget": 4,
+      "hand": "leap_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:d92712c4494c77a1a0c5"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.5837668180465698,
+            "max_active_position_residual": 0.0041941381059587,
+            "proposal_id": "wrench_guided:708894f027f5814c724a",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 2.3971996307373047,
+            "max_active_position_residual": 0.004796114284545183,
+            "proposal_id": "wrench_guided:cdeaa02e00ba2472ea09",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.2375476360321045,
+            "max_active_position_residual": 0.004422000143676996,
+            "proposal_id": "wrench_guided:72e54047d35364675e74",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 3,
+          "proposal:palm_hypothesis_unavailable": 1
+        },
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 4,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 3,
+        "proposal_rejected": 1,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 32.637116,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 3,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.75,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 14,
+      "hand": "wonik_allegro",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:5a3b387d55734a5d0b2e"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:af5f0a95a7fda3f87fc2"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:0eba9a72b203655c3eca"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:d36057a74a61e0123c1c"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:3523ccabb52df0395980"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:b2a4a71d6c300caeaaba"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:7c070c8121a88dec8210"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.23695573210716248,
+            "max_active_position_residual": 0.0014819211792200804,
+            "proposal_id": "wrench_guided:16dec1b9851c56ef4f3c",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.3163807690143585,
+            "max_active_position_residual": 0.0017440031515434384,
+            "proposal_id": "wrench_guided:c5ad6664889ab2ef2e8c",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.4679498076438904,
+            "max_active_position_residual": 0.003440020838752389,
+            "proposal_id": "wrench_guided:abd442d3d5fc8a7b88b5",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.0638214349746704,
+            "max_active_position_residual": 0.005442934576421976,
+            "proposal_id": "wrench_guided:ca6209d4f672522aa9e6",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.6305283308029175,
+            "max_active_position_residual": 0.0015045440522953868,
+            "proposal_id": "wrench_guided:4349ab73fcce1d2fd8e7",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.29899466037750244,
+            "max_active_position_residual": 0.0012433945666998625,
+            "proposal_id": "wrench_guided:fe205b6b75be92892fa4",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.5437040328979492,
+            "max_active_position_residual": 0.00211686291731894,
+            "proposal_id": "wrench_guided:b66141a973c93ccb47a1",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 7,
+          "proposal:palm_hypothesis_unavailable": 7
+        },
+        "ik_contact_signatures": [],
+        "max_penetration": null,
+        "median_penetration": null,
+        "penetration_observations": 0,
+        "wrench_signatures": []
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 14,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 7,
+        "proposal_rejected": 7,
+        "static_force_rejected": 0
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 80.996313,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 7,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 0.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.0,
+        "proposal_yield": 0.5,
+        "static_pass_rate": 0.0
+      }
+    },
+    {
+      "candidate_budget": 10,
+      "hand": "shadow_hand",
+      "metrics": {
+        "accepted_contact_signatures": [],
+        "candidate_diagnostics": [
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:285e49115720b6f336a8"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              true,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:18570d1185f22e9dc8fd"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "palm_hypothesis_unavailable",
+            "failure_stage": "proposal",
+            "proposal_id": "wrench_guided:5c687c13fe023496a3ba"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.856323003768921,
+            "max_active_position_residual": 0.006461555603891611,
+            "proposal_id": "wrench_guided:53604f150e9687c17c09",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 1.3139081001281738,
+            "max_active_position_residual": 0.009191535413265228,
+            "proposal_id": "wrench_guided:89ab1ebcae5b5cddc7ef",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              false,
+              true,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "force_closure_failed",
+            "failure_stage": "static_force",
+            "max_active_normal_residual": 0.28131645917892456,
+            "max_active_position_residual": 0.0005584427854046226,
+            "proposal_id": "wrench_guided:969138fa9e38dff09f13",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.8629761338233948,
+            "max_active_position_residual": 0.0021336032077670097,
+            "proposal_id": "wrench_guided:05ea520e34567358964f",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              true,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.8616949915885925,
+            "max_active_position_residual": 0.004382653161883354,
+            "proposal_id": "wrench_guided:5fe6d6104cc11f4e243e",
+            "solver_reason": "max_iter"
+          },
+          {
+            "active_fingers": [
+              false,
+              false,
+              false,
+              true,
+              true
+            ],
+            "collision_reason": "passed",
+            "failure_reason": "force_closure_failed",
+            "failure_stage": "static_force",
+            "max_active_normal_residual": 0.2766348123550415,
+            "max_active_position_residual": 0.00037195123150013387,
+            "proposal_id": "wrench_guided:1a2925c5bf2e13f65252",
+            "solver_reason": "converged"
+          },
+          {
+            "active_fingers": [
+              true,
+              false,
+              false,
+              false,
+              true
+            ],
+            "failure_reason": "max_iter",
+            "failure_stage": "ik",
+            "max_active_normal_residual": 0.9512463212013245,
+            "max_active_position_residual": 0.0017769505502656102,
+            "proposal_id": "wrench_guided:ccd5db9eb8a16b525c1f",
+            "solver_reason": "max_iter"
+          }
+        ],
+        "failure_signature": {
+          "ik:max_iter": 5,
+          "proposal:palm_hypothesis_unavailable": 3,
+          "static_force:force_closure_failed": 2
+        },
+        "ik_contact_signatures": [
+          "3a9d43de6e4bada27ef4",
+          "5494d1ebeb419c3d31da"
+        ],
+        "max_penetration": 0.0003935940055816538,
+        "median_penetration": 0.0003206840241883526,
+        "penetration_observations": 2,
+        "wrench_signatures": [
+          "17b0761f87b081d5cf10"
+        ]
+      },
+      "object": "generated_reachable",
+      "observed_candidates": 10,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 5,
+        "proposal_rejected": 3,
+        "static_force_rejected": 2
+      },
+      "recipe": "wrench_guided_v1",
+      "runtime_seconds": 113.580966,
+      "stage_counts": {
+        "collision_passed": 2,
+        "dynamic_attempted": 0,
+        "ik_passed": 2,
+        "proposal_passed": 7,
+        "static_passed": 0
+      },
+      "stage_rates": {
+        "collision_pass_rate": 1.0,
+        "dynamic_pass_rate": 0.0,
+        "ik_convergence_rate": 0.2857142857142857,
+        "proposal_yield": 0.7,
+        "static_pass_rate": 0.0
+      }
+    }
+  ],
+  "decision": {
+    "criterion": "require all three hands to have measured dynamic positives; require at least two distinct accepted contact signatures; then maximize (accepted_cells, accepted, distinct_accepted_contacts, static_passed, collision_passed, ik_passed, proposal_passed); exact ties are inconclusive",
+    "reason": "unique_pre_registered_score",
+    "scores": {
+      "region_opposition_v1": [
+        3,
+        3,
+        3,
+        3,
+        5,
+        6,
+        16
+      ]
+    },
+    "status": "selected",
+    "winner": "region_opposition_v1"
+  },
+  "protocol": {
+    "candidate_budgets_by_hand": {
+      "leap_hand": 4,
+      "shadow_hand": 10,
+      "wonik_allegro": 14
+    },
+    "candidates_per_cell": null,
+    "hands": [
+      "leap_hand",
+      "wonik_allegro",
+      "shadow_hand"
+    ],
+    "interpretation_limit": "May select a recipe for the validated positive-control envelope; does not establish procedural-object generalization.",
+    "matrix": "positive-control",
+    "objects": [
+      "generated_reachable"
+    ],
+    "planned_candidates": 84,
+    "recipes": [
+      "surface_fixed_v1",
+      "region_opposition_v1",
+      "wrench_guided_v1"
+    ],
+    "run_dynamic": true,
+    "scope": "morphology-specific pipeline positive controls",
+    "seed": 42
+  },
+  "provenance": {
+    "git_commit": "79a997b7ba2a568f1ea2f01812823cedb85ee0a4",
+    "object_mesh_hashes": {
+      "leap_hand/generated_reachable": "9485b40b3b2da687955ca743086e4e2c91ad5244fbeaadca4eb38fd26bf82d10",
+      "shadow_hand/generated_reachable": "7bc059032647fd7f3bde76a7655966c48cf765b4665393e2e0a046f8522ddbf4",
+      "wonik_allegro/generated_reachable": "7df9e392fc77f74348758ed50d31eef1a2a67fc0cdb792d7bbf016e916e1128d"
+    },
+    "robot_profile_hashes": {
+      "leap_hand": "d99fc45aba47695296797703ef288718ebf66a7a660ff8a73b3168bb582ba0fc",
+      "shadow_hand": "6be6a224771c4e3d996f9a71e4d931b8913127b3c070a7cab4ee8296b73fb4fc",
+      "wonik_allegro": "b564de72a12ec9dab80bd92fe4b6d92f408efbd4df8933752529efd75e8f4095"
+    },
+    "rollout_protocol_sha256": "b32594d421acc37ba1c1e32ea3463b6e0955756fa931f04e3c2557c9c83f202e",
+    "source_hashes": {
+      "qdgrasp/dataset/pipeline/contracts.py": "f9d5a0bc734091f3b264565bd9d8395ac79a9e6985919a63fe9c66d8b4796da3",
+      "qdgrasp/dataset/pipeline/generated_reachable.py": "2051c38237b4aa2a76223442988e73400332290013676d747801c40212098684",
+      "qdgrasp/dataset/pipeline/orchestrator.py": "9a37be0c3443b640b0f53b75bd9ca799bb9abe9b511e80abb001d60c3239dffc",
+      "qdgrasp/dataset/pipeline/proposals/region_opposition.py": "5e1638008672b50f04ba8168ab6222fa8563d4fc63e752edeb60426f826e4024",
+      "qdgrasp/dataset/pipeline/proposals/surface_fixed.py": "6f970888eacb1ad2f23075c43c925d1b2e75431638440aa411847e22a554c726",
+      "qdgrasp/dataset/pipeline/proposals/wrench_guided.py": "0e2a09aa995cce7886f85e9e778e35cedf12de4be7cc4aad656aa3ff4ef51cf5",
+      "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "797eb0356467906baf53fcb12585ebe35d2ba5d775afdfce306ac951209c70ea",
+      "qdgrasp/dataset/pipeline/solvers/region_dls.py": "863ebbfcfffeffbf20a15be200684c4a4e38e26a63018d8643e372ca121a393e",
+      "qdgrasp/dataset/pipeline/validators/collision_admission.py": "f9f8e7ec02454c8ec5ca531644db65f581d53b91809bc8e5b374754224608285",
+      "qdgrasp/dataset/pipeline/validators/dynamic_predicate.py": "4376f041b52bf8590a94e05149cc0ba03c41e7c63ed2689f7a7451972cd8ed0a",
+      "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "e81e1a04e34336e853f78c881d83e8186164477d93039aeae58be91c58e2ae4c",
+      "scripts/ablate_recipes.py": "3e7bdb882a6c9fc59b0656482970f7b2f5a709462bb0922d602554614bd1e6dc"
+    }
+  },
+  "recipes": {
+    "region_opposition_v1": {
+      "accepted_cell_count": 3,
+      "accepted_hands": [
+        "leap_hand",
+        "shadow_hand",
+        "wonik_allegro"
+      ],
+      "collision_pass_rate": 0.8333333333333334,
+      "distinct_accepted_contact_count": 3,
+      "distinct_ik_contact_count": 6,
+      "distinct_wrench_count": 3,
+      "dynamic_pass_rate": 1.0,
+      "ik_convergence_rate": 0.375,
+      "proposal_yield": 0.5714285714285714,
+      "reasons": {
+        "accepted": 3,
+        "collision_rejected": 1,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 10,
+        "proposal_rejected": 12,
+        "static_force_rejected": 2
+      },
+      "runtime_seconds": 129.346722,
+      "stage_counts": {
+        "collision_passed": 5,
+        "dynamic_attempted": 3,
+        "ik_passed": 6,
+        "proposal_passed": 16,
+        "static_passed": 3
+      },
+      "static_pass_rate": 0.6,
+      "total_candidates": 28
+    },
+    "surface_fixed_v1": {
+      "accepted_cell_count": 0,
+      "accepted_hands": [],
+      "collision_pass_rate": 0.0,
+      "distinct_accepted_contact_count": 0,
+      "distinct_ik_contact_count": 0,
+      "distinct_wrench_count": 0,
+      "dynamic_pass_rate": 0.0,
+      "ik_convergence_rate": 0.0,
+      "proposal_yield": 0.6785714285714286,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 19,
+        "proposal_rejected": 9,
+        "static_force_rejected": 0
+      },
+      "runtime_seconds": 58.383326,
+      "stage_counts": {
+        "collision_passed": 0,
+        "dynamic_attempted": 0,
+        "ik_passed": 0,
+        "proposal_passed": 19,
+        "static_passed": 0
+      },
+      "static_pass_rate": 0.0,
+      "total_candidates": 28
+    },
+    "wrench_guided_v1": {
+      "accepted_cell_count": 0,
+      "accepted_hands": [],
+      "collision_pass_rate": 1.0,
+      "distinct_accepted_contact_count": 0,
+      "distinct_ik_contact_count": 2,
+      "distinct_wrench_count": 1,
+      "dynamic_pass_rate": 0.0,
+      "ik_convergence_rate": 0.11764705882352941,
+      "proposal_yield": 0.6071428571428571,
+      "reasons": {
+        "accepted": 0,
+        "collision_rejected": 0,
+        "dynamic_rejected": 0,
+        "dynamic_skipped": 0,
+        "ik_rejected": 15,
+        "proposal_rejected": 11,
+        "static_force_rejected": 2
+      },
+      "runtime_seconds": 227.369536,
+      "stage_counts": {
+        "collision_passed": 2,
+        "dynamic_attempted": 0,
+        "ik_passed": 2,
+        "proposal_passed": 17,
+        "static_passed": 0
+      },
+      "static_pass_rate": 0.0,
+      "total_candidates": 28
+    }
+  },
+  "schema": "qdgrasp/controlled-ablation/v2",
+  "status": "COMPLETE"
+}

@@ -83,9 +83,11 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   complete. Generated-reachable full flow pass cho LEAP, Allegro và Shadow;
   solver math, palm initialization, exact collision, task-space command,
   dynamic predicate và deterministic evidence đã qua independent review.
-  Shadow được gỡ release block bởi `REV-20260824-001`. Canonical-independent
-  yield vẫn `0/12`; controlled ablation, official regeneration và các gate P3
-  còn lại chưa được tuyên bố hoàn tất.
+  Shadow được gỡ release block bởi `REV-20260824-001`. Controlled ablation
+  P3.1-13 đã chọn `region_opposition_v1` trong validated positive-control scope
+  (`REV-20260825-001`), nhưng canonical-independent yield vẫn `0/12` và không
+  chứng minh generalization. Official regeneration P3.1-14 và closure P3.1-15
+  còn pending.
 - Phase 3.3 ([`ROADMAP-P3.3-001`](PHASE3_3_SCENE_GRASP_DATA_PLAN.md)) mở rộng
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object
