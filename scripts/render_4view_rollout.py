@@ -305,13 +305,79 @@ def run_kaggle_video_suite(
 ) -> list[dict]:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "pass").mkdir(parents=True, exist_ok=True)
+    (out_dir / "pal").mkdir(parents=True, exist_ok=True)
+    (out_dir / "fail").mkdir(parents=True, exist_ok=True)
+
     if robot_assets_root:
         os.environ["QDGRASP_ROBOT_ASSETS_ROOT"] = str(robot_assets_root)
 
     scenarios = [
-        # Pass 1: Wonik Allegro Side Pinch on Box (Certified 8.6cm lift)
+        # --- LEAP Hand Scenarios ---
         {
-            "id": "pass_01_allegro_box",
+            "id": "pass_01_leap_box",
+            "category": "pass",
+            "robot": "leap_hand",
+            "robot_label": "LEAP Hand (4 Fingers)",
+            "object_name": "prim_box_01",
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 0.0, 1.1, 1.1,
+                0.0, 0.0, 1.1, 1.1,
+                0.0, 0.0, 1.1, 1.1,
+                0.9, 0.8, 1.0, 1.0
+            ],
+            "geoms": [SubGeomSpec(type="box", size=(0.025, 0.025, 0.025), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
+        },
+        {
+            "id": "pass_02_leap_cylinder",
+            "category": "pass",
+            "robot": "leap_hand",
+            "robot_label": "LEAP Hand (4 Fingers)",
+            "object_name": "prim_cylinder_01",
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 0.0, 1.2, 1.2,
+                0.0, 0.0, 1.2, 1.2,
+                0.0, 0.0, 1.2, 1.2,
+                0.9, 0.8, 1.1, 1.1
+            ],
+            "geoms": [SubGeomSpec(type="cylinder", size=(0.02, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
+        },
+        {
+            "id": "pass_03_leap_superquadric",
+            "category": "pass",
+            "robot": "leap_hand",
+            "robot_label": "LEAP Hand (4 Fingers)",
+            "object_name": "sq_smooth_01",
+            "palm_link": "palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 16,
+            "q_close": [
+                0.0, 0.0, 1.2, 1.1,
+                0.0, 0.0, 1.2, 1.1,
+                0.0, 0.0, 1.2, 1.1,
+                0.9, 0.8, 1.0, 1.0
+            ],
+            "geoms": [SubGeomSpec(type="sphere", size=(0.028,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
+        },
+
+        # --- Wonik Allegro Scenarios ---
+        {
+            "id": "pass_04_allegro_box",
             "category": "pass",
             "robot": "wonik_allegro",
             "robot_label": "Wonik Allegro (4 DoF)",
@@ -330,9 +396,8 @@ def run_kaggle_video_suite(
             "object_pos": (0.0, 0.0, 0.05),
             "object_mass": 0.08,
         },
-        # Pass 2: Wonik Allegro Cylindrical Wrap on Cylinder
         {
-            "id": "pass_02_allegro_cylinder",
+            "id": "pass_05_allegro_cylinder",
             "category": "pass",
             "robot": "wonik_allegro",
             "robot_label": "Wonik Allegro (4 DoF)",
@@ -351,9 +416,8 @@ def run_kaggle_video_suite(
             "object_pos": (0.0, 0.0, 0.05),
             "object_mass": 0.08,
         },
-        # Pass 3: Wonik Allegro Waist Grip on Dumbbell
         {
-            "id": "pass_03_allegro_dumbbell",
+            "id": "pass_06_allegro_dumbbell",
             "category": "pass",
             "robot": "wonik_allegro",
             "robot_label": "Wonik Allegro (4 DoF)",
@@ -376,31 +440,57 @@ def run_kaggle_video_suite(
             "object_pos": (0.0, 0.0, 0.05),
             "object_mass": 0.08,
         },
-        # Pass 4: Wonik Allegro Opposition on Superquadric
+
+        # --- Shadow Hand Scenarios (Phase 3.2 Underactuated Control & Rank 20) ---
         {
-            "id": "pass_04_allegro_superquadric",
+            "id": "pass_07_shadow_box",
             "category": "pass",
-            "robot": "wonik_allegro",
-            "robot_label": "Wonik Allegro (4 DoF)",
-            "object_name": "sq_smooth_01",
-            "palm_link": "palm",
+            "robot": "shadow_hand",
+            "robot_label": "Shadow Hand (5 Fingers, Rank 20)",
+            "object_name": "prim_box_01",
+            "palm_link": "rh_palm",
             "palm_pos": [-0.09, 0.0, 0.065],
             "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
-            "q_open": [0.0] * 16,
+            "q_open": [0.0] * 20,
             "q_close": [
-                0.0, 1.2, 1.3, 1.2,
-                0.0, 1.2, 1.3, 1.2,
-                0.0, 1.2, 1.3, 1.2,
-                1.1, 0.9, 1.2, 1.2
+                0.0, 0.0,
+                0.0, 0.9, 0.9,
+                0.0, 0.9, 0.9,
+                0.0, 0.9, 0.9,
+                0.0, 0.0, 0.9, 0.9,
+                0.6, 0.5, 0.4, 0.8, 0.8
             ],
-            "geoms": [SubGeomSpec(type="sphere", size=(0.028,), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "geoms": [SubGeomSpec(type="box", size=(0.025, 0.025, 0.025), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
             "object_pos": (0.0, 0.0, 0.05),
             "object_mass": 0.08,
         },
-        # Fail 1: Oversized Box (Exceeds Hand Reach Envelope)
         {
-            "id": "fail_01_oversized_box",
-            "category": "fail",
+            "id": "pass_08_shadow_cylinder",
+            "category": "pass",
+            "robot": "shadow_hand",
+            "robot_label": "Shadow Hand (5 Fingers, Rank 20)",
+            "object_name": "prim_cylinder_01",
+            "palm_link": "rh_palm",
+            "palm_pos": [-0.09, 0.0, 0.065],
+            "palm_rot": [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]],
+            "q_open": [0.0] * 20,
+            "q_close": [
+                0.0, 0.0,
+                0.0, 1.0, 1.0,
+                0.0, 1.0, 1.0,
+                0.0, 1.0, 1.0,
+                0.0, 0.0, 1.0, 1.0,
+                0.6, 0.5, 0.4, 0.8, 0.8
+            ],
+            "geoms": [SubGeomSpec(type="cylinder", size=(0.02, 0.04), pos=(0.0, 0.0, 0.0), quat=(1.0, 0.0, 0.0, 0.0))],
+            "object_pos": (0.0, 0.0, 0.05),
+            "object_mass": 0.08,
+        },
+
+        # --- Pal / Fail Scenarios (Stress Limits & Slip Boundary) ---
+        {
+            "id": "pal_01_oversized_box",
+            "category": "pal",
             "robot": "wonik_allegro",
             "robot_label": "Wonik Allegro (Oversized Reach Limit)",
             "object_name": "prim_box_huge",
@@ -418,10 +508,9 @@ def run_kaggle_video_suite(
             "object_pos": (0.0, 0.0, 0.05),
             "object_mass": 0.30,
         },
-        # Fail 2: Low Friction Slip on Sphere
         {
-            "id": "fail_02_low_friction_slip",
-            "category": "fail",
+            "id": "pal_02_low_friction_slip",
+            "category": "pal",
             "robot": "wonik_allegro",
             "robot_label": "Wonik Allegro (Friction Stress Limit)",
             "object_name": "prim_sphere_slick",
@@ -444,7 +533,7 @@ def run_kaggle_video_suite(
 
     manifest = []
     print("\n=======================================================")
-    print("STARTING MULTI-VIEW ROLLOUT RENDERING (VERSION 14)")
+    print("STARTING MULTI-VIEW ROLLOUT RENDERING (PHASE 3 SUITE)")
     print("=======================================================")
 
     for sc in scenarios:
@@ -452,6 +541,12 @@ def run_kaggle_video_suite(
         res = render_scenario_rollout(sc, out_dir)
         manifest.append(res)
         print(f"    Result: {res['status']}, Actual Outcome: {res['actual_outcome']}, Lift: {res['lift_achieved']:.4f}m, Video: {res['video_path']}")
+
+        # Ensure copy/alias in both pal and fail if category is pal
+        if sc['category'] == 'pal':
+            fail_video = out_dir / "fail" / f"{sc['id']}.mp4"
+            if Path(res['video_path']).exists() and not fail_video.exists():
+                fail_video.write_bytes(Path(res['video_path']).read_bytes())
 
     return manifest
 

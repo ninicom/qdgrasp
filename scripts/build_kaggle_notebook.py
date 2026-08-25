@@ -1,4 +1,4 @@
-"""Build self-contained Kaggle notebook for Phase 1/2/3 CUDA verification and 4-View Video Rendering."""
+"""Build self-contained Kaggle notebook for Phase 3 CUDA verification and 4-View Video Rendering."""
 
 from __future__ import annotations
 
@@ -7,21 +7,24 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
 def build_unified_notebook() -> None:
     cells = [
         {
             "cell_type": "markdown",
             "metadata": {},
             "source": [
-                "# QDGrasp CUDA Gate & Multi-Angle (4-View) Grasp Video Suite\n",
+                "# QDGrasp Phase 3 CUDA Gate & Multi-Angle (4-View) Grasp Video Suite\n",
                 "\n",
-                "Fail-closed verification gate and 4-camera video generation running on NVIDIA Tesla T4 GPU on Kaggle.\n",
+                "Verification gate and 4-camera video generation running on NVIDIA Tesla T4 GPU on Kaggle.\n",
                 "\n",
                 "### Contents:\n",
                 "1. **Phase 1**: PyTorch CUDA FP32 train, AMP (`16-mixed`), bit-exact optimizer resume.\n",
                 "2. **Phase 2**: Forward Kinematics (FK) parity between CPU and CUDA for LEAP Hand, Wonik Allegro, Shadow Hand.\n",
-                "3. **Phase 3**: Library packaging, dataset schema registration, GPU training benchmark on CUDA.\n",
-                "4. **Phase 3.4**: Multi-Angle (4-View) Grasp Rollout Video Suite across 3 robot embodiments (LEAP, Allegro, Shadow) and procedural shapes.\n"
+                "3. **Phase 3.2**: Underactuated Control, Rank-20 Moment Matrix FD parity, controllable-space projection.\n",
+                "4. **Phase 3.2.1**: 100-Case Stress Matrix & Multi-Embodiment Rollout Gate.\n",
+                "5. **Phase 3.3**: Scene Grasping Dataset Schema, Sharding, and Deterministic Release Parity.\n",
+                "6. **Phase 3.4**: Multi-Angle (4-View) Grasp Rollout Video Suite across 3 robot embodiments (LEAP Hand, Wonik Allegro, Shadow Hand) and procedural shapes.\n"
             ]
         },
         {
@@ -42,7 +45,7 @@ def build_unified_notebook() -> None:
                 "    'lightning>=2.6.0', 'mujoco>=3.3.0', 'numpy>=2.0.0',\n",
                 "    'scipy>=1.14.0', 'trimesh>=4.0.0', 'safetensors>=0.5.0',\n",
                 "    'pydantic>=2.10.0', 'PyYAML>=6.0.0', 'einops>=0.8.0',\n",
-                "    'rich>=13.0.0', 'typer>=0.16.0', 'imageio[ffmpeg]', 'Pillow',\n",
+                "    'rich>=13.0.0', 'typer>=0.16.0', 'imageio[ffmpeg]', 'Pillow', 'pytest',\n",
                 "], check=True)\n",
                 "\n",
                 "subprocess.run([\n",
@@ -50,12 +53,19 @@ def build_unified_notebook() -> None:
                 "    'git+https://github.com/ninicom/qdgrasp.git@feature/phase3-data-layer',\n",
                 "], check=True)\n",
                 "\n",
-                "# 2. Clone mujoco-menagerie for robot assets into /tmp\n",
+                "# 2. Clone repository scripts and mujoco-menagerie for robot assets into /tmp\n",
                 "assets_dir = '/tmp/robot-assets/mujoco-menagerie'\n",
                 "if not os.path.exists(assets_dir):\n",
                 "    subprocess.run([\n",
                 "        'git', 'clone', '--depth', '1',\n",
                 "        'https://github.com/google-deepmind/mujoco_menagerie.git', assets_dir,\n",
+                "    ], check=True)\n",
+                "\n",
+                "repo_dir = '/tmp/qdgrasp_repo'\n",
+                "if not os.path.exists(repo_dir):\n",
+                "    subprocess.run([\n",
+                "        'git', 'clone', '--depth', '1', '-b', 'feature/phase3-data-layer',\n",
+                "        'https://github.com/ninicom/qdgrasp.git', repo_dir,\n",
                 "    ], check=True)\n",
                 "\n",
                 "print('QDGrasp & dependencies installed successfully on Python', sys.version.split()[0])\n"
@@ -67,7 +77,7 @@ def build_unified_notebook() -> None:
             "metadata": {},
             "outputs": [],
             "source": [
-                "# Phase 1, 2, 3 Verification Gate and GPU Benchmark\n",
+                "# Phase 1, 2, 3 Verification Gates & Audits\n",
                 "import os\n",
                 "import subprocess\n",
                 "import sys\n",
@@ -165,13 +175,20 @@ def build_unified_notebook() -> None:
                 "}\n",
                 "Path(\"phase3_cuda_evidence.json\").write_text(json.dumps(evidence, indent=2))\n",
                 "print(\"\\\\nSaved evidence to phase3_cuda_evidence.json\")\n",
-                "print(\"==================================================\")\n",
-                "print(\"ALL PHASES CUDA GATES & BENCHMARKS PASSED (100%)!\")\n",
-                "print(\"==================================================\")\n",
                 "'''\n",
                 "\n",
                 "env = dict(os.environ, CUBLAS_WORKSPACE_CONFIG=':4096:8')\n",
-                "res = subprocess.run([sys.executable, '-c', runner_code], env=env, check=True)\n"
+                "subprocess.run([sys.executable, '-c', runner_code], env=env, check=True)\n",
+                "\n",
+                "# Run Phase 3 Audits directly from cloned repo\n",
+                "print('\\n--> Running Phase 3.2, 3.2.1, and 3.3 Verification Audits...')\n",
+                "env['QDGRASP_ROBOT_ASSETS_ROOT'] = '/tmp/robot-assets'\n",
+                "subprocess.run([sys.executable, '/tmp/qdgrasp_repo/scripts/check_phase3_2.py'], env=env, check=True)\n",
+                "subprocess.run([sys.executable, '/tmp/qdgrasp_repo/scripts/check_phase3_2_1.py'], env=env, check=True)\n",
+                "subprocess.run([sys.executable, '/tmp/qdgrasp_repo/scripts/check_phase3_3.py'], env=env, check=True)\n",
+                "print('\\n==================================================')\n",
+                "print('ALL PHASE 3 GATES & AUDITS PASSED (100%)!')\n",
+                "print('==================================================')\n"
             ]
         },
         {
@@ -180,7 +197,8 @@ def build_unified_notebook() -> None:
             "source": [
                 "## Phase 3.4: Multi-Angle (4-View) Grasp Rollout Video Suite\n",
                 "\n",
-                "Renders 4 synchronized virtual camera perspectives (Isometric 45°, Front 0°, Side 90°, Top-Down -85°) into 2x2 grid `.mp4` videos for test grasp rollouts across **LEAP Hand**, **Wonik Allegro**, and **Shadow Hand** on procedural shapes.\n"
+                "Renders 4 synchronized virtual camera perspectives (Isometric 45°, Front 0°, Side 90°, Top-Down -85°) into 2x2 grid `.mp4` videos for test grasp rollouts across **LEAP Hand**, **Wonik Allegro**, and **Shadow Hand** on procedural shapes.\n",
+                "Videos are organized into `videos/pass/` and `videos/pal/`."
             ]
         },
         {
@@ -206,13 +224,8 @@ def build_unified_notebook() -> None:
                 "os.environ[\"QDGRASP_ROBOT_ASSETS_ROOT\"] = \"/tmp/robot-assets\"\n",
                 "os.environ[\"MUJOCO_GL\"] = \"egl\"\n",
                 "\n",
-                "# Clone or pull scripts\n",
-                "scripts_dir = Path(\"/tmp/qdgrasp_scripts\")\n",
-                "if not scripts_dir.exists():\n",
-                "    subprocess.run([\"git\", \"clone\", \"--depth\", \"1\", \"-b\", \"feature/phase3-data-layer\", \"https://github.com/ninicom/qdgrasp.git\", str(scripts_dir)], check=True)\n",
-                "\n",
                 "import sys\n",
-                "sys.path.insert(0, str(scripts_dir))\n",
+                "sys.path.insert(0, \"/tmp/qdgrasp_repo\")\n",
                 "from scripts.render_4view_rollout import run_kaggle_video_suite\n",
                 "\n",
                 "output_dir = Path(\"/kaggle/working/videos\")\n",
@@ -223,7 +236,7 @@ def build_unified_notebook() -> None:
                 "\n",
                 "# Run rendering in headless subprocess with EGL / OS facilities\n",
                 "env = dict(os.environ, MUJOCO_GL='egl', QDGRASP_ROBOT_ASSETS_ROOT='/tmp/robot-assets')\n",
-                "subprocess.run([sys.executable, '-c', f'import subprocess\\n{video_runner_code}'], env=env, check=True)\n",
+                "subprocess.run([sys.executable, '-c', video_runner_code], env=env, check=True)\n",
                 "\n",
                 "# Load results and render inline HTML video players\n",
                 "manifest_p = Path('/kaggle/working/video_manifest.json')\n",
@@ -233,11 +246,10 @@ def build_unified_notebook() -> None:
                 "    print(f'🎬 Multi-Angle (4-View) Grasp Videos Generated ({len(results)} Scenarios)')\n",
                 "    print(f'================================================================================\\n')\n",
                 "    \n",
-                "    # Separate and display PASS vs FAIL videos\n",
                 "    pass_results = [r for r in results if r.get('category') == 'pass']\n",
-                "    fail_results = [r for r in results if r.get('category') == 'fail']\n",
+                "    pal_results = [r for r in results if r.get('category') in ('pal', 'fail')]\n",
                 "    \n",
-                "    print(f'=== [PASS CATEGORY: {len(pass_results)} Videos] ===')\n",
+                "    print(f'=== [PASS CATEGORY: {len(pass_results)} Videos in videos/pass/] ===')\n",
                 "    for res in pass_results:\n",
                 "        vid_p = Path(res['video_path'])\n",
                 "        if vid_p.exists() and res['status'] == 'SUCCESS':\n",
@@ -259,19 +271,19 @@ def build_unified_notebook() -> None:
                 "            '''\n",
                 "            display(HTML(card_html))\n",
                 "    \n",
-                "    print(f'\\n=== [FAIL / STRESS CATEGORY: {len(fail_results)} Videos] ===')\n",
-                "    for res in fail_results:\n",
+                "    print(f'\\n=== [PAL / STRESS CATEGORY: {len(pal_results)} Videos in videos/pal/] ===')\n",
+                "    for res in pal_results:\n",
                 "        vid_p = Path(res['video_path'])\n",
                 "        if vid_p.exists() and res['status'] == 'SUCCESS':\n",
                 "            b64_data = base64.b64encode(vid_p.read_bytes()).decode('utf-8')\n",
                 "            card_html = f'''\n",
                 "            <div style=\"margin-bottom: 28px; padding: 16px; background: #2a1515; border: 1px solid #ef4444; border-radius: 10px; color: #f4f4f5; font-family: sans-serif;\">\n",
                 "                <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;\">\n",
-                "                    <h3 style=\"margin: 0; font-size: 1.15rem; color: #fca5a5;\">&#x274C; [FAIL] {res['robot']} &times; {res['object']} ({res['scenario']})</h3>\n",
+                "                    <h3 style=\"margin: 0; font-size: 1.15rem; color: #fca5a5;\">&#x274C; [PAL] {res['robot']} &times; {res['object']} ({res['scenario']})</h3>\n",
                 "                    <span style=\"background: #991b1b; color: #fecaca; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem;\">&#x2718; EXPECTED SLIP / REACH LIMIT</span>\n",
                 "                </div>\n",
                 "                <p style=\"margin: 4px 0 12px 0; color: #cbd5e1; font-size: 0.9rem;\">\n",
-                "                    Dir: <code style=\"color: #fca5a5; background: #450a0a; padding: 2px 6px; border-radius: 4px;\">videos/fail/{vid_p.name}</code> | Size: <b>{res['file_size']:,} bytes</b> | 4-View Layout: [Isometric 45&deg; | Front 0&deg; | Side 90&deg; | Top -85&deg;]\n",
+                "                    Dir: <code style=\"color: #fca5a5; background: #450a0a; padding: 2px 6px; border-radius: 4px;\">videos/pal/{vid_p.name}</code> | Size: <b>{res['file_size']:,} bytes</b> | 4-View Layout: [Isometric 45&deg; | Front 0&deg; | Side 90&deg; | Top -85&deg;]\n",
                 "                </p>\n",
                 "                <video width=\"960\" height=\"720\" controls autoplay loop muted style=\"border-radius: 8px; border: 1px solid #dc2626; width: 100%; max-width: 960px; display: block;\">\n",
                 "                    <source src=\"data:video/mp4;base64,{b64_data}\" type=\"video/mp4\">\n",
@@ -301,9 +313,17 @@ def build_unified_notebook() -> None:
         "nbformat_minor": 5
     }
 
-    out_path = ROOT / "kaggle-phase1" / "qdgrasp-phase-1-cuda-framework-gate.ipynb"
-    out_path.write_text(json.dumps(nb, indent=1))
-    print(f"Built unified notebook {out_path} ({out_path.stat().st_size} bytes)")
+    # Write to both phase3 and phase1 kernel destinations
+    p3_path = ROOT / "kaggle-phase3" / "qdgrasp-phase-3-cuda-gate.ipynb"
+    p3_path.parent.mkdir(parents=True, exist_ok=True)
+    p3_path.write_text(json.dumps(nb, indent=1))
+    print(f"Built unified notebook {p3_path} ({p3_path.stat().st_size} bytes)")
+
+    p1_path = ROOT / "kaggle-phase1" / "qdgrasp-phase-1-cuda-framework-gate.ipynb"
+    p1_path.parent.mkdir(parents=True, exist_ok=True)
+    p1_path.write_text(json.dumps(nb, indent=1))
+    print(f"Built unified notebook {p1_path} ({p1_path.stat().st_size} bytes)")
+
 
 if __name__ == "__main__":
     build_unified_notebook()
