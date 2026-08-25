@@ -144,6 +144,7 @@ def test_scene_rollout_result_exposes_same_stage_observer_evidence(monkeypatch):
 
     monkeypatch.setattr(scene_rollout_module, "validate_grasp_rollout", fake_rollout)
     observed = []
+    observed_steps = []
     result = run_scene_grasp_rollout(
         "unused.xml",
         [],
@@ -154,6 +155,7 @@ def test_scene_rollout_result_exposes_same_stage_observer_evidence(monkeypatch):
         recipe_hash="b" * 64,
         source_hash="c" * 64,
         evidence_stage_observer=lambda stage, model, data: observed.append((stage, float(data.time))),
+        evidence_step_observer=lambda stage, model, data: observed_steps.append((stage, float(data.time))),
     )
     assert result.validation.passed
     assert [stage for stage, _ in observed] == [
@@ -162,4 +164,5 @@ def test_scene_rollout_result_exposes_same_stage_observer_evidence(monkeypatch):
         "lift",
         "perturbation",
     ]
+    assert [stage for stage, _ in observed_steps] == ["initial", "squeeze", "lift", "perturbation"]
     assert result.state_hashes == result.validation.trajectory_metrics["scene_state_hashes"]

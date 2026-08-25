@@ -134,6 +134,7 @@ def run_scene_grasp_rollout(
     scene_validator: SceneDynamicValidator | None = None,
     rollout_kwargs: Mapping[str, Any] | None = None,
     evidence_stage_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
+    evidence_step_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
 ) -> SceneRolloutResult:
     """Run one physical multi-object rollout and return its exact measured evidence."""
     options = dict(rollout_kwargs or {})
@@ -158,6 +159,11 @@ def run_scene_grasp_rollout(
         if evidence_stage_observer is not None:
             evidence_stage_observer(stage, model, data)
 
+    def observe_step(stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+        collector.observe_step(stage, model, data)
+        if evidence_step_observer is not None:
+            evidence_step_observer(stage, model, data)
+
     base_validation = validate_grasp_rollout(
         hand_xml_path,
         collision_geoms,
@@ -166,7 +172,7 @@ def run_scene_grasp_rollout(
         require_scene_clearance=True,
         initial_observer=observe_stage,
         stage_observer=observe_stage,
-        step_observer=collector.observe_step,
+        step_observer=observe_step,
         **options,
     )
     initial_state = collector.stage_states.get("initial", {})
