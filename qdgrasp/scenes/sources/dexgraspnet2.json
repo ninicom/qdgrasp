@@ -1,0 +1,10 @@
+{
+  "dataset_id": "dexgraspnet2",
+  "evidence_url": "https://github.com/PKU-EPIC/DexGraspNet2/blob/main/README.md",
+  "expected_layout": "scenes; meshdata; dex_grasps_new or acronym_test_scenes",
+  "license": "CC BY-NC 4.0",
+  "redistributable": false,
+  "source_url": "https://huggingface.co/datasets/lhrlhr/DexGraspNet2.0",
+  "verified_date": "2026-08-25",
+  "version": "DexGraspNet 2.0 / CoRL 2024"
+}

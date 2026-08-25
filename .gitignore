@@ -22,8 +22,10 @@ dist/
 /checkpoints/
 /datasets/*
 !/datasets/dgn-open-tiny/
+!/datasets/qdgrasp-scene-tiny/
 *.pt
 !/datasets/dgn-open-tiny/**
+!/datasets/qdgrasp-scene-tiny/**
 !/datasets/dgn-open-tiny/**/*.pt
 *.pth
 *.ckpt

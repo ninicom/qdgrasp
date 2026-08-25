@@ -1,0 +1,10 @@
+{
+  "dataset_id": "graspclutter6d",
+  "evidence_url": "https://sites.google.com/view/graspclutter6d/dataset",
+  "expected_layout": "split_info; scenes/<scene>/{scene_camera,scene_gt,scene_gt_info,rgb,depth}; models_obj_m; grasp_label",
+  "license": "CC BY-SA 4.0",
+  "redistributable": false,
+  "source_url": "https://huggingface.co/datasets/GraspClutter6D/GraspClutter6D",
+  "verified_date": "2026-08-25",
+  "version": "GraspClutter6D official 2025 release"
+}

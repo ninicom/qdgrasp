@@ -56,6 +56,7 @@ qdgrasp = [
   "cfg/*.yaml",
   "presets/*.yaml",
   "presets/**/*.yaml",
+  "scenes/sources/*.json",
   "assets/*",
   "assets/**/*",
 ]

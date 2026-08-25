@@ -1,0 +1,10 @@
+{
+  "dataset_id": "graspnet1b",
+  "evidence_url": "https://graspnet.net/",
+  "expected_layout": "scenes/<scene>/<camera>/{annotations,rgb,depth,label}; models/<object>; grasp_label",
+  "license": "Upstream dataset terms require separate confirmation; redistribution is prohibited by QDGrasp policy until reviewed.",
+  "redistributable": false,
+  "source_url": "https://graspnet.net/datasets.html",
+  "verified_date": "2026-08-25",
+  "version": "GraspNet-1Billion official layout"
+}
