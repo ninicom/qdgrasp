@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import os
@@ -17,8 +18,11 @@ from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset.scene_loader import audit_scene_dataset
 from qdgrasp.dataset.scene_manifest import load_scene_manifest
 from qdgrasp.dataset.scene_shards import read_scene_shard
+from qdgrasp.objects.manifest import load_object_asset
+from qdgrasp.robot.spec import resolve_robot_asset
 from qdgrasp.scenes.adapters import get_adapter
 from qdgrasp.scenes.release import DATASET_ID, generate_scene_tiny
+from qdgrasp.scenes.release_recipes import build_release_grasp_recipe
 from qdgrasp.scenes.source_registry import load_source_records
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +35,23 @@ REAL_ROOTS = {
 
 def _file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _json_value(value: Any) -> Any:
+    if dataclasses.is_dataclass(value):
+        return _json_value(dataclasses.asdict(value))
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    if isinstance(value, dict):
+        return {str(key): _json_value(item) for key, item in sorted(value.items())}
+    if isinstance(value, (list, tuple)):
+        return [_json_value(item) for item in value]
+    return value
+
+
+def _hash(value: Any) -> str:
+    payload = json.dumps(_json_value(value), sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _bounded_tree_hashes(root: Path) -> dict[str, str]:
@@ -71,12 +92,57 @@ def audit_release(root: Path, *, require_full: bool) -> dict[str, Any]:
         path = (root / reference).resolve()
         if not path.is_relative_to(root) or not path.is_file() or _file_hash(path) != expected_hash:
             raise ConfigError(f"release artifact integrity mismatch: {reference}")
-    expected_split_hashes = {
-        split: hashlib.sha256(json.dumps(scene_ids, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
-        for split, scene_ids in manifest.splits.items()
-    }
+    expected_split_hashes = {split: _hash(scene_ids) for split, scene_ids in manifest.splits.items()}
     if manifest.split_hashes != expected_split_hashes:
         raise ConfigError("release split hashes are inconsistent")
+
+    native = get_adapter("native")
+    measured_object_hashes: dict[str, str] = {}
+    measured_camera_hashes: dict[str, str] = {}
+    measured_environment_hashes: dict[str, str] = {}
+    for scene_ids in manifest.splits.values():
+        for scene_id in scene_ids:
+            evidence = native.audit(str(root), scene_id)
+            if not evidence.is_complete:
+                raise ConfigError(f"native adapter release audit failed for {scene_id}: {evidence.missing_files}")
+            scene = native.load_scene(str(root), scene_id)
+            for item in scene.objects:
+                object_manifest_path = Path(item.asset_ref)
+                _, object_manifest = load_object_asset(object_manifest_path)
+                measured_object_hashes[item.object_id] = _hash(
+                    {
+                        "manifest": object_manifest.model_dump(mode="json"),
+                        "manifest_file": _file_hash(object_manifest_path),
+                    }
+                )
+            for camera in scene.cameras:
+                measured_camera_hashes[f"{scene_id}/{camera.camera_id}"] = _hash(
+                    {
+                        "intrinsics": camera.intrinsics,
+                        "T_world_camera": camera.T_world_camera,
+                    }
+                )
+            measured_environment_hashes[scene.environment] = _hash(
+                [dataclasses.asdict(item) for item in scene.supports]
+            )
+    if measured_object_hashes != manifest.object_asset_hashes:
+        raise ConfigError("release object asset hashes are inconsistent")
+    if measured_camera_hashes != manifest.camera_calibration_hashes:
+        raise ConfigError("release camera calibration hashes are inconsistent")
+    if measured_environment_hashes != manifest.environment_hashes:
+        raise ConfigError("release environment hashes are inconsistent")
+
+    measured_robot_hashes = {}
+    for profile in manifest.coverage.get("robot_profiles", []):
+        recipe = build_release_grasp_recipe(profile)
+        measured_robot_hashes[profile] = _hash(
+            {
+                "config": (REPO_ROOT / "qdgrasp" / "presets" / "robots" / profile).read_bytes().hex(),
+                "asset": _file_hash(resolve_robot_asset(recipe.robot_spec.config.source_asset)),
+            }
+        )
+    if measured_robot_hashes != manifest.robot_profile_hashes:
+        raise ConfigError("release robot profile hashes are inconsistent")
 
     positives = [record for record in _records(root, "grasp") if record.get("dynamic_valid")]
     negatives = [record for record in _records(root, "grasp") if not record.get("dynamic_valid")]
