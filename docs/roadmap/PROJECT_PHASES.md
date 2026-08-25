@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.15.0
+version: 1.16.0
 status: active
 date: 2026-08-25
-revises: ROADMAP-001@1.14.0
+revises: ROADMAP-001@1.15.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260825-005-phase3-3-render-rollout.md
+latest_revision_record: docs/revisions/REV-20260825-006-phase3-3-release-candidate.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -92,14 +92,16 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object
   rollout; camera observations và `QDGrasp-Scene-Tiny`. P3.2/P3.2.1 đã bàn giao
-  baseline và P3.3 hiện `active`. P3.3-07, P3.3-10, P3.3-12 và P3.3-13 đã có
-  runtime implementation/test; scene dynamic evidence validator của P3.3-11 đã
-  fail-closed. Adapter 02–05 đã có implementation thật và micro-layout evidence
-  tại `a6d067e`; external source-scale smoke vẫn mở. Renderer/observation 08,
-  target crop 09 và measured multi-object rollout 11 đã hoàn tất implementation
-  tại `2cd1e65`/`3e47ca2`/`9465af0`. Bounded 12-scene/three-hand release,
-  rendered QA và final review còn mở, nên chưa claim closure P3.3
-  (`REV-20260825-005`).
+  baseline và P3.3 hiện ở release candidate. Adapter official-layout micro,
+  native builders, renderer/observation, target crop, whole-scene clearance,
+  measured multi-object rollout, shards và loader đều đã qua gate.
+  `QDGrasp-Scene-Tiny` tại `e9c87b8` có 12 scene/24 observation/33 scene-state,
+  17 grasp, ba measured positive cho LEAP/Allegro/Shadow, ba negative class và
+  108 artifact hash. Micro regeneration byte parity, release audit, resource
+  policy và rendered QA đã pass. P3.3 vẫn `active` chỉ vì independent acceptance
+  review theo GOV-REVIEW-001 chưa được một reviewer khác phát hành; external
+  real-source roots chưa cấu hình nên không có source-scale claim
+  (`REV-20260825-006`).
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
   thêm contact-rich trajectory search trực tiếp trong scene: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety
