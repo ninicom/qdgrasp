@@ -1,0 +1,175 @@
+{
+  "created_utc": "2026-08-23T11:17:04+00:00",
+  "data_manifest": {
+    "data_config": {
+      "name": "dummy-tiny",
+      "params": {
+        "num_points": 128,
+        "seed": 0,
+        "train_samples": 32,
+        "val_samples": 8
+      },
+      "schema": "qdgrasp/data/v1",
+      "type": "dummy_points"
+    },
+    "generator": "dummy_points",
+    "joints": [
+      "thumb_joint_0",
+      "thumb_joint_1",
+      "index_joint_0",
+      "index_joint_1"
+    ],
+    "num_points": 128,
+    "robot": "dummy-hand",
+    "samples": 32,
+    "seed": 0,
+    "split": "train"
+  },
+  "hashes": {
+    "bundle": "72ec519dff198661fa014cb421be9b98a7f5b671b118ad43c5db754b96bca300",
+    "model_config": "0f1d1564e2ce6a0d065bcaf45ef4119d3a431755904eb5048e0418825c19982d",
+    "robot_config": "64bcb37e5dbfae22e60356c30f54c0ebcc933bedb33d5f026071b24c89d8d08c",
+    "weights": "2d3ba21a7c972c145a667cca7dbe58c0bdb4b029f232bf036684ac7c37fa3d9e"
+  },
+  "model_config": {
+    "name": "qdgrasp-dummy-n",
+    "params": {
+      "grasps": 4,
+      "hidden": 64
+    },
+    "schema": "qdgrasp/model/v1",
+    "type": "dummy_grasp"
+  },
+  "preprocess": {
+    "dtype": "float32",
+    "frame": "palm",
+    "input": "points",
+    "layout": "[B, N, 3]",
+    "normalization": "none",
+    "units": "meters"
+  },
+  "qdgrasp_version": "0.1.0a1",
+  "robot_config": {
+    "frame": "palm",
+    "joint_limits": {
+      "index_joint_0": [
+        -0.3,
+        1.4
+      ],
+      "index_joint_1": [
+        0.0,
+        1.6
+      ],
+      "thumb_joint_0": [
+        -0.5,
+        1.2
+      ],
+      "thumb_joint_1": [
+        0.0,
+        1.5
+      ]
+    },
+    "joints": [
+      "thumb_joint_0",
+      "thumb_joint_1",
+      "index_joint_0",
+      "index_joint_1"
+    ],
+    "name": "dummy-hand",
+    "palm_link": "palm",
+    "schema": "qdgrasp/robot/v1"
+  },
+  "schema": "qdgrasp/bundle/v1",
+  "tensors": {
+    "encoder.0.bias": {
+      "dtype": "torch.float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.0.weight": {
+      "dtype": "torch.float32",
+      "shape": [
+        64,
+        3
+      ]
+    },
+    "encoder.2.bias": {
+      "dtype": "torch.float32",
+      "shape": [
+        64
+      ]
+    },
+    "encoder.2.weight": {
+      "dtype": "torch.float32",
+      "shape": [
+        64,
+        64
+      ]
+    },
+    "joint_head.bias": {
+      "dtype": "torch.float32",
+      "shape": [
+        16
+      ]
+    },
+    "joint_head.weight": {
+      "dtype": "torch.float32",
+      "shape": [
+        16,
+        64
+      ]
+    },
+    "joint_lower": {
+      "dtype": "torch.float32",
+      "shape": [
+        4
+      ]
+    },
+    "joint_upper": {
+      "dtype": "torch.float32",
+      "shape": [
+        4
+      ]
+    },
+    "rotation_head.bias": {
+      "dtype": "torch.float32",
+      "shape": [
+        24
+      ]
+    },
+    "rotation_head.weight": {
+      "dtype": "torch.float32",
+      "shape": [
+        24,
+        64
+      ]
+    },
+    "score_head.bias": {
+      "dtype": "torch.float32",
+      "shape": [
+        4
+      ]
+    },
+    "score_head.weight": {
+      "dtype": "torch.float32",
+      "shape": [
+        4,
+        64
+      ]
+    },
+    "translation_head.bias": {
+      "dtype": "torch.float32",
+      "shape": [
+        12
+      ]
+    },
+    "translation_head.weight": {
+      "dtype": "torch.float32",
+      "shape": [
+        12,
+        64
+      ]
+    }
+  }
+}

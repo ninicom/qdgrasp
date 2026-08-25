@@ -1,0 +1,88 @@
+{
+  "artifacts": {
+    "bundle": "runs/cuda-amp/bundle",
+    "results": "runs/cuda-amp/results.json",
+    "resume": "runs/cuda-amp/resume.pt"
+  },
+  "created_utc": "2026-08-23T11:17:04+00:00",
+  "final_loss": 0.924542248249054,
+  "global_step": 8,
+  "hashes": {
+    "bundle": "cf751100f87148efd1cd8b0b5de0dc0a29f2a2e8443ad555281c339158160b3b",
+    "model_config": "0f1d1564e2ce6a0d065bcaf45ef4119d3a431755904eb5048e0418825c19982d",
+    "robot_config": "64bcb37e5dbfae22e60356c30f54c0ebcc933bedb33d5f026071b24c89d8d08c"
+  },
+  "losses": [
+    [
+      1,
+      0.9393430948257446
+    ],
+    [
+      2,
+      0.9780118465423584
+    ],
+    [
+      3,
+      0.9234937429428101
+    ],
+    [
+      4,
+      0.8919029235839844
+    ],
+    [
+      5,
+      0.8362390398979187
+    ],
+    [
+      6,
+      0.8141518831253052
+    ],
+    [
+      7,
+      0.8932917714118958
+    ],
+    [
+      8,
+      0.924542248249054
+    ]
+  ],
+  "metrics": {
+    "joint_error": 0.41668927669525146,
+    "loss": 0.9306719899177551,
+    "rotation_error": 2.588155150413513,
+    "translation_error": 0.1449878290295601
+  },
+  "run_dir": "runs/cuda-amp",
+  "runtime": {
+    "adjustments": [],
+    "effective": {
+      "accelerator": "cuda",
+      "amp": true,
+      "deterministic": true,
+      "device": "cuda:0",
+      "device_index": 0,
+      "precision": "16-mixed",
+      "seed": 0,
+      "workers": 0
+    },
+    "requested": {
+      "amp": true,
+      "batch_size": 4,
+      "deterministic": true,
+      "device": "cuda:0",
+      "ema_decay": 0.0,
+      "grad_clip": 0.0,
+      "learning_rate": 0.001,
+      "max_steps": 8,
+      "project_dir": "runs",
+      "resume": null,
+      "run_name": "cuda-amp",
+      "schema": "qdgrasp/run/v1",
+      "seed": 0,
+      "stop_after_steps": null,
+      "val_interval": 0,
+      "workers": 0
+    }
+  },
+  "schema": "qdgrasp/results/v1"
+}

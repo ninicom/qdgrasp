@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-08-23T11:17:06.100315+00:00",
+  "device": "Tesla T4",
+  "cuda_version": "12.8",
+  "phase1_fp32_loss": 0.9242877960205078,
+  "phase1_amp_loss": 0.924542248249054,
+  "phase3_metrics": {
+    "loss": 1.2257251739501953,
+    "translation_error": 0.012397337704896927,
+    "rotation_error": 2.417602777481079,
+    "joint_error": 0.6195878982543945
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,180 @@
+[{"stream_name":"stderr","time":5.529321211,"data":"/usr/local/lib/python3.12/dist-packages/nbformat/__init__.py:96: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":5.52936405,"data":"  validate(nb)\n"}
+,{"stream_name":"stderr","time":6.272138963,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.272166711,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.272180932,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.272183866,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.817777503,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.817811805,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.817817176,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.817821174,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":9.836840126,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 2.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":10.039317309,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 2.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":10.158787553,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 232.7/232.7 kB 6.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":10.359777583,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 232.7/232.7 kB 6.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":11.144523463,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.4/62.4 kB 3.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":11.346943361,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.4/62.4 kB 3.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":12.019669144,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 109.4/109.4 kB 8.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":12.221649123,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 109.4/109.4 kB 8.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.385876172,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 848.6/848.6 kB 32.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.554944202,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.8/19.8 MB 90.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.587679823,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 848.6/848.6 kB 32.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.587726949,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.8/19.8 MB 90.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.700664525,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 96.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.902603213,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 96.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.986208277,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.3/35.3 MB 58.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.016875138,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 745.5/745.5 kB 40.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.043080871,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 516.0/516.0 kB 35.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.071143091,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 472.3/472.3 kB 28.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.105674379,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 91.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.130136903,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 310.7/310.7 kB 24.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.151794758,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 122.9/122.9 kB 11.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.177560091,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 248.5/248.5 kB 18.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188121273,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.3/35.3 MB 58.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188140333,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 745.5/745.5 kB 40.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188146005,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 516.0/516.0 kB 35.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188150795,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 472.3/472.3 kB 28.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.18815579,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 91.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188160815,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 310.7/310.7 kB 24.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188184778,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 122.9/122.9 kB 11.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.188200685,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 248.5/248.5 kB 18.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":30.72435231,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":30.724382197,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":30.724388104,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":30.724392946000002,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724397681,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.18.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724402188,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724406608,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724411077,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724415615,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724420064,"data":"bigframes 2.39.0 requires rich\u003c14,\u003e=12.4.4, but you have rich 15.0.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724424981,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724429632,"data":"pyiceberg 0.11.1 requires rich\u003c15.0.0,\u003e=10.11.0, but you have rich 15.0.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.724434117,"data":"gradio 5.50.0 requires pydantic\u003c=2.12.3,\u003e=2.0, but you have pydantic 2.13.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926776914,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":30.926816267,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":30.926823402,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":30.926828436,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926833331,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.18.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926840476,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926849621,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.92685312,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926869791,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926872608,"data":"bigframes 2.39.0 requires rich\u003c14,\u003e=12.4.4, but you have rich 15.0.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926875219,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.92687776,"data":"pyiceberg 0.11.1 requires rich\u003c15.0.0,\u003e=10.11.0, but you have rich 15.0.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926880418,"data":"gradio 5.50.0 requires pydantic\u003c=2.12.3,\u003e=2.0, but you have pydantic 2.13.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926883167,"data":"\n"}
+,{"stream_name":"stderr","time":30.926885644,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":30.926888453,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":30.926891086,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":30.926893621,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.92689682,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.18.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926910805,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926915508,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926918364,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926920731,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926923219,"data":"bigframes 2.39.0 requires rich\u003c14,\u003e=12.4.4, but you have rich 15.0.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926925585,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926928003,"data":"pyiceberg 0.11.1 requires rich\u003c15.0.0,\u003e=10.11.0, but you have rich 15.0.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":30.926930371,"data":"gradio 5.50.0 requires pydantic\u003c=2.12.3,\u003e=2.0, but you have pydantic 2.13.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":40.217272352,"data":"Cloning into '/tmp/robot-assets/mujoco-menagerie'...\n"}
+,{"stream_name":"stderr","time":40.421174998,"data":"Cloning into '/tmp/robot-assets/mujoco-menagerie'...\n"}
+,{"stream_name":"stderr","time":40.421204098,"data":"\n"}
+,{"stream_name":"stderr","time":40.421210935,"data":"Cloning into '/tmp/robot-assets/mujoco-menagerie'...\n"}
+,{"stream_name":"stderr","time":86.593325323,"data":"Updating files:  13% (421/3162)\rUpdating files:  14% (443/3162)\rUpdating files:  15% (475/3162)\rUpdating files:  16% (506/3162)\rUpdating files:  17% (538/3162)\rUpdating files:  13% (421/3162)\rUpdating files:  14% (443/3162)\rUpdating files:  15% (475/3162)\rUpdating files:  16% (506/3162)\rUpdating files:  17% (538/3162)\r\n"}
+,{"stream_name":"stderr","time":86.849857611,"data":"Updating files:  13% (421/3162)\rUpdating files:  14% (443/3162)\rUpdating files:  15% (475/3162)\rUpdating files:  16% (506/3162)\rUpdating files:  17% (538/3162)\rUpdating files:  18% (570/3162)\rUpdating files:  19% (601/3162)\rUpdating files:  20% (633/3162)\rUpdating files:  21% (665/3162)\rUpdating files:  22% (696/3162)\rUpdating files:  18% (570/3162)\rUpdating files:  19% (601/3162)\rUpdating files:  20% (633/3162)\rUpdating files:  21% (665/3162)\rUpdating files:  22% (696/3162)\r\n"}
+,{"stream_name":"stderr","time":87.206129901,"data":"Updating files:  18% (570/3162)\rUpdating files:  19% (601/3162)\rUpdating files:  20% (633/3162)\rUpdating files:  21% (665/3162)\rUpdating files:  22% (696/3162)\rUpdating files:  23% (728/3162)\rUpdating files:  24% (759/3162)\rUpdating files:  23% (728/3162)\rUpdating files:  24% (759/3162)\r\n"}
+,{"stream_name":"stderr","time":87.578650543,"data":"Updating files:  23% (728/3162)\rUpdating files:  24% (759/3162)\rUpdating files:  24% (784/3162)\rUpdating files:  25% (791/3162)\rUpdating files:  26% (823/3162)\rUpdating files:  27% (854/3162)\rUpdating files:  28% (886/3162)\rUpdating files:  24% (784/3162)\rUpdating files:  25% (791/3162)\rUpdating files:  26% (823/3162)\rUpdating files:  27% (854/3162)\rUpdating files:  28% (886/3162)\r\n"}
+,{"stream_name":"stderr","time":87.915284004,"data":"Updating files:  24% (784/3162)\rUpdating files:  25% (791/3162)\rUpdating files:  26% (823/3162)\rUpdating files:  27% (854/3162)\rUpdating files:  28% (886/3162)\rUpdating files:  29% (917/3162)\rUpdating files:  30% (949/3162)\rUpdating files:  29% (917/3162)\rUpdating files:  30% (949/3162)\r\n"}
+,{"stream_name":"stderr","time":88.122130747,"data":"Updating files:  29% (917/3162)\rUpdating files:  30% (949/3162)\rUpdating files:  31% (981/3162)\rUpdating files:  32% (1012/3162)\rUpdating files:  33% (1044/3162)\rUpdating files:  34% (1076/3162)\rUpdating files:  35% (1107/3162)\rUpdating files:  31% (981/3162)\rUpdating files:  32% (1012/3162)\rUpdating files:  33% (1044/3162)\rUpdating files:  34% (1076/3162)\rUpdating files:  35% (1107/3162)\r\n"}
+,{"stream_name":"stderr","time":88.376715367,"data":"Updating files:  31% (981/3162)\rUpdating files:  32% (1012/3162)\rUpdating files:  33% (1044/3162)\rUpdating files:  34% (1076/3162)\rUpdating files:  35% (1107/3162)\rUpdating files:  36% (1139/3162)\rUpdating files:  37% (1170/3162)\rUpdating files:  38% (1202/3162)\rUpdating files:  39% (1234/3162)\rUpdating files:  36% (1139/3162)\rUpdating files:  37% (1170/3162)\rUpdating files:  38% (1202/3162)\rUpdating files:  39% (1234/3162)\r\n"}
+,{"stream_name":"stderr","time":88.588924174,"data":"Updating files:  36% (1139/3162)\rUpdating files:  37% (1170/3162)\rUpdating files:  38% (1202/3162)\rUpdating files:  39% (1234/3162)\rUpdating files:  39% (1248/3162)\rUpdating files:  40% (1265/3162)\rUpdating files:  41% (1297/3162)\rUpdating files:  42% (1329/3162)\rUpdating files:  43% (1360/3162)\rUpdating files:  39% (1248/3162)\rUpdating files:  40% (1265/3162)\rUpdating files:  41% (1297/3162)\rUpdating files:  42% (1329/3162)\rUpdating files:  43% (1360/3162)\r\n"}
+,{"stream_name":"stderr","time":88.846504635,"data":"Updating files:  39% (1248/3162)\rUpdating files:  40% (1265/3162)\rUpdating files:  41% (1297/3162)\rUpdating files:  42% (1329/3162)\rUpdating files:  43% (1360/3162)\rUpdating files:  44% (1392/3162)\rUpdating files:  45% (1423/3162)\rUpdating files:  46% (1455/3162)\rUpdating files:  47% (1487/3162)\rUpdating files:  48% (1518/3162)\rUpdating files:  49% (1550/3162)\rUpdating files:  50% (1581/3162)\rUpdating files:  51% (1613/3162)\rUpdating files:  52% (1645/3162)\rUpdating files:  53% (1676/3162)\rUpdating files:  54% (1708/3162)\rUpdating files:  44% (1392/3162)\rUpdating files:  45% (1423/3162)\rUpdating files:  46% (1455/3162)\rUpdating files:  47% (1487/3162)\rUpdating files:  48% (1518/3162)\rUpdating files:  49% (1550/3162)\rUpdating files:  50% (1581/3162)\rUpdating files:  51% (1613/3162)\rUpdating files:  52% (1645/3162)\rUpdating files:  53% (1676/3162)\rUpdating files:  54% (1708/3162)\r\n"}
+,{"stream_name":"stderr","time":89.075265938,"data":"Updating files:  44% (1392/3162)\rUpdating files:  45% (1423/3162)\rUpdating files:  46% (1455/3162)\rUpdating files:  47% (1487/3162)\rUpdating files:  48% (1518/3162)\rUpdating files:  49% (1550/3162)\rUpdating files:  50% (1581/3162)\rUpdating files:  51% (1613/3162)\rUpdating files:  52% (1645/3162)\rUpdating files:  53% (1676/3162)\rUpdating files:  54% (1708/3162)\rUpdating files:  55% (1740/3162)\rUpdating files:  56% (1771/3162)\rUpdating files:  57% (1803/3162)\rUpdating files:  55% (1740/3162)\rUpdating files:  56% (1771/3162)\rUpdating files:  57% (1803/3162)\r\n"}
+,{"stream_name":"stderr","time":89.378128097,"data":"Updating files:  55% (1740/3162)\rUpdating files:  56% (1771/3162)\rUpdating files:  57% (1803/3162)\rUpdating files:  58% (1834/3162)\rUpdating files:  59% (1866/3162)\rUpdating files:  59% (1867/3162)\rUpdating files:  58% (1834/3162)\rUpdating files:  59% (1866/3162)\rUpdating files:  59% (1867/3162)\r\n"}
+,{"stream_name":"stderr","time":89.838665508,"data":"Updating files:  58% (1834/3162)\rUpdating files:  59% (1866/3162)\rUpdating files:  59% (1867/3162)\rUpdating files:  60% (1898/3162)\rUpdating files:  61% (1929/3162)\rUpdating files:  62% (1961/3162)\rUpdating files:  60% (1898/3162)\rUpdating files:  61% (1929/3162)\rUpdating files:  62% (1961/3162)\r\n"}
+,{"stream_name":"stderr","time":90.172934676,"data":"Updating files:  60% (1898/3162)\rUpdating files:  61% (1929/3162)\rUpdating files:  62% (1961/3162)\rUpdating files:  63% (1993/3162)\rUpdating files:  64% (2024/3162)\rUpdating files:  65% (2056/3162)\rUpdating files:  66% (2087/3162)\rUpdating files:  63% (1993/3162)\rUpdating files:  64% (2024/3162)\rUpdating files:  65% (2056/3162)\rUpdating files:  66% (2087/3162)\r\n"}
+,{"stream_name":"stderr","time":90.538793239,"data":"Updating files:  63% (1993/3162)\rUpdating files:  64% (2024/3162)\rUpdating files:  65% (2056/3162)\rUpdating files:  66% (2087/3162)\rUpdating files:  67% (2119/3162)\rUpdating files:  67% (2150/3162)\rUpdating files:  68% (2151/3162)\rUpdating files:  69% (2182/3162)\rUpdating files:  70% (2214/3162)\rUpdating files:  71% (2246/3162)\rUpdating files:  72% (2277/3162)\rUpdating files:  67% (2119/3162)\rUpdating files:  67% (2150/3162)\rUpdating files:  68% (2151/3162)\rUpdating files:  69% (2182/3162)\rUpdating files:  70% (2214/3162)\rUpdating files:  71% (2246/3162)\rUpdating files:  72% (2277/3162)\r\n"}
+,{"stream_name":"stderr","time":90.745457804,"data":"Updating files:  67% (2119/3162)\rUpdating files:  67% (2150/3162)\rUpdating files:  68% (2151/3162)\rUpdating files:  69% (2182/3162)\rUpdating files:  70% (2214/3162)\rUpdating files:  71% (2246/3162)\rUpdating files:  72% (2277/3162)\rUpdating files:  73% (2309/3162)\rUpdating files:  74% (2340/3162)\rUpdating files:  75% (2372/3162)\rUpdating files:  76% (2404/3162)\rUpdating files:  77% (2435/3162)\rUpdating files:  78% (2467/3162)\rUpdating files:  79% (2498/3162)\rUpdating files:  73% (2309/3162)\rUpdating files:  74% (2340/3162)\rUpdating files:  75% (2372/3162)\rUpdating files:  76% (2404/3162)\rUpdating files:  77% (2435/3162)\rUpdating files:  78% (2467/3162)\rUpdating files:  79% (2498/3162)\r\n"}
+,{"stream_name":"stderr","time":90.953092356,"data":"Updating files:  73% (2309/3162)\rUpdating files:  74% (2340/3162)\rUpdating files:  75% (2372/3162)\rUpdating files:  76% (2404/3162)\rUpdating files:  77% (2435/3162)\rUpdating files:  78% (2467/3162)\rUpdating files:  79% (2498/3162)\rUpdating files:  80% (2530/3162)\rUpdating files:  81% (2562/3162)\rUpdating files:  82% (2593/3162)\rUpdating files:  80% (2530/3162)\rUpdating files:  81% (2562/3162)\rUpdating files:  82% (2593/3162)\r\n"}
+,{"stream_name":"stderr","time":91.217586482,"data":"Updating files:  80% (2530/3162)\rUpdating files:  81% (2562/3162)\rUpdating files:  82% (2593/3162)\rUpdating files:  83% (2625/3162)\rUpdating files:  84% (2657/3162)\rUpdating files:  83% (2625/3162)\rUpdating files:  84% (2657/3162)\r\n"}
+,{"stream_name":"stderr","time":91.510182173,"data":"Updating files:  83% (2625/3162)\rUpdating files:  84% (2657/3162)\rUpdating files:  85% (2688/3162)\rUpdating files:  86% (2720/3162)\rUpdating files:  87% (2751/3162)\rUpdating files:  88% (2783/3162)\rUpdating files:  89% (2815/3162)\rUpdating files:  89% (2819/3162)\rUpdating files:  90% (2846/3162)\rUpdating files:  91% (2878/3162)\rUpdating files:  92% (2910/3162)\rUpdating files:  85% (2688/3162)\rUpdating files:  86% (2720/3162)\rUpdating files:  87% (2751/3162)\rUpdating files:  88% (2783/3162)\rUpdating files:  89% (2815/3162)\rUpdating files:  89% (2819/3162)\rUpdating files:  90% (2846/3162)\rUpdating files:  91% (2878/3162)\rUpdating files:  92% (2910/3162)\r\n"}
+,{"stream_name":"stderr","time":91.736706097,"data":"Updating files:  85% (2688/3162)\rUpdating files:  86% (2720/3162)\rUpdating files:  87% (2751/3162)\rUpdating files:  88% (2783/3162)\rUpdating files:  89% (2815/3162)\rUpdating files:  89% (2819/3162)\rUpdating files:  90% (2846/3162)\rUpdating files:  91% (2878/3162)\rUpdating files:  92% (2910/3162)\rUpdating files:  93% (2941/3162)\rUpdating files:  94% (2973/3162)\rUpdating files:  95% (3004/3162)\rUpdating files:  93% (2941/3162)\rUpdating files:  94% (2973/3162)\rUpdating files:  95% (3004/3162)\r\n"}
+,{"stream_name":"stderr","time":92.053707697,"data":"Updating files:  93% (2941/3162)\rUpdating files:  94% (2973/3162)\rUpdating files:  95% (3004/3162)\rUpdating files:  96% (3036/3162)\rUpdating files:  97% (3068/3162)\rUpdating files:  98% (3099/3162)\rUpdating files:  96% (3036/3162)\rUpdating files:  97% (3068/3162)\rUpdating files:  98% (3099/3162)\r\n"}
+,{"stream_name":"stderr","time":92.199570546,"data":"Updating files:  96% (3036/3162)\rUpdating files:  97% (3068/3162)\rUpdating files:  98% (3099/3162)\rUpdating files:  99% (3131/3162)\rUpdating files: 100% (3162/3162)\rUpdating files: 100% (3162/3162), done.\n"}
+,{"stream_name":"stdout","time":92.221885239,"data":"QDGrasp Phase 3 installed successfully on Python 3.12.13\n"}
+,{"stream_name":"stderr","time":92.223080001,"data":"Updating files:  99% (3131/3162)\rUpdating files: 100% (3162/3162)\rUpdating files: 100% (3162/3162), done.\n"}
+,{"stream_name":"stderr","time":92.223100412,"data":"\n"}
+,{"stream_name":"stderr","time":92.223106338,"data":"Updating files:  99% (3131/3162)\rUpdating files: 100% (3162/3162)\rUpdating files: 100% (3162/3162), done.\n"}
+,{"stream_name":"stderr","time":120.271115146,"data":"Using 16-bit Automatic Mixed Precision (AMP)\n"}
+,{"stream_name":"stderr","time":120.4736692,"data":"Using 16-bit Automatic Mixed Precision (AMP)\n"}
+,{"stream_name":"stderr","time":120.473708919,"data":"\n"}
+,{"stream_name":"stderr","time":120.473732257,"data":"Using 16-bit Automatic Mixed Precision (AMP)\n"}
+,{"stream_name":"stdout","time":121.788579171,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.788624274,"data":"      QDGrasp Kaggle GPU Gate \u0026 Benchmark         \n"}
+,{"stream_name":"stdout","time":121.788630679,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.788635801,"data":"CUDA Available  : True\n"}
+,{"stream_name":"stdout","time":121.788641994,"data":"GPU Device      : Tesla T4\n"}
+,{"stream_name":"stdout","time":121.78864707,"data":"CUDA Capability : (7, 5)\n"}
+,{"stream_name":"stdout","time":121.788651914,"data":"PyTorch CUDA    : 12.8\n"}
+,{"stream_name":"stdout","time":121.788656557,"data":"QDGrasp Version : 0.1.0a1\n"}
+,{"stream_name":"stdout","time":121.788671911,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.788675911,"data":"\n"}
+,{"stream_name":"stdout","time":121.788679565,"data":"--\u003e Running Phase 1 CUDA FP32 \u0026 AMP Training...\n"}
+,{"stream_name":"stdout","time":121.788683502,"data":"Phase 1 FP32 Loss: 0.9243 (steps=8)\n"}
+,{"stream_name":"stdout","time":121.788687417,"data":"Phase 1 AMP Loss : 0.9245 (precision=16-mixed)\n"}
+,{"stream_name":"stdout","time":121.788691767,"data":"Phase 1 CUDA Gate: PASS\n"}
+,{"stream_name":"stdout","time":121.788695349,"data":"\n"}
+,{"stream_name":"stdout","time":121.788698712,"data":"--\u003e Running Phase 2 Forward Kinematics Parity...\n"}
+,{"stream_name":"stdout","time":121.788702665,"data":"Phase 2 FK parity on leap_hand.yaml: PASS (max_diff=1.19e-07)\n"}
+,{"stream_name":"stdout","time":121.788706672,"data":"Phase 2 FK parity on wonik_allegro.yaml: PASS (max_diff=1.79e-07)\n"}
+,{"stream_name":"stdout","time":121.788711089,"data":"Phase 2 FK parity on shadow_hand.yaml: PASS (max_diff=2.98e-07)\n"}
+,{"stream_name":"stdout","time":121.788715397,"data":"Phase 2 CUDA Gate: PASS\n"}
+,{"stream_name":"stdout","time":121.788718981,"data":"\n"}
+,{"stream_name":"stdout","time":121.788722718,"data":"--\u003e Running Phase 3 GPU Training Benchmark...\n"}
+,{"stream_name":"stdout","time":121.78872637,"data":"Phase 3 GPU Training: PASS\n"}
+,{"stream_name":"stdout","time":121.78873037,"data":"Final Metrics: {'loss': 1.2257251739501953, 'translation_error': 0.012397337704896927, 'rotation_error': 2.417602777481079, 'joint_error': 0.6195878982543945}\n"}
+,{"stream_name":"stdout","time":121.788734472,"data":"\n"}
+,{"stream_name":"stdout","time":121.788841389,"data":"Saved evidence to phase3_cuda_evidence.json\n"}
+,{"stream_name":"stdout","time":121.788848746,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.78885312,"data":"ALL PHASES CUDA GATES \u0026 BENCHMARKS PASSED (100%)!\n"}
+,{"stream_name":"stdout","time":121.788856904,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.991559856,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.991602079,"data":"      QDGrasp Kaggle GPU Gate \u0026 Benchmark         \n"}
+,{"stream_name":"stdout","time":121.991634658,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.991642385,"data":"CUDA Available  : True\n"}
+,{"stream_name":"stdout","time":121.991646585,"data":"GPU Device      : Tesla T4\n"}
+,{"stream_name":"stdout","time":121.991650259,"data":"CUDA Capability : (7, 5)\n"}
+,{"stream_name":"stdout","time":121.991653641,"data":"PyTorch CUDA    : 12.8\n"}
+,{"stream_name":"stdout","time":121.991656931,"data":"QDGrasp Version : 0.1.0a1\n"}
+,{"stream_name":"stdout","time":121.991660194,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.991663579,"data":"\n"}
+,{"stream_name":"stdout","time":121.991666859,"data":"--\u003e Running Phase 1 CUDA FP32 \u0026 AMP Training...\n"}
+,{"stream_name":"stdout","time":121.991670398,"data":"Phase 1 FP32 Loss: 0.9243 (steps=8)\n"}
+,{"stream_name":"stdout","time":121.991700633,"data":"Phase 1 AMP Loss : 0.9245 (precision=16-mixed)\n"}
+,{"stream_name":"stdout","time":121.991703469,"data":"Phase 1 CUDA Gate: PASS\n"}
+,{"stream_name":"stdout","time":121.991705819,"data":"\n"}
+,{"stream_name":"stdout","time":121.991707986,"data":"--\u003e Running Phase 2 Forward Kinematics Parity...\n"}
+,{"stream_name":"stdout","time":121.99175008899999,"data":"Phase 2 FK parity on leap_hand.yaml: PASS (max_diff=1.19e-07)\n"}
+,{"stream_name":"stdout","time":121.991754333,"data":"Phase 2 FK parity on wonik_allegro.yaml: PASS (max_diff=1.79e-07)\n"}
+,{"stream_name":"stdout","time":121.991757815,"data":"Phase 2 FK parity on shadow_hand.yaml: PASS (max_diff=2.98e-07)\n"}
+,{"stream_name":"stdout","time":121.991761204,"data":"Phase 2 CUDA Gate: PASS\n"}
+,{"stream_name":"stdout","time":121.991764503,"data":"\n"}
+,{"stream_name":"stdout","time":121.991767668,"data":"--\u003e Running Phase 3 GPU Training Benchmark...\n"}
+,{"stream_name":"stdout","time":121.991771035,"data":"Phase 3 GPU Training: PASS\n"}
+,{"stream_name":"stdout","time":121.991774363,"data":"Final Metrics: {'loss': 1.2257251739501953, 'translation_error': 0.012397337704896927, 'rotation_error': 2.417602777481079, 'joint_error': 0.6195878982543945}\n"}
+,{"stream_name":"stdout","time":121.99177838,"data":"\n"}
+,{"stream_name":"stdout","time":121.991781483,"data":"Saved evidence to phase3_cuda_evidence.json\n"}
+,{"stream_name":"stdout","time":121.991784814,"data":"==================================================\n"}
+,{"stream_name":"stdout","time":121.991789822,"data":"ALL PHASES CUDA GATES \u0026 BENCHMARKS PASSED (100%)!\n"}
+,{"stream_name":"stdout","time":121.991796564,"data":"==================================================\n"}
+,{"stream_name":"stderr","time":126.461294517,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":126.46132663,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":126.601255442,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":126.601279701,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":127.192054775,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":127.479443423,"data":"[NbConvertApp] Writing 14592 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":129.732220461,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":130.482895443,"data":"[NbConvertApp] Writing 292175 bytes to __results__.html\n"}
+]

@@ -63,6 +63,7 @@ qdgrasp = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "scripts/tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 target-version = "py311"

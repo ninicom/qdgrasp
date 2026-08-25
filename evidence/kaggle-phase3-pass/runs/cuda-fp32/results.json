@@ -1,0 +1,88 @@
+{
+  "artifacts": {
+    "bundle": "runs/cuda-fp32/bundle",
+    "results": "runs/cuda-fp32/results.json",
+    "resume": "runs/cuda-fp32/resume.pt"
+  },
+  "created_utc": "2026-08-23T11:17:04+00:00",
+  "final_loss": 0.9242877960205078,
+  "global_step": 8,
+  "hashes": {
+    "bundle": "72ec519dff198661fa014cb421be9b98a7f5b671b118ad43c5db754b96bca300",
+    "model_config": "0f1d1564e2ce6a0d065bcaf45ef4119d3a431755904eb5048e0418825c19982d",
+    "robot_config": "64bcb37e5dbfae22e60356c30f54c0ebcc933bedb33d5f026071b24c89d8d08c"
+  },
+  "losses": [
+    [
+      1,
+      0.9393895268440247
+    ],
+    [
+      2,
+      0.97804856300354
+    ],
+    [
+      3,
+      0.9233159422874451
+    ],
+    [
+      4,
+      0.8918845057487488
+    ],
+    [
+      5,
+      0.8363461494445801
+    ],
+    [
+      6,
+      0.8143664002418518
+    ],
+    [
+      7,
+      0.8932704925537109
+    ],
+    [
+      8,
+      0.9242877960205078
+    ]
+  ],
+  "metrics": {
+    "joint_error": 0.41669104993343353,
+    "loss": 0.9307821393013,
+    "rotation_error": 2.5891536474227905,
+    "translation_error": 0.1449953019618988
+  },
+  "run_dir": "runs/cuda-fp32",
+  "runtime": {
+    "adjustments": [],
+    "effective": {
+      "accelerator": "cuda",
+      "amp": false,
+      "deterministic": true,
+      "device": "cuda:0",
+      "device_index": 0,
+      "precision": "32-true",
+      "seed": 0,
+      "workers": 0
+    },
+    "requested": {
+      "amp": false,
+      "batch_size": 4,
+      "deterministic": true,
+      "device": "cuda:0",
+      "ema_decay": 0.0,
+      "grad_clip": 0.0,
+      "learning_rate": 0.001,
+      "max_steps": 8,
+      "project_dir": "runs",
+      "resume": null,
+      "run_name": "cuda-fp32",
+      "schema": "qdgrasp/run/v1",
+      "seed": 0,
+      "stop_after_steps": null,
+      "val_interval": 4,
+      "workers": 0
+    }
+  },
+  "schema": "qdgrasp/results/v1"
+}
