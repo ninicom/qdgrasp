@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.13.0
+version: 1.14.0
 status: active
 date: 2026-08-25
-revises: ROADMAP-001@1.12.0
+revises: ROADMAP-001@1.13.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260825-003-phase3-3-runtime-checkpoint.md
+latest_revision_record: docs/revisions/REV-20260825-004-phase3-3-adapters.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -94,9 +94,10 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   rollout; camera observations và `QDGrasp-Scene-Tiny`. P3.2/P3.2.1 đã bàn giao
   baseline và P3.3 hiện `active`. P3.3-07, P3.3-10, P3.3-12 và P3.3-13 đã có
   runtime implementation/test; scene dynamic evidence validator của P3.3-11 đã
-  fail-closed. Audit checkpoint `REV-20260825-003` xác nhận adapters 02–05,
-  renderer 08 và multi-object rollout integration 11 vẫn mở, nên chưa có claim
-  `QDGrasp-Scene-Tiny` hoặc closure P3.3.
+  fail-closed. Adapter 02–05 đã có implementation thật và micro-layout evidence
+  tại `a6d067e`; external source-scale smoke vẫn mở. Renderer 08 và multi-object
+  rollout integration 11 chưa hoàn tất, nên chưa có claim `QDGrasp-Scene-Tiny`
+  hoặc closure P3.3 (`REV-20260825-004`).
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
   thêm contact-rich trajectory search trực tiếp trong scene: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety

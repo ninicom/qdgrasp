@@ -2,16 +2,16 @@
 document_id: ROADMAP-P3.3-001
 document_type: plan
 title: Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
-version: 1.3.0
+version: 1.4.0
 status: active
 date: 2026-08-25
-revises: ROADMAP-P3.3-001@1.2.0
+revises: ROADMAP-P3.3-001@1.3.0
 related_plan: ROADMAP-P3.1-001
 depends_on:
   - ROADMAP-P3.1-001
   - ROADMAP-P3.2-001
 literature_cutoff: 2026-08-23
-latest_revision_record: docs/revisions/REV-20260825-003-phase3-3-runtime-checkpoint.md
+latest_revision_record: docs/revisions/REV-20260825-004-phase3-3-adapters.md
 ---
 
 # Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
@@ -408,14 +408,14 @@ Thứ tự bắt buộc:
 Mỗi source và mỗi strategy là module riêng. Orchestrator chỉ gọi contract; không
 chứa branch theo tên dataset, hand hoặc environment.
 
-### Trạng thái thực thi tại checkpoint `3a2c6a9` (2026-08-25)
+### Trạng thái thực thi tại checkpoint `a6d067e` (2026-08-25)
 
 | Work package | Trạng thái | Bằng chứng / blocker |
 | --- | --- | --- |
 | P3.3-00 | complete | no-positive-substitution regression pass; P3.2.1 measured full flow 3/3 hand |
-| P3.3-01 | implemented, contract audit pending | canonical dataclasses/interface đã có; validation chặt sẽ audit cùng adapters |
-| P3.3-02 | remediation required | registry có allowlist nhưng native `load_scene/load_observation` vẫn `NotImplemented` và manifest parsing cũ không khớp scene manifest v1 |
-| P3.3-03…05 | skeleton only | probe/index sơ bộ; cả ba external adapter chưa load scene/observation/grasp thật và `audit()` đang trả complete giả |
+| P3.3-01 | complete | canonical dataclasses/interface được thực thi qua bốn adapter và 35 scene tests |
+| P3.3-02 | complete | native adapter đọc scene manifest/shards đã verify, kiểm SceneSpec/calibration/reference/hash và fail closed tại `a6d067e` |
+| P3.3-03…05 | implementation complete; source-scale audit pending | GraspNet-1Billion, DexGraspNet2 và GraspClutter6D load scene/pose/camera/observation/external label thật; source manifest/license/hash và audit fail closed tại `a6d067e`; chưa claim full-dataset replay |
 | P3.3-06 | implemented, audit pending | table/bin/shelf support specs đã có test; transform compile được builder kiểm fail-closed |
 | P3.3-07 | complete | verified object manifests được compile thành MuJoCo geoms; replay giữ pose; settle finite/velocity/timeout gate tại `3a2c6a9` |
 | P3.3-08 | remediation required | camera render RGB/depth/segmentation có thật nhưng visibility vẫn map geom ID thô và được ghi chú mock; chưa pack observation evidence |
@@ -424,12 +424,13 @@ chứa branch theo tên dataset, hand hoặc environment.
 | P3.3-11 | validator complete; rollout integration pending | stage/hash/load/lift/contact/non-target displacement/rotation/impulse fail-closed tại `fd5f46e`; chưa instrument multi-object hand rollout để sinh evidence đầu vào |
 | P3.3-12 | complete | sequential revalidation, exact-target removal và parent/child lineage hash tại `e266ed7` |
 | P3.3-13 | complete | canonical JSONL shards, manifest, loader, positive admission và cross-shard audit tại `6639c5f` |
-| P3.3-14…15 | pending | bị chặn bởi adapters 02–05, renderer 08, multi-object rollout 11 và genuine rendered release evidence |
+| P3.3-14…15 | pending | bị chặn bởi renderer 08, multi-object rollout 11, external source-scale smoke và genuine rendered release evidence |
 
-Checkpoint regression: 61 tests trong `tests/scenes`, scene dynamic, scene
-dataset và no-positive-substitution pass tuần tự, giới hạn một BLAS/OpenMP
-thread. Kết quả này xác nhận packages 07/10/12/13 và validator của 11; không
-được dùng để claim adapters, multi-object rollout hoặc `QDGrasp-Scene-Tiny`.
+Checkpoint adapter: 35/35 test trong `tests/scenes` pass tuần tự, giới hạn một
+BLAS/OpenMP thread. Bốn adapter dùng fixture theo layout nguồn, kiểm pose/frame,
+visibility, external-label boundary, file provenance và negative fail-closed.
+Kết quả xác nhận implementation 02–05 nhưng không thay thế smoke trên dataset
+nguồn đầy đủ, multi-object rollout hoặc evidence `QDGrasp-Scene-Tiny`.
 
 ## 11. Test matrix bắt buộc
 
