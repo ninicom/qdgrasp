@@ -6,6 +6,7 @@ from qdgrasp.dataset.pipeline.validators import scene_rollout as scene_rollout_m
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import RolloutSceneObject
 from qdgrasp.dataset.pipeline.validators.scene_rollout import (
     SceneRolloutEvidenceCollector,
+    run_scene_grasp_rollout,
     validate_scene_grasp_rollout,
 )
 
@@ -113,3 +114,52 @@ def test_scene_rollout_wrapper_feeds_only_observed_evidence(monkeypatch):
     assert not disturbed.passed
     assert disturbed.failure_stage == "wrong_object_contact"
     assert disturbed.trajectory_metrics["wrong_contacts"] == ["obstacle"]
+
+
+def test_scene_rollout_result_exposes_same_stage_observer_evidence(monkeypatch):
+    model = _model()
+    data = mujoco.MjData(model)
+
+    def fake_rollout(*args, initial_observer, stage_observer, step_observer, **kwargs):
+        del args, kwargs
+        for stage, height in (
+            ("initial", 0.0),
+            ("squeeze", 0.005),
+            ("lift", 0.05),
+            ("perturbation", 0.05),
+        ):
+            _set_target_height(model, data, height)
+            (initial_observer if stage == "initial" else stage_observer)(stage, model, data)
+            step_observer(stage, model, data)
+        return DynamicValidation(
+            trajectory_metrics={
+                "lift_achieved": 0.045,
+                "final_active_fingers": 2.0,
+                "swept_clearance_passed": 1.0,
+            },
+            per_finger_loads=np.ones((2, 6)),
+            failure_stage="none",
+            passed=True,
+        )
+
+    monkeypatch.setattr(scene_rollout_module, "validate_grasp_rollout", fake_rollout)
+    observed = []
+    result = run_scene_grasp_rollout(
+        "unused.xml",
+        [],
+        ["tip_1", "tip_2"],
+        target_object_id="target",
+        non_target_objects=[],
+        protocol_hash="a" * 64,
+        recipe_hash="b" * 64,
+        source_hash="c" * 64,
+        evidence_stage_observer=lambda stage, model, data: observed.append((stage, float(data.time))),
+    )
+    assert result.validation.passed
+    assert [stage for stage, _ in observed] == [
+        "initial",
+        "squeeze",
+        "lift",
+        "perturbation",
+    ]
+    assert result.state_hashes == result.validation.trajectory_metrics["scene_state_hashes"]

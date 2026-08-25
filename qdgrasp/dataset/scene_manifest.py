@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path, PurePosixPath
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -62,14 +62,28 @@ class SceneDatasetManifest(BaseModel):
     scene_spec_hashes: dict[str, str]
     camera_calibration_hashes: dict[str, str]
     environment_hashes: dict[str, str]
+    object_asset_hashes: dict[str, str] = Field(default_factory=dict)
+    robot_profile_hashes: dict[str, str] = Field(default_factory=dict)
+    split_hashes: dict[str, str] = Field(default_factory=dict)
+    release_artifact_hashes: dict[str, str] = Field(default_factory=dict)
     source_licenses: dict[str, str]
     shards: tuple[SceneShardMetadata, ...]
     success_criteria: dict[str, float]
+    coverage: dict[str, Any] = Field(default_factory=dict)
+    resource_policy: dict[str, Any] = Field(default_factory=dict)
     release_blocked: bool = True
     invalidated: bool = False
     invalidation_reason: str = ""
 
-    @field_validator("scene_spec_hashes", "camera_calibration_hashes", "environment_hashes")
+    @field_validator(
+        "scene_spec_hashes",
+        "camera_calibration_hashes",
+        "environment_hashes",
+        "object_asset_hashes",
+        "robot_profile_hashes",
+        "split_hashes",
+        "release_artifact_hashes",
+    )
     @classmethod
     def _hash_mapping(cls, value: dict[str, str]) -> dict[str, str]:
         bad = sorted(key for key, digest in value.items() if not _SHA256.fullmatch(digest))
@@ -84,6 +98,8 @@ class SceneDatasetManifest(BaseModel):
             raise ValueError("scene IDs must not leak across splits")
         if set(scene_ids) != set(self.scene_spec_hashes):
             raise ValueError("split scene IDs must exactly match scene_spec_hashes")
+        if self.split_hashes and set(self.split_hashes) != set(self.splits):
+            raise ValueError("split_hashes keys must exactly match manifest splits")
         if self.invalidated and not self.invalidation_reason:
             raise ValueError("invalidated scene release requires invalidation_reason")
         filenames = [shard.filename for shard in self.shards]
@@ -95,9 +111,7 @@ class SceneDatasetManifest(BaseModel):
 def save_scene_manifest(manifest: SceneDatasetManifest, output_path: str | Path) -> None:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(
-        manifest.model_dump(by_alias=True, mode="json"), indent=2, sort_keys=True
-    ) + "\n"
+    payload = json.dumps(manifest.model_dump(by_alias=True, mode="json"), indent=2, sort_keys=True) + "\n"
     path.write_text(payload, encoding="utf-8")
 
 

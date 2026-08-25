@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import mujoco
@@ -109,7 +110,18 @@ class SceneRolloutEvidenceCollector:
         return {stage: hash_scene_state(state) for stage, state in self.stage_states.items()}
 
 
-def validate_scene_grasp_rollout(
+@dataclass(frozen=True)
+class SceneRolloutResult:
+    """Validated rollout plus the exact measured scene evidence used for its label."""
+
+    validation: DynamicValidation
+    stage_states: Mapping[str, SceneState]
+    state_hashes: Mapping[str, str]
+    contact_object_ids: tuple[str, ...]
+    non_target_impulses: Mapping[str, float]
+
+
+def run_scene_grasp_rollout(
     hand_xml_path: str,
     collision_geoms: Sequence[SubGeomSpec],
     fingertip_body_names: Sequence[str],
@@ -121,8 +133,9 @@ def validate_scene_grasp_rollout(
     source_hash: str,
     scene_validator: SceneDynamicValidator | None = None,
     rollout_kwargs: Mapping[str, Any] | None = None,
-) -> DynamicValidation:
-    """Run one physical multi-object rollout and validate only its measured evidence."""
+    evidence_stage_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
+) -> SceneRolloutResult:
+    """Run one physical multi-object rollout and return its exact measured evidence."""
     options = dict(rollout_kwargs or {})
     forbidden = sorted(
         {
@@ -139,21 +152,27 @@ def validate_scene_grasp_rollout(
         target_object_id,
         [item.object_id for item in non_target_objects],
     )
+
+    def observe_stage(stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+        collector.observe_stage(stage, model, data)
+        if evidence_stage_observer is not None:
+            evidence_stage_observer(stage, model, data)
+
     base_validation = validate_grasp_rollout(
         hand_xml_path,
         collision_geoms,
         fingertip_body_names,
         non_target_objects=non_target_objects,
         require_scene_clearance=True,
-        initial_observer=collector.observe_stage,
-        stage_observer=collector.observe_stage,
+        initial_observer=observe_stage,
+        stage_observer=observe_stage,
         step_observer=collector.observe_step,
         **options,
     )
     initial_state = collector.stage_states.get("initial", {})
     final_state = collector.stage_states.get("perturbation", initial_state)
     validator = scene_validator or SceneDynamicValidator()
-    return validator.validate(
+    validation = validator.validate(
         target_object_id=target_object_id,
         initial_scene_state=initial_state,
         final_scene_state=final_state,
@@ -167,3 +186,38 @@ def validate_scene_grasp_rollout(
         recipe_hash=recipe_hash,
         source_hash=source_hash,
     )
+    return SceneRolloutResult(
+        validation=validation,
+        stage_states=dict(collector.stage_states),
+        state_hashes=collector.state_hashes,
+        contact_object_ids=tuple(sorted(collector.contact_object_ids)),
+        non_target_impulses=dict(collector.non_target_impulses),
+    )
+
+
+def validate_scene_grasp_rollout(
+    hand_xml_path: str,
+    collision_geoms: Sequence[SubGeomSpec],
+    fingertip_body_names: Sequence[str],
+    *,
+    target_object_id: str,
+    non_target_objects: Sequence[RolloutSceneObject],
+    protocol_hash: str,
+    recipe_hash: str,
+    source_hash: str,
+    scene_validator: SceneDynamicValidator | None = None,
+    rollout_kwargs: Mapping[str, Any] | None = None,
+) -> DynamicValidation:
+    """Run one physical multi-object rollout and validate only its measured evidence."""
+    return run_scene_grasp_rollout(
+        hand_xml_path,
+        collision_geoms,
+        fingertip_body_names,
+        target_object_id=target_object_id,
+        non_target_objects=non_target_objects,
+        protocol_hash=protocol_hash,
+        recipe_hash=recipe_hash,
+        source_hash=source_hash,
+        scene_validator=scene_validator,
+        rollout_kwargs=rollout_kwargs,
+    ).validation
