@@ -14,7 +14,7 @@ execution_policy:
 profiles:
   cpu:
     lock: environments/requirements/cpu.lock
-    sha256: 5d8c65b043eb39b2452f4765e54639acf6e859567198f2354d31213c0aa094e1
+    sha256: 681a850db825db429dc2182cd4bb4ee31339cf185a29f743b964f34775ab08b4
     torch: 2.11.0+cpu
     status: verified
     evidence:
@@ -25,7 +25,7 @@ profiles:
       dependency_check: pass
   cuda:
     lock: environments/requirements/cu128.lock
-    sha256: 43536551e9ecbf4f525eb08f77567378a1531c2a24f1b7275a65751b0b95b4ef
+    sha256: a257bb3bfe557b9b54cfb566d9f79698b16ae7171081a99481585656159ae8e1
     torch: 2.11.0+cu128
     cuda_runtime: "12.8"
     status: verified
@@ -51,11 +51,11 @@ profiles:
       mujoco_forward: pass
   dev_cpu:
     lock: environments/requirements/dev-cpu.lock
-    sha256: 6ea95a3d402e968e817bdf9663252d2f05a27206c13c2e06018f16018beb0c68
+    sha256: bee0bf6b7e6fdc4d0b3f826ba74072a081014d3c59c9655f10c9e3edcd3b39bb
     status: resolved
   export_cpu:
     lock: environments/requirements/export-cpu.lock
-    sha256: 4d7ce045ad217e2c77e9ae7d9328dfb3f09c737e838df02e3ddde459c39cfe32
+    sha256: 84fe02253b704345be0d1c3afed33bef86dba6f3f357e7c737ea2bb806ec47bc
     status: resolved
 excluded_from_core:
   - PyTorch3D
