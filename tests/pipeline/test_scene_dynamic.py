@@ -31,7 +31,7 @@ def _evidence():
         "perturbation": {"target": _pose(z=0.05), "obstacle": _pose(y=1.01)},
     }
     base = DynamicValidation(
-        trajectory_metrics={"lift_achieved": 0.05, "final_active_fingers": 2.0},
+        trajectory_metrics={"lift_achieved": 0.045, "final_active_fingers": 2.0},
         per_finger_loads=np.ones((2, 6)),
         failure_stage="none",
         passed=True,
@@ -54,6 +54,7 @@ def test_complete_measured_evidence_passes_without_fabricated_metrics():
     assert result.passed
     assert result.failure_stage == "none"
     assert result.trajectory_metrics["measured_target_lift"] == pytest.approx(0.05)
+    assert result.trajectory_metrics["measured_lift_phase"] == pytest.approx(0.045)
     assert result.trajectory_metrics["validated_stages"] == [
         "initial",
         "squeeze",
@@ -106,9 +107,7 @@ def test_missing_or_tampered_stage_evidence_fails_closed():
 def test_missing_object_or_non_finite_pose_is_scene_unstable():
     evidence = _evidence()
     del evidence["final_scene_state"]["obstacle"]
-    evidence["state_hashes"]["perturbation"] = hash_scene_state(
-        evidence["final_scene_state"]
-    )
+    evidence["state_hashes"]["perturbation"] = hash_scene_state(evidence["final_scene_state"])
     result = SceneDynamicValidator().validate(**evidence)
     assert result.failure_stage == "scene_unstable"
 
@@ -150,22 +149,16 @@ def test_non_target_disturbance_gates_translation_rotation_and_impulse(mutation,
         evidence["final_scene_state"]["obstacle"]["pos"][1] = 1.1
     elif mutation == "rotation":
         angle = 0.3
-        evidence["final_scene_state"]["obstacle"]["quat"] = np.array(
-            [np.cos(angle / 2), 0.0, 0.0, np.sin(angle / 2)]
-        )
+        evidence["final_scene_state"]["obstacle"]["quat"] = np.array([np.cos(angle / 2), 0.0, 0.0, np.sin(angle / 2)])
     else:
         if mutation == "impulse":
             evidence["non_target_impulses"]["obstacle"] = 1.1
         else:
             evidence["final_scene_state"]["obstacle"]["pos"][2] = 0.02
-    evidence["state_hashes"]["perturbation"] = hash_scene_state(
-        evidence["final_scene_state"]
-    )
+    evidence["state_hashes"]["perturbation"] = hash_scene_state(evidence["final_scene_state"])
     result = SceneDynamicValidator().validate(**evidence)
     assert result.failure_stage == "non_target_disturbed"
-    threshold_name = (
-        "non_target_lift_threshold" if metric == "vertical_displacement" else f"{metric}_threshold"
-    )
+    threshold_name = "non_target_lift_threshold" if metric == "vertical_displacement" else f"{metric}_threshold"
     assert result.trajectory_metrics[metric] > getattr(SceneDynamicValidator(), threshold_name)
 
 
@@ -188,6 +181,4 @@ def test_inputs_are_not_mutated():
     initial_copy = copy.deepcopy(evidence["initial_scene_state"])
     SceneDynamicValidator().validate(**evidence)
     for object_id in initial_copy:
-        np.testing.assert_array_equal(
-            evidence["initial_scene_state"][object_id]["pos"], initial_copy[object_id]["pos"]
-        )
+        np.testing.assert_array_equal(evidence["initial_scene_state"][object_id]["pos"], initial_copy[object_id]["pos"])

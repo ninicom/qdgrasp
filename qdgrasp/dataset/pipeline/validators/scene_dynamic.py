@@ -30,9 +30,9 @@ def _canonical_scene_state(state: SceneState) -> dict[str, dict[str, list[float]
 
 def hash_scene_state(state: SceneState) -> str:
     """Return a stable SHA-256 over canonical object poses."""
-    payload = json.dumps(
-        _canonical_scene_state(state), sort_keys=True, separators=(",", ":"), allow_nan=False
-    ).encode("utf-8")
+    payload = json.dumps(_canonical_scene_state(state), sort_keys=True, separators=(",", ":"), allow_nan=False).encode(
+        "utf-8"
+    )
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -53,6 +53,7 @@ class SceneDynamicValidator:
         impulse_threshold: float = 1.0,
         minimum_target_lift: float = 0.025,
         non_target_lift_threshold: float = 0.01,
+        lift_consistency_tolerance: float = 0.002,
     ):
         thresholds = {
             "displacement_threshold": displacement_threshold,
@@ -60,6 +61,7 @@ class SceneDynamicValidator:
             "impulse_threshold": impulse_threshold,
             "minimum_target_lift": minimum_target_lift,
             "non_target_lift_threshold": non_target_lift_threshold,
+            "lift_consistency_tolerance": lift_consistency_tolerance,
         }
         invalid = [name for name, value in thresholds.items() if not math.isfinite(value) or value <= 0]
         if invalid:
@@ -69,6 +71,7 @@ class SceneDynamicValidator:
         self.impulse_threshold = float(impulse_threshold)
         self.minimum_target_lift = float(minimum_target_lift)
         self.non_target_lift_threshold = float(non_target_lift_threshold)
+        self.lift_consistency_tolerance = float(lift_consistency_tolerance)
 
     @staticmethod
     def _result(
@@ -225,23 +228,31 @@ class SceneDynamicValidator:
         target_initial = np.asarray(initial_scene_state[target_object_id]["pos"], dtype=np.float64)
         target_final = np.asarray(final_scene_state[target_object_id]["pos"], dtype=np.float64)
         measured_lift = float(target_final[2] - target_initial[2])
+        squeeze_stage_pos = np.asarray(stage_states["squeeze"][target_object_id]["pos"], dtype=np.float64)
         lift_stage_pos = np.asarray(stage_states["lift"][target_object_id]["pos"], dtype=np.float64)
         lift_stage_height = float(lift_stage_pos[2] - target_initial[2])
+        measured_lift_phase = float(lift_stage_pos[2] - squeeze_stage_pos[2])
         base_lift = base_validation.trajectory_metrics.get("lift_achieved")
         if (
             not isinstance(base_lift, (int, float, np.integer, np.floating))
             or not math.isfinite(float(base_lift))
             or measured_lift < self.minimum_target_lift
             or lift_stage_height < self.minimum_target_lift
-            or not np.isclose(float(base_lift), measured_lift, atol=1e-6)
+            or abs(float(base_lift) - measured_lift_phase) > self.lift_consistency_tolerance
         ):
             return self._result(
                 base_validation,
                 "target_not_lifted",
                 {
                     "measured_target_lift": measured_lift,
+                    "measured_lift_phase": measured_lift_phase,
                     "lift_stage_height": lift_stage_height,
                     "base_target_lift": base_lift,
+                    "lift_consistency_error": (
+                        abs(float(base_lift) - measured_lift_phase)
+                        if isinstance(base_lift, (int, float, np.integer, np.floating))
+                        else None
+                    ),
                 },
             )
 
@@ -273,8 +284,7 @@ class SceneDynamicValidator:
             final_pose = final_scene_state[object_id]
             displacement = float(
                 np.linalg.norm(
-                    np.asarray(final_pose["pos"], dtype=np.float64)
-                    - np.asarray(initial_pose["pos"], dtype=np.float64)
+                    np.asarray(final_pose["pos"], dtype=np.float64) - np.asarray(initial_pose["pos"], dtype=np.float64)
                 )
             )
             rotation = _rotation_distance(
@@ -308,7 +318,9 @@ class SceneDynamicValidator:
             "none",
             {
                 "measured_target_lift": measured_lift,
+                "measured_lift_phase": measured_lift_phase,
                 "lift_stage_height": lift_stage_height,
+                "lift_consistency_error": abs(float(base_lift) - measured_lift_phase),
                 "non_target_motion": non_target_metrics,
                 "scene_state_hashes": measured_hashes,
                 "protocol_hash": protocol_hash,

@@ -1,11 +1,12 @@
-from typing import Callable, Dict, Mapping, Optional, Sequence, Tuple
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
-import numpy as np
+
 import mujoco
+import numpy as np
 from scipy.spatial.transform import Rotation
 
 from qdgrasp.config.schema import ConfigError
-from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.dataset.pipeline.contracts import DynamicValidation
 from qdgrasp.dataset.pipeline.observers.contact_load import extract_contact_loads
 from qdgrasp.dataset.pipeline.validators.dynamic_predicate import (
@@ -13,14 +14,73 @@ from qdgrasp.dataset.pipeline.validators.dynamic_predicate import (
     RolloutProtocol,
     evaluate_dynamic_success,
 )
+from qdgrasp.objects.schema import SubGeomSpec
+
+
+@dataclass(frozen=True)
+class RolloutSceneObject:
+    """A physical non-target object compiled into the grasp rollout."""
+
+    object_id: str
+    collision_geoms: Sequence[SubGeomSpec]
+    pos: tuple[float, float, float]
+    quat: tuple[float, float, float, float] = (1.0, 0.0, 0.0, 0.0)
+    mass: float = 0.1
+
+
+def _add_rollout_object(
+    spec: mujoco.MjSpec,
+    *,
+    body_name: str,
+    geom_prefix: str,
+    collision_geoms: Sequence[SubGeomSpec],
+    pos: Sequence[float],
+    quat: Sequence[float],
+    mass: float,
+) -> None:
+    if not collision_geoms:
+        raise ConfigError(f"rollout object {body_name} has no collision geoms")
+    if not np.isfinite(mass) or mass <= 0.0:
+        raise ConfigError(f"rollout object {body_name} mass must be finite and positive")
+    position = np.asarray(pos, dtype=np.float64)
+    quaternion = np.asarray(quat, dtype=np.float64)
+    if (
+        position.shape != (3,)
+        or quaternion.shape != (4,)
+        or not np.all(np.isfinite(np.concatenate([position, quaternion])))
+    ):
+        raise ConfigError(f"rollout object {body_name} pose is invalid")
+    quaternion_norm = float(np.linalg.norm(quaternion))
+    if quaternion_norm <= np.finfo(np.float64).eps:
+        raise ConfigError(f"rollout object {body_name} quaternion has zero norm")
+    object_body = spec.worldbody.add_body(
+        name=body_name,
+        pos=position.tolist(),
+        quat=(quaternion / quaternion_norm).tolist(),
+    )
+    object_body.add_freejoint(name=f"{body_name}::freejoint")
+    for index, geom in enumerate(collision_geoms):
+        geom_type = getattr(mujoco.mjtGeom, f"mjGEOM_{geom.type.upper()}")
+        object_body.add_geom(
+            name=f"{geom_prefix}{index}",
+            type=geom_type,
+            size=[float(value) for value in geom.size],
+            pos=[float(value) for value in geom.pos],
+            quat=[float(value) for value in geom.quat],
+            mass=float(mass / len(collision_geoms)),
+            condim=4,
+            friction=[1.0, 0.005, 0.0001],
+            rgba=[0.8, 0.3, 0.3, 1.0],
+        )
 
 
 def build_rollout_scene_model(
     hand_xml_path: str | Path,
     collision_geoms: Sequence[SubGeomSpec],
     *,
-    object_pos: Tuple[float, float, float] = (0.0, 0.0, 0.05),
+    object_pos: tuple[float, float, float] = (0.0, 0.0, 0.05),
     object_mass: float = 0.1,
+    non_target_objects: Sequence[RolloutSceneObject] = (),
 ) -> mujoco.MjModel:
     """Build a compiled MuJoCo model containing the hand and the procedural object geoms."""
     hand_p = Path(hand_xml_path).resolve()
@@ -59,28 +119,30 @@ def build_rollout_scene_model(
         dtype=np.float64,
     )
 
-    obj_body = spec.worldbody.add_body(
-        name="target_object",
-        pos=[float(object_pos[0]), float(object_pos[1]), float(object_pos[2])],
+    _add_rollout_object(
+        spec,
+        body_name="target_object",
+        geom_prefix="object_subgeom_",
+        collision_geoms=collision_geoms,
+        pos=object_pos,
+        quat=(1.0, 0.0, 0.0, 0.0),
+        mass=object_mass,
     )
-    obj_body.add_freejoint(name="object_freejoint")
-
-    for i, g in enumerate(collision_geoms):
-        geom_type = getattr(mujoco.mjtGeom, f"mjGEOM_{g.type.upper()}")
-        size_list = [float(s) for s in g.size]
-        pos_list = [float(p) for p in g.pos]
-        quat_list = [float(q) for q in g.quat]
-
-        obj_body.add_geom(
-            name=f"object_subgeom_{i}",
-            type=geom_type,
-            size=size_list,
-            pos=pos_list,
-            quat=quat_list,
-            mass=float(object_mass / len(collision_geoms)),
-            condim=4,
-            friction=[1.0, 0.005, 0.0001],
-            rgba=[0.8, 0.3, 0.3, 1.0],
+    reserved_names = {"target_object", "hand_mocap", "floor"}
+    object_ids = [item.object_id for item in non_target_objects]
+    if len(object_ids) != len(set(object_ids)) or any(
+        not object_id or object_id in reserved_names for object_id in object_ids
+    ):
+        raise ConfigError("non-target rollout object IDs must be unique and non-reserved")
+    for item in non_target_objects:
+        _add_rollout_object(
+            spec,
+            body_name=item.object_id,
+            geom_prefix=f"scene_object::{item.object_id}::geom::",
+            collision_geoms=item.collision_geoms,
+            pos=item.pos,
+            quat=item.quat,
+            mass=item.mass,
         )
 
     spec.worldbody.add_geom(
@@ -108,29 +170,30 @@ def validate_grasp_rollout(
     collision_geoms: Sequence[SubGeomSpec],
     fingertip_body_names: Sequence[str],
     *,
-    palm_pos: Tuple[float, float, float] = (0.0, 0.0, 0.1),
-    palm_rot: Optional[np.ndarray] = None, # 3x3 rotation matrix or quaternion
-    joint_targets: Optional[Mapping[str, float]] = None,
-    initial_joint_targets: Optional[Mapping[str, float]] = None,
-    object_pos: Tuple[float, float, float] = (0.0, 0.0, 0.05),
+    palm_pos: tuple[float, float, float] = (0.0, 0.0, 0.1),
+    palm_rot: np.ndarray | None = None,  # 3x3 rotation matrix or quaternion
+    joint_targets: Mapping[str, float] | None = None,
+    initial_joint_targets: Mapping[str, float] | None = None,
+    object_pos: tuple[float, float, float] = (0.0, 0.0, 0.05),
     object_mass: float = 0.1,
     squeeze_steps: int = 150,
     lift_steps: int = 150,
     lift_height: float = 0.05,
     perturbation_steps: int = 50,
-    perturbation_wrench: Optional[np.ndarray] = None, # [6] force & torque
+    perturbation_wrench: np.ndarray | None = None,  # [6] force & torque
     max_allowed_penetration: float = 0.002,
     min_active_fingers: int = 2,
     pregrasp_distance: float = 0.03,
-    expected_fingertip_positions: Optional[np.ndarray] = None,
-    fingertip_local_offsets: Optional[np.ndarray] = None,
-    active_fingers: Optional[np.ndarray] = None,
-    desired_fingertip_displacement: Optional[np.ndarray] = None,
-    contact_joint_targets: Optional[Mapping[str, float]] = None,
-    rollout_protocol: Optional[RolloutProtocol] = None,
-    stage_observer: Optional[
-        Callable[[str, mujoco.MjModel, mujoco.MjData], None]
-    ] = None,
+    expected_fingertip_positions: np.ndarray | None = None,
+    fingertip_local_offsets: np.ndarray | None = None,
+    active_fingers: np.ndarray | None = None,
+    desired_fingertip_displacement: np.ndarray | None = None,
+    contact_joint_targets: Mapping[str, float] | None = None,
+    rollout_protocol: RolloutProtocol | None = None,
+    non_target_objects: Sequence[RolloutSceneObject] = (),
+    initial_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
+    stage_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
+    step_observer: Callable[[str, mujoco.MjModel, mujoco.MjData], None] | None = None,
 ) -> DynamicValidation:
     """
     Executes a multi-stage physical rollout:
@@ -145,6 +208,7 @@ def validate_grasp_rollout(
         collision_geoms=collision_geoms,
         object_pos=object_pos,
         object_mass=object_mass,
+        non_target_objects=non_target_objects,
     )
     data = mujoco.MjData(model)
     mujoco.mj_resetData(model, data)
@@ -153,21 +217,13 @@ def validate_grasp_rollout(
     if protocol_error is not None:
         return DynamicValidation(
             trajectory_metrics={"protocol_error": protocol_error},
-            per_finger_loads=np.zeros(
-                (len(fingertip_body_names), 6), dtype=np.float64
-            ),
+            per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
             failure_stage="controller_protocol",
             passed=False,
         )
 
-    fingertip_body_ids = [
-        mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
-        for name in fingertip_body_names
-    ]
-    missing_tips = [
-        name for name, body_id in zip(fingertip_body_names, fingertip_body_ids)
-        if body_id < 0
-    ]
+    fingertip_body_ids = [mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name) for name in fingertip_body_names]
+    missing_tips = [name for name, body_id in zip(fingertip_body_names, fingertip_body_ids) if body_id < 0]
     if missing_tips:
         raise ConfigError(f"fingertip bodies are absent from rollout model: {missing_tips}")
 
@@ -193,9 +249,7 @@ def validate_grasp_rollout(
         else np.asarray(active_fingers, dtype=bool)
     )
     if task_active_fingers.shape != (len(fingertip_body_names),):
-        raise ConfigError(
-            f"active_fingers must have shape ({len(fingertip_body_names)},)"
-        )
+        raise ConfigError(f"active_fingers must have shape ({len(fingertip_body_names)},)")
 
     palm_candidates = [
         b_id
@@ -216,16 +270,12 @@ def validate_grasp_rollout(
     # away from the requested pose even while the free root tracks mocap.
     if initial_joint_targets:
         for joint_name, value in initial_joint_targets.items():
-            joint_id = mujoco.mj_name2id(
-                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
-            )
+            joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
             if joint_id < 0 or int(model.jnt_type[joint_id]) not in (
                 int(mujoco.mjtJoint.mjJNT_HINGE),
                 int(mujoco.mjtJoint.mjJNT_SLIDE),
             ):
-                raise ConfigError(
-                    f"initial joint target refers to unsupported joint: {joint_name}"
-                )
+                raise ConfigError(f"initial joint target refers to unsupported joint: {joint_name}")
             data.qpos[model.jnt_qposadr[joint_id]] = float(value)
 
     mocap_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "hand_mocap")
@@ -239,9 +289,7 @@ def validate_grasp_rollout(
     root_rot_initial = np.array(data.xmat[root_id]).reshape(3, 3)
     palm_rot_initial = np.array(data.xmat[palm_id]).reshape(3, 3)
     root_to_palm_rot = root_rot_initial.T @ palm_rot_initial
-    root_to_palm_pos = root_rot_initial.T @ (
-        np.array(data.xpos[palm_id]) - np.array(data.xpos[root_id])
-    )
+    root_to_palm_pos = root_rot_initial.T @ (np.array(data.xpos[palm_id]) - np.array(data.xpos[root_id]))
 
     requested_palm_rot = np.eye(3, dtype=np.float64)
     if palm_rot is not None:
@@ -249,9 +297,7 @@ def validate_grasp_rollout(
             requested_palm_rot = np.asarray(palm_rot, dtype=np.float64)
         elif palm_rot.shape == (4,):
             quat = np.asarray(palm_rot, dtype=np.float64)
-            requested_palm_rot = Rotation.from_quat(
-                [quat[1], quat[2], quat[3], quat[0]]
-            ).as_matrix()
+            requested_palm_rot = Rotation.from_quat([quat[1], quat[2], quat[3], quat[0]]).as_matrix()
         else:
             raise ConfigError("palm_rot must have shape (3, 3) or (4,)")
 
@@ -264,9 +310,7 @@ def validate_grasp_rollout(
     root_pregrasp_pos = root_target_pos + pregrasp_distance * outward / outward_norm
 
     jnt_id = model.body_jntadr[root_id]
-    if jnt_id < 0 or int(model.jnt_type[jnt_id]) != int(
-        mujoco.mjtJoint.mjJNT_FREE
-    ):
+    if jnt_id < 0 or int(model.jnt_type[jnt_id]) != int(mujoco.mjtJoint.mjJNT_FREE):
         raise ConfigError(f"Root body {root_id} must have a freejoint for mocap-weld control.")
 
     qpos_adr = model.jnt_qposadr[jnt_id]
@@ -285,41 +329,25 @@ def validate_grasp_rollout(
         if int(model.jnt_type[j_id]) in (int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE))
         and not (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j_id) or "").startswith("object_")
     ]
-    hand_actuator_names = [
-        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, a_id)
-        for a_id in range(model.nu)
-    ]
+    hand_actuator_names = [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, a_id) for a_id in range(model.nu)]
 
     actuated_damping = []
     for joint_name in hand_joint_names:
-        joint_id = mujoco.mj_name2id(
-            model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
-        )
+        joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
         dof_address = int(model.jnt_dofadr[joint_id])
         actuated_damping.append(float(model.dof_damping[dof_address]))
-    if (
-        not actuated_damping
-        or not np.all(np.isfinite(actuated_damping))
-        or np.any(np.asarray(actuated_damping) <= 0.0)
-    ):
+    if not actuated_damping or not np.all(np.isfinite(actuated_damping)) or np.any(np.asarray(actuated_damping) <= 0.0):
         return DynamicValidation(
             trajectory_metrics={
                 "protocol_error": "nonpositive_actuated_damping",
-                "minimum_actuated_damping": min(
-                    actuated_damping, default=float("nan")
-                ),
+                "minimum_actuated_damping": min(actuated_damping, default=float("nan")),
             },
-            per_finger_loads=np.zeros(
-                (len(fingertip_body_names), 6), dtype=np.float64
-            ),
+            per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
             failure_stage="controller_protocol",
             passed=False,
         )
 
-    has_tendon = any(
-        int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_TENDON)
-        for a_id in range(model.nu)
-    )
+    has_tendon = any(int(model.actuator_trntype[a_id]) == int(mujoco.mjtTrn.mjTRN_TENDON) for a_id in range(model.nu))
 
     from qdgrasp.robot.transmission.direct import DirectJointTransmission
     from qdgrasp.robot.transmission.fixed_tendon import FixedTendonTransmission
@@ -340,16 +368,12 @@ def validate_grasp_rollout(
         from qdgrasp.robot.transmission.command import plan_controllable_task_command
 
         task_active = task_active_fingers
-        desired_tip_delta = np.asarray(
-            desired_fingertip_displacement, dtype=np.float64
-        )
+        desired_tip_delta = np.asarray(desired_fingertip_displacement, dtype=np.float64)
         if task_active.shape != (len(fingertip_body_names),) or desired_tip_delta.shape != (
             len(fingertip_body_names),
             3,
         ):
-            raise ConfigError(
-                "task command active_fingers/displacement must have shapes [K] and [K,3]"
-            )
+            raise ConfigError("task command active_fingers/displacement must have shapes [K] and [K,3]")
         active_count = int(np.sum(task_active))
         if active_count < min_active_fingers:
             return DynamicValidation(
@@ -357,9 +381,7 @@ def validate_grasp_rollout(
                     "active_finger_count": float(active_count),
                     "minimum_active_fingers": float(min_active_fingers),
                 },
-                per_finger_loads=np.zeros(
-                    (len(fingertip_body_names), 6), dtype=np.float64
-                ),
+                per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
                 failure_stage="insufficient_active_fingers",
                 passed=False,
             )
@@ -369,9 +391,7 @@ def validate_grasp_rollout(
         for tip_index in np.where(task_active)[0]:
             body_id = fingertip_body_ids[int(tip_index)]
             body_rotation = np.asarray(data.xmat[body_id]).reshape(3, 3)
-            contact_point = np.asarray(data.xpos[body_id]) + (
-                body_rotation @ local_tip_offsets[int(tip_index)]
-            )
+            contact_point = np.asarray(data.xpos[body_id]) + (body_rotation @ local_tip_offsets[int(tip_index)])
             jacobian_position = np.zeros((3, model.nv), dtype=np.float64)
             jacobian_rotation = np.zeros((3, model.nv), dtype=np.float64)
             mujoco.mj_jac(
@@ -385,11 +405,9 @@ def validate_grasp_rollout(
             task_rows.append(
                 np.stack(
                     [
-                        jacobian_position[:, int(model.jnt_dofadr[
-                            mujoco.mj_name2id(
-                                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
-                            )
-                        ])]
+                        jacobian_position[
+                            :, int(model.jnt_dofadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)])
+                        ]
                         for joint_name in hand_joint_names
                     ],
                     axis=1,
@@ -401,9 +419,7 @@ def validate_grasp_rollout(
         task_delta = np.concatenate(desired_rows, axis=0)
         joint_limits = np.empty((len(hand_joint_names), 2), dtype=np.float64)
         for joint_index, joint_name in enumerate(hand_joint_names):
-            joint_id = mujoco.mj_name2id(
-                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
-            )
+            joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
             joint_limits[joint_index] = (
                 np.asarray(model.jnt_range[joint_id], dtype=np.float64)
                 if bool(model.jnt_limited[joint_id])
@@ -434,9 +450,7 @@ def validate_grasp_rollout(
                     "nullspace_residual": float(command_plan.nullspace_residual),
                     "actuator_saturation_count": float(np.sum(command_plan.saturated)),
                 },
-                per_finger_loads=np.zeros(
-                    (len(fingertip_body_names), 6), dtype=np.float64
-                ),
+                per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
                 failure_stage=command_plan.rejection_reason,
                 passed=False,
             )
@@ -448,9 +462,7 @@ def validate_grasp_rollout(
                 q_target[idx] = float(joint_targets[j_name])
 
     dq_desired = q_target - q_init
-    cmd = None if command_plan is not None else tm.project_joint_delta(
-        dq_desired, initial_trans_state
-    )
+    cmd = None if command_plan is not None else tm.project_joint_delta(dq_desired, initial_trans_state)
 
     if cmd is not None and cmd.reason in ("nullspace_rejection", "actuator_saturation"):
         return DynamicValidation(
@@ -462,31 +474,22 @@ def validate_grasp_rollout(
                 "nullspace_residual": float(cmd.nullspace_residual),
                 "actuator_saturation_count": float(np.sum(cmd.saturated)),
             },
-            per_finger_loads=np.zeros(
-                (len(fingertip_body_names), 6), dtype=np.float64
-            ),
-            failure_stage=(
-                "underactuated_targets"
-                if cmd.reason == "nullspace_rejection"
-                else "actuator_saturation"
-            ),
+            per_finger_loads=np.zeros((len(fingertip_body_names), 6), dtype=np.float64),
+            failure_stage=("underactuated_targets" if cmd.reason == "nullspace_rejection" else "actuator_saturation"),
             passed=False,
         )
 
     start_controls = initial_trans_state.actuator_coordinate.copy()
-    target_controls = (
-        command_plan.control_target.copy()
-        if command_plan is not None
-        else cmd.control_target.copy()
-    )
+    target_controls = command_plan.control_target.copy() if command_plan is not None else cmd.control_target.copy()
 
     ctrl_mins = tm.actuator_ctrlrange[:, 0]
     ctrl_maxs = tm.actuator_ctrlrange[:, 1]
-    data.ctrl[:model.nu] = np.clip(start_controls, ctrl_mins, ctrl_maxs)
+    data.ctrl[: model.nu] = np.clip(start_controls, ctrl_mins, ctrl_maxs)
 
     # Object & floor geom IDs
     object_geom_ids = {
-        g_id for g_id in range(model.ngeom)
+        g_id
+        for g_id in range(model.ngeom)
         if (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, g_id) or "").startswith("object_subgeom_")
     }
     floor_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
@@ -519,7 +522,7 @@ def validate_grasp_rollout(
     contact_force_threshold = max(1e-6, 10.0 * contact_noise_floor)
     dt = float(model.opt.timestep)
 
-    def summarize_contact_window(samples: list[Dict[str, object]]) -> Dict[str, object]:
+    def summarize_contact_window(samples: list[dict[str, object]]) -> dict[str, object]:
         if not samples:
             return {
                 "sustained_count": 0,
@@ -528,17 +531,10 @@ def validate_grasp_rollout(
                 "palm_support": False,
                 "max_cone_violation": float("inf"),
             }
-        normal_forces = np.stack(
-            [np.asarray(sample["per_finger_f_normal"], dtype=np.float64) for sample in samples]
-        )
+        normal_forces = np.stack([np.asarray(sample["per_finger_f_normal"], dtype=np.float64) for sample in samples])
         duty_cycle = np.mean(normal_forces > contact_force_threshold, axis=0)
         normal_impulse = np.sum(normal_forces, axis=0) * dt
-        minimum_impulse = (
-            contact_force_threshold
-            * dt
-            * len(samples)
-            * protocol.minimum_contact_impulse_ratio
-        )
+        minimum_impulse = contact_force_threshold * dt * len(samples) * protocol.minimum_contact_impulse_ratio
         sustained = (
             (duty_cycle >= protocol.minimum_contact_duty_cycle)
             & (normal_impulse >= minimum_impulse)
@@ -549,9 +545,7 @@ def validate_grasp_rollout(
             "duty_cycle": duty_cycle,
             "normal_impulse": normal_impulse,
             "palm_support": any(bool(sample["has_palm_contact"]) for sample in samples),
-            "max_cone_violation": max(
-                float(np.max(sample["cone_violations"])) for sample in samples
-            ),
+            "max_cone_violation": max(float(np.max(sample["cone_violations"])) for sample in samples),
         }
 
     def get_max_penetration() -> float:
@@ -559,22 +553,18 @@ def validate_grasp_rollout(
         for idx in range(int(data.ncon)):
             c = data.contact[idx]
             g1, g2 = int(c.geom1), int(c.geom2)
-            if (g1 in object_geom_ids or g2 in object_geom_ids) and floor_geom_id not in (g1, g2):
-                if c.dist < 0:
-                    max_pen = max(max_pen, abs(float(c.dist)))
+            if (g1 in object_geom_ids or g2 in object_geom_ids) and floor_geom_id not in (g1, g2) and c.dist < 0:
+                max_pen = max(max_pen, abs(float(c.dist)))
         return max_pen
 
     def object_has_floor_support() -> bool:
         return any(
             floor_geom_id in (int(data.contact[idx].geom1), int(data.contact[idx].geom2))
-            and (
-                int(data.contact[idx].geom1) in object_geom_ids
-                or int(data.contact[idx].geom2) in object_geom_ids
-            )
+            and (int(data.contact[idx].geom1) in object_geom_ids or int(data.contact[idx].geom2) in object_geom_ids)
             for idx in range(int(data.ncon))
         )
 
-    def tracking_metrics() -> Dict[str, float]:
+    def tracking_metrics() -> dict[str, float]:
         current_state = tm.extract_state(model, data)
         current_q = current_state.joint_position
         current_coords = current_state.actuator_coordinate
@@ -583,9 +573,7 @@ def validate_grasp_rollout(
         actuator_errors = np.abs(current_coords - target_controls)
         joint_ranges = np.empty(len(hand_joint_names), dtype=np.float64)
         for index, joint_name in enumerate(hand_joint_names):
-            joint_id = mujoco.mj_name2id(
-                model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
-            )
+            joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
             joint_ranges[index] = (
                 float(np.diff(model.jnt_range[joint_id])[0])
                 if bool(model.jnt_limited[joint_id])
@@ -610,19 +598,13 @@ def validate_grasp_rollout(
         commanded_palm_pos = data.mocap_pos[mocap_idx] + mocap_rot @ root_to_palm_pos
         commanded_palm_rot = mocap_rot @ root_to_palm_rot
         command_controllable_residual = (
-            float(command_plan.task_residual)
-            if command_plan is not None
-            else float(cmd.controllable_residual)
+            float(command_plan.task_residual) if command_plan is not None else float(cmd.controllable_residual)
         )
         command_nullspace_residual = (
-            float(command_plan.nullspace_residual)
-            if command_plan is not None
-            else float(cmd.nullspace_residual)
+            float(command_plan.nullspace_residual) if command_plan is not None else float(cmd.nullspace_residual)
         )
         command_saturation_count = (
-            float(np.sum(command_plan.saturated))
-            if command_plan is not None
-            else float(np.sum(cmd.saturated))
+            float(np.sum(command_plan.saturated)) if command_plan is not None else float(np.sum(cmd.saturated))
         )
         metrics = {
             "transmission_rank": float(tm.rank),
@@ -637,12 +619,8 @@ def validate_grasp_rollout(
             "max_normalized_joint_tracking_error": float(
                 np.max(joint_errors / np.maximum(joint_ranges, 1e-12), initial=0.0)
             ),
-            "max_normalized_actuator_tracking_error": float(
-                np.max(actuator_errors / control_scales, initial=0.0)
-            ),
-            "palm_position_tracking_error": float(
-                np.linalg.norm(np.asarray(data.xpos[palm_id]) - commanded_palm_pos)
-            ),
+            "max_normalized_actuator_tracking_error": float(np.max(actuator_errors / control_scales, initial=0.0)),
+            "palm_position_tracking_error": float(np.linalg.norm(np.asarray(data.xpos[palm_id]) - commanded_palm_pos)),
             "root_mocap_position_error": float(
                 np.linalg.norm(np.asarray(data.xpos[root_id]) - data.mocap_pos[mocap_idx])
             ),
@@ -657,29 +635,21 @@ def validate_grasp_rollout(
         if expected_tips is not None:
             actual_tips = np.asarray(
                 [
-                    data.xpos[body_id]
-                    + np.asarray(data.xmat[body_id]).reshape(3, 3) @ local_offset
-                    for body_id, local_offset in zip(
-                        fingertip_body_ids, local_tip_offsets
-                    )
+                    data.xpos[body_id] + np.asarray(data.xmat[body_id]).reshape(3, 3) @ local_offset
+                    for body_id, local_offset in zip(fingertip_body_ids, local_tip_offsets)
                 ],
                 dtype=np.float64,
             )
-            commanded_tips = data.mocap_pos[mocap_idx] + (
-                mocap_rot
-                @ root_start_rot.T
-                @ (expected_tips - root_target_pos).T
-            ).T
+            commanded_tips = (
+                data.mocap_pos[mocap_idx] + (mocap_rot @ root_start_rot.T @ (expected_tips - root_target_pos).T).T
+            )
             tip_errors = np.linalg.norm(actual_tips - commanded_tips, axis=1)
             metrics["mean_fingertip_tracking_error"] = float(np.mean(tip_errors))
             metrics["max_fingertip_tracking_error"] = float(np.max(tip_errors))
         return metrics
 
     def simulation_is_stable() -> bool:
-        state_is_finite = all(
-            np.all(np.isfinite(values))
-            for values in (data.qpos, data.qvel, data.qacc)
-        )
+        state_is_finite = all(np.all(np.isfinite(values)) for values in (data.qpos, data.qvel, data.qacc))
         warning_count = sum(int(warning.number) for warning in data.warning)
         return bool(state_is_finite and warning_count == 0)
 
@@ -696,24 +666,25 @@ def validate_grasp_rollout(
         )
 
     overall_max_penetration = 0.0
-    tracking_history: list[Dict[str, float]] = []
+    tracking_history: list[dict[str, float]] = []
+    if initial_observer is not None:
+        initial_observer("initial", model, data)
 
     # Stage 1: Squeeze (apply closing torque via smoothstep trajectory)
-    squeeze_contact_samples: list[Dict[str, object]] = []
+    squeeze_contact_samples: list[dict[str, object]] = []
     squeeze_window_start = max(
         0,
-        squeeze_steps
-        - max(1, int(np.ceil(squeeze_steps * protocol.contact_window_fraction))),
+        squeeze_steps - max(1, int(np.ceil(squeeze_steps * protocol.contact_window_fraction))),
     )
     for squeeze_index in range(squeeze_steps):
         squeeze_progress = smoothstep((squeeze_index + 1) / max(1, squeeze_steps))
-        data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (
-            root_target_pos - root_pregrasp_pos
-        )
+        data.mocap_pos[mocap_idx][:3] = root_pregrasp_pos + squeeze_progress * (root_target_pos - root_pregrasp_pos)
         u_val = start_controls + squeeze_progress * (target_controls - start_controls)
-        data.ctrl[:model.nu] = np.clip(u_val, ctrl_mins, ctrl_maxs)
+        data.ctrl[: model.nu] = np.clip(u_val, ctrl_mins, ctrl_maxs)
 
         mujoco.mj_step(model, data)
+        if step_observer is not None:
+            step_observer("squeeze", model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
         if not simulation_is_stable():
             return instability_result("squeeze")
@@ -724,12 +695,7 @@ def validate_grasp_rollout(
                     data,
                     object_geom_ids,
                     fingertip_body_names,
-                    palm_body_names=(
-                        mujoco.mj_id2name(
-                            model, mujoco.mjtObj.mjOBJ_BODY, palm_id
-                        )
-                        or "palm",
-                    ),
+                    palm_body_names=(mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, palm_id) or "palm",),
                 )
             )
 
@@ -753,11 +719,7 @@ def validate_grasp_rollout(
         squeeze_stage = (
             "palm_support"
             if bool(squeeze_window["palm_support"])
-            else (
-                "penetration"
-                if overall_max_penetration > max_allowed_penetration
-                else "active_contact"
-            )
+            else ("penetration" if overall_max_penetration > max_allowed_penetration else "active_contact")
         )
         return DynamicValidation(
             trajectory_metrics={
@@ -765,18 +727,12 @@ def validate_grasp_rollout(
                 "squeeze_active_fingers": int(squeeze_window["sustained_count"]),
                 "contact_noise_floor": contact_noise_floor,
                 "contact_force_threshold": contact_force_threshold,
-                "squeeze_contact_duty_cycle": np.asarray(
-                    squeeze_window["duty_cycle"]
-                ).tolist(),
-                "squeeze_normal_impulse": np.asarray(
-                    squeeze_window["normal_impulse"]
-                ).tolist(),
+                "squeeze_contact_duty_cycle": np.asarray(squeeze_window["duty_cycle"]).tolist(),
+                "squeeze_normal_impulse": np.asarray(squeeze_window["normal_impulse"]).tolist(),
                 "contacting_links": len(squeeze_loads["contacting_links"]),
                 "has_palm_contact": float(bool(squeeze_window["palm_support"])),
                 "max_cone_violation": float(np.max(squeeze_loads["cone_violations"])),
-                "measured_fingertip_wrench_norm": float(
-                    np.linalg.norm(squeeze_loads["net_fingertip_wrench"])
-                ),
+                "measured_fingertip_wrench_norm": float(np.linalg.norm(squeeze_loads["net_fingertip_wrench"])),
                 **squeeze_tracking,
             },
             per_finger_loads=squeeze_loads["per_finger_loads"],
@@ -793,9 +749,11 @@ def validate_grasp_rollout(
         progress = float(s) / max(1, lift_steps)
         s_val = smoothstep(progress)
         data.mocap_pos[mocap_idx][2] = start_mocap_z + lift_height * s_val
-        data.ctrl[:model.nu] = np.clip(target_controls, ctrl_mins, ctrl_maxs)
+        data.ctrl[: model.nu] = np.clip(target_controls, ctrl_mins, ctrl_maxs)
 
         mujoco.mj_step(model, data)
+        if step_observer is not None:
+            step_observer("lift", model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
         if not simulation_is_stable():
             return instability_result("lift")
@@ -805,10 +763,7 @@ def validate_grasp_rollout(
     floor_support_after_lift = object_has_floor_support()
     tracking_history.append(tracking_metrics())
 
-    if (
-        actual_lift < protocol.lift_success_fraction * lift_height
-        or floor_support_after_lift
-    ):
+    if actual_lift < protocol.lift_success_fraction * lift_height or floor_support_after_lift:
         return DynamicValidation(
             trajectory_metrics={
                 "max_penetration": overall_max_penetration,
@@ -817,7 +772,7 @@ def validate_grasp_rollout(
             },
             per_finger_loads=squeeze_loads["per_finger_loads"],
             failure_stage=("floor_support" if floor_support_after_lift else "lift"),
-            passed=False
+            passed=False,
         )
     if stage_observer is not None:
         stage_observer("lift", model, data)
@@ -827,10 +782,7 @@ def validate_grasp_rollout(
         gravity_magnitude = float(np.linalg.norm(model.opt.gravity))
         object_weight = float(object_mass) * gravity_magnitude
         characteristic_length = max(
-            (
-                2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64)))
-                for geom in collision_geoms
-            ),
+            (2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64))) for geom in collision_geoms),
             default=0.05,
         )
         force_amplitude = 0.5 * object_weight
@@ -850,7 +802,7 @@ def validate_grasp_rollout(
         applied_wrench = np.asarray(perturbation_wrench, dtype=np.float64)
 
     total_impulse = np.zeros(6, dtype=np.float64)
-    perturbation_contact_samples: list[Dict[str, object]] = []
+    perturbation_contact_samples: list[dict[str, object]] = []
 
     for step_p in range(perturbation_steps):
         # Alternate perturbation direction periodically
@@ -859,6 +811,8 @@ def validate_grasp_rollout(
         data.xfrc_applied[obj_body_id] = current_wrench
         total_impulse += np.abs(current_wrench) * dt
         mujoco.mj_step(model, data)
+        if step_observer is not None:
+            step_observer("perturbation", model, data)
         overall_max_penetration = max(overall_max_penetration, get_max_penetration())
         if not simulation_is_stable():
             return instability_result("perturbation")
@@ -892,33 +846,20 @@ def validate_grasp_rollout(
     if stage_observer is not None:
         stage_observer("perturbation", model, data)
 
-    passed_penetration = (overall_max_penetration <= max_allowed_penetration)
+    passed_penetration = overall_max_penetration <= max_allowed_penetration
     passed_lift = final_lift >= protocol.lift_success_fraction * lift_height
     passed_fingers = int(perturbation_window["sustained_count"]) >= min_active_fingers
     passed_floor = not floor_support_after_lift
-    passed_cone = bool(
-        float(perturbation_window["max_cone_violation"])
-        <= protocol.cone_tolerance
-    )
+    passed_cone = bool(float(perturbation_window["max_cone_violation"]) <= protocol.cone_tolerance)
     max_normalized_actuator_error = max(
-        snapshot["max_normalized_actuator_tracking_error"]
-        for snapshot in tracking_history
+        snapshot["max_normalized_actuator_tracking_error"] for snapshot in tracking_history
     )
-    max_normalized_joint_error = max(
-        snapshot["max_normalized_joint_tracking_error"] for snapshot in tracking_history
-    )
-    max_palm_position_error = max(
-        snapshot["palm_position_tracking_error"] for snapshot in tracking_history
-    )
-    max_palm_rotation_error = max(
-        snapshot["palm_rotation_tracking_error"] for snapshot in tracking_history
-    )
-    max_root_mocap_error = max(
-        snapshot["root_mocap_position_error"] for snapshot in tracking_history
-    )
+    max_normalized_joint_error = max(snapshot["max_normalized_joint_tracking_error"] for snapshot in tracking_history)
+    max_palm_position_error = max(snapshot["palm_position_tracking_error"] for snapshot in tracking_history)
+    max_palm_rotation_error = max(snapshot["palm_rotation_tracking_error"] for snapshot in tracking_history)
+    max_root_mocap_error = max(snapshot["root_mocap_position_error"] for snapshot in tracking_history)
     actuator_tracking_pass = (
-        max_normalized_actuator_error
-        <= protocol.actuator_tracking_range_fraction
+        max_normalized_actuator_error <= protocol.actuator_tracking_range_fraction
         and max_normalized_joint_error <= protocol.joint_tracking_range_fraction
     )
     palm_tracking_pass = (
@@ -971,5 +912,5 @@ def validate_grasp_rollout(
         trajectory_metrics=metrics,
         per_finger_loads=final_loads["per_finger_loads"],
         failure_stage=failure_stage,
-        passed=passed
+        passed=passed,
     )

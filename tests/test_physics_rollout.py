@@ -1,18 +1,19 @@
 import mujoco
 import numpy as np
 import pytest
-from scipy.spatial.transform import Rotation
 import torch
+from scipy.spatial.transform import Rotation
 
-from qdgrasp.objects.schema import SubGeomSpec
-from qdgrasp.dataset.pipeline.validators.mujoco_rollout import (
-    build_rollout_scene_model,
-    validate_grasp_rollout,
-    smoothstep,
-)
 from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
-from qdgrasp.robot.spec import RobotSpec
-from qdgrasp.robot.spec import resolve_robot_asset
+from qdgrasp.dataset.pipeline.validators.mujoco_rollout import (
+    RolloutSceneObject,
+    build_rollout_scene_model,
+    smoothstep,
+    validate_grasp_rollout,
+)
+from qdgrasp.dataset.pipeline.validators.scene_rollout import validate_scene_grasp_rollout
+from qdgrasp.objects.schema import SubGeomSpec
+from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
 
 
 def test_smoothstep():
@@ -26,9 +27,7 @@ def test_smoothstep():
 def test_build_rollout_scene_model():
     asset_path = resolve_robot_asset("asset://mujoco-menagerie/shadow_hand/right_hand.xml")
 
-    geoms = [
-        SubGeomSpec(type="box", size=(0.02, 0.02, 0.02), pos=(0.0, 0.0, 0.05), quat=(1.0, 0.0, 0.0, 0.0))
-    ]
+    geoms = [SubGeomSpec(type="box", size=(0.02, 0.02, 0.02), pos=(0.0, 0.0, 0.05), quat=(1.0, 0.0, 0.0, 0.0))]
 
     model = build_rollout_scene_model(asset_path, geoms, object_pos=(0.0, 0.0, 0.05), object_mass=0.1)
     assert model is not None
@@ -45,23 +44,41 @@ def test_build_rollout_scene_model():
     np.testing.assert_allclose(model.eq_solref[weld_id], [0.01, 1.0])
 
 
+def test_build_rollout_scene_model_includes_named_non_target():
+    asset_path = resolve_robot_asset("asset://mujoco-menagerie/shadow_hand/right_hand.xml")
+    geoms = [
+        SubGeomSpec(
+            type="box",
+            size=(0.02, 0.02, 0.02),
+            pos=(0.0, 0.0, 0.0),
+            quat=(1.0, 0.0, 0.0, 0.0),
+        )
+    ]
+    obstacle = RolloutSceneObject(
+        object_id="obstacle",
+        collision_geoms=geoms,
+        pos=(0.2, 0.0, 0.05),
+    )
+    model = build_rollout_scene_model(asset_path, geoms, non_target_objects=[obstacle])
+    assert mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "obstacle") >= 0
+    assert mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "scene_object::obstacle::geom::0") >= 0
+
+
 def test_validate_grasp_rollout_no_contact():
     asset_path = resolve_robot_asset("asset://mujoco-menagerie/shadow_hand/right_hand.xml")
 
-    geoms = [
-        SubGeomSpec(type="box", size=(0.02, 0.02, 0.02), pos=(0.0, 0.0, 0.05), quat=(1.0, 0.0, 0.0, 0.0))
-    ]
+    geoms = [SubGeomSpec(type="box", size=(0.02, 0.02, 0.02), pos=(0.0, 0.0, 0.05), quat=(1.0, 0.0, 0.0, 0.0))]
 
     # Hand placed far away from object
     result = validate_grasp_rollout(
         hand_xml_path=asset_path,
         collision_geoms=geoms,
         fingertip_body_names=["rh_ffdistal", "rh_mfdistal", "rh_rfdistal", "rh_lfdistal", "rh_thdistal"],
-        palm_pos=(0.5, 0.5, 0.5), # Far away
+        palm_pos=(0.5, 0.5, 0.5),  # Far away
         object_pos=(0.0, 0.0, 0.05),
         squeeze_steps=10,
         lift_steps=10,
-        perturbation_steps=5
+        perturbation_steps=5,
     )
 
     assert not result.passed
@@ -162,9 +179,7 @@ def test_shadow_underactuated_joint_targets_fail_before_rollout(monkeypatch):
 
 
 @pytest.mark.parametrize("active_count", [0, 1])
-def test_task_command_with_too_few_active_fingers_fails_before_step(
-    monkeypatch, active_count
-):
+def test_task_command_with_too_few_active_fingers_fails_before_step(monkeypatch, active_count):
     step_calls = 0
     original_step = mujoco.mj_step
 
@@ -184,9 +199,7 @@ def test_task_command_with_too_few_active_fingers_fails_before_step(
         palm_pos=(0.5, 0.5, 0.5),
         object_pos=(0.0, 0.0, 0.01),
         active_fingers=active,
-        desired_fingertip_displacement=np.zeros(
-            (len(spec.fingertip_links), 3), dtype=np.float64
-        ),
+        desired_fingertip_displacement=np.zeros((len(spec.fingertip_links), 3), dtype=np.float64),
         squeeze_steps=1,
         lift_steps=1,
         perturbation_steps=1,
@@ -202,10 +215,22 @@ def test_known_leap_pinch_lifts_box_without_teleportation():
     spec = RobotSpec.from_config("leap_hand.yaml", sample_anchors=False)
     q_contact = np.array(
         [
-            0.5927356227, -0.3791691612, 0.6132688578, 1.692338131,
-            0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0,
-            1.228141244, 0.1354573565, -0.1336592733, 1.666422321,
+            0.5927356227,
+            -0.3791691612,
+            0.6132688578,
+            1.692338131,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.228141244,
+            0.1354573565,
+            -0.1336592733,
+            1.666422321,
         ],
         dtype=np.float32,
     )
@@ -216,9 +241,7 @@ def test_known_leap_pinch_lifts_box_without_teleportation():
     )[0].numpy()
     pinch_axis = local_contacts[3] - local_contacts[0]
     pinch_axis /= np.linalg.norm(pinch_axis)
-    palm_rotation, _ = Rotation.align_vectors(
-        np.array([[-1.0, 0.0, 0.0]]), pinch_axis[None]
-    )
+    palm_rotation, _ = Rotation.align_vectors(np.array([[-1.0, 0.0, 0.0]]), pinch_axis[None])
     palm_rot = palm_rotation.as_matrix()
     pinch_center = 0.5 * (local_contacts[0] + local_contacts[3])
     half_width = 0.5 * np.linalg.norm(local_contacts[3] - local_contacts[0])
@@ -257,17 +280,18 @@ def test_known_leap_pinch_lifts_box_without_teleportation():
     )
     assert np.all(commands.converged)
 
+    target_geoms = [
+        SubGeomSpec(
+            type="box",
+            size=(float(half_width), 0.015, 0.02),
+            pos=(0.0, 0.0, 0.0),
+            quat=(1.0, 0.0, 0.0, 0.0),
+        )
+    ]
     observed_stages = []
     result = validate_grasp_rollout(
         resolve_robot_asset(spec.config.source_asset),
-        [
-            SubGeomSpec(
-                type="box",
-                size=(float(half_width), 0.015, 0.02),
-                pos=(0.0, 0.0, 0.0),
-                quat=(1.0, 0.0, 0.0, 0.0),
-            )
-        ],
+        target_geoms,
         spec.fingertip_links,
         palm_pos=tuple(palm_pos),
         palm_rot=palm_rot,
@@ -276,9 +300,7 @@ def test_known_leap_pinch_lifts_box_without_teleportation():
         object_pos=tuple(object_pos),
         object_mass=0.02,
         expected_fingertip_positions=contact_points,
-        fingertip_local_offsets=np.stack(
-            [spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]
-        ),
+        fingertip_local_offsets=np.stack([spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]),
         pregrasp_distance=0.0,
         squeeze_steps=300,
         stage_observer=lambda stage, _model, _data: observed_stages.append(stage),
@@ -291,31 +313,89 @@ def test_known_leap_pinch_lifts_box_without_teleportation():
     assert result.trajectory_metrics["floor_support"] == 0.0
     assert observed_stages == ["squeeze", "lift", "perturbation"]
 
+    scene_result = validate_scene_grasp_rollout(
+        str(resolve_robot_asset(spec.config.source_asset)),
+        target_geoms,
+        spec.fingertip_links,
+        target_object_id="target",
+        non_target_objects=[
+            RolloutSceneObject(
+                object_id="obstacle",
+                collision_geoms=[
+                    SubGeomSpec(
+                        type="box",
+                        size=(0.015, 0.015, 0.02),
+                        pos=(0.0, 0.0, 0.0),
+                        quat=(1.0, 0.0, 0.0, 0.0),
+                    )
+                ],
+                pos=(0.3, 0.0, 0.02),
+                mass=0.02,
+            )
+        ],
+        protocol_hash="a" * 64,
+        recipe_hash="b" * 64,
+        source_hash="c" * 64,
+        rollout_kwargs={
+            "palm_pos": tuple(palm_pos),
+            "palm_rot": palm_rot,
+            "initial_joint_targets": dict(zip(spec.actuated_joint_names, commands.q[0])),
+            "joint_targets": dict(zip(spec.actuated_joint_names, commands.q[1])),
+            "object_pos": tuple(object_pos),
+            "object_mass": 0.02,
+            "expected_fingertip_positions": contact_points,
+            "fingertip_local_offsets": np.stack(
+                [spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]
+            ),
+            "pregrasp_distance": 0.0,
+            "squeeze_steps": 300,
+        },
+    )
+    assert scene_result.passed, {
+        key: scene_result.trajectory_metrics.get(key)
+        for key in (
+            "measured_target_lift",
+            "measured_lift_phase",
+            "lift_stage_height",
+            "base_target_lift",
+        )
+    }
+    assert scene_result.failure_stage == "none"
+    assert scene_result.trajectory_metrics["non_target_motion"]["obstacle"]["impulse"] == 0.0
+
 
 def test_known_allegro_pinch_lifts_box_with_calibrated_disturbance():
     spec = RobotSpec.from_config("wonik_allegro.yaml", sample_anchors=False)
     q_contact = np.array(
         [
-            -0.1410063654, 0.7589393854, 0.2905291915, 1.610496521,
-            -0.1829498112, 0.7104878426, 0.4637212753, 0.6895720363,
-            -0.3722456992, 0.4500102401, 1.241124988, 1.336122274,
-            1.066359162, 0.5970826745, 0.1071554348, 1.677100062,
+            -0.1410063654,
+            0.7589393854,
+            0.2905291915,
+            1.610496521,
+            -0.1829498112,
+            0.7104878426,
+            0.4637212753,
+            0.6895720363,
+            -0.3722456992,
+            0.4500102401,
+            1.241124988,
+            1.336122274,
+            1.066359162,
+            0.5970826745,
+            0.1071554348,
+            1.677100062,
         ],
         dtype=np.float32,
     )
-    local_contacts = spec.fingertip_positions(
-        torch.zeros(1, 3), torch.eye(3)[None], torch.from_numpy(q_contact[None])
-    )[0].numpy()
+    local_contacts = spec.fingertip_positions(torch.zeros(1, 3), torch.eye(3)[None], torch.from_numpy(q_contact[None]))[
+        0
+    ].numpy()
     pinch_axis = local_contacts[3] - local_contacts[0]
     half_width = 0.5 * float(np.linalg.norm(pinch_axis))
     pinch_axis /= np.linalg.norm(pinch_axis)
-    palm_rot = Rotation.align_vectors(
-        np.array([[-1.0, 0.0, 0.0]]), pinch_axis[None]
-    )[0].as_matrix()
+    palm_rot = Rotation.align_vectors(np.array([[-1.0, 0.0, 0.0]]), pinch_axis[None])[0].as_matrix()
     object_pos = np.array([0.0, 0.0, 0.02])
-    palm_pos = object_pos - palm_rot @ (
-        0.5 * (local_contacts[0] + local_contacts[3])
-    )
+    palm_pos = object_pos - palm_rot @ (0.5 * (local_contacts[0] + local_contacts[3]))
     palm_pos_b = palm_pos.astype(np.float32)[None]
     palm_rot_b = palm_rot.astype(np.float32)[None]
     q_b = q_contact[None]
@@ -358,23 +438,15 @@ def test_known_allegro_pinch_lifts_box_with_calibrated_disturbance():
         spec.fingertip_links,
         palm_pos=tuple(palm_pos),
         palm_rot=palm_rot,
-        initial_joint_targets=spec.expand_mimic_joint_targets(
-            dict(zip(spec.actuated_joint_names, q_contact))
-        ),
-        joint_targets=spec.expand_mimic_joint_targets(
-            dict(zip(spec.actuated_joint_names, command.q[0]))
-        ),
+        initial_joint_targets=spec.expand_mimic_joint_targets(dict(zip(spec.actuated_joint_names, q_contact))),
+        joint_targets=spec.expand_mimic_joint_targets(dict(zip(spec.actuated_joint_names, command.q[0]))),
         object_pos=tuple(object_pos),
         object_mass=0.02,
         expected_fingertip_positions=contact_points,
-        fingertip_local_offsets=np.stack(
-            [spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]
-        ),
+        fingertip_local_offsets=np.stack([spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]),
         pregrasp_distance=0.0,
         squeeze_steps=300,
-        perturbation_wrench=np.array(
-            [0.15, 0.15, 0.0, 0.01, 0.01, 0.01], dtype=np.float64
-        ),
+        perturbation_wrench=np.array([0.15, 0.15, 0.0, 0.01, 0.01, 0.01], dtype=np.float64),
     )
 
     assert result.passed
@@ -405,15 +477,13 @@ def test_known_shadow_pinch_lifts_box_with_transmission_control():
     q_contact[j_names.index("rh_THJ2")] = 0.5
     q_contact[j_names.index("rh_THJ1")] = 0.5
 
-    local_contacts = spec.fingertip_positions(
-        torch.zeros(1, 3), torch.eye(3)[None], torch.from_numpy(q_contact[None])
-    )[0].numpy()
+    local_contacts = spec.fingertip_positions(torch.zeros(1, 3), torch.eye(3)[None], torch.from_numpy(q_contact[None]))[
+        0
+    ].numpy()
     pinch_axis = local_contacts[4] - local_contacts[0]
     dist = np.linalg.norm(pinch_axis)
     pinch_axis /= dist
-    palm_rotation, _ = Rotation.align_vectors(
-        np.array([[-1.0, 0.0, 0.0]]), pinch_axis[None]
-    )
+    palm_rotation, _ = Rotation.align_vectors(np.array([[-1.0, 0.0, 0.0]]), pinch_axis[None])
     palm_rot = palm_rotation.as_matrix()
     pinch_center = 0.5 * (local_contacts[0] + local_contacts[4])
     half_width = 0.5 * dist - 0.0075
@@ -464,9 +534,7 @@ def test_known_shadow_pinch_lifts_box_with_transmission_control():
         object_pos=tuple(object_pos),
         object_mass=0.02,
         expected_fingertip_positions=contact_points,
-        fingertip_local_offsets=np.stack(
-            [spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]
-        ),
+        fingertip_local_offsets=np.stack([spec.fingertip_contact_offsets[name] for name in spec.fingertip_links]),
         pregrasp_distance=0.0,
         squeeze_steps=250,
         lift_steps=150,
