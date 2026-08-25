@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.11.0
+version: 1.12.0
 status: active
-date: 2026-08-24
-revises: ROADMAP-001@1.10.0
+date: 2026-08-25
+revises: ROADMAP-001@1.11.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260824-001-phase3-2-1-closure.md
+latest_revision_record: docs/revisions/REV-20260825-002-phase3-2-to-phase3-3-handoff.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -91,7 +91,9 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 - Phase 3.3 ([`ROADMAP-P3.3-001`](PHASE3_3_SCENE_GRASP_DATA_PLAN.md)) mở rộng
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object
-  rollout; camera observations và `QDGrasp-Scene-Tiny`.
+  rollout; camera observations và `QDGrasp-Scene-Tiny`. P3.2/P3.2.1 đã bàn giao
+  baseline và P3.3 hiện `active`; blocker implementation đầu tiên là thay mock
+  swept collision P3.3-10 trước khi mở multi-object rollout P3.3-11.
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
   thêm contact-rich trajectory search trực tiếp trong scene: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety

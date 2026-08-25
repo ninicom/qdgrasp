@@ -2,12 +2,12 @@
 document_id: ROADMAP-P3.2-001
 document_type: plan
 title: Kế hoạch Phase 3.2 — Underactuated Hand Control & Dynamic Parity
-version: 1.2.0
+version: 1.3.0
 status: complete
-date: 2026-08-24
-revises: ROADMAP-P3.2-001@1.1.0
+date: 2026-08-25
+revises: ROADMAP-P3.2-001@1.2.0
 related_plan: ROADMAP-P3.1-001
-latest_revision_record: docs/revisions/REV-20260824-001-phase3-2-1-closure.md
+latest_revision_record: docs/revisions/REV-20260825-002-phase3-2-to-phase3-3-handoff.md
 ---
 
 # Kế hoạch Phase 3.2 — Underactuated Hand Control & Dynamic Parity
@@ -324,3 +324,14 @@ Sau đó mới được:
 - chọn recipe/mixture bằng revision evidence;
 - regenerate `DGN-Open-Tiny` hai lần từ clean staging;
 - audit hash/class/robot/split coverage và đóng P3 tổng.
+
+### Bàn giao thực tế sang P3.3 — 2026-08-25
+
+P3.2 và corrective P3.2.1 đã đóng tại commit `c7f4061`; transmission/control,
+generated-reachable full flow, mutation, determinism và independent review đã
+được nghiệm thu trong `REV-20260824-001`. Baseline này được bàn giao cho
+`ROADMAP-P3.3-001` để tiếp tục scene contracts và scene-aware validation.
+
+Các work package P3.1 còn lại là release-data backlog độc lập và vẫn giữ gate
+riêng; chúng không đổi trạng thái complete của P3.2, đồng thời không cho phép
+P3.3 phát hành positive scene dataset trước khi object-level release gate pass.

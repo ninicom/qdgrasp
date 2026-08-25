@@ -2,15 +2,16 @@
 document_id: ROADMAP-P3.3-001
 document_type: plan
 title: Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
-version: 1.1.0
+version: 1.2.0
 status: active
-date: 2026-08-23
-revises: ROADMAP-P3.3-001@1.0.0
+date: 2026-08-25
+revises: ROADMAP-P3.3-001@1.1.0
 related_plan: ROADMAP-P3.1-001
 depends_on:
   - ROADMAP-P3.1-001
   - ROADMAP-P3.2-001
 literature_cutoff: 2026-08-23
+latest_revision_record: docs/revisions/REV-20260825-002-phase3-2-to-phase3-3-handoff.md
 ---
 
 # Kế hoạch Phase 3.3 — Scene Grasp Synthesis & Scene Dataset
@@ -31,14 +32,17 @@ acquisition dưới safety budget, rồi hợp nhất qua dataset manifest.
 
 ## 1. Baseline, dependency và entry gate
 
-- Baseline implementation: commit `984df26` trên `feature/phase3-data-layer`.
-- P3.2 đã cung cấp transmission/control parity cho LEAP, Allegro và Shadow.
-- P3.1 còn controlled ablation, regeneration và release closure.
+- Baseline bàn giao: commit `c7f4061` trên `feature/phase3-data-layer`.
+- P3.2/P3.2.1 đã complete transmission/control parity và generated-reachable
+  full-flow correctness cho LEAP, Allegro và Shadow (`REV-20260824-001`).
+- P3.1-12 đã xóa fabricated positive; P3.1-13 đã chọn
+  `region_opposition_v1`. Regeneration và release closure P3.1-14/15 còn mở.
 - `build_rollout_scene_model()` hiện đã ghép hand, một target object và floor
   trong MuJoCo, nhưng chưa có scene schema, non-target objects, camera rig,
   imported-scene adapter hay scene-level dataset writer.
-- `scripts/generate_dgn_open_tiny.py` hiện còn nhánh thay outcome đầu bằng
-  `DynamicValidation(passed=True)` thủ công. Đây không phải rollout evidence.
+- `scripts/generate_dgn_open_tiny.py` không còn nhánh thay outcome bằng positive
+  thủ công; regression `tests/test_no_positive_substitution.py` fail closed nếu
+  positive thiếu passing rollout evidence.
 
 ### Entry gate bắt buộc
 
@@ -403,6 +407,21 @@ Thứ tự bắt buộc:
 
 Mỗi source và mỗi strategy là module riêng. Orchestrator chỉ gọi contract; không
 chứa branch theo tên dataset, hand hoặc environment.
+
+### Trạng thái nhận bàn giao tại 2026-08-25
+
+| Work package | Trạng thái | Bằng chứng / blocker |
+| --- | --- | --- |
+| P3.3-00 | complete | no-positive-substitution regression pass; P3.2.1 measured full flow 3/3 hand |
+| P3.3-01…06 | implemented, audit pending | contracts, adapter micro fixtures và environment modules đã có test |
+| P3.3-07…09 | implemented, audit pending | builders, observations và target selection đã có deterministic micro tests |
+| P3.3-10 | remediation required | `clearance.py` vẫn có mock swept-collision path; chưa được phép coi là whole-scene gate |
+| P3.3-11 | skeleton only | mới kiểm target lift và non-target translation; thiếu rotation, impulse, missing-state, wrong-object contact, stage evidence và hashes |
+| P3.3-12…15 | pending | bị chặn bởi P3.3-10/11 và release-data entry gate |
+
+Baseline handoff test: 29 tests trong `tests/scenes`, scene dynamic và
+no-positive-substitution pass tuần tự. Kết quả này chỉ xác nhận baseline hiện có;
+không nâng mock P3.3-10/11 thành complete.
 
 ## 11. Test matrix bắt buộc
 
