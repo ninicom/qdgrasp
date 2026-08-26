@@ -59,15 +59,32 @@ def generated_reachable_rng(profile_name: str, seed: int = 42):
     return get_generator(seed, *parts)
 
 
-def build_generated_reachable_object(profile_name: str) -> GeneratedReachableObject:
-    """Build a table-supported grasp bar without embedding any grasp oracle."""
+#: Default vertical extent of the graspable block.  Release variants may move
+#: this or ``upper_center_z`` inside the calibrated envelope; every variant is
+#: measured by the full pipeline before it is admitted, never assumed.
+_DEFAULT_UPPER_HEIGHT = 0.050
+
+
+def build_grasp_bar(
+    profile_name: str,
+    *,
+    upper_height: float = _DEFAULT_UPPER_HEIGHT,
+    upper_center_z: float | None = None,
+) -> GeneratedReachableObject:
+    """Build a table-supported grasp bar without embedding any grasp oracle.
+
+    ``build_generated_reachable_object`` is the pinned positive-control call and
+    keeps the per-profile calibration.  This function exposes the same geometry
+    with an explicit envelope so a second release variant can be built and then
+    measured; it still carries no joint state, palm pose, contact, or grasp.
+    """
     try:
         width = _PROFILE_WIDTHS[profile_name]
     except KeyError as exc:
         raise ValueError(f"unsupported generated-reachable profile: {profile_name}") from exc
 
-    upper_center_z = _PROFILE_UPPER_CENTER_Z[profile_name]
-    upper_height = 0.050
+    if upper_center_z is None:
+        upper_center_z = _PROFILE_UPPER_CENTER_Z[profile_name]
     stem_width = 0.008
     stem_height = upper_center_z - 0.5 * upper_height
     upper = trimesh.creation.box(extents=(width, width, upper_height))
@@ -95,3 +112,8 @@ def build_generated_reachable_object(profile_name: str) -> GeneratedReachableObj
         object_pos=(0.0, 0.0, 0.0),
         candidate_budget=16,
     )
+
+
+def build_generated_reachable_object(profile_name: str) -> GeneratedReachableObject:
+    """Return the pinned positive-control object for ``profile_name``."""
+    return build_grasp_bar(profile_name)

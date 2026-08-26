@@ -14,6 +14,7 @@ import torch
 
 from qdgrasp.dataset.manifest import DatasetManifestSpec, ShardMetadata, save_dataset_manifest
 from qdgrasp.dataset.pipeline.contracts import ALLOWED_RECIPES, PipelineOutcome, get_recipe
+from qdgrasp.dataset.pipeline.generated_reachable import build_grasp_bar, generated_reachable_rng
 from qdgrasp.dataset.pipeline.orchestrator import run_pipeline_chunk
 from qdgrasp.dataset.render import sample_analytic_point_cloud
 from qdgrasp.dataset.rng import get_generator
@@ -34,6 +35,28 @@ from qdgrasp.robot.provenance import validate_profile_for_release
 from qdgrasp.runtime import environment_info
 
 logger = logging.getLogger("generate_dgn_open_tiny")
+
+# Candidate budgets of the validated positive-control envelope (P3.1-13).  They
+# are the budgets the recipe selection was measured at and must not be raised
+# above ``GeneratedReachableObject.candidate_budget``.
+POSITIVE_CONTROL_BUDGETS = {"leap_hand": 4, "wonik_allegro": 14, "shadow_hand": 10}
+
+# Release variants of the positive-control grasp bar.  Each entry was measured
+# end-to-end by this pipeline before being admitted (P3.1-14); none of them
+# carries a stored grasp.  A hand with two variants can hold a positive in both
+# splits; ``wonik_allegro`` has one because no second variant produced a
+# measured positive inside its validated envelope.
+POSITIVE_CONTROL_VARIANTS: dict[str, tuple[tuple[str, dict[str, float]], ...]] = {
+    "leap_hand": (
+        ("pc_leap_01", {}),
+        ("pc_leap_02", {"upper_height": 0.055}),
+    ),
+    "wonik_allegro": (("pc_allegro_01", {}),),
+    "shadow_hand": (
+        ("pc_shadow_01", {}),
+        ("pc_shadow_02", {"upper_center_z": 0.135}),
+    ),
+}
 
 
 def outcome_to_sample(
@@ -201,6 +224,38 @@ def generate_tiny_dataset(
         objects.append(manifest)
         meshes[obj_id] = mesh
 
+    # Positive-control objects: same generator contract as every other object,
+    # but each one is only ever paired with the hand it was calibrated for.
+    positive_control: dict[str, dict[str, Any]] = {}
+    for robot_name, variants in POSITIVE_CONTROL_VARIANTS.items():
+        for obj_id, params in variants:
+            bar = build_grasp_bar(robot_name, **params)
+            inertia_scale = bar.mass / float(bar.mesh.volume)
+            unit_inertia = bar.mesh.moment_inertia
+            inertia = tuple(float(unit_inertia[i][i] * inertia_scale) for i in range(3))
+            mesh_bytes, manifest = create_object_asset(
+                object_id=obj_id,
+                family="positive_control",
+                shape_type=f"grasp_bar_{robot_name}",
+                mesh=bar.mesh,
+                collision_geoms=bar.collision_geoms,
+                params={"profile": robot_name, **params},
+                mass=bar.mass,
+                inertia=inertia,
+            )
+            save_object_asset(mesh_bytes, manifest, obj_dir)
+            objects.append(manifest)
+            meshes[obj_id] = bar.mesh
+            positive_control[obj_id] = {
+                "robot_name": robot_name,
+                "object_pos": bar.object_pos,
+                "budget": POSITIVE_CONTROL_BUDGETS[robot_name],
+            }
+            if positive_control[obj_id]["budget"] > bar.candidate_budget:
+                raise RuntimeError(
+                    f"positive-control budget for {robot_name} exceeds its validated ceiling"
+                )
+
     # Disjoint split by object family
     splits = create_object_family_splits(objects, val_fraction=0.25, seed=base_seed)
     logger.info(f"Split objects: train={splits['train']}, val={splits['val']}")
@@ -221,9 +276,23 @@ def generate_tiny_dataset(
             positives = 0
 
             for obj_id in obj_ids:
+                control = positive_control.get(obj_id)
+                if control is not None and control["robot_name"] != r_name:
+                    continue
+
                 obj_manifest = next(o for o in objects if o.object_id == obj_id)
                 mesh = meshes[obj_id]
-                rng = get_generator(base_seed, split_name, r_name, obj_id)
+                if control is None:
+                    rng = get_generator(base_seed, split_name, r_name, obj_id)
+                    num_candidates = samples_per_pair
+                    object_pos = None
+                else:
+                    # Frozen proposal stream and budget of the validated
+                    # positive-control envelope; a different stream would be an
+                    # unmeasured experiment, not this release.
+                    rng = generated_reachable_rng(r_name, base_seed)
+                    num_candidates = control["budget"]
+                    object_pos = control["object_pos"]
 
                 outcomes, reasons = run_pipeline_chunk(
                     recipe_id=recipe_id,
@@ -232,8 +301,9 @@ def generate_tiny_dataset(
                     collision_geoms=obj_manifest.collision_geoms,
                     hand_xml_path=xml_path,
                     rng=rng,
-                    num_candidates=samples_per_pair,
+                    num_candidates=num_candidates,
                     object_mass=obj_manifest.mass,
+                    object_pos=object_pos,
                     run_dynamic=True,
                 )
 
@@ -281,6 +351,7 @@ def generate_tiny_dataset(
         "scripts/generate_dgn_open_tiny.py",
         "qdgrasp/dataset/manifest.py",
         "qdgrasp/dataset/pipeline/contracts.py",
+        "qdgrasp/dataset/pipeline/generated_reachable.py",
         "qdgrasp/dataset/pipeline/filter.py",
         "qdgrasp/dataset/pipeline/orchestrator.py",
         "qdgrasp/dataset/pipeline/proposals/surface_fixed.py",
