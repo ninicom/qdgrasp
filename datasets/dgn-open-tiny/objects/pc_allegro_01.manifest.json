@@ -1,0 +1,68 @@
+{
+  "bounding_box": [
+    -0.02,
+    -0.02,
+    0.0,
+    0.02,
+    0.02,
+    0.11000000000000001
+  ],
+  "collision_geoms": [
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.085
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.02,
+        0.02,
+        0.025
+      ],
+      "type": "box"
+    },
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.030000000000000002
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.004,
+        0.004,
+        0.030000000000000002
+      ],
+      "type": "box"
+    }
+  ],
+  "family": "positive_control",
+  "inertia": [
+    2.3610318940232665e-06,
+    2.3610318940232665e-06,
+    1.2747073791348602e-06
+  ],
+  "license": "CC0-1.0",
+  "mass": 0.005,
+  "mesh_filename": "pc_allegro_01.obj",
+  "mesh_sha256": "e434c0b652907ff6dc84426e8714f316da0eb142affddad5e376150fd9dccbb8",
+  "object_id": "pc_allegro_01",
+  "params": {
+    "profile": "wonik_allegro"
+  },
+  "schema": "qdgrasp/object-manifest/v1",
+  "shape_type": "grasp_bar_wonik_allegro"
+}

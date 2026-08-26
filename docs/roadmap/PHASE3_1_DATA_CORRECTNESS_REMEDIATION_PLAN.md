@@ -2,13 +2,13 @@
 document_id: ROADMAP-P3.1-001
 document_type: plan
 title: Kế hoạch Phase 3.1 — Data Correctness Remediation
-version: 1.8.0
+version: 1.9.0
 status: active
-date: 2026-08-25
-revises: ROADMAP-P3.1-001@1.7.0
+date: 2026-08-27
+revises: ROADMAP-P3.1-001@1.8.0
 related_plan: ROADMAP-P3-001
 literature_cutoff: 2026-08-23
-latest_revision_record: docs/revisions/REV-20260825-001-p3-1-13-controlled-ablation.md
+latest_revision_record: docs/revisions/REV-20260827-001-p3-1-14-regeneration.md
 ---
 
 # Kế hoạch Phase 3.1 — Data Correctness Remediation
@@ -494,7 +494,7 @@ Thứ tự bắt buộc: `00 → 01 → (02 → 03 → 04) || (05 → 06) || (08
 → 07 → 11 → (12 || 13) → 14 → 15`. Không regenerate release trước khi cả ba
 recipe và static/dynamic validator pass correctness fixture.
 
-### Trạng thái triển khai tại 2026-08-25
+### Trạng thái triển khai tại 2026-08-27
 
 | Module | Trạng thái | Evidence / blocker |
 | --- | --- | --- |
@@ -502,8 +502,8 @@ recipe và static/dynamic validator pass correctness fixture.
 | P3.1-11 | completed | Component fixtures pass trong Phase 3.2; P3.2.1 bổ sung generated-reachable full flow cho LEAP, Allegro và Shadow, transmission Shadow 24-state/20-control, measured rollout và independent review (`REV-20260824-001`), mở khóa `release_blocked: false` |
 | P3.1-12 | completed | Fabricated positive substitution đã bị xóa; `tests/test_no_positive_substitution.py` pass 6/6 và P3.2.1 gate pin source/profile/protocol hashes cùng raw trajectory evidence |
 | P3.1-13 | completed | Official positive-control matrix chạy `84/84` candidates từ commit `79a997b`, chọn duy nhất `region_opposition_v1`: dynamic positive `3/3` hand, 3 accepted contact signatures. Canonical matrix 72 candidates vẫn inconclusive và được giữ như giới hạn generalization; xem `REV-20260825-001` |
-| P3.1-14 | ready | Recipe release trong scope validated envelope đã được khóa là `region_opposition_v1`; regeneration phải giữ provenance recipe, measured rollout và audit class/hand/object coverage |
-| P3.1-15 | pending | Chỉ đóng P3.1 sau khi staging dataset P3.1-14 qua regression, hash và release-evidence gate |
+| P3.1-14 | partial | Regeneration đã chạy tại `790f5c6` (`REV-20260827-001`). Mười hai object procedural cho **0 positive ở cả sáu shard**, nên release nhận thêm positive-control object gắn theo hand. Kết quả: measured positive ở 5/6 shard, `invalidated=false`, hai clean regeneration byte-identical. `wonik_allegro` không có variant thứ hai (0/4 geometry, kể cả ở ceiling budget 16) nên split `val` của nó vẫn 0 positive và `release_blocked` vẫn `true` |
+| P3.1-15 | blocked | Điều kiện §10.2 (positive coverage cho cả ba hand và hai split) chưa đạt vì split `val` của `wonik_allegro`. Không đóng P3.1 và không mở P4 cho tới khi có measured positive hợp lệ cho ô đó, hoặc release rule được định nghĩa lại bằng revision |
 
 Do máy development từng bị hard-freeze trong ablation, mọi verification còn lại
 phải chạy tuần tự với `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,

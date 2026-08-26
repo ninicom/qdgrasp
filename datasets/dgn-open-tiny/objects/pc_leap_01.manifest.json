@@ -1,0 +1,68 @@
+{
+  "bounding_box": [
+    -0.02,
+    -0.02,
+    0.0,
+    0.02,
+    0.02,
+    0.165
+  ],
+  "collision_geoms": [
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.14
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.02,
+        0.02,
+        0.025
+      ],
+      "type": "box"
+    },
+    {
+      "density": 1000.0,
+      "pos": [
+        0.0,
+        0.0,
+        0.05750000000000001
+      ],
+      "quat": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.004,
+        0.004,
+        0.05750000000000001
+      ],
+      "type": "box"
+    }
+  ],
+  "family": "positive_control",
+  "inertia": [
+    4.656452974681058e-06,
+    4.656452974681058e-06,
+    1.225494505494506e-06
+  ],
+  "license": "CC0-1.0",
+  "mass": 0.005,
+  "mesh_filename": "pc_leap_01.obj",
+  "mesh_sha256": "f05ff473a48d06e5101463a74dc4290e4619ff56ee2de259877df304ce41d121",
+  "object_id": "pc_leap_01",
+  "params": {
+    "profile": "leap_hand"
+  },
+  "schema": "qdgrasp/object-manifest/v1",
+  "shape_type": "grasp_bar_leap_hand"
+}
