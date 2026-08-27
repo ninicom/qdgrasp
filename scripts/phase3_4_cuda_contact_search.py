@@ -268,6 +268,26 @@ def _benchmark_scene(
         "horizon": BENCHMARK_HORIZON,
     }
 
+    def device_memory() -> dict[str, float]:
+        """Device-level memory, not PyTorch's allocator.
+
+        torch.cuda.max_memory_allocated only tracks PyTorch. Warp allocates
+        through its own allocator, so a PyTorch figure measures nothing about
+        the backend under test -- Phase 3.4 reported ~0 GiB on that basis and
+        called it within budget, which was an unearned pass.
+        """
+        out: dict[str, float] = {}
+        try:
+            free, total = torch.cuda.mem_get_info()
+            out["device_free_gib"] = free / (1024**3)
+            out["device_total_gib"] = total / (1024**3)
+            out["device_used_gib"] = (total - free) / (1024**3)
+        except Exception as exc:  # noqa: BLE001 - absence is reported, not hidden
+            out["device_query_error"] = 1.0
+            out["device_query_message"] = str(exc)[:120]  # type: ignore[assignment]
+        return out
+
+    before_memory = device_memory()
     torch.cuda.reset_peak_memory_stats()
     gpu = MjWarpCudaBackend(scene, device=device)
     gpu.compile(signature, profile, batch_capacity=worlds)
@@ -275,7 +295,32 @@ def _benchmark_scene(
     commands = np.full((worlds, BENCHMARK_HORIZON, gpu.num_actuators), 0.15)
     gpu_summaries = gpu.rollout(commands)
     gpu_timing = gpu.timing
-    peak_vram = torch.cuda.max_memory_allocated() / (1024**3)
+    after_memory = device_memory()
+    torch_peak_gib = torch.cuda.max_memory_allocated() / (1024**3)
+
+    device_peak_gib = None
+    if "device_used_gib" in before_memory and "device_used_gib" in after_memory:
+        device_peak_gib = max(
+            after_memory["device_used_gib"] - before_memory["device_used_gib"], 0.0
+        )
+
+    # Overflow is a distinct failure from a non-finite value, and Phase 3.4
+    # never read it. Decode the bitmask if the backend exposes one.
+    overflow_worlds = 0
+    overflow_detail: Any = "field_absent"
+    raw = getattr(gpu, "_warp_data", None)
+    flag = getattr(raw, "overflow", None) if raw is not None else None
+    if flag is not None:
+        try:
+            arr = flag.numpy() if hasattr(flag, "numpy") else np.asarray(flag)
+            arr = np.atleast_1d(arr)
+            overflow_worlds = int((arr != 0).sum())
+            overflow_detail = {
+                "nonzero_worlds": overflow_worlds,
+                "distinct_codes": sorted({int(v) for v in arr.ravel() if int(v) != 0})[:10],
+            }
+        except Exception as exc:  # noqa: BLE001
+            overflow_detail = f"unreadable: {type(exc).__name__}: {exc}"[:160]
 
     cpu = MuJoCoCpuBackend(scene)
     cpu.compile(signature, profile, batch_capacity=worlds)
@@ -333,9 +378,27 @@ def _benchmark_scene(
             "speedup": round(float(speedup), 3),
             "min_required_speedup": MIN_GPU_SPEEDUP,
             "speedup_met": bool(speedup >= MIN_GPU_SPEEDUP),
-            "peak_vram_gib": round(peak_vram, 3),
+            # Three distinct failures, kept apart. Phase 3.4 collapsed them
+            # into one flag and 29 non-finite worlds were reported as OOM.
+            "nonfinite_worlds": len(rejected),
+            "overflow_worlds": overflow_worlds,
+            "overflow_detail": overflow_detail,
+            "oom_events": 0,
+            "device_peak_vram_gib": (
+                round(device_peak_gib, 3) if device_peak_gib is not None else None
+            ),
+            "torch_peak_vram_gib": round(torch_peak_gib, 3),
             "vram_budget_gib": VRAM_BUDGET_GIB,
-            "vram_within_budget": bool(peak_vram <= VRAM_BUDGET_GIB),
+            "vram_measurement": (
+                "device_free_delta" if device_peak_gib is not None else "unavailable"
+            ),
+            "vram_within_budget": (
+                bool(device_peak_gib <= VRAM_BUDGET_GIB)
+                if device_peak_gib is not None
+                else None
+            ),
+            "device_memory_before": before_memory,
+            "device_memory_after": after_memory,
             "rejected_worlds": rejected,
             "rejected_world_count": len(rejected),
             "surviving_worlds": len(gpu_summaries) - len(rejected),
@@ -504,8 +567,9 @@ def main() -> int:
             name
             for name, ok in (
                 ("speedup", bench["speedup_met"]),
-                ("vram", bench["vram_within_budget"]),
-                ("no_oom", bench["worlds_ran_without_oom"]),
+                ("vram", bench["vram_within_budget"] is True),
+                ("no_nonfinite", bench["nonfinite_worlds"] == 0),
+                ("no_overflow", bench["overflow_worlds"] == 0),
                 ("cpu_routing", bench["finalists_routed_to_cpu"]),
             )
             if not ok

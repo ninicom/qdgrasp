@@ -1,0 +1,44 @@
+{
+  "corrected_verdicts": {
+    "full_cuda_gate": "fail_stability",
+    "note": "The speed subcriterion passing does not make the CUDA gate pass. Section 10 requires a nonzero exit on NaN and 29 worlds went non-finite.",
+    "speed_subcriterion": "pass"
+  },
+  "failure_taxonomy": {
+    "nonfinite_worlds": 29,
+    "note": "Phase 3.4 collapsed these into one flag named worlds_ran_without_oom. 29 non-finite worlds are not 29 OOMs, and conflating them hides which cause is actually present.",
+    "oom_events": 0,
+    "overflow_worlds": "not_measured -- Data.overflow bitmask was never read"
+  },
+  "frozen_inputs": {
+    "README.md": "d1f9a9e648308a2a65f127d6b27f4f9731211bbebe82fc54621621e71eee176c",
+    "kernel-v9.log": "fff430dfe85573c4e2229aca86cf67b931ced9c8a7b9d4413d65fe3d48f426d3",
+    "phase3_4_cuda_evidence.json": "15ec8bb2d443ad99f766b8f6bf49d062e33e3bac24d9cec65bd54b069b29e462"
+  },
+  "invalid_telemetry": {
+    "field": "peak_vram_gib",
+    "reason": "Measured with torch.cuda.max_memory_allocated(), which only tracks PyTorch's allocator. Warp allocates through its own, so this figure measures nothing about the backend under test. It was reported as vram_within_budget=true, which is an unearned pass and is retracted here. The raw JSON is left unedited so the provenance of the error stays visible.",
+    "replacement_required": "device-level peak via Warp free-memory delta and NVML (P3.4.1-03)",
+    "reported_value": 0.0,
+    "reported_verdict": true,
+    "status": "INVALID -- does not measure Warp"
+  },
+  "open_questions_for_triage": [
+    "Is Data.overflow set before the NaN appears?",
+    "Are the rejected indices stable across fresh processes?",
+    "Do permuted and duplicated worlds diverge at the same indices?",
+    "Which kernel or stage produces the first non-finite value?"
+  ],
+  "preserved_measurements": {
+    "cpu_steps_per_second": 2876.3,
+    "gating_point": "leap_hand_scene@1024",
+    "gpu_steps_per_second": 12781.4,
+    "rejected_world_indices_count": 29,
+    "speedup_1024": 4.444,
+    "speedup_64": 0.694,
+    "worlds": 1024
+  },
+  "purpose": "Freeze the Phase 3.4 GPU evidence and correct its interpretation. Raw numbers are preserved unchanged; only the verdict wording is fixed.",
+  "schema": "qdgrasp/evidence/phase3.4.1-baseline/v1",
+  "work_package": "P3.4.1-00"
+}
