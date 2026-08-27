@@ -1,0 +1,46 @@
+{
+  "blockers": [
+    "B-05"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "0b5b055b09b03305fc7b61bdee887afaea867f48",
+  "device": "cpu",
+  "gates": [
+    "G04"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dynamic/certify.py": "92b32ea0cccc9df4399837e55d223d9ed2eaebc9c61e510fb55126be21bc6961",
+    "qdgrasp/dynamic/wrapped_rollout.py": "8fc1d31cebcdd2b319c0c289ca98ef42f2689a3266823435532edb90e5f90ec6"
+  },
+  "implementation_refs": [
+    "qdgrasp/dynamic/certify.py",
+    "qdgrasp/dynamic/wrapped_rollout.py"
+  ],
+  "note": "S6 certification, release provenance and the stage-denominator ledger",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T19:15:59.138096+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S6",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_release_invariants.py",
+      "tests/dynamic_grasp/test_certify.py"
+    ],
+    "summary": "34 passed in 0.10s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

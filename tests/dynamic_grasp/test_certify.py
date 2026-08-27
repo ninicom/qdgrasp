@@ -146,7 +146,12 @@ def test_two_failures_for_the_same_reason_are_not_divergence():
         replay_outcome=failing("insufficient_lift"),
         search_trajectory=make_trajectory(), replay_trajectory=make_trajectory(),
     )
-    assert result.certified
+    # The backends agree, which is parity evidence worth keeping...
+    assert result.parity_confirmed
+    assert result.outcome_class == "fail:insufficient_lift"
+    # ...but agreeing on a failure is not a certification (blocker B-05).
+    assert not result.certified
+    assert result.reason == "insufficient_lift"
 
 
 def test_tolerances_are_pinned_before_comparison():

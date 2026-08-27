@@ -28,8 +28,10 @@ import mujoco
 import numpy as np
 
 from qdgrasp.dataset.dynamic_contracts import (
+    STAGE_ORDER,
     ContactClass,
     ContactEvent,
+    ContactPairKind,
     ContactSafetyBudget,
     CpuReplayCertificate,
     DynamicGraspTrajectory,
@@ -39,6 +41,7 @@ from qdgrasp.dataset.dynamic_contracts import (
 )
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
 from qdgrasp.dynamic.capsule import InitialState, ModelIdentity, ReplayCapsule
+from qdgrasp.dynamic.certify import certify_terminal_grasp
 from qdgrasp.dynamic.safety import ContactObserver, SceneRoles, summarise_safety
 from qdgrasp.objects.schema import SubGeomSpec
 
@@ -247,7 +250,7 @@ def run_wrapped_contact_rollout(
         actuator_command=np.asarray(record.commands),
         object_pose=np.asarray(record.poses),
         object_velocity=np.asarray(record.velocities),
-        stage=tuple(record.stages),
+        stage=_derive_stages(record.stages, record.events, np.asarray(record.poses)),
         timebase=base,
         contact_graph=tuple(
             # The sample association is clamped to the last recorded sample,
@@ -274,12 +277,26 @@ def run_wrapped_contact_rollout(
 
     peak, cumulative = summarise_safety(trajectory.contact_graph)
     hard = trajectory.hard_reject_events
+    # Every declared limit, measured -- not just the contact-scope seven the
+    # per-event margin covers (blocker B-01).
+    evaluation = record.observer.evaluation
+    # The stage progression is now derived from measurement, so requiring it is
+    # a real check rather than a check on the protocol's own labels (C03.7).
+    terminal = certify_terminal_grasp(trajectory, require_stage_progression=True)
+
     if hard:
         classes = {e.contact_class for e in hard}
         stage, reason = (
             ("contact", "forbidden_contact")
             if ContactClass.FORBIDDEN in classes
             else ("contact", "damaging_contact")
+        )
+    elif not evaluation.safe:
+        stage = "contact"
+        reason = (
+            evaluation.failure_reasons[0]
+            if evaluation.failure_reasons
+            else "safety_budget_violation"
         )
     elif not validation.passed:
         # The validated protocol has the final say on whether this is a grasp.
@@ -288,6 +305,11 @@ def run_wrapped_contact_rollout(
         # groups on and the validator's stage names are its own (C01.4).
         stage = "dynamic"
         reason = f"validated_rollout:{validation.failure_stage or 'unknown'}"
+    elif not terminal.certified:
+        # The terminal conditions are measured on the recorded trajectory rather
+        # than asserted from the protocol's own verdict, so a positive has to
+        # show the enclosure, the support release and the lift (G04).
+        stage, reason = ("terminal", terminal.reason)
     else:
         stage, reason = ("none", "none")
 
@@ -302,8 +324,10 @@ def run_wrapped_contact_rollout(
             "lift_m": lift,
             "steps": float(steps),
             "contact_events": float(len(trajectory.contact_graph)),
+            "min_budget_margin": float(evaluation.min_margin),
+            **{f"terminal_{k}": v for k, v in terminal.metrics.items()},
         },
-        peak_safety_metrics=peak,
+        peak_safety_metrics={**peak, **dict(evaluation.measurements)},
         cumulative_safety_metrics=cumulative,
         cpu_replay_evidence=(
             CpuReplayCertificate(
@@ -312,8 +336,8 @@ def run_wrapped_contact_rollout(
                 command_sha256=capsule.command_sha256,
                 model_sha256=model_sha256,
                 timestep_s=base.simulator_dt,
-                terminal_certified=True,
-                safety_certified=not hard,
+                terminal_certified=terminal.certified,
+                safety_certified=evaluation.safe and not hard,
                 outcome_class="pass",
             )
             if passed and capsule is not None
@@ -321,6 +345,71 @@ def run_wrapped_contact_rollout(
         ),
     )
     return trajectory, outcome, validation
+
+
+def _derive_stages(
+    stages: Sequence[TrajectoryStage],
+    events: Sequence[ContactEvent],
+    object_pose: np.ndarray,
+    *,
+    lift_threshold_m: float = 0.005,
+) -> tuple[TrajectoryStage, ...]:
+    """Label the acquisition from what was measured, not from phase names.
+
+    The validated protocol names its own phases -- settle, approach, squeeze,
+    lift, perturbation -- and has no phase for "the target left its support".
+    That is not a naming gap: it is the one transition a contact-rich positive
+    has to show (C03.7). Worse, its ``lift`` phase begins while the object is
+    still resting on the table, so the label and the physics disagree for as
+    long as it takes the object to actually come free.
+
+    So from the enclosure onwards the stage is decided by measurement: the
+    target is either still supported, or free but not yet lifted, or lifted.
+    Both derived boundaries are monotone by construction, so the sequence cannot
+    run backwards.
+    """
+    steps = len(stages)
+    if steps == 0:
+        return tuple(stages)
+
+    supported = [False] * steps
+    target_held = [False] * steps
+    for event in events:
+        index = int(event.time_index)
+        if not 0 <= index < steps:
+            continue
+        if event.supports_target:
+            supported[index] = True
+        if event.pair_kind is ContactPairKind.TARGET_ROBOT:
+            target_held[index] = True
+
+    # Released once no target-support contact ever returns: monotone on purpose,
+    # so a single late brush against the table cannot un-release the grasp.
+    released = [not any(supported[index:]) for index in range(steps)]
+
+    base_height = float(object_pose[0, 0, 2]) if object_pose.shape[1] else 0.0
+    lifted_from = steps
+    for index in range(steps):
+        if released[index] and float(object_pose[index, 0, 2]) - base_height >= lift_threshold_m:
+            lifted_from = index
+            break
+
+    result = list(stages)
+    enclose_rank = STAGE_ORDER[TrajectoryStage.ENCLOSE]
+    for index in range(steps):
+        if STAGE_ORDER[result[index]] < enclose_rank:
+            continue  # approach and reposition are the protocol's to name
+        if not released[index]:
+            result[index] = TrajectoryStage.ENCLOSE
+        elif index < lifted_from:
+            result[index] = TrajectoryStage.SUPPORT_RELEASE
+        elif result[index] is not TrajectoryStage.PERTURB:
+            result[index] = TrajectoryStage.LIFT
+
+    # The grasp is retained if the hand still holds the target at the end.
+    if target_held[-1] and result[-1] is TrajectoryStage.PERTURB:
+        result[-1] = TrajectoryStage.RETAIN
+    return tuple(result)
 
 
 def _build_capsule(

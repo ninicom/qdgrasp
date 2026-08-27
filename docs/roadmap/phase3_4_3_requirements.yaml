@@ -85,6 +85,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-05
     mapped_to: [G04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/certify.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_release_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s6/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-06
     category: blocker
@@ -247,6 +253,12 @@ requirements:
     category: direct_gate
     normative_source: P3.4.3#G04
     mapped_to: [C01, C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/certify.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_release_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s6/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G05
     category: direct_gate
@@ -427,6 +439,12 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-12
     mapped_to: [G04, G06, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/certify.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_release_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s6/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-13
     category: original_work_package
@@ -481,6 +499,12 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#4.3
     mapped_to: [G04, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/certify.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_release_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s6/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-CONTRACT-01
     category: original_clause
