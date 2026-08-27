@@ -248,7 +248,23 @@ print("gate exit:", gate.returncode)
 '''
         ),
         _markdown(
-            """## 5. What this run does and does not establish
+            """## 5. Compute Sanitizer on a minimized reproducer
+
+Section 3.3 step 5. The classification already excluded a benchmark reading
+defect and an index-range error, and showed the rejected set changes between
+runs, which points at a race or uninitialized memory. Sanitizer output is what
+separates those two; contact numbers cannot.
+
+Small on purpose: sanitizer costs one to two orders of magnitude, so a
+1024-world run would not finish. This is a diagnostic and never performance
+evidence.
+"""
+        ),
+        _code(
+            'import json\nimport shutil\nimport subprocess\nimport sys\n\nsanitizer = shutil.which("compute-sanitizer")\nprint("compute-sanitizer:", sanitizer or "NOT FOUND")\n\nplain = subprocess.run(\n    [sys.executable, "scripts/phase3_4_1_sanitizer.py", "--worlds", "8",\n     "--horizon", "20", "--out", "/tmp/repro_plain.json"],\n    cwd="/tmp/qdgrasp_repo", capture_output=True, text=True,\n)\nprint("=== reproducer without sanitizer ===")\nprint(plain.stdout[-2000:])\n\nif sanitizer:\n    for tool in ("initcheck", "racecheck"):\n        print("=" * 70)\n        print("compute-sanitizer --tool", tool)\n        run = subprocess.run(\n            [sanitizer, "--tool", tool, "--error-exitcode", "0",\n             sys.executable, "scripts/phase3_4_1_sanitizer.py",\n             "--worlds", "4", "--horizon", "8"],\n            cwd="/tmp/qdgrasp_repo", capture_output=True, text=True, timeout=3600,\n        )\n        tail = (run.stdout + run.stderr)[-4000:]\n        print(tail)\n        hits = [ln for ln in tail.splitlines()\n                if "error" in ln.lower() or "hazard" in ln.lower()]\n        print("--- " + tool + ": " + str(len(hits)) + " lines mentioning an error or hazard ---")\nelse:\n    print("compute-sanitizer unavailable on this image; the race-versus-uninitialized",\n          "question stays open rather than being guessed at.")\n'
+        ),
+        _markdown(
+            """## 6. What this run does and does not establish
 
 A `supported` verdict unblocks `P3.4-05` (the CUDA backend). It does **not**
 close Phase 3.4: throughput, VRAM, CPU/GPU parity fixtures, a CPU-confirmed
