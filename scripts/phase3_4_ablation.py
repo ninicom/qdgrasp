@@ -82,11 +82,19 @@ def _roles(model: mujoco.MjModel) -> SceneRoles:
     def gid(name: str) -> int:
         return mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, name)
 
+    def bid(name: str) -> int:
+        return mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
+
     return SceneRoles(
         target_geoms=frozenset({gid("target_geom")}),
         support_geoms=frozenset({gid("table")}),
         non_target_geoms=frozenset(),
         robot_geoms=frozenset({gid("pusher_geom")}),
+        # The micro scene has no separate wrist link, so the wrist budget
+        # resolves at the body the stage is driven through. Naming it is what
+        # makes the wrist limits measurable at all (G01).
+        wrist_body=bid("pusher"),
+        palm_body=bid("pusher"),
     )
 
 

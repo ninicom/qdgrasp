@@ -125,6 +125,27 @@ TARGET_SUPPORTING_PAIRS: frozenset[ContactPairKind] = frozenset(
     {ContactPairKind.TARGET_SUPPORT}
 )
 
+#: Pair kinds the robot's contact budget governs.
+#:
+#: ``ContactSafetyBudget`` is a budget for one ``robot_profile``: it bounds what
+#: the *hand* does. A neighbouring box resting on the table is scene physics the
+#: hand is not part of, and charging it against the hand's peak-force limit
+#: rejects trajectories for the weight of the furniture. Scene damage is bounded
+#: instead by the non-target translation, rotation and velocity limits, which are
+#: measured at trajectory scope. ``TARGET_SUPPORT`` is in scope because the hand
+#: really can crush the target against its support.
+ROBOT_BUDGETED_PAIRS: frozenset[ContactPairKind] = frozenset(
+    {
+        ContactPairKind.TARGET_ROBOT,
+        ContactPairKind.ROBOT_SUPPORT,
+        ContactPairKind.NON_TARGET_ROBOT,
+        ContactPairKind.ROBOT_SELF,
+        ContactPairKind.TARGET_SUPPORT,
+        ContactPairKind.UNKNOWN,
+    }
+)
+
+
 #: Pair kinds that involve an object which is not the target. Damage to these is
 #: scene damage, not acquisition progress.
 NON_TARGET_PAIRS: frozenset[ContactPairKind] = frozenset(
@@ -493,6 +514,11 @@ class ContactEvent:
     @property
     def is_hard_reject(self) -> bool:
         return self.contact_class in HARD_REJECT_CLASSES
+
+    @property
+    def robot_budgeted(self) -> bool:
+        """Whether the robot's contact budget governs this contact."""
+        return self.pair_kind in ROBOT_BUDGETED_PAIRS
 
     @property
     def supports_target(self) -> bool:

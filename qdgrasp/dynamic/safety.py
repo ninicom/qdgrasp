@@ -33,6 +33,7 @@ import mujoco
 import numpy as np
 
 from qdgrasp.dataset.dynamic_contracts import (
+    ROBOT_BUDGETED_PAIRS,
     ContactClass,
     ContactEvent,
     ContactPairKind,
@@ -464,6 +465,13 @@ class ContactObserver:
             while episode.window and episode.window[0][0] <= cutoff:
                 episode.window.popleft()
 
+            # Episode bookkeeping runs for every pair, because the trajectory
+            # records them all. The *budget* peaks only take robot-mediated
+            # contacts: a tray rim resting on the floor accumulates impulse and
+            # duration for the whole rollout, and charging that against the
+            # hand's budget rejects the trajectory for the weight of the tray.
+            if classify_pair(self._roles, key[0], key[1]) not in ROBOT_BUDGETED_PAIRS:
+                continue
             for point in points:
                 self._record_peak("peak_normal_force_N", float(point["normal_force"]))
                 self._record_peak("peak_tangential_force_N", float(point["tangential_force"]))
@@ -552,8 +560,12 @@ class ContactObserver:
                 )
                 # A permitted contact that blows the budget becomes damaging.
                 # The class is a safety verdict once forces are known, not just
-                # geometry.
-                if margin < 0.0 and contact_class is not ContactClass.FORBIDDEN:
+                # geometry. Only contacts the robot is party to are judged
+                # against the robot's budget: a neighbouring box resting on the
+                # table is scene physics, and charging its weight against the
+                # hand's peak-force limit rejects a trajectory for the furniture.
+                budgeted = pair_kind in ROBOT_BUDGETED_PAIRS
+                if budgeted and margin < 0.0 and contact_class is not ContactClass.FORBIDDEN:
                     contact_class = ContactClass.DAMAGING
 
                 relative = np.asarray(point["relative"], dtype=np.float64)
