@@ -1,7 +1,7 @@
 {
-  "assembled_at": "2026-08-27T20:35:18.068164+00:00",
+  "assembled_at": "2026-08-27T23:57:28.958109+00:00",
   "branch": "feature/phase3-1-closure",
-  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "commit": "d800310459d1af785c2e222bf3cb95ac580d27f1",
   "completeness": {
     "manifest_sha256": "3856c405df87aaa3c50c454c5e2e98420ea638f6beecece1eda94e9012f65333",
     "open_required": [
@@ -182,13 +182,13 @@
       }
     },
     "dataset_id": "QDGrasp-ContactRich-Active-Tiny",
-    "manifest_sha256": "1708b7443bb706e90cbf2e816fb8f6761d07c0c8ff2c84c499b850b0be11122a",
+    "manifest_sha256": "9be590f1c2eef00d77ed1a8a6c0095b0f070c0eed1672b8f721815b16d3bd514",
     "present": true,
     "release_blocked": true,
     "root": "/run/media/quyen/H_H/Project 2026/qdgrasp/datasets/contactrich-active-tiny",
     "shard_hashes": {
-      "shards/train.json": "c317321cf0a6db83573cf646ebec62818d26083f05e20e721c757c561a356479",
-      "shards/val.json": "3c35237d5601e941a7f7c7e123e9f2e8badee4d158fa44dc2af918fdcdffe428"
+      "shards/train.json": "21eb4634cafd75a808ef70aff36cd5422ab6021ae92db2e332f0d2f7af361403",
+      "shards/val.json": "4274ffd20647b7ea7714ef4d27fa966e4a9f69b4a945aabaeff91ffd6b596b5d"
     }
   },
   "known_limitations": [
@@ -199,7 +199,7 @@
     "The static-vs-dynamic ablation reports no_measured_difference on the release recipe's scenes. No threshold was moved to avoid it."
   ],
   "missing_required_artifacts": [],
-  "packet_sha256": "df96686bfcda30e7181ed5cf80a482769790f743f6ad3ee060f3a63b8b9d4bef",
+  "packet_sha256": "eb74a67477a9f9c4f075f923aad580c92dc5e70b97344dd0430d16d25a629dcb",
   "phase": "3.4.3",
   "required_artifacts": {
     "docs/decisions/0008-temporary-shadow-hand-pause.md": {
@@ -259,12 +259,12 @@
     },
     "qdgrasp/dataset/dynamic_shards.py": {
       "kind": "file",
-      "sha256": "9e84900ca649898776f1e2848d6dada52070b3017a0ef6ef4d662457fa5c7393"
+      "sha256": "b883d967f30c4a19c9518e71319c1f079845deba232ae7bc3d73c633883a0925"
     },
     "qdgrasp/dynamic": {
       "files": 12,
       "kind": "directory",
-      "sha256": "f4dc79d37c2cb8e643437ea069dbb9ec31b1efbe85b4bd61b4a80782e9ef2ed3"
+      "sha256": "865a47b0beeed9909c4420de252a02327b39aae2c90000410609a22f2c0a388f"
     },
     "qdgrasp/roadmap": {
       "files": 3,
@@ -315,10 +315,11 @@
     "evidence/phase3_4_3/s0/result.json": "42e026f6faaa02435b126546b0a2901de7dc5c77e113b7d2fb6deaf18dfda07a",
     "evidence/phase3_4_3/s1/result.json": "f6ce018e2af246ac35e4d420221281d0067327e52872d9bdf8a7e6f8e6b95705",
     "evidence/phase3_4_3/s10/result.json": "cd479b4bf19af7e3dce32c304e3579ed0609ab469a6989ca599e133ad419f330",
-    "evidence/phase3_4_3/s11/result.json": "9aa4f6b5e0251a3f0e088d997889bbb1e12ccdbe0a84328309e69202a3cd1e80",
-    "evidence/phase3_4_3/s11/stage-renders.json": "80d2514dc5fdf65ed5502a8e519cb756670f19eb021601703c22af17428fc18d",
-    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "a8842bc9ea89fe35d462dab023587c80d17d22205362fc2c9a3659d17bbd0974",
+    "evidence/phase3_4_3/s11/result.json": "aa5298b28c0ced1a10b4a2715974543b56207d719b51794bb9c9c2e352b1fdd2",
+    "evidence/phase3_4_3/s11/stage-renders.json": "218a0235ff5e2f3ef363958eeb77d0a7fe4a63db52024166d6983e5b922b083b",
+    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "f832dc7cdf7b07d0cf428e70a7228cf0ccb8904747cc86d96e53dd5b59a62257",
     "evidence/phase3_4_3/s12/result.json": "2aebab800bace3908b995078603a5b92779867bb82178bdc42e5bc45794552e2",
+    "evidence/phase3_4_3/s12/review-packet.json": "47717a8d9182153de60f826ff393c44ae36085f52e7ce866c0bfefcaaa646cc3",
     "evidence/phase3_4_3/s2/result.json": "69ad77c557cce3b9765d234aed898016173fede2e9a57295148f27955bf82afe",
     "evidence/phase3_4_3/s3/result.json": "41dfc07527063c19517e492e90aa84a20c5fd9d22be58bf39630829a02585210",
     "evidence/phase3_4_3/s4/result.json": "c2b8a4ea5839bcabf9e998a0c7e9a855788edd5da039524a9a3348049161878a",
