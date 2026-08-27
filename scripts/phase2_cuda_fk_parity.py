@@ -72,7 +72,8 @@ def run_cuda_fk_parity(device_str: str = "cuda:0", out_path: Path | None = None)
 
     evidence: dict[str, object] = {
         "schema": "qdgrasp/evidence/phase2-cuda-fk/v1",
-        "environment": environment_info(device=device_str).to_dict(),
+        "environment": environment_info().to_dict(),
+        "device": device_str,
         "profile_hashes": profile_hashes,
         "results": results,
         "max_deviation_overall": max_deviation_overall,
