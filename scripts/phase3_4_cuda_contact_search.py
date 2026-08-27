@@ -365,8 +365,10 @@ def _benchmark_scene(
 
     survivors = [s.world_index for s in gpu_summaries if not s.hard_reject][:3]
     finalists = gpu.export_finalists(survivors) if survivors else ()
+    # A finalist is a capsule now, not a request: replayability means the CPU
+    # oracle has the exact commands, not that a field says "cpu" (blocker B-04).
     replayable = bool(survivors) and all(
-        f.backend_request == "cpu" for f in finalists
+        len(capsule.capsule_sha256) == 64 and capsule.horizon > 0 for capsule in finalists
     )
 
     result.update(
@@ -557,15 +559,24 @@ def main() -> int:
         return 1
 
     bench = evidence["search_benchmark"]
+    if bench.get("status") != "measured":
+        # A benchmark that did not run is not a benchmark that passed. v1 fell
+        # through to the success message here (blocker B-08).
+        print(
+            f"Phase 3.4 benchmark did not run: status={bench.get('status')!r} "
+            f"reason={bench.get('reason')!r}",
+            file=sys.stderr,
+        )
+        return 1
     if bench.get("status") == "measured":
         failures = [
             name
             for name, ok in (
-                ("speedup", bench["speedup_met"]),
-                ("vram", bench["vram_within_budget"] is True),
-                ("no_nonfinite", bench["nonfinite_worlds"] == 0),
-                ("no_overflow", bench["overflow_worlds"] == 0),
-                ("cpu_routing", bench["finalists_routed_to_cpu"]),
+                ("speedup", bench.get("speedup_met") is True),
+                ("vram", bench.get("vram_within_budget") is True),
+                ("no_nonfinite", bench.get("nonfinite_worlds") == 0),
+                ("no_overflow", bench.get("overflow_worlds") == 0),
+                ("cpu_routing", bench.get("finalists_routed_to_cpu") is True),
             )
             if not ok
         ]
@@ -579,7 +590,8 @@ def main() -> int:
             return 1
         print(
             f"Phase 3.4 benchmark passed: {bench['speedup']}x speedup on "
-            f"{bench['worlds']} worlds, {bench['peak_vram_gib']} GiB peak VRAM.",
+            f"{bench['worlds']} worlds, "
+            f"{bench['device_peak_vram_gib']} GiB peak VRAM.",
             file=sys.stderr,
         )
     print(

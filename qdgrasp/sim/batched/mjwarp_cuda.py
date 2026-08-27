@@ -53,6 +53,7 @@ REQUIRED_CONTACT_FIELDS: tuple[str, ...] = (
     "frame",
     "geom",
     "efc_address",
+    "includemargin",
 )
 
 
@@ -127,6 +128,7 @@ class MjWarpCudaBackend:
         self._overflowed: set[int] = set()
         self._rolled_out = False
         self._last_commands: np.ndarray | None = None
+        self._peak_contact_force: np.ndarray | None = None
         self._model_sha256 = ""
         self._timing = BackendTiming(0.0, 0.0, 0.0, 0, 0)
 
@@ -216,6 +218,7 @@ class MjWarpCudaBackend:
         self._overflowed = set()
         self._rolled_out = False
         self._last_commands = None
+        self._peak_contact_force = None
 
         cpu_data = mujoco.MjData(model)
         shared = next((state for state in states if state is not None), None)
@@ -324,6 +327,15 @@ class MjWarpCudaBackend:
             self._peak_contacts[:worlds] = np.maximum(
                 self._peak_contacts[:worlds], contact_counts
             )
+        forces = self.read_contact_forces()
+        if forces is not None and forces.size:
+            # The device stream is flat across worlds; without a per-contact
+            # world index the honest reduction is the batch peak, recorded as
+            # such rather than attributed to a world it may not belong to.
+            peak = float(np.max(forces))
+            if self._peak_contact_force is None or self._peak_contact_force.size != worlds:
+                self._peak_contact_force = np.zeros(worlds)
+            self._peak_contact_force[:] = np.maximum(self._peak_contact_force, peak)
 
         self._reject_unusable(qpos, qvel)
         return BackendState(
@@ -396,6 +408,55 @@ class MjWarpCudaBackend:
         self._last_commands = np.array(control_sequences, dtype=np.float64)
         return tuple(self._summarise(index, state, horizon) for index in range(worlds))
 
+    def missing_contact_fields(self) -> tuple[str, ...]:
+        """Contact fields this build does not expose.
+
+        The safety budget needs the force, the frame, the penetration depth and
+        the identity of both geoms. A build that supplies only ``pos`` can count
+        contacts but cannot say whether any of them was safe, so the gate refuses
+        it rather than reporting the subset it happens to have (G08.1).
+        """
+        contact = getattr(self._warp_data, "contact", None)
+        if contact is None:
+            return REQUIRED_CONTACT_FIELDS
+        missing = [field for field in REQUIRED_CONTACT_FIELDS if not hasattr(contact, field)]
+        if not hasattr(self._warp_data, "efc_force"):
+            missing.append("efc_force")
+        return tuple(missing)
+
+    def read_contact_forces(self) -> np.ndarray | None:
+        """Per-contact normal force, or ``None`` when the build cannot supply it.
+
+        MuJoCo resolves contact force through the constraint solver, so the
+        force of a contact is read at its ``efc_address`` in ``efc_force``. A
+        contact whose address is negative was not admitted to the constraint
+        system and carries no force; that is a real zero, unlike a missing field.
+        """
+        contact = getattr(self._warp_data, "contact", None)
+        if contact is None or self.missing_contact_fields():
+            return None
+        address = self._as_numpy(contact.efc_address)
+        forces = self._as_numpy(self._warp_data.efc_force)
+        if address is None or forces is None:
+            return None
+        flat_address = np.asarray(address).astype(int).ravel()
+        flat_forces = np.asarray(forces, dtype=np.float64).ravel()
+        out = np.zeros(flat_address.shape[0], dtype=np.float64)
+        valid = (flat_address >= 0) & (flat_address < flat_forces.shape[0])
+        out[valid] = np.abs(flat_forces[flat_address[valid]])
+        return out
+
+    @staticmethod
+    def _as_numpy(value: object) -> np.ndarray | None:
+        if value is None:
+            return None
+        if hasattr(value, "numpy"):
+            return value.numpy()
+        try:
+            return np.asarray(value)
+        except (TypeError, ValueError):
+            return None
+
     def contact_telemetry(self, world_index: int) -> ContactTelemetry:
         """What the device reported about contact in one world.
 
@@ -404,11 +465,7 @@ class MjWarpCudaBackend:
         and a world whose contacts were not observed cannot be ranked against
         one whose were (blocker B-03).
         """
-        unavailable = tuple(
-            field
-            for field in REQUIRED_CONTACT_FIELDS
-            if not hasattr(getattr(self._warp_data, "contact", object()), field)
-        )
+        unavailable = self.missing_contact_fields()
         capacity = int(getattr(self.model, "nconmax", 0) or 0)
         count = int(self._peak_contacts[world_index]) if self._peak_contacts.size else 0
         overflow = bool(capacity > 0 and count >= capacity) or world_index in self._overflowed
@@ -440,13 +497,17 @@ class MjWarpCudaBackend:
         elif not invalid and telemetry.unavailable_fields:
             invalid, reason = True, "truncated_contact_stream"
 
+        peak = {
+            "max_object_speed_mps": float(np.max(np.abs(state.object_velocity[index])))
+        }
+        forces = self._peak_contact_force
+        if forces is not None and forces.size:
+            peak["peak_normal_force_N"] = float(forces[index]) if forces.size > index else 0.0
         return RolloutSummary(
             world_index=index,
             steps_executed=0 if invalid else horizon,
             objective_terms={"steps": float(0 if invalid else horizon)},
-            peak_safety_metrics={
-                "max_object_speed_mps": float(np.max(np.abs(state.object_velocity[index])))
-            },
+            peak_safety_metrics=peak,
             cumulative_safety_metrics={},
             hard_reject=invalid,
             failure_stage="rollout" if invalid else "none",
