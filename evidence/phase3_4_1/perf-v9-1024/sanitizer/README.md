@@ -59,3 +59,48 @@ Initcheck can also report an access as uninitialized when a value is written by
 one kernel and read by another in a way it cannot follow. 62,919 is large enough
 to be worth taking seriously, but the specific arrays still have to be named
 before a fix is written.
+
+## Addendum: the defect is upstream, in MuJoCo Warp's own solver
+
+A rerun with `--print-limit 40` printed the records verbatim instead of counting
+them. Every captured uninitialized read is in the same kernel:
+
+```
+Uninitialized __global__ memory read of size 4 bytes
+  at _linesearch_iterative_kernel__locals__kernel_..._cuda_kernel_forward+0x7be0
+  by thread (25,0,0) in block (0,0,0)
+  Host Frame: _linesearch_iterative in solver.py:1359
+  Host Frame: _linesearch           in solver.py:1562
+  Host Frame: _solver_iteration     in solver.py:3533
+  Host Frame: _solve                in solver.py:3726
+```
+
+Those frames are `mujoco_warp/_src/solver.py` -- MuJoCo Warp's own constraint
+solver. QDGrasp appears in the backtrace only as the caller, at
+`mjwarp_cuda.py:244` in `rollout`.
+
+**This corrects the previous section of this document.** It said the next step
+was auditing what `put_data` leaves untouched and whether
+`MjWarpCudaBackend.reset` needs to initialize fields explicitly. That was a
+reasonable guess and it is wrong: the read is in the solver's iterative
+linesearch, not in per-world data initialization on our side. No change to
+QDGrasp's reset path can fix it.
+
+Section 3.4's row for this is *upstream MJWarp 1.16.0 bug*, whose prescribed
+response is pinning a patch or a newer version through a compatibility spike,
+with tendon, weld, contact, force and CPU parity re-evidenced.
+
+### Limits
+
+`racecheck` remains clean across both runs, so this is still not a race.
+
+66,177 errors were reported and 40 printed; 3 records survived into the notebook
+log, and all 3 are the same kernel. That is consistent with a single upstream
+site but does not prove all 66,177 are, and a rerun capturing the full set would
+settle it.
+
+An `initcheck` report can also flag a value written by one kernel and read by
+another in a way the tool cannot follow. The named frames make an upstream solver
+defect the most direct reading, but confirming it means reproducing against
+`mjwarp-testspeed` on the exported model, which section 3.3 step 6 already asks
+for and which has not been run.
