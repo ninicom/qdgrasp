@@ -54,3 +54,48 @@ that does not pass.
 
 No threshold, contact stiffness, actuator gain or force budget was altered. Plan
 section 4.3 forbids those as a first fix and none was used.
+
+## Addendum: the classification is settled, and the tracking failure is explained
+
+Two measurements taken after the sweep close both open questions.
+
+### `invalid_proxy` is excluded
+
+| body | visual mesh half-extent | collision proxy |
+| --- | --- | --- |
+| `rh_lfproximal` | `[0.0101, 0.0100, 0.0309]` | capsule, radius `0.009`, half-length `0.02` |
+| `rh_lfmetacarpal` | `[0.0126, 0.0214, 0.0368]` | box `[0.011, 0.012, 0.025]` |
+
+The collision proxy is **smaller than the visual mesh on every axis of both
+bodies**. It is conservative, not inflated. So if the proxies overlap by 0.36 mm
+the visual geometry overlaps by more, and the contact is real rather than a proxy
+artifact.
+
+The recipe posture also sits well inside the joint limits -- `rh_LFJ1`/`LFJ2` at
+76% of range, `LFJ3` at 91% -- so the model permits it and the links genuinely
+intersect there. That excludes `missing_structural_exclusion` as well.
+
+**`invalid_posture` from P3.4.1-06 stands.** The doubt raised earlier in this
+document was wrong and is withdrawn.
+
+### Why 0.0 rad fails actuator tracking
+
+`rh_LFJ1` and `rh_LFJ2` have **no individual actuators**. They are driven
+together by one tendon actuator, `rh_A_LFJ0` on tendon `rh_LFJ0`, whose
+ctrlrange is `[0.000, 3.142]` -- the tendon coordinate is the sum of the two
+joints. `rh_MFJ0` and `rh_RFJ0` are the same.
+
+So commanding `rh_LFJ1 = rh_LFJ2 = 0.0` puts the tendon at exactly the bottom of
+its control range, which is the hardest point to hold, and the sweep's
+intermediate values were setting two coupled joints as if they were independent.
+
+That makes the sweep above an invalid parameterisation of the problem, not a
+refutation of option A. A correct version varies the **tendon coordinate**, and
+should avoid the range boundary rather than land on it.
+
+### Handoff
+
+Option A remains the right direction and its safety result stands: 323 N to
+0.6 N with damaging contacts eliminated. What it needs is a clearance posture
+expressed in tendon coordinates, off the boundary, for `rh_MFJ0`, `rh_RFJ0` and
+`rh_LFJ0` -- not per-joint values on coupled joints. That has not been run.
