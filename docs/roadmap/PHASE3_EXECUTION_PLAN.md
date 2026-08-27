@@ -2,11 +2,12 @@
 document_id: ROADMAP-P3-001
 document_type: plan
 title: Kế hoạch thực thi Phase 3 — Data layer
-version: 1.0.0
+version: 1.1.0
 status: active
-date: 2026-08-22
-revises: none
+date: 2026-08-27
+revises: ROADMAP-P3-001@1.0.0
 related_plan: PLAN-V2
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
 ---
 
 # Kế hoạch thực thi Phase 3 — Data layer
@@ -16,6 +17,10 @@ Tài liệu này chỉ diễn giải cách thực thi P3 đã được `docs/roa
 định. Nó không sửa, không mở rộng và không đánh giá lại quyết định của phase
 trước. Người thực hiện là maintainer; kế hoạch viết để chạy được mà không cần
 suy đoán.
+
+**Current scope override — ADR-0008:** active/default work từ 2026-08-27 chỉ
+dùng LEAP và Wonik Allegro. Các dòng Shadow bên dưới là baseline/evidence lịch sử
+hoặc resumption backlog, không còn là gate cho dataset/checkpoint/release mới.
 
 ## 1. Ranh giới phạm vi
 
@@ -62,7 +67,7 @@ workspace của ngón, `palm_pos=(0, 0, 0.1)`, `seed=0`:
 | --- | ---: | ---: |
 | LEAP | 32 | 0 |
 | Allegro | 12 | 24 |
-| Shadow | 18 | 6 |
+| Shadow | 18 | 6 (historical probe; paused by ADR-0008) |
 
 Hai cột đến từ **hai lưới khác nhau**, không phải một sweep:
 
@@ -237,7 +242,7 @@ ignore mọi dataset runtime khác; gate dùng `git check-ignore` cùng
 | Nguồn | Vai trò trong P3 | License artifact sinh ra |
 | --- | --- | --- |
 | Procedural primitives/superquadrics do dự án sinh | Nguồn object chính của `DGN-Open-Tiny` | `CC0-1.0`, dự án sở hữu |
-| MJCF Menagerie ba hand (P2) | Hand model cho label replay | Giữ license gốc; chỉ tham chiếu, không phân phối lại trong dataset |
+| MJCF Menagerie ba hand (P2 historical) | Hand model cho label replay; active gate chỉ LEAP/Allegro | Giữ license gốc; Shadow paused, không phân phối lại trong dataset |
 | Profile robot v2 của P2 | `robot_profile_hash` trong manifest | Cờ release-blocked phải lan xuống shard (§6.3) |
 | CC0 asset ngoài (nếu dùng) | Bổ sung đa dạng | Mỗi mesh cần manifest license riêng |
 
@@ -256,7 +261,7 @@ license của repository.
 | P3-02 | Procedural object generator: primitives + superquadrics + compound convex | `qdgrasp/objects/generate.py` | không CSG |
 | P3-03 | Object asset manifest: mesh hash, tham số sinh, license, physical properties | `qdgrasp/objects/manifest.py` | |
 | P3-04 | Collision representation guard: geom va chạm phải khớp mesh hiển thị trong tolerance | `qdgrasp/objects/collision.py` | xem §6.1, đây là defect class của `SESSION-20260822-021` |
-| P3-05 | Candidate palm/contact sampler theo `RobotSpec` và object surface | `qdgrasp/dataset/pipeline/sample.py` | phải phủ cả ba hand, gồm LEAP |
+| P3-05 | Candidate palm/contact sampler theo `RobotSpec` và object surface | `qdgrasp/dataset/pipeline/sample.py` | phải phủ LEAP và Allegro; Shadow paused |
 | P3-06 | IK damped least squares trên FK của P2, projection về named limits | `qdgrasp/dataset/pipeline/ik.py` | công cụ sinh dữ liệu, không nằm trên đường inference |
 | P3-07 | Collision filter tay–vật và self-collision trước khi tốn bước simulate | `qdgrasp/dataset/pipeline/filter.py` | |
 | P3-08 | Physics label: replay squeeze/lift, tiêu chí success có force closure | `qdgrasp/sim/labeling.py` | dùng `evaluate_grasp_fixture` với argument thật, không sửa default |
@@ -337,7 +342,7 @@ dataset toàn nhãn âm**. Nhưng khi đó `DGN-Open-Tiny` vô dụng cho gate o
 P4, và defect chỉ lộ ra giữa P4. Vì vậy P3 tự thêm một tiêu chí kiểm được bằng
 lệnh:
 
-- Tỉ lệ nhãn dương **khác 0 trên cả ba hand** trong `DGN-Open-Tiny`, in ra bởi
+- Tỉ lệ nhãn dương **khác 0 trên cả hai active hand** trong `DGN-Open-Tiny`, in ra bởi
   `scripts/check_phase3.py` và ghi vào manifest.
 - LEAP là ca khó đã biết (0 hit trong lưới thô ở §1). Không được đóng phase bằng
   cách bỏ LEAP khỏi tiny dataset.
@@ -411,7 +416,8 @@ Mỗi mục phải kiểm được bằng lệnh, không phải bằng nhận đ
 - Tiêu chí success gồm force closure và perturbation test (§6.2); ngưỡng nằm
   trong manifest.
 - Chạy lại cùng seed cho cùng label trên mọi sample.
-- Tỉ lệ nhãn dương khác 0 trên cả LEAP, Allegro và Shadow (§6.3).
+- Tỉ lệ nhãn dương khác 0 trên cả hai active hand LEAP và Allegro (§6.3).
+  Shadow không được ghi pass/zero; trạng thái là `paused_by_ADR-0008`.
 
 **Point cloud và camera**
 

@@ -2,16 +2,22 @@
 document_id: ROADMAP-P3.5-001
 document_type: plan
 title: Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
-version: 1.0.0
+version: 1.1.0
 status: active
 date: 2026-08-27
-revises: none
+revises: ROADMAP-P3.5-001@1.0.0
 related_plan: ROADMAP-P3.3-001
 depends_on:
   - ROADMAP-P2-001
   - ROADMAP-P3.3-001
 optional_dependencies:
   - ROADMAP-P3.4-001
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
+active_hands:
+  - leap_hand
+  - wonik_allegro
+paused_hands:
+  - shadow_hand
 literature_cutoff: 2026-08-27
 gpu_evidence_targets:
   - ninicom/qdgrasp-cuda-kaggle
@@ -25,6 +31,11 @@ reset/step theo contract học tăng cường. Đầu vào có thể là scene h
 object manifest đã chuẩn hóa hoặc chỉ một raw mesh. Nếu không có scene, hệ thống
 tạo một scene ảo có support và spawn region hữu hạn, thả vật bằng physics, chờ
 settle và lưu lại trạng thái khởi tạo có thể tái lập.
+
+Theo `ADR-0008`, compatibility/release gate hiện dùng 2/2 active hand: LEAP và
+Wonik Allegro. Shadow preset/evidence vẫn được giữ nhưng không được load trong
+default environment, backend spike hoặc RL readiness dataset cho tới quyết định
+mở lại.
 
 P3.5 **không viết lại P3.3**. `SceneSpec`, native scene builder, MuJoCo settle và
 asset provenance của P3.3 là baseline/oracle. Phần mới của P3.5 là:
@@ -77,14 +88,13 @@ chọn làm release target sau compatibility spike:
 | GPU candidate A | MJX-Warp/MuJoCo Warp | Thử đầu tiên; cùng hệ MuJoCo, cài bằng wheel, hợp với notebook và batched RL |
 | GPU candidate B | ManiSkill 3/SAPIEN GPU | Fallback nếu A fail; Gymnasium/PyTorch-native, pip-install, mạnh cho manipulation và heterogeneous scene |
 | Backend mở rộng | Isaac Lab | Không chặn P3.5; chỉ mở khi có môi trường persistent qua preflight và có parity artifact |
-| Watchlist | Genesis | Không vào gate v1 trước khi có parity/contact/provenance evidence cho ba hand |
+| Watchlist | Genesis | Không vào gate v1 trước khi có parity/contact/provenance evidence cho hai active hand |
 
 MJX-Warp là candidate ưu tiên vì tài liệu MuJoCo mô tả đây là implementation GPU
 đầy đủ tính năng nhất, hỗ trợ batched model/data và tối ưu contact/constraint.
-Tuy nhiên catalog MuJoCo Menagerie hiện đánh dấu LEAP, Wonik Allegro và Shadow
-Hand là chưa được chứng nhận `MJX`. Dấu này không đủ kết luận MJX-Warp chắc chắn
-fail, nhưng buộc P3.5 chạy compatibility spike cho từng hand/tendon/contact
-trước khi chọn backend.
+Catalog MuJoCo Menagerie hiện đánh dấu LEAP, Wonik Allegro và Shadow Hand là chưa
+được chứng nhận `MJX`. Gate hiện chỉ spike LEAP/Allegro; Shadow finding được giữ
+cho resumption nhưng không chặn backend decision khi ADR-0008 còn hiệu lực.
 
 Nguồn:
 
@@ -95,7 +105,8 @@ Nguồn:
 ManiSkill 3 là fallback hợp lý vì hỗ trợ CPU/GPU simulation, Gymnasium API,
 custom task, URDF/MJCF và GPU-parallel manipulation. Nhưng MJCF importer của nó
 không bảo toàn mọi motor/solver/collision attribute, nên cũng không được chọn
-trước khi LEAP/Allegro/Shadow import-parity pass.
+trước khi LEAP/Allegro import-parity pass. Shadow import-parity được defer rõ
+theo ADR-0008, không được ghi pass.
 
 Nguồn:
 
@@ -495,13 +506,14 @@ general policy success.
 
 ### 7.1 CPU oracle
 
-MuJoCo CPU tiếp tục là semantic oracle vì đã qua P2/P3.3 cho ba hand. Oracle
+MuJoCo CPU tiếp tục là semantic oracle vì đã qua P2/P3.3 trong lịch sử. Active
+gate hiện replay LEAP và Allegro. Oracle
 kiểm model compile, named joint/transmission, passive force, actuator response,
 free-object drop, contact class, settle và scripted grasp/lift.
 
 ### 7.2 MJX-Warp spike — candidate A
 
-Spike phải kiểm riêng LEAP, Allegro và Shadow:
+Spike phải kiểm riêng LEAP và Allegro:
 
 1. `put_model`/compile không unsupported feature;
 2. joint/actuator/tendon counts và named mapping khớp CPU;
@@ -514,8 +526,8 @@ Spike phải kiểm riêng LEAP, Allegro và Shadow:
 9. deterministic seed/accounting ở cùng backend;
 10. memory/compile time nằm trong budget notebook.
 
-Candidate A chỉ thắng nếu **3/3 hand** pass. Không bỏ Shadow, sửa raw MJCF hoặc
-fallback CPU im lặng để đóng gate.
+Candidate A chỉ thắng nếu **2/2 active hand** pass. Shadow mang trạng thái
+`paused_by_ADR-0008`, không được ghi như một pass; vẫn cấm fallback CPU im lặng.
 
 ### 7.3 ManiSkill spike — candidate B
 
@@ -657,7 +669,8 @@ nằm critical path.
 
 - MuJoCo CPU oracle pass trước GPU candidate.
 - GPU request không thể fallback CPU.
-- 3/3 hand compile/step/contact/drop/lift parity theo tolerance/class.
+- 2/2 active hand compile/step/contact/drop/lift parity theo tolerance/class;
+  Shadow ghi `paused_by_ADR-0008`.
 - Compile/warmup báo riêng khỏi steady-state throughput.
 - Contact buffer/memory cap overflow là failure.
 - Kaggle exact-commit evidence; Colab resume/portability smoke.
@@ -700,7 +713,7 @@ python scripts/phase3_5_gpu_rl_readiness.py \
 
 Không đóng P3.5 chỉ bằng việc import simulator, render được một ảnh hoặc train
 được một hand. Gate yêu cầu asset → scene/drop → settle → reset/step → scripted
-outcome xuyên suốt cho LEAP, Allegro và Shadow.
+outcome xuyên suốt cho LEAP và Allegro; manifest ghi Shadow paused.
 
 ## 13. Điều kiện hoàn tất
 
@@ -713,8 +726,8 @@ outcome xuyên suốt cho LEAP, Allegro và Shadow.
    không teleport, deterministic theo seed.
 4. `SceneSnapshot` replay và MuJoCo CPU oracle xác nhận validity class.
 5. Gymnasium single/vector environment, observation/action/reward/termination,
-   reset/randomization contracts pass cho ba hand.
-6. Một backend GPU duy nhất được chọn bằng decision record sau 3-hand parity;
+   reset/randomization contracts pass cho hai active hand.
+6. Một backend GPU duy nhất được chọn bằng decision record sau 2-hand parity;
    không có silent fallback hoặc approximation không khai báo.
 7. Kaggle GPU evidence exact-commit pass; Colab Pro portability/resume được chạy
    hoặc ghi rõ `not_run` mà không biến thành release claim.

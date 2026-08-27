@@ -2,16 +2,18 @@
 document_id: ROADMAP-P3.4-001
 document_type: plan
 title: Kế hoạch Phase 3.4 — Contact-Rich Dynamic Grasp Synthesis
-version: 1.0.0
+version: 1.3.0
 status: active
-date: 2026-08-23
-revises: none
+date: 2026-08-27
+revises: ROADMAP-P3.4-001@1.2.0
 related_plan: ROADMAP-P3.3-001
 depends_on:
   - ROADMAP-P3.1-001
   - ROADMAP-P3.2-001
   - ROADMAP-P3.3-001
-literature_cutoff: 2026-08-23
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
+execution_state: paused_by_ADR-0008
+literature_cutoff: 2026-08-27
 gpu_evidence_target: ninicom/qdgrasp-cuda-kaggle
 ---
 
@@ -547,3 +549,49 @@ không xác nhận finalist cũng không tạo release positive.
 
 P3.4 làm tăng coverage grasp bằng compute có kiểm soát; nó không tuyên bố rằng
 mọi collision đều an toàn và không thay thế hardware safety validation.
+
+## 17. Corrective phase P3.4.1
+
+Ba nhánh P3.4 đã có measured/structural blocker. Kernel v9 tại 1024 worlds đạt
+speed `4.444x` so với gate `>=2.0x`, nhưng full CUDA gate vẫn fail vì 29/1024
+world non-finite và telemetry VRAM hiện chỉ đo PyTorch allocator. Shadow 40/40
+hard-reject do damaging self-contact có cả ở no-closure; chưa có independent
+reviewer. Không điều kiện nào được đổi thành pass bằng cách diễn giải lại
+evidence.
+
+Kế hoạch sửa chi tiết nằm tại
+[`ROADMAP-P3.4.1-001`](PHASE3_4_1_FIX_PLAN.md). P3.4.1 giữ nguyên ngưỡng §10,
+ưu tiên overflow/non-finite triage và đo VRAM đúng allocator; device-resident
+MJWarp + CUDA Graph chỉ kích hoạt nếu speed sau stability fix tụt dưới `2x`.
+Plan tạo versioned corrective delta cho Shadow thay vì sửa lịch sử P3.2/P3.3 và
+đóng gói exact immutable review packet để một reviewer khác phát hành verdict.
+P3.4 vẫn `active/pending` cho tới khi GPU gate, Shadow positive và independent
+review cùng pass.
+
+## 18. Correctness-recovery successor P3.4.2
+
+Session report `SESSION-20260827-002` đã loại các phương án Shadow A/B/C trong
+miền thử và ghi GPU divergence trên toàn identical-world cohort. Sau khi đối
+chiếu code/evidence, hai kết luận cần thêm gate trước khi sửa runtime: GPU chưa
+có fail-closed sanitizer verdict, còn failure `actuator_tracking` của Shadow
+đang gộp joint tracking với actuator/tendon-coordinate tracking. Review packet
+P3.4.1 cũng khóa revision cũ, worktree bẩn và chứa disclosure đã bị rút lại.
+
+[`ROADMAP-P3.4.2-001`](PHASE3_4_2_CORRECTNESS_RECOVERY_PLAN.md) supersede đường
+execution của P3.4.1 nhưng giữ P3.4.1 làm diagnostic history. P3.4.2 yêu cầu sửa
+sanitizer harness thành fail-closed, tách Shadow predicate trước khi chọn
+projected-target/safe-set/mixed-mode controller, rồi dựng lại immutable packet
+cho reviewer độc lập. Gate §10/§16, safety budget và yêu cầu ba hand không đổi.
+
+## 19. Tạm dừng bởi ADR-0008
+
+Maintainer đã tạm dừng Shadow Hand khỏi active corpus vì chi phí cấu hình
+underactuated/contact-control. Exact P3.4 contract này yêu cầu ba hand nên không
+thể đóng trong thời gian pause; trạng thái execution là `paused_by_ADR-0008`,
+không phải `pass` hay `complete`.
+
+Không rewrite §10/§11/§16 hoặc evidence lịch sử thành hai hand. Nếu dự án cần
+phát hành contact-rich dataset LEAP+Allegro trong thời gian pause, phải lập một
+successor scope/plan riêng với tên dataset/verdict mới; không được gắn verdict đó
+vào P3.4 ba-hand. Chi tiết policy và điều kiện mở lại nằm tại
+[`ADR-0008`](../decisions/0008-temporary-shadow-hand-pause.md).

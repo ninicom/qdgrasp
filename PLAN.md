@@ -2,17 +2,17 @@
 document_id: PLAN-V2
 document_type: plan
 title: QDGrasp — thư viện dexterous grasp cộng đồng dưới AGPL-3.0
-version: 4.0.0
+version: 4.1.0
 status: active
 date: 2026-08-22
 approved_date: 2026-08-22
-revises: LEGACY-PLAN-PRE-V2
+revises: PLAN-V2@4.0.0
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260822-009-agpl-library-first-phase0.md
-revision_reason: Maintainer chọn AGPL-3.0, library-first, public repository hiện tại và loại RH56E2 khỏi mọi phạm vi hoạt động.
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
+revision_reason: Maintainer tạm dừng Shadow Hand khỏi active corpus vì chi phí cấu hình underactuated/contact-control; giữ preset/evidence để có thể mở lại.
 necessity: N3
-impact: Hủy kế hoạch Apache clean-room/repository mới; phát hành cây hiện tại dưới AGPL-3.0, giữ notice tương thích và khóa P0 bằng wheel cùng CUDA Kaggle evidence.
+impact: Active corpus/gate mới chuyển từ LEAP+Allegro+Shadow sang LEAP+Allegro; giữ Shadow preset/evidence ở trạng thái paused và chặn mọi claim three-hand mới.
 ---
 
 # QDGrasp — kế hoạch triển khai chính thức
@@ -29,6 +29,11 @@ intake nằm tại `docs/decisions/0005-environment-and-reference-intake.md`; CU
 hardware gate nằm tại `docs/decisions/0006-cuda-hardware-required.md`. Đây là
 chính sách kỹ thuật về nguồn và phát hành, không thay thế tư vấn pháp lý chuyên
 nghiệp.
+
+Phạm vi robot hiện hành được sửa bởi
+`docs/decisions/0008-temporary-shadow-hand-pause.md`: active corpus chỉ gồm LEAP
+và Wonik Allegro. Shadow Hand được giữ như paused/experimental compatibility
+profile, không tham gia workload/gate/release mới cho tới ADR mở lại.
 
 ## 1. Mục tiêu và quyết định nền
 
@@ -78,8 +83,10 @@ nghiệp.
   kiện và sinh trực tiếp palm pose + named joint state. Differentiable FK nối
   state thực thi với keypoint/contact/force phụ; không khóa latent hoặc joint
   order vào Shadow/LEAP và không cần retarget làm đường mặc định.
-- Corpus tương thích cục bộ đầu tiên gồm LEAP, Allegro và Shadow Hand; exact
-  source/commit/tree/license nằm trong `robot_assets.lock.yaml`. Barrett chỉ là
+- Corpus tương thích lịch sử đầu tiên gồm LEAP, Allegro và Shadow Hand; exact
+  source/commit/tree/license nằm trong `robot_assets.lock.yaml`. Active corpus
+  sau ADR-0008 chỉ gồm LEAP và Allegro; Shadow tạm dừng nhưng không bị xóa khỏi
+  manifest/provenance. Barrett chỉ là
   fixture nghiên cứu bị chặn phát hành cho tới khi có license đầy đủ bao phủ cả
   URDF lẫn mesh. RH56E2 bị loại khỏi scope, manifest, fixture, model và checkpoint.
 - Core model bắt buộc hỗ trợ CPU FP32 cho correctness/CI và NVIDIA CUDA
@@ -231,9 +238,10 @@ heads:
 - Checkpoint bị từ chối nếu profile hash hoặc joint schema không khớp.
 - Mỗi URDF/mesh/profile public phải có provenance và license manifest. User có
   thể dùng asset riêng cục bộ nhưng asset đó không tự động được phát hành lại.
-- Matrix đầu tiên phải phủ: LEAP official URDF + Menagerie MJCF; Wonik Allegro
-  official URDF + Menagerie MJCF; Shadow E3M5 Menagerie MJCF và một URDF ngoài
-  distribution để kiểm parser. Raw asset không được sửa để làm test pass; mọi
+- Matrix lịch sử Phase 2 phủ LEAP official URDF + Menagerie MJCF, Wonik Allegro
+  official URDF + Menagerie MJCF, Shadow E3M5 Menagerie MJCF và một URDF ngoài
+  distribution để kiểm parser. Workload/gate mới chỉ bắt buộc LEAP + Allegro;
+  Shadow fixture giữ paused theo ADR-0008. Raw asset không được sửa để làm test pass; mọi
   normalization phải là transform tái lập, có hash nguồn/đầu ra và cờ `modified`.
 
 ## 4. Model và pipeline dữ liệu mở
@@ -264,8 +272,9 @@ raw XYZ / depth + intrinsics          URDF/MJCF + permissive meshes
   force về Coulomb cone theo đặc tả toán học kiểu EquiDexFlow. Energy penetration,
   surface-pulling và self-collision kiểu EFF-Grasp là plugin inference có thể tắt,
   không thay thế simulator labels.
-- v1 phải có cả checkpoint từng robot và một checkpoint multi-hand trên ít nhất
-  LEAP/Allegro/Shadow. Zero-shot hand chỉ được tuyên bố khi robot held-out và
+- v1 hiện hành phải có checkpoint LEAP, Allegro và một checkpoint multi-hand
+  LEAP+Allegro. Shadow checkpoint bị defer theo ADR-0008. Zero-shot hand chỉ
+  được tuyên bố khi robot held-out và
   morphology perturbation đều qua protocol định trước.
 - Quality head học từ positive, hard/free-space negative và on-policy failures do
   MuJoCo/MJX gắn nhãn.
@@ -325,8 +334,9 @@ của database không thay thế license của từng mesh.
 
 - Canonical `GraspBatch` và immutable manifests.
 - URDF/Profile validator, FK, joint-limit mapping, mesh resolver và fixtures.
-- MJCF importer và compatibility matrix LEAP/Allegro/Shadow; test raw XML, mesh
-  resolution, joint names/limits, MuJoCo load/forward và transform normalization.
+- MJCF importer và compatibility matrix active LEAP/Allegro; giữ Shadow parser/
+  transmission fixture ở trạng thái paused, không dùng làm gate mới. Test raw
+  XML, mesh resolution, joint names/limits, MuJoCo load/forward và transform normalization.
 - Procedural/CC0 object generator, candidate sampler, collision filter và
   MuJoCo/MJX label pipeline.
 - Phát hành `DGN-Open-Tiny` để overfit/CI trước khi tạo corpus lớn.

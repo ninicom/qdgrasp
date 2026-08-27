@@ -2,11 +2,14 @@
 document_id: DOCS-INDEX
 document_type: index
 title: Chỉ mục tài liệu QDGrasp
-version: 1.3.0
+version: 1.4.0
 status: active
 date: 2026-08-21
-revises: none
-latest_revision_record: docs/revisions/REV-20260821-006-audit-remediation.md
+revises: DOCS-INDEX@1.3.0
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
+revision_reason: Thêm ADR-0008 vào chỉ mục và công bố active corpus tạm thời LEAP/Allegro.
+necessity: N3
+impact: Chỉ mục điều hướng người thực hiện tới policy tạm dừng Shadow trước khi tạo workload/release artifact mới.
 ---
 
 # Bộ tài liệu kiểm chứng QDGrasp
@@ -54,6 +57,9 @@ PLAN.md
 - `decisions/`: quyết định kiến trúc/quy trình có ảnh hưởng dài hạn.
 - `decisions/0007-agpl-community-library.md`: quyết định AGPL-3.0, library-first,
   DGN2 paper-only và loại RH56E2; supersede quyết định Apache trước đó.
+- `decisions/0008-temporary-shadow-hand-pause.md`: active corpus tạm thời chỉ
+  gồm LEAP/Allegro; giữ Shadow preset/evidence nhưng dừng dùng trong workload,
+  release gate và RL pipeline mới cho tới quyết định mở lại.
 - `archive/`: tài liệu đã bị thay thế nhưng không bị xóa; `archive/README.md`
   là sidecar trạng thái/hash cho raw archive bất biến.
 

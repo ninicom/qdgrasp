@@ -2,11 +2,15 @@
 document_id: QDGRASP-ROBOT-V2
 document_type: registry
 title: Registry schema cấu hình robot profile QDGrasp v2
-version: 1.0.0
+version: 1.1.0
 status: active
-date: 2026-08-22
-revises: none
+date: 2026-08-27
+revises: QDGRASP-ROBOT-V2@1.0.0
 related_plan: PLAN-V2
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
+revision_reason: Ghi operational status paused của Shadow mà không đổi schema hoặc xóa preset.
+necessity: N3
+impact: Active/default robot set chỉ còn LEAP và Allegro; Shadow profile chỉ dành cho compatibility/audit/resumption.
 ---
 
 # Registry schema cấu hình robot profile QDGrasp v2
@@ -79,6 +83,13 @@ Phase 2 phát hành 3 presets chuẩn:
 1. `leap_hand.yaml`: LEAP Hand v2 (16 actuated joints, Menagerie MJCF).
 2. `wonik_allegro.yaml`: Wonik Allegro Hand v2 (16 actuated joints, Menagerie MJCF / normalized URDF).
 3. `shadow_hand.yaml`: Shadow Hand E3M5 v2 (20 actuated joints từ $nq=24$, 4 mimic joints, Menagerie MJCF).
+
+Theo `ADR-0008`, active/default set hiện chỉ gồm `leap_hand` và
+`wonik_allegro`. `shadow_hand` được giữ nguyên trong registry để parse artifact
+cũ, chạy compatibility audit và phục vụ một resumption task tương lai, nhưng có
+operational status `paused_by_ADR-0008`: không dùng cho generation, training,
+checkpoint, release dataset hoặc backend/RL gate mới. Đây là project policy nằm
+trên schema; không đổi ý nghĩa field `release_blocked` trong file lịch sử.
 
 Các preset dùng `source_asset: asset://…`, không trỏ tới đường dẫn workspace.
 Wheel không mang MJCF/mesh robot; trước khi gọi `RobotSpec.from_config`, đặt

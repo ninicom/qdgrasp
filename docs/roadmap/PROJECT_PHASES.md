@@ -2,18 +2,24 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.21.0
+version: 1.24.0
 status: active
 date: 2026-08-27
-revises: ROADMAP-001@1.20.0
+revises: ROADMAP-001@1.23.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260827-003-phase3-5-asset-scene-rl-readiness.md
+latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
 ---
 
 # Roadmap tổng thể QDGrasp
 
 Tài liệu này là bản nhìn cấp cao để tổ chức thực thi. `PLAN.md` và các ADR vẫn
 là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm thu.
+
+**Current robot scope (`ADR-0008`):** active corpus/gate mới chỉ gồm LEAP và
+Wonik Allegro. Shadow Hand tạm dừng vì khó cấu hình underactuated/contact-control;
+preset/evidence lịch sử được giữ nhưng không dùng trong default workload,
+release hoặc RL pipeline. Các phase ba-hand đã đóng vẫn là historical truth;
+P3.4 ba-hand chưa đóng thì giữ paused, không đổi thành pass.
 
 ## Nhịp thực hiện
 
@@ -130,17 +136,51 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   `rh_lfproximal` vào `rh_lfmetacarpal` ở 323 N bền vững, thứ mà P3.2.1 không
   kiểm. Chi tiết tại `evidence/phase3_4/p16-contactrich-tiny/`; CEM 40 candidate
   trên closure scale của Shadow cho 40/40 hard-reject, nên đây không phải bài
-  toán search control mà là recipe/collision model, thuộc P3.2/P3.3. Ngoài ra
-  **tiêu chí hiệu năng §10 đã đo và trượt**: GPU đạt `0.764x` so với CPU oracle
-  trên scene tay 91 geom, yêu cầu là `2x`
-  (`evidence/phase3_4/p15-throughput/`). P3.4-05/15 còn thiếu
-  throughput/VRAM/parity trên GPU; P3.4-17 independent review không thể do tác
+  toán search control mà là recipe/collision model, thuộc P3.2/P3.3. GPU speed
+  §10 ban đầu fail `0.764x` ở 64 worlds; v9 tại operating point đã pin 1024
+  worlds đạt **`4.444x`**, vượt yêu cầu `2x`. Tuy nhiên full CUDA gate vẫn fail:
+  29/1024 identical worlds non-finite, còn `peak_vram_gib=0.0` được đo qua
+  PyTorch nên không bao phủ Warp allocator
+  (`evidence/phase3_4/p15-throughput/`). P3.4-05/15 vì vậy còn stability,
+  allocator-correct VRAM và parity; P3.4-17 independent review không thể do tác
   giả tự phát hành; P3.4-10 MPPI deferred theo đúng kế hoạch. Ablation
   static-vs-dynamic chạy được nhưng verdict `no_measured_difference` và **không**
   xác nhận giả thuyết P3.4. Phạm vi gốc: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety
   budget, GPU batched generation dùng MJX-Warp/MuJoCo Warp và CUDA evidence chạy
   trên Kaggle như Phase 1. CPU vẫn là correctness/oracle replay backend.
+- Phase 3.4.1
+  ([`ROADMAP-P3.4.1-001`](PHASE3_4_1_FIX_PLAN.md)) là diagnostic/corrective plan
+  đã được `ROADMAP-P3.4.2-001` supersede, không phải giấy phép tự đóng P3.4. Plan
+  giữ nguyên gate `>=2x`; v9
+  đã đạt `4.444x` tại 1024 worlds nên speed subcriterion pass, nhưng ưu tiên hiện
+  tại là phân loại 29 non-finite world qua `Data.overflow`, repeat/index
+  invariance, Warp debug và Compute Sanitizer. Bộ đo VRAM hiện tại dùng
+  `torch.cuda.max_memory_allocated()` nên không bao phủ allocation của Warp;
+  con số `~0 GiB` không được dùng làm bằng chứng GPU idle hoặc VRAM pass, và sẽ
+  được thay bằng Warp/NVML/Nsight measurement. CUDA Graph/device-resident
+  refactor chỉ chạy nếu speed sau stability fix tụt dưới `2x`. Shadow dùng versioned
+  corrective delta: ưu tiên mở các ngón inactive và swept-collision audit; chỉ
+  exclude/re-author proxy khi có geometric evidence, không tăng safety budget.
+  Evidence P3.2/P3.3 cũ giữ bất biến, impacted gates phải replay. Tác giả chỉ
+  chuẩn bị immutable packet; external hoặc internal-independent reviewer khác
+  mới được ký verdict. P4 contact-rich input tiếp tục bị chặn, còn P4
+  static/offline chỉ dùng interface/dataset không phụ thuộc release-blocked data.
+- Phase 3.4.2
+  ([`ROADMAP-P3.4.2-001`](PHASE3_4_2_CORRECTNESS_RECOVERY_PLAN.md)) là exact
+  three-hand closure contract hiện `superseded/paused_by_ADR-0008`. Trước khi bị
+  pause, plan yêu cầu reconcile ledger P3.4
+  vì headline/bảng/roadmap hiện ghi ba package count khác nhau và invalidate
+  review packet cũ vì packet khóa commit cũ, worktree bẩn, manifest count lệch
+  và còn disclosure Shadow đã rút lại. GPU branch giữ native MJWarp, sửa
+  sanitizer harness thành fail-closed, localization first-bad-tick/overflow và
+  chỉ đóng khi zero invalid + outcome parity + median T4 `>=2x` + device VRAM
+  `<=14 GiB`. Shadow branch tách actuator/tendon tracking khỏi joint tracking;
+  chỉ sửa projected-target semantics hoặc kích hoạt actuator-space safe set /
+  mixed-mode controller theo classification, không miễn kiểm inactive fingers.
+  Vì Shadow tạm dừng, các package closure này không còn là default backlog và
+  P3.4 ba-hand giữ trạng thái chưa đạt. P4 static/offline và P3.5 active-two-hand
+  asset/scene work có thể tiếp tục; ContactRich v1 vẫn release-blocked.
 - Phase 3.5 ([`ROADMAP-P3.5-001`](PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md))
   thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
   mesh được chuẩn hóa theo mét, tách visual/collision, rồi public Python CoACD
@@ -153,8 +193,10 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   chỉ nhận snapshot sau deterministic settle certification. P3.5 cung cấp
   Gymnasium single/vector contract, reset/randomization/checkpoint và GPU
   notebook evidence để sẵn sàng cho RL ở P5. MuJoCo CPU là oracle; MJX-Warp là
-  GPU candidate đầu tiên, ManiSkill 3 là fallback qua 3-hand compatibility gate;
+  GPU candidate đầu tiên, ManiSkill 3 là fallback qua active-hand compatibility gate;
   Isaac Lab chỉ là optional backend cho persistent RTX/cloud, không chặn v1.
+  Theo ADR-0008, P3.5 gate hiện dùng LEAP+Allegro 2/2; Shadow được ghi
+  `paused_by_ADR-0008`, không được suy thành three-hand coverage.
   P3.5 không chặn việc bắt đầu P4 static/offline sau khi dataset interface đã
   khóa, nhưng vẫn phải đóng hoặc được scope lại trước khi ghi P3 tổng `complete`.
 - `DGN-Open-Tiny` đủ nhỏ cho CI/overfit và tái tạo từ đầu.

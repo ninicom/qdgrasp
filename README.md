@@ -7,6 +7,12 @@ chỉ là client của public API, không chứa bản sao source.
 Python được hỗ trợ từ 3.11 trở lên. Lock tham chiếu dùng Python 3.11 để tái lập;
 đây không phải upper bound của thư viện.
 
+> **Phạm vi robot hiện tại:** workload, dataset, checkpoint và release gate mới
+> chỉ dùng LEAP Hand và Wonik Allegro. Shadow Hand đang tạm dừng vì cấu hình
+> underactuated/contact-control còn phức tạp. Preset và evidence Shadow vẫn được
+> giữ cho compatibility/audit nhưng không thuộc default workload. Xem
+> `docs/decisions/0008-temporary-shadow-hand-pause.md`.
+
 ## Cài development
 
 Cài thông thường theo pattern package của YOLO — dependency dùng compatible
@@ -74,8 +80,10 @@ CUDA không bao giờ fallback về CPU.
 Các model/data/checkpoint của DGN2 không được sử dụng. Source tham chiếu nằm
 ngoài import path và tuân theo manifest/provenance riêng.
 
-RH56E2 không thuộc robot corpus. Corpus Phase 0 chỉ khóa LEAP, Allegro và Shadow
-Hand; asset robot không được đóng gói trong wheel.
+RH56E2 không thuộc robot corpus. Corpus lịch sử Phase 0 từng khóa LEAP, Allegro
+và Shadow Hand; theo ADR-0008, active corpus hiện chỉ gồm LEAP và Allegro, còn
+Shadow ở trạng thái paused/experimental. Asset robot không được đóng gói trong
+wheel.
 
 Robot presets trong wheel dùng URI `asset://…`. Trước khi dựng `RobotSpec` cho
 một preset đó, cung cấp checkout asset đã pin qua
