@@ -120,7 +120,16 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   vì P3.4 contact-rich trajectory và P3.5 RL simulation readiness còn độc lập
   chưa đóng.
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
-  thêm contact-rich trajectory search trực tiếp trong scene: target được phép
+  đạt **14/18 work package** tại `ee6db09` (`REV-20260827-005`), tất cả pass CPU
+  gate `scripts/check_phase3_4.py` với 117 test. Backend decision đã giải quyết
+  trên Tesla T4: MuJoCo Warp 1.16.0 compile được cả ba tay kể cả 4 tendon của
+  Shadow, verdict `supported`. **Phase chưa đóng.** P3.4-16 `blocked`: rollout
+  chưa điều khiển được tay thật, 0 positive trên 9 hand-iteration, chẩn đoán và
+  hướng sửa tại `evidence/phase3_4/p16-dataset-blocked/`. P3.4-05/15 còn thiếu
+  throughput/VRAM/parity trên GPU; P3.4-17 independent review không thể do tác
+  giả tự phát hành; P3.4-10 MPPI deferred theo đúng kế hoạch. Ablation
+  static-vs-dynamic chạy được nhưng verdict `no_measured_difference` và **không**
+  xác nhận giả thuyết P3.4. Phạm vi gốc: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety
   budget, GPU batched generation dùng MJX-Warp/MuJoCo Warp và CUDA evidence chạy
   trên Kaggle như Phase 1. CPU vẫn là correctness/oracle replay backend.
