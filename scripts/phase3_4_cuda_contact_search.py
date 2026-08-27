@@ -293,6 +293,29 @@ def _benchmark_scene(
     # Every finalist must be replayable on the oracle; the GPU never self-admits.
     # Pick from worlds that survived: a rejected world is a measurement, not a
     # crash, and exporting one is correctly refused by the backend.
+    # Diagnose the divergence rather than only counting it. Identical worlds
+    # under identical commands should evolve identically, so a split is either
+    # backend non-determinism or a defect in how this benchmark reads state.
+    state = gpu.observe()
+    finite_rows = np.isfinite(state.qpos).all(axis=1)
+    diverged = [int(i) for i in np.flatnonzero(~finite_rows)]
+    diagnostics = {
+        "qpos_shape": list(state.qpos.shape),
+        "expected_shape": [worlds, int(gpu.model.nq)],
+        "shape_matches": list(state.qpos.shape) == [worlds, int(gpu.model.nq)],
+        "diverged_world_indices": diverged[:20],
+        "diverged_are_contiguous_tail": bool(
+            diverged and diverged == list(range(diverged[0], worlds))
+        ),
+        "first_diverged_index": diverged[0] if diverged else None,
+        "distinct_finite_qpos_rows": int(
+            np.unique(np.round(state.qpos[finite_rows], 9), axis=0).shape[0]
+        )
+        if finite_rows.any()
+        else 0,
+    }
+    result["divergence_diagnostics"] = diagnostics
+
     survivors = [s.world_index for s in gpu_summaries if not s.hard_reject][:3]
     finalists = gpu.export_finalists(survivors) if survivors else ()
     replayable = bool(survivors) and all(
