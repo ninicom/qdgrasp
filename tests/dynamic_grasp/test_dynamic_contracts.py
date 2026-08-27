@@ -15,7 +15,7 @@ from qdgrasp.dataset.dynamic_contracts import (
     TrajectoryStage,
 )
 
-from .conftest import make_event, make_trajectory
+from .conftest import make_certificate, make_event, make_trajectory
 
 
 def test_forbidden_and_damaging_are_the_only_hard_rejects():
@@ -42,12 +42,17 @@ def test_every_contact_class_is_a_stable_string():
         "forbidden",
         "damaging",
     }
+    # v2 adds support_release and retain: a positive has to show the target
+    # leaving its support and still being held afterwards, and the original five
+    # stages had no way to say either.
     assert {s.value for s in TrajectoryStage} == {
         "approach",
         "reposition",
         "enclose",
+        "support_release",
         "lift",
         "perturb",
+        "retain",
     }
 
 
@@ -80,8 +85,10 @@ def test_trajectory_rejects_malformed_pose_shapes():
 def test_trajectory_rejects_contact_event_outside_the_horizon():
     with pytest.raises(ValueError, match="outside"):
         make_trajectory(steps=4, contact_graph=(make_event(time_index=4),))
-    with pytest.raises(ValueError, match="outside"):
-        make_trajectory(steps=4, contact_graph=(make_event(time_index=-1),))
+    # A negative index never gets as far as the trajectory: the event itself
+    # refuses to exist, which is the earlier and better place to stop it.
+    with pytest.raises(ValueError, match="time_index must be non-negative"):
+        make_event(time_index=-1)
 
 
 def test_trajectory_exposes_events_by_class():
@@ -121,7 +128,7 @@ def test_a_passed_outcome_cannot_carry_a_failure_reason():
             passed=True,
             failure_stage="none",
             failure_reason="damaging_contact",
-            cpu_replay_evidence={"confirmed": True},
+            cpu_replay_evidence=make_certificate(),
         )
 
 
@@ -141,8 +148,21 @@ def test_a_passed_outcome_requires_cpu_replay_evidence():
         failure_stage="none",
         failure_reason="none",
         gpu_search_evidence={"backend": "mjwarp_cuda"},
-        cpu_replay_evidence={"confirmed": True, "outcome_class": "pass"},
+        cpu_replay_evidence=make_certificate(),
     )
+
+
+def test_a_truthy_dict_is_not_a_cpu_certificate():
+    # The v1 contract accepted any truthy object, so {"confirmed": True} admitted
+    # a release positive with nothing behind it (blockers B-05, B-11).
+    with pytest.raises(ValueError, match="typed"):
+        DynamicSearchOutcome(
+            trajectory_ref="t:0",
+            passed=True,
+            failure_stage="none",
+            failure_reason="none",
+            cpu_replay_evidence={"confirmed": True, "outcome_class": "pass"},
+        )
 
 
 def test_a_failed_outcome_needs_no_replay_evidence():

@@ -19,6 +19,8 @@ import numpy as np
 
 from qdgrasp.dataset.dynamic_contracts import (
     ContactClass,
+    ContactPairKind,
+    CpuReplayCertificate,
     DynamicGraspTrajectory,
     DynamicSearchOutcome,
 )
@@ -106,8 +108,17 @@ def certify_terminal_grasp(
     *,
     min_enclosure_links: int = 2,
     min_lift_m: float = 0.03,
+    require_stage_progression: bool = False,
+    target_slot: int = 0,
 ) -> CertificateResult:
-    """Check the terminal conditions of plan section 4.3 on a finished rollout."""
+    """Check the terminal conditions of plan section 4.3 on a finished rollout.
+
+    Two things changed in v2. Support release is decided from *target*-support
+    contacts alone: a robot link resting on the table is support-assisted too,
+    and counting it made every lifted object read as still supported (blocker
+    B-12). And the lift is measured on the declared target slot, so lifting the
+    wrong object is a typed negative rather than a pass.
+    """
     if trajectory.num_steps == 0:
         return CertificateResult(False, "terminal", "empty_trajectory", {})
     if trajectory.hard_reject_events:
@@ -125,26 +136,53 @@ def certify_terminal_grasp(
     enclosure = max(0, len(links) - 1)
 
     lift = float(
-        trajectory.object_pose[-1, 0, 2] - trajectory.object_pose[0, 0, 2]
-    ) if trajectory.num_objects else 0.0
+        trajectory.object_pose[-1, target_slot, 2] - trajectory.object_pose[0, target_slot, 2]
+    ) if trajectory.num_objects > target_slot else 0.0
 
-    still_supported = any(
-        e.contact_class is ContactClass.SUPPORT_ASSISTED
-        for e in trajectory.contact_graph
-        if e.time_index == trajectory.num_steps - 1
+    final_events = [
+        e for e in trajectory.contact_graph if e.time_index == trajectory.num_steps - 1
+    ]
+    still_supported = any(e.supports_target for e in final_events)
+    # A pair whose roles were never resolved cannot answer the support question
+    # either way, so it is not silently read as "released".
+    unresolved = any(
+        e.pair_kind is ContactPairKind.UNKNOWN for e in final_events
     )
+
+    # The largest rise of any object that is not the declared target, so a
+    # sequence that lifted a neighbour is not scored as a success.
+    other_lift = 0.0
+    for slot in range(trajectory.num_objects):
+        if slot == target_slot:
+            continue
+        other_lift = max(
+            other_lift,
+            float(trajectory.object_pose[-1, slot, 2] - trajectory.object_pose[0, slot, 2]),
+        )
 
     metrics = {
         "enclosure_links": float(enclosure),
         "lift_m": lift,
         "still_supported": float(still_supported),
+        "max_non_target_lift_m": other_lift,
+        "reached_required_stages": float(trajectory.has_required_terminal_stages),
     }
+    if unresolved:
+        return CertificateResult(False, "terminal", "hard_reject_contact", metrics)
     if enclosure < min_enclosure_links:
         return CertificateResult(False, "terminal", "insufficient_enclosure", metrics)
     if still_supported:
         return CertificateResult(False, "terminal", "support_not_released", metrics)
     if lift < min_lift_m:
+        if other_lift >= min_lift_m:
+            return CertificateResult(False, "terminal", "wrong_object_lift", metrics)
         return CertificateResult(False, "terminal", "insufficient_lift", metrics)
+    if other_lift >= min_lift_m:
+        return CertificateResult(False, "terminal", "wrong_object_lift", metrics)
+    if require_stage_progression and not trajectory.terminal_stages_in_canonical_order:
+        # Enclosing after the lift, or lifting before the support was released,
+        # is not an acquisition -- it is a mislabelled one (C03.7).
+        return CertificateResult(False, "terminal", "no_closure", metrics)
     return CertificateResult(True, "terminal", "none", metrics)
 
 
@@ -152,12 +190,21 @@ def release_decision(
     *,
     replay: CertificateResult,
     terminal: CertificateResult,
+    certificate: CpuReplayCertificate,
+    trajectory_ref: str = "",
     gpu_evidence: dict[str, Any] | None = None,
 ) -> DynamicSearchOutcome:
-    """Fold both certificates into the outcome that may or may not be released."""
+    """Fold both certificates into the outcome that may or may not be released.
+
+    The typed ``certificate`` is what makes a positive releasable: it names the
+    backend, the capsule, the commands and the compiled model, so the replay can
+    be re-run by someone who was not there. v1 folded two booleans into a dict
+    that said ``confirmed: True``, which is an assertion rather than evidence
+    (blockers B-05, B-11).
+    """
     if not replay.certified:
         return DynamicSearchOutcome(
-            trajectory_ref="",
+            trajectory_ref=trajectory_ref,
             passed=False,
             failure_stage="cpu_replay",
             failure_reason=replay.reason,
@@ -165,23 +212,26 @@ def release_decision(
         )
     if not terminal.certified:
         return DynamicSearchOutcome(
-            trajectory_ref="",
+            trajectory_ref=trajectory_ref,
             passed=False,
             failure_stage="terminal",
             failure_reason=terminal.reason,
             gpu_search_evidence=gpu_evidence,
         )
+    if not certificate.is_positive:
+        return DynamicSearchOutcome(
+            trajectory_ref=trajectory_ref,
+            passed=False,
+            failure_stage="cpu_replay",
+            failure_reason="evidence_hash_mismatch",
+            gpu_search_evidence=gpu_evidence,
+        )
     return DynamicSearchOutcome(
-        trajectory_ref="",
+        trajectory_ref=trajectory_ref,
         passed=True,
         failure_stage="none",
         failure_reason="none",
         objective_terms=dict(terminal.metrics),
         gpu_search_evidence=gpu_evidence,
-        cpu_replay_evidence={
-            "backend": "mujoco_cpu",
-            "confirmed": True,
-            "tier": replay.tier,
-            **replay.metrics,
-        },
+        cpu_replay_evidence=certificate,
     )

@@ -1,0 +1,48 @@
+{
+  "blockers": [
+    "B-01",
+    "B-02"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "f44881f65c63e700e4ca4ea7f49784842569174d",
+  "device": "cpu",
+  "gates": [
+    "G01",
+    "G02"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dynamic/safety.py": "8518ef9ad0aab060123bf05b0b25d63d0473cb1734ba13fba588dd63dc7b08ee",
+    "qdgrasp/dynamic/safety_budget.py": "2d23ccf5eaf89a547cc3e15c6100de022134e6c164eb15d8b8e0c153048dca94"
+  },
+  "implementation_refs": [
+    "qdgrasp/dynamic/safety.py",
+    "qdgrasp/dynamic/safety_budget.py"
+  ],
+  "note": "S3 SafetyBudget v2 field coverage, rolling impulse window and contact episodes",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T19:01:00.099158+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S3",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_safety_budget_v2.py",
+      "tests/dynamic_grasp/test_safety.py"
+    ],
+    "summary": "48 passed in 1.14s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

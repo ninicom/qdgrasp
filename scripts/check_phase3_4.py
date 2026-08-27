@@ -134,11 +134,28 @@ def verify_contracts() -> dict[str, Any]:
             "GPU search must never admit a release positive on its own"
         )
 
+    try:
+        DynamicSearchOutcome(
+            trajectory_ref="t:probe",
+            passed=True,
+            failure_stage="none",
+            failure_reason="none",
+            cpu_replay_evidence={"confirmed": True},
+        )
+    except ValueError:
+        pass
+    else:
+        raise ConfigError(
+            "a passed outcome was admitted on an untyped truthy object; a release "
+            "positive needs a typed CPU replay certificate"
+        )
+
     return {
         "contact_classes": sorted(c.value for c in ContactClass),
         "trajectory_stages": sorted(s.value for s in TrajectoryStage),
         "hard_reject_classes": sorted(c.value for c in HARD_REJECT_CLASSES),
         "gpu_only_positive_refused": True,
+        "untyped_cpu_evidence_refused": True,
     }
 
 

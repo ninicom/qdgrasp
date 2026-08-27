@@ -24,6 +24,7 @@ from qdgrasp.dataset.dynamic_contracts import (
     ContactSafetyBudget,
     DynamicGraspTrajectory,
     DynamicSearchOutcome,
+    TrajectoryTimebase,
 )
 from qdgrasp.dynamic.primitives import Primitive, PrimitiveSequenceController
 from qdgrasp.dynamic.safety import ContactObserver, SceneRoles, summarise_safety
@@ -172,7 +173,13 @@ def run_static_seeded_rollout(
     non_target_bodies = sorted({int(model.geom_bodyid[g]) for g in roles.non_target_geoms})
     free_bodies = target_bodies + non_target_bodies
 
-    steps_per_control = max(1, round(control_dt / float(model.opt.timestep)))
+    simulator_dt = float(model.opt.timestep)
+    steps_per_control = max(1, round(control_dt / simulator_dt))
+    # Time comes from the integrator, not from the requested control period: the
+    # two differ whenever control_dt is not an exact multiple of the timestep,
+    # and writing the request as if it were the measurement is blocker B-06.
+    sample_period_s = simulator_dt * steps_per_control
+    timebase = TrajectoryTimebase(simulator_dt=simulator_dt, sample_every=steps_per_control)
 
     times, palm_poses, joints, commands = [], [], [], []
     object_poses, object_velocities, stages = [], [], []
@@ -186,7 +193,13 @@ def run_static_seeded_rollout(
     for index in range(horizon):
         if controller.finished:
             break
-        events = observer.observe(data, time_index=index, dt=control_dt)
+        # A peek, not a reading: the controller needs to see the current
+        # contacts before it decides, but charging this interval here and again
+        # after the step would double every impulse, duration and work the
+        # observer reports (C03.10).
+        events = observer.observe(
+            data, time_index=index, dt=simulator_dt, accumulate=False
+        )
         step = controller.step(events)
         command = _actuator_command(
             model,
@@ -222,7 +235,12 @@ def run_static_seeded_rollout(
             if np.any(travelled > allowed):
                 teleported = True
 
-        post_events = observer.observe(data, time_index=index, dt=control_dt)
+        post_events = observer.observe(
+            data,
+            time_index=index,
+            dt=sample_period_s,
+            simulator_step=(index + 1) * steps_per_control,
+        )
         contact_graph.extend(post_events)
         for event in post_events:
             if event.contact_class is ContactClass.SUPPORT_ASSISTED:
@@ -233,7 +251,7 @@ def run_static_seeded_rollout(
             ):
                 enclosure_links.update({event.body_a, event.body_b})
 
-        times.append(index * control_dt)
+        times.append(index * sample_period_s)
         palm = np.zeros(7)
         palm[3] = 1.0
         palm[:3] = data.xpos[1] if int(model.nbody) > 1 else 0.0
@@ -260,6 +278,7 @@ def run_static_seeded_rollout(
         object_pose=np.asarray(object_poses, dtype=float),
         object_velocity=np.asarray(object_velocities, dtype=float),
         stage=tuple(stages),
+        timebase=timebase,
         contact_graph=tuple(contact_graph),
     )
 

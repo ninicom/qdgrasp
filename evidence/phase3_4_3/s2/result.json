@@ -1,0 +1,47 @@
+{
+  "blockers": [
+    "B-11"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "f44881f65c63e700e4ca4ea7f49784842569174d",
+  "device": "cpu",
+  "gates": [
+    "C01"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dataset/dynamic_contracts.py": "e5415a1b1428fb5deb21033cb06e7ce53cd49dde28eeeca605a1858d7bd73fbd",
+    "qdgrasp/dataset/dynamic_shards.py": "9e84900ca649898776f1e2848d6dada52070b3017a0ef6ef4d662457fa5c7393"
+  },
+  "implementation_refs": [
+    "qdgrasp/dataset/dynamic_contracts.py",
+    "qdgrasp/dataset/dynamic_shards.py"
+  ],
+  "note": "S2 typed contract v2, versioned schemas and invalid corpus",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T17:06:55.947698+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S2",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_contracts_v2.py",
+      "tests/dynamic_grasp/test_dynamic_contracts.py",
+      "tests/dynamic_grasp/test_dynamic_shards.py"
+    ],
+    "summary": "83 passed in 0.14s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

@@ -47,11 +47,23 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-01
     mapped_to: [G01, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety_budget.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_safety_budget_v2.py]
+    evidence_refs: [evidence/phase3_4_3/s3/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-02
     category: blocker
     normative_source: P3.4.3#B-02
     mapped_to: [G02, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_safety_budget_v2.py]
+    evidence_refs: [evidence/phase3_4_3/s3/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-03
     category: blocker
@@ -109,11 +121,23 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-11
     mapped_to: [C01]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/dynamic_contracts.py, qdgrasp/dataset/dynamic_shards.py]
+    test_ids: [tests/contactrich_active/test_contracts_v2.py, tests/dynamic_grasp/test_dynamic_contracts.py]
+    evidence_refs: [evidence/phase3_4_3/s2/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-12
     category: blocker
     normative_source: P3.4.3#B-12
     mapped_to: [C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/self_contact.py, qdgrasp/dynamic/certify.py, qdgrasp/dynamic/primitives.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py]
+    evidence_refs: [evidence/phase3_4_3/s4/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-13
     category: blocker
@@ -129,6 +153,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-15
     mapped_to: [C03, C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/self_contact.py, qdgrasp/dynamic/certify.py, qdgrasp/dynamic/primitives.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py]
+    evidence_refs: [evidence/phase3_4_3/s4/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-16
     category: blocker
@@ -172,11 +202,23 @@ requirements:
     category: direct_gate
     normative_source: P3.4.3#G01
     mapped_to: [C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety_budget.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_safety_budget_v2.py]
+    evidence_refs: [evidence/phase3_4_3/s3/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G02
     category: direct_gate
     normative_source: P3.4.3#G02
     mapped_to: [C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_safety_budget_v2.py]
+    evidence_refs: [evidence/phase3_4_3/s3/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G03
     category: direct_gate
@@ -235,6 +277,12 @@ requirements:
     category: completeness_gate
     normative_source: P3.4.3#C01
     mapped_to: [P3.4-00, P3.4-01, P3.4-13]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/dynamic_contracts.py, qdgrasp/dataset/dynamic_shards.py]
+    test_ids: [tests/contactrich_active/test_contracts_v2.py, tests/dynamic_grasp/test_dynamic_contracts.py]
+    evidence_refs: [evidence/phase3_4_3/s2/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: C02
     category: completeness_gate
@@ -245,6 +293,12 @@ requirements:
     category: completeness_gate
     normative_source: P3.4.3#C03
     mapped_to: [P3.4-06, P3.4-07, P3.4-08, P3.4-12]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/self_contact.py, qdgrasp/dynamic/certify.py, qdgrasp/dynamic/primitives.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py]
+    evidence_refs: [evidence/phase3_4_3/s4/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: C04
     category: completeness_gate
@@ -307,6 +361,12 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-06
     mapped_to: [G01, G02, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/self_contact.py, qdgrasp/dynamic/certify.py, qdgrasp/dynamic/primitives.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py]
+    evidence_refs: [evidence/phase3_4_3/s4/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-07
     category: original_work_package
@@ -369,11 +429,23 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#4.1
     mapped_to: [C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/self_contact.py, qdgrasp/dynamic/certify.py, qdgrasp/dynamic/primitives.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py]
+    evidence_refs: [evidence/phase3_4_3/s4/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-SAFETY-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#4.2
     mapped_to: [G01, G02, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety_budget.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_safety_budget_v2.py]
+    evidence_refs: [evidence/phase3_4_3/s3/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-TERMINAL-01
     category: original_clause
@@ -384,6 +456,12 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#5
     mapped_to: [G03, G04, G06, C01]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/dynamic_contracts.py, qdgrasp/dataset/dynamic_shards.py]
+    test_ids: [tests/contactrich_active/test_contracts_v2.py, tests/dynamic_grasp/test_dynamic_contracts.py]
+    evidence_refs: [evidence/phase3_4_3/s2/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-BACKEND-01
     category: original_clause
@@ -459,6 +537,12 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.2
     mapped_to: [G01, G02, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety_budget.py, qdgrasp/dynamic/safety.py]
+    test_ids: [tests/contactrich_active/test_safety_budget_v2.py]
+    evidence_refs: [evidence/phase3_4_3/s3/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-DOD-03
     category: original_clause

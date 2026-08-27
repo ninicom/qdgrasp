@@ -17,7 +17,7 @@ from qdgrasp.dataset.dynamic_shards import (
     write_trajectory_shard,
 )
 
-from .conftest import make_event, make_trajectory
+from .conftest import make_certificate, make_event, make_trajectory
 
 
 def sample(passed=False):
@@ -34,7 +34,7 @@ def sample(passed=False):
         objective_terms={"lift_m": 0.05},
         peak_safety_metrics={"peak_normal_force_N": 1.5},
         cumulative_safety_metrics={"contact_work_J": 0.01},
-        cpu_replay_evidence={"confirmed": True} if passed else {},
+        cpu_replay_evidence=make_certificate() if passed else None,
     )
     return trajectory, outcome
 
@@ -104,11 +104,12 @@ def test_gpu_evidence_is_preserved_alongside_cpu_replay(tmp_path):
     outcome = DynamicSearchOutcome(
         trajectory_ref=outcome.trajectory_ref, passed=True,
         failure_stage="none", failure_reason="none",
-        cpu_replay_evidence={"confirmed": True, "backend": "mujoco_cpu"},
+        cpu_replay_evidence=make_certificate(),
         gpu_search_evidence={"backend": "mjwarp_cuda", "worlds": 64},
     )
     path = tmp_path / "s.json"
     write_trajectory_shard(path, [(trajectory, outcome)])
     _, loaded = read_trajectory_shard(path)[0]
     assert loaded.gpu_search_evidence["worlds"] == 64
-    assert loaded.cpu_replay_evidence["backend"] == "mujoco_cpu"
+    assert loaded.cpu_replay_evidence.backend_id == "mujoco_cpu"
+    assert loaded.cpu_replay_evidence == outcome.cpu_replay_evidence

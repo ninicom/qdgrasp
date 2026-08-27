@@ -33,6 +33,11 @@ from qdgrasp.config.active_scope import (
 from qdgrasp.dataset.dynamic_contracts import ContactSafetyBudget
 from qdgrasp.dataset.dynamic_shards import write_trajectory_shard
 from qdgrasp.dynamic.safety import SceneRoles
+from qdgrasp.dynamic.self_contact import (
+    SelfContactPolicy,
+    build_self_contact_policy,
+    resolve_geom_allowlist,
+)
 from qdgrasp.dynamic.wrapped_rollout import run_wrapped_contact_rollout
 from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
 from qdgrasp.scenes.release_recipes import build_release_grasp_recipe
@@ -85,7 +90,13 @@ NEGATIVE_CONTROLS: tuple[tuple[str, str, dict[str, Any]], ...] = (
 )
 
 
-def _roles_from_model(model: mujoco.MjModel) -> SceneRoles:
+def _roles_from_model(
+    model: mujoco.MjModel,
+    *,
+    wrist_link: str,
+    palm_link: str,
+    policy: SelfContactPolicy,
+) -> SceneRoles:
     target_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "target_object")
     floor = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "floor")
     target, support, robot = set(), set(), set()
@@ -96,12 +107,38 @@ def _roles_from_model(model: mujoco.MjModel) -> SceneRoles:
             support.add(geom)
         else:
             robot.add(geom)
-    # A dexterous hand touches itself constantly; self-contact is allowed by
-    # identity and still judged by the budget, which is what caught Shadow.
-    allow = frozenset((min(a, b), max(a, b)) for a in robot for b in robot)
+    # A dexterous hand touches itself constantly, so self-contact is allowed --
+    # but by a versioned link-pair policy derived from the robot profile, not by
+    # the Cartesian product of every geom with every other one. A finger folding
+    # onto a link three joints away has gone through itself (blocker B-12).
+    allow = resolve_geom_allowlist(model, policy, frozenset(robot))
+    wrist_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, wrist_link)
+    palm_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, palm_link)
+    if wrist_body < 0:
+        raise ValueError(
+            f"wrist body {wrist_link!r} is not in the compiled model; the wrist "
+            "force and torque budgets cannot be measured without it"
+        )
     return SceneRoles(
-        frozenset(target), frozenset(support), frozenset(), frozenset(robot), allow
+        frozenset(target),
+        frozenset(support),
+        frozenset(),
+        frozenset(robot),
+        allow,
+        wrist_body=int(wrist_body),
+        palm_body=int(palm_body) if palm_body >= 0 else None,
     )
+
+
+def _wrist_link(spec: RobotSpec) -> str:
+    """Where the wrist budget is resolved for this hand.
+
+    Neither active hand declares a separate wrist link: both are welded to the
+    mocap through the palm, so the external wrench at that body *is* the load
+    the wrist carries. Which body it was is recorded in the evidence, because a
+    wrist number nobody can locate is not a measurement.
+    """
+    return spec.wrist_link or spec.base_link or spec.palm_link
 
 
 def _generate_one(hand: str, variant: str, overrides: dict[str, Any]):
@@ -115,9 +152,16 @@ def _generate_one(hand: str, variant: str, overrides: dict[str, Any]):
         hand_xml_path=resolve_robot_asset(spec.config.source_asset),
         collision_geoms=recipe.target_geoms,
         fingertip_body_names=spec.fingertip_links,
-        roles_from_model=_roles_from_model,
+        roles_from_model=lambda model: _roles_from_model(
+            model,
+            wrist_link=_wrist_link(spec),
+            palm_link=spec.palm_link,
+            policy=build_self_contact_policy(spec, robot_profile=hand),
+        ),
         budget=BUDGETS[hand],
         rollout_kwargs=kwargs,
+        palm_body_name=spec.palm_link,
+        robot_profile=hand,
         trajectory_ref=f"{hand}/{variant}",
     )
 

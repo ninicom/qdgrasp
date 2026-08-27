@@ -1,0 +1,50 @@
+{
+  "blockers": [
+    "B-12",
+    "B-15"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "f44881f65c63e700e4ca4ea7f49784842569174d",
+  "device": "cpu",
+  "gates": [
+    "C03"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dynamic/certify.py": "ed552cc6f4e42c2a4629c943263b737a5af5f21ce8a8a6ed26067d03fea7124c",
+    "qdgrasp/dynamic/primitives.py": "b90ca171ab1748f76819caf2f926e6e24aa60579c706fd0c89a67a63407dd2b7",
+    "qdgrasp/dynamic/self_contact.py": "7b181130b0383708d516a9b0da11decafddd951a095ca6bc89e2c672cfb06cbf"
+  },
+  "implementation_refs": [
+    "qdgrasp/dynamic/self_contact.py",
+    "qdgrasp/dynamic/certify.py",
+    "qdgrasp/dynamic/primitives.py"
+  ],
+  "note": "S4 contact pair taxonomy, self-contact policy, terminal and timeout semantics",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T19:01:05.529667+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S4",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_taxonomy_and_terminal.py",
+      "tests/dynamic_grasp/test_primitives.py",
+      "tests/dynamic_grasp/test_certify.py"
+    ],
+    "summary": "77 passed in 0.51s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

@@ -42,10 +42,10 @@ _STAGE_OF: dict[PrimitiveKind, TrajectoryStage] = {
     PrimitiveKind.SLIDE: TrajectoryStage.REPOSITION,
     PrimitiveKind.ROLL: TrajectoryStage.REPOSITION,
     PrimitiveKind.PIVOT_ON_SUPPORT: TrajectoryStage.REPOSITION,
-    PrimitiveKind.HOOK: TrajectoryStage.APPROACH,
+    PrimitiveKind.HOOK: TrajectoryStage.REPOSITION,
     PrimitiveKind.CAGE: TrajectoryStage.ENCLOSE,
     PrimitiveKind.SQUEEZE: TrajectoryStage.ENCLOSE,
-    PrimitiveKind.SUPPORT_RELEASE: TrajectoryStage.LIFT,
+    PrimitiveKind.SUPPORT_RELEASE: TrajectoryStage.SUPPORT_RELEASE,
     PrimitiveKind.LIFT: TrajectoryStage.LIFT,
     PrimitiveKind.PERTURB: TrajectoryStage.PERTURB,
 }
@@ -135,9 +135,11 @@ def condition_met(
     if condition is TransitionCondition.TARGET_CONTACT_LOST:
         return not _target_contacts(events)
     if condition is TransitionCondition.SUPPORT_RELEASED:
-        return not any(
-            e.contact_class is ContactClass.SUPPORT_ASSISTED for e in events
-        )
+        # Only the *target* resting on something answers this. A robot link on
+        # the table is support-assisted too, and counting it kept every grasp
+        # "still supported" no matter how high the object had been lifted
+        # (blocker B-12).
+        return not any(e.supports_target for e in events)
     if condition is TransitionCondition.ENCLOSURE_REACHED:
         links = {e.body_a for e in _target_contacts(events)} | {
             e.body_b for e in _target_contacts(events)
@@ -158,6 +160,12 @@ class PrimitiveStep:
     grip: float
     advanced: bool
     finished: bool
+    #: True when the primitive yielded because its clock ran out rather than
+    #: because its condition was observed. The two are not the same outcome and
+    #: must not be recorded as one (blocker B-15).
+    timed_out: bool = False
+    #: The condition that never arrived, as a typed failure reason.
+    timeout_reason: str = ""
 
 
 class PrimitiveSequenceController:
@@ -177,6 +185,7 @@ class PrimitiveSequenceController:
         self._dt = float(control_dt)
         self._index = 0
         self._elapsed = 0.0
+        self._timeouts: list[str] = []
 
     @property
     def sequence(self) -> tuple[Primitive, ...]:
@@ -193,6 +202,7 @@ class PrimitiveSequenceController:
     def reset(self) -> None:
         self._index = 0
         self._elapsed = 0.0
+        self._timeouts = []
 
     def step(self, events: Sequence[ContactEvent]) -> PrimitiveStep:
         """Command one timestep and decide whether to advance."""
@@ -209,8 +219,18 @@ class PrimitiveSequenceController:
             max_duration_s=primitive.max_duration_s,
             required_contacts=primitive.required_contacts,
         )
-        timed_out = self._elapsed >= primitive.max_duration_s
-        advance = satisfied or timed_out
+        expired = self._elapsed >= primitive.max_duration_s
+        # A timeout is only a timeout when the condition is something other than
+        # the clock: a DURATION_ELAPSED primitive that runs its course did what
+        # it was asked.
+        timed_out = bool(
+            expired
+            and not satisfied
+            and primitive.until is not TransitionCondition.DURATION_ELAPSED
+        )
+        advance = satisfied or expired
+        if timed_out:
+            self._timeouts.append(primitive.until.value)
 
         step = PrimitiveStep(
             index=self._index,
@@ -220,11 +240,27 @@ class PrimitiveSequenceController:
             grip=primitive.grip,
             advanced=advance,
             finished=advance and self._index + 1 >= len(self._sequence),
+            timed_out=timed_out,
+            timeout_reason=f"transition_timeout:{primitive.until.value}" if timed_out else "",
         )
         if advance:
             self._index += 1
             self._elapsed = 0.0
         return step
+
+    @property
+    def timeouts(self) -> tuple[str, ...]:
+        """Conditions that never arrived, in the order they expired.
+
+        A sequence that finished only because every clock ran out has not shown
+        the acquisition it claims; the caller turns this into a typed negative
+        rather than letting the sequence end quietly (blocker B-15).
+        """
+        return tuple(self._timeouts)
+
+    @property
+    def first_timeout_reason(self) -> str:
+        return f"transition_timeout:{self._timeouts[0]}" if self._timeouts else ""
 
 
 def table_pivot_sequence(approach_axis: np.ndarray) -> tuple[Primitive, ...]:

@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 import numpy as np
 import pytest
 
-from qdgrasp.dataset.dynamic_contracts import ContactClass, DynamicSearchOutcome
+from qdgrasp.dataset.dynamic_contracts import (
+    ContactClass,
+    ContactPairKind,
+    DynamicSearchOutcome,
+)
 from qdgrasp.dynamic.cem import ParameterSpace
 from qdgrasp.dynamic.certify import (
     ParityTolerance,
@@ -16,7 +22,7 @@ from qdgrasp.dynamic.certify import (
 from qdgrasp.dynamic.primitives import Primitive, PrimitiveKind
 from qdgrasp.dynamic.refine import RefineConfig, refine_local
 
-from .conftest import make_event, make_trajectory
+from .conftest import make_certificate, make_event, make_trajectory
 
 
 def template() -> tuple[Primitive, ...]:
@@ -36,7 +42,7 @@ def passing(lift=0.05, **extra) -> DynamicSearchOutcome:
         objective_terms={"lift_m": lift, **extra},
         peak_safety_metrics={"min_budget_margin": 0.5, "peak_normal_force_N": 1.0},
         cumulative_safety_metrics={"total_slip_m": 0.0},
-        cpu_replay_evidence={"confirmed": True},
+        cpu_replay_evidence=make_certificate(),
     )
 
 
@@ -160,17 +166,16 @@ def lifted_trajectory(links=2, lift=0.05, still_supported=False):
     ]
     if still_supported:
         events.append(
-            make_event(time_index=3, contact_class=ContactClass.SUPPORT_ASSISTED)
+            make_event(
+                time_index=3,
+                contact_class=ContactClass.SUPPORT_ASSISTED,
+                pair_kind=ContactPairKind.TARGET_SUPPORT,
+            )
         )
     traj = make_trajectory(steps=4, contact_graph=tuple(events))
     pose = traj.object_pose.copy()
     pose[-1, 0, 2] = pose[0, 0, 2] + lift
-    return type(traj)(
-        time=traj.time, palm_pose=traj.palm_pose, joint_state=traj.joint_state,
-        actuator_command=traj.actuator_command, object_pose=pose,
-        object_velocity=traj.object_velocity, stage=traj.stage,
-        contact_graph=traj.contact_graph,
-    )
+    return dataclasses.replace(traj, object_pose=pose)
 
 
 def test_a_lifted_enclosed_grasp_certifies():
@@ -213,12 +218,17 @@ def test_release_requires_both_certificates():
         search_trajectory=make_trajectory(), replay_trajectory=make_trajectory(),
     )
     good_terminal = certify_terminal_grasp(lifted_trajectory())
-    released = release_decision(replay=good_replay, terminal=good_terminal)
+    released = release_decision(
+        replay=good_replay, terminal=good_terminal, certificate=make_certificate()
+    )
     assert released.passed
-    assert released.cpu_replay_evidence["confirmed"] is True
+    assert released.cpu_replay_evidence.backend_id == "mujoco_cpu"
+    assert released.cpu_replay_evidence.is_positive
 
     bad_terminal = certify_terminal_grasp(lifted_trajectory(links=1))
-    refused = release_decision(replay=good_replay, terminal=bad_terminal)
+    refused = release_decision(
+        replay=good_replay, terminal=bad_terminal, certificate=make_certificate()
+    )
     assert not refused.passed
     assert refused.failure_reason == "insufficient_enclosure"
 
@@ -231,8 +241,32 @@ def test_gpu_evidence_alone_never_releases_a_positive():
     refused = release_decision(
         replay=diverged,
         terminal=certify_terminal_grasp(lifted_trajectory()),
+        certificate=make_certificate(),
         gpu_evidence={"backend": "mjwarp_cuda", "score": 99.0},
     )
     assert not refused.passed
     assert refused.failure_reason == "backend_divergence"
     assert refused.gpu_search_evidence["backend"] == "mjwarp_cuda"
+
+
+def test_a_certificate_that_did_not_certify_cannot_release():
+    good_replay = certify_replay(
+        search_outcome=passing(), replay_outcome=passing(),
+        search_trajectory=make_trajectory(), replay_trajectory=make_trajectory(),
+    )
+    refused = release_decision(
+        replay=good_replay,
+        terminal=certify_terminal_grasp(lifted_trajectory()),
+        certificate=make_certificate(safety_certified=False),
+    )
+    assert not refused.passed
+
+
+def test_a_cpu_certificate_cannot_name_a_cuda_backend():
+    with pytest.raises(ValueError, match="cannot name a CUDA backend"):
+        make_certificate(backend_id="mjwarp_cuda")
+
+
+def test_certificate_hashes_have_to_be_digests():
+    with pytest.raises(ValueError, match="sha256 hex digest"):
+        make_certificate(capsule_sha256="not-a-hash")

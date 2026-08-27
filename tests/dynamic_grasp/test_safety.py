@@ -34,6 +34,10 @@ def gid(model: mujoco.MjModel, name: str) -> int:
     return mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, name)
 
 
+def bid(model: mujoco.MjModel, name: str) -> int:
+    return mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
+
+
 @pytest.fixture
 def roles(model: mujoco.MjModel) -> SceneRoles:
     return SceneRoles(
@@ -41,6 +45,11 @@ def roles(model: mujoco.MjModel) -> SceneRoles:
         support_geoms=frozenset({gid(model, "table")}),
         non_target_geoms=frozenset(),
         robot_geoms=frozenset({gid(model, "pusher_geom")}),
+        # The micro scene has no separate wrist link, so the wrist budget
+        # resolves at the body the stage is driven through. Naming it is what
+        # makes the wrist limits measurable at all.
+        wrist_body=bid(model, "pusher"),
+        palm_body=bid(model, "pusher"),
     )
 
 

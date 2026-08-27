@@ -7,7 +7,7 @@ import dataclasses
 import numpy as np
 import pytest
 
-from qdgrasp.dataset.dynamic_contracts import ContactClass, TrajectoryStage
+from qdgrasp.dataset.dynamic_contracts import ContactClass, ContactPairKind, TrajectoryStage
 from qdgrasp.dynamic.primitives import (
     Primitive,
     PrimitiveKind,
@@ -99,11 +99,30 @@ def test_a_damaging_target_contact_still_counts_as_contact():
     )
 
 
-def test_support_released_requires_no_support_contact():
+def test_support_released_requires_no_target_support_contact():
     common = {"elapsed_s": 0.0, "max_duration_s": 1.0, "required_contacts": 2}
-    on_table = (make_event(contact_class=ContactClass.SUPPORT_ASSISTED),)
+    on_table = (
+        make_event(
+            contact_class=ContactClass.SUPPORT_ASSISTED,
+            pair_kind=ContactPairKind.TARGET_SUPPORT,
+        ),
+    )
     assert not condition_met(TransitionCondition.SUPPORT_RELEASED, events=on_table, **common)
     assert condition_met(TransitionCondition.SUPPORT_RELEASED, events=(), **common)
+
+
+def test_a_hand_resting_on_the_table_does_not_keep_the_target_supported():
+    # Both are support_assisted, but only one of them is the target resting on
+    # something. Counting the robot-support contact kept every lifted object
+    # classified as still supported (blocker B-12).
+    common = {"elapsed_s": 0.0, "max_duration_s": 1.0, "required_contacts": 2}
+    hand_on_table = (
+        make_event(
+            contact_class=ContactClass.SUPPORT_ASSISTED,
+            pair_kind=ContactPairKind.ROBOT_SUPPORT,
+        ),
+    )
+    assert condition_met(TransitionCondition.SUPPORT_RELEASED, events=hand_on_table, **common)
 
 
 def test_enclosure_counts_distinct_robot_links_not_contacts():

@@ -20,6 +20,7 @@ diagnosis is in `evidence/phase3_4/p16-dataset-blocked/`.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
@@ -30,9 +31,12 @@ from qdgrasp.dataset.dynamic_contracts import (
     ContactClass,
     ContactEvent,
     ContactSafetyBudget,
+    CpuReplayCertificate,
     DynamicGraspTrajectory,
     DynamicSearchOutcome,
     TrajectoryStage,
+    TrajectoryTimebase,
+    sequence_hash,
 )
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
 from qdgrasp.dynamic.safety import ContactObserver, SceneRoles, summarise_safety
@@ -45,6 +49,7 @@ _STAGE_MAP: dict[str, TrajectoryStage] = {
     "pregrasp": TrajectoryStage.APPROACH,
     "squeeze": TrajectoryStage.ENCLOSE,
     "close": TrajectoryStage.ENCLOSE,
+    "support_release": TrajectoryStage.SUPPORT_RELEASE,
     "lift": TrajectoryStage.LIFT,
     "perturbation": TrajectoryStage.PERTURB,
     "perturb": TrajectoryStage.PERTURB,
@@ -65,8 +70,9 @@ class _Recorder:
     """Accumulates a trajectory while the validated rollout runs."""
 
     observer: ContactObserver
-    control_dt: float
+    simulator_dt: float
     free_bodies: Sequence[int]
+    palm_body_id: int
     sample_every: int = 5
 
     def __post_init__(self) -> None:
@@ -85,19 +91,29 @@ class _Recorder:
         self.calls += 1
         # Contacts are read every step so impulse and work accumulate honestly;
         # state is sampled sparsely so the record does not grow with the
-        # integrator timestep.
+        # integrator timestep. The observer is advanced by the *simulator*
+        # timestep, not by a requested control period: those are different
+        # clocks, and feeding it the wrong one inflates every impulse and every
+        # contact duration it reports (blocker B-06).
         self.events.extend(
-            self.observer.observe(data, time_index=self.index, dt=self.control_dt)
+            self.observer.observe(
+                data,
+                time_index=self.index,
+                dt=self.simulator_dt,
+                simulator_step=self.calls,
+            )
         )
         if self.calls % self.sample_every:
             return
 
-        self.times.append(self.index * self.control_dt)
+        # Time is read from the integrator rather than reconstructed from an
+        # index, so the recorded duration is the duration that was simulated.
+        self.times.append(float(data.time))
         self.joints.append(np.array(data.qpos))
         self.commands.append(np.array(data.ctrl))
         pose = np.zeros(7)
-        pose[3] = 1.0
-        pose[:3] = data.xpos[1] if int(model.nbody) > 1 else 0.0
+        pose[:3] = data.xpos[self.palm_body_id]
+        pose[3:] = data.xquat[self.palm_body_id]
         self.palm.append(pose)
 
         count = max(1, len(self.free_bodies))
@@ -123,15 +139,23 @@ def run_wrapped_contact_rollout(
     roles_from_model: Callable[[mujoco.MjModel], SceneRoles],
     budget: ContactSafetyBudget,
     rollout_kwargs: Mapping[str, object],
-    control_dt: float = 0.002,
+    palm_body_name: str,
+    sample_every: int = 5,
+    robot_profile: str = "",
     trajectory_ref: str = "",
 ) -> tuple[DynamicGraspTrajectory, DynamicSearchOutcome, object]:
     """Run the validated rollout and observe it as a Phase 3.4 trajectory.
 
     ``roles_from_model`` receives the compiled model and returns the
     :class:`SceneRoles` for it, because geom ids only exist after compilation.
+
+    ``palm_body_name`` has to name the real palm body. v1 recorded body index 1
+    and an identity quaternion, so every trajectory claimed the hand never
+    rotated and that its palm sat wherever the first body happened to be
+    (blocker B-06); there is no sensible default for this, so it is required.
     """
     recorder: dict[str, _Recorder] = {}
+    timebase: dict[str, TrajectoryTimebase] = {}
 
     def install(stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         if "r" not in recorder:
@@ -143,10 +167,26 @@ def run_wrapped_contact_rollout(
                 and int(model.jnt_bodyid[j])
                 in {int(model.geom_bodyid[g]) for g in roles.target_geoms}
             ]
+            palm_body_id = mujoco.mj_name2id(
+                model, int(mujoco.mjtObj.mjOBJ_BODY), palm_body_name
+            )
+            if palm_body_id < 0:
+                raise ValueError(
+                    f"palm body {palm_body_name!r} does not exist in the compiled model; "
+                    "a trajectory cannot record a palm pose it cannot find"
+                )
+            simulator_dt = float(model.opt.timestep)
+            timebase["t"] = TrajectoryTimebase(
+                simulator_dt=simulator_dt,
+                sample_every=int(sample_every),
+                start_time_s=float(data.time) + simulator_dt * int(sample_every),
+            )
             recorder["r"] = _Recorder(
                 observer=ContactObserver(model, roles, budget),
-                control_dt=control_dt,
+                simulator_dt=simulator_dt,
                 free_bodies=free_bodies,
+                palm_body_id=int(palm_body_id),
+                sample_every=int(sample_every),
             )
         recorder["r"](stage, model, data)
 
@@ -159,6 +199,7 @@ def run_wrapped_contact_rollout(
     )
 
     record = recorder.get("r")
+    base = timebase.get("t") or TrajectoryTimebase(simulator_dt=1e-3, sample_every=int(sample_every))
     if record is None or not record.times:
         empty = DynamicGraspTrajectory(
             time=np.zeros(0),
@@ -168,6 +209,9 @@ def run_wrapped_contact_rollout(
             object_pose=np.zeros((0, 1, 7)),
             object_velocity=np.zeros((0, 1, 6)),
             stage=(),
+            timebase=base,
+            robot_profile=robot_profile,
+            palm_body=palm_body_name,
         )
         return (
             empty,
@@ -189,10 +233,17 @@ def run_wrapped_contact_rollout(
         object_pose=np.asarray(record.poses),
         object_velocity=np.asarray(record.velocities),
         stage=tuple(record.stages),
+        timebase=base,
         contact_graph=tuple(
+            # The sample association is clamped to the last recorded sample,
+            # but ``simulator_step`` keeps the exact integrator step the reading
+            # came from, so a tail contact is no longer indistinguishable from
+            # one that happened at the final sample (blocker B-06).
             dataclasses.replace(e, time_index=min(e.time_index, steps - 1))
             for e in record.events
         ),
+        robot_profile=robot_profile,
+        palm_body=palm_body_name,
     )
 
     peak, cumulative = summarise_safety(trajectory.contact_graph)
@@ -206,7 +257,11 @@ def run_wrapped_contact_rollout(
         )
     elif not validation.passed:
         # The validated protocol has the final say on whether this is a grasp.
-        stage, reason = (validation.failure_stage or "dynamic", "validated_rollout_failed")
+        # Its own stage name is carried in the reason rather than in the stage
+        # field, because ``failure_stage`` is a closed vocabulary the ledger
+        # groups on and the validator's stage names are its own (C01.4).
+        stage = "dynamic"
+        reason = f"validated_rollout:{validation.failure_stage or 'unknown'}"
     else:
         stage, reason = ("none", "none")
 
@@ -225,14 +280,34 @@ def run_wrapped_contact_rollout(
         peak_safety_metrics=peak,
         cumulative_safety_metrics=cumulative,
         cpu_replay_evidence=(
-            {
-                "backend": "mujoco_cpu",
-                "confirmed": True,
-                "protocol": "mocap-weld-v3",
-                "validated_rollout_passed": True,
-            }
+            CpuReplayCertificate(
+                backend_id="mujoco_cpu",
+                capsule_sha256=sequence_hash(
+                    np.concatenate(
+                        [
+                            np.asarray(trajectory.joint_state[0]).ravel(),
+                            np.asarray(trajectory.actuator_command).ravel(),
+                        ]
+                    )
+                ),
+                command_sha256=sequence_hash(trajectory.actuator_command),
+                model_sha256=_asset_hash(hand_xml_path),
+                timestep_s=base.simulator_dt,
+                terminal_certified=True,
+                safety_certified=not hard,
+                outcome_class="pass",
+            )
             if passed
-            else {}
+            else None
         ),
     )
     return trajectory, outcome, validation
+
+
+def _asset_hash(path: str | Path) -> str:
+    """sha256 of the model file the rollout was compiled from.
+
+    A replay that reproduces the numbers against a different model has not
+    reproduced anything, so the model identity travels with the certificate.
+    """
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()

@@ -30,6 +30,10 @@ def gid(model, name: str) -> int:
     return mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, name)
 
 
+def bid(model, name: str) -> int:
+    return mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
+
+
 @pytest.fixture
 def roles(model) -> SceneRoles:
     return SceneRoles(
@@ -37,6 +41,8 @@ def roles(model) -> SceneRoles:
         support_geoms=frozenset({gid(model, "table")}),
         non_target_geoms=frozenset(),
         robot_geoms=frozenset({gid(model, "pusher_geom")}),
+        wrist_body=bid(model, "pusher"),
+        palm_body=bid(model, "pusher"),
     )
 
 
@@ -132,6 +138,8 @@ def test_an_unknown_geom_role_is_a_forbidden_contact(model, budget, seed):
         support_geoms=frozenset(),
         non_target_geoms=frozenset(),
         robot_geoms=frozenset({gid(model, "pusher_geom")}),
+        wrist_body=bid(model, "pusher"),
+        palm_body=bid(model, "pusher"),
     )
     _, outcome = run_static_seeded_rollout(
         model, roles=blind, budget=budget, seed=seed,

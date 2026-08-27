@@ -12,7 +12,7 @@ from qdgrasp.dynamic.cem import CemConfig, ParameterSpace, search_cem
 from qdgrasp.dynamic.objective import ObjectiveWeights, ReasonLedger, score_outcome
 from qdgrasp.dynamic.primitives import Primitive, PrimitiveKind
 
-from .conftest import make_trajectory
+from .conftest import make_certificate, make_trajectory
 
 
 def template() -> tuple[Primitive, ...]:
@@ -42,7 +42,7 @@ def outcome(passed=False, reason="insufficient_lift", **terms) -> DynamicSearchO
         objective_terms=terms,
         peak_safety_metrics={"min_budget_margin": 0.5, "peak_normal_force_N": 1.0},
         cumulative_safety_metrics={"total_slip_m": 0.0},
-        cpu_replay_evidence={"confirmed": True} if passed else {},
+        cpu_replay_evidence=make_certificate() if passed else {},
     )
 
 

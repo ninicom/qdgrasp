@@ -20,14 +20,25 @@ from typing import Any
 import numpy as np
 
 from qdgrasp.dataset.dynamic_contracts import (
+    DYNAMIC_TRAJECTORY_SCHEMA_V1,
+    DYNAMIC_TRAJECTORY_SCHEMA_V2,
     ContactClass,
     ContactEvent,
+    ContractViolation,
     DynamicGraspTrajectory,
     DynamicSearchOutcome,
     TrajectoryStage,
+    TrajectoryTimebase,
+    certificate_from_dict,
+    outcome_evidence_dict,
 )
 
-SCHEMA = "qdgrasp/dynamic-trajectory/v1"
+#: Payloads are written at v2 and only v2 backs a release. v1 stays readable so
+#: old evidence can still be inspected, but reading it never promotes it to
+#: release-ready (C01.5).
+SCHEMA = DYNAMIC_TRAJECTORY_SCHEMA_V2
+LEGACY_SCHEMA = DYNAMIC_TRAJECTORY_SCHEMA_V1
+READABLE_SCHEMAS = (SCHEMA, LEGACY_SCHEMA)
 
 
 def _event_to_dict(event: ContactEvent) -> dict[str, Any]:
@@ -51,6 +62,8 @@ def _event_to_dict(event: ContactEvent) -> dict[str, Any]:
         "budget_margin": float(event.budget_margin),
         "duration_s": float(event.duration_s),
         "link_class": event.link_class,
+        "simulator_step": int(event.simulator_step),
+        "episode_index": int(event.episode_index),
     }
 
 
@@ -75,6 +88,8 @@ def _event_from_dict(payload: dict[str, Any]) -> ContactEvent:
         budget_margin=float(payload["budget_margin"]),
         duration_s=float(payload["duration_s"]),
         link_class=payload["link_class"],
+        simulator_step=int(payload.get("simulator_step", -1)),
+        episode_index=int(payload.get("episode_index", 0)),
     )
 
 
@@ -96,6 +111,9 @@ def trajectory_to_record(
             "object_pose": trajectory.object_pose.tolist(),
             "object_velocity": trajectory.object_velocity.tolist(),
             "stage": [s.value for s in trajectory.stage],
+            "timebase": trajectory.timebase.as_dict(),
+            "robot_profile": trajectory.robot_profile,
+            "palm_body": trajectory.palm_body,
             "contact_graph": [_event_to_dict(e) for e in trajectory.contact_graph],
             "terminal_grasp": trajectory.terminal_grasp,
         },
@@ -111,7 +129,7 @@ def trajectory_to_record(
             "cumulative_safety_metrics": {
                 k: float(v) for k, v in outcome.cumulative_safety_metrics.items()
             },
-            "cpu_replay_evidence": outcome.cpu_replay_evidence,
+            "cpu_replay_evidence": outcome_evidence_dict(outcome),
             "gpu_search_evidence": outcome.gpu_search_evidence,
         },
     }
@@ -121,9 +139,25 @@ def record_to_trajectory(
     record: dict[str, Any],
 ) -> tuple[DynamicGraspTrajectory, DynamicSearchOutcome]:
     """Rebuild a sample from its record."""
-    if record.get("schema") != SCHEMA:
-        raise ValueError(f"unsupported trajectory schema: {record.get('schema')!r}")
+    schema = record.get("schema")
+    if schema not in READABLE_SCHEMAS:
+        raise ValueError(f"unsupported trajectory schema: {schema!r}")
     payload = record["trajectory"]
+    raw_timebase = payload.get("timebase")
+    if raw_timebase is None:
+        if schema != LEGACY_SCHEMA:
+            raise ContractViolation("a v2 record must declare its timebase")
+        # A v1 record has no declared timebase, so one is reconstructed from the
+        # samples purely to make the payload inspectable. It is stamped with the
+        # legacy schema, which the release path refuses.
+        times = [float(v) for v in payload["time"]]
+        period = (times[1] - times[0]) if len(times) > 1 else 1.0
+        raw_timebase = {"simulator_dt": period or 1.0, "sample_every": 1, "start_time_s": times[0] if times else 0.0}
+    timebase = TrajectoryTimebase(
+        simulator_dt=float(raw_timebase["simulator_dt"]),
+        sample_every=int(raw_timebase["sample_every"]),
+        start_time_s=float(raw_timebase.get("start_time_s", 0.0)),
+    )
     trajectory = DynamicGraspTrajectory(
         time=np.asarray(payload["time"], dtype=float),
         palm_pose=np.asarray(payload["palm_pose"], dtype=float),
@@ -132,8 +166,12 @@ def record_to_trajectory(
         object_pose=np.asarray(payload["object_pose"], dtype=float),
         object_velocity=np.asarray(payload["object_velocity"], dtype=float),
         stage=tuple(TrajectoryStage(s) for s in payload["stage"]),
+        timebase=timebase,
         contact_graph=tuple(_event_from_dict(e) for e in payload["contact_graph"]),
         terminal_grasp=payload.get("terminal_grasp"),
+        schema=schema,
+        robot_profile=payload.get("robot_profile", ""),
+        palm_body=payload.get("palm_body", ""),
     )
     raw = record["outcome"]
     outcome = DynamicSearchOutcome(
@@ -144,7 +182,7 @@ def record_to_trajectory(
         objective_terms=dict(raw["objective_terms"]),
         peak_safety_metrics=dict(raw["peak_safety_metrics"]),
         cumulative_safety_metrics=dict(raw["cumulative_safety_metrics"]),
-        cpu_replay_evidence=dict(raw["cpu_replay_evidence"]),
+        cpu_replay_evidence=certificate_from_dict(raw.get("cpu_replay_evidence")),
         gpu_search_evidence=raw.get("gpu_search_evidence"),
     )
     return trajectory, outcome
@@ -169,10 +207,26 @@ def write_trajectory_shard(
 def read_trajectory_shard(
     path: Path,
 ) -> tuple[tuple[DynamicGraspTrajectory, DynamicSearchOutcome], ...]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("schema") != SCHEMA:
+    text = path.read_text(encoding="utf-8")
+    payload = json.loads(text)
+    if payload.get("schema") not in READABLE_SCHEMAS:
         raise ValueError(f"unsupported shard schema: {payload.get('schema')!r}")
-    return tuple(record_to_trajectory(r) for r in payload["records"])
+    records = payload["records"]
+    # The header count is checked on read as well as on write: a shard whose
+    # header disagrees with its records is how a manifest ends up counting
+    # samples that are not there (C01.6).
+    declared = int(payload.get("count", -1))
+    if declared != len(records):
+        raise ContractViolation(
+            f"shard header declares {declared} records but carries {len(records)}"
+        )
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    samples = tuple(record_to_trajectory(r) for r in records)
+    if payload.get("sha256") not in (None, digest):
+        raise ContractViolation(
+            f"shard content hash {digest} does not match the declared {payload['sha256']}"
+        )
+    return samples
 
 
 def storage_cost(trajectory: DynamicGraspTrajectory) -> dict[str, int]:

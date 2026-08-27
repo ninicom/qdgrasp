@@ -7,8 +7,10 @@ from qdgrasp.dataset.dynamic_contracts import (
     ContactClass,
     ContactEvent,
     ContactSafetyBudget,
+    CpuReplayCertificate,
     DynamicGraspTrajectory,
     TrajectoryStage,
+    TrajectoryTimebase,
 )
 
 
@@ -61,24 +63,51 @@ def make_event(
     return ContactEvent(**defaults)
 
 
+SAMPLE_PERIOD_S = 0.01
+
+
+def make_timebase(sample_period_s: float = SAMPLE_PERIOD_S) -> TrajectoryTimebase:
+    return TrajectoryTimebase(simulator_dt=sample_period_s, sample_every=1)
+
+
 def make_trajectory(
     steps: int = 4,
     joints: int = 16,
     actuators: int = 16,
     objects: int = 2,
     contact_graph: tuple[ContactEvent, ...] = (),
+    stage: tuple[TrajectoryStage, ...] | None = None,
 ) -> DynamicGraspTrajectory:
     palm = np.zeros((steps, 7))
     palm[:, 3] = 1.0
     pose = np.zeros((steps, objects, 7))
     pose[:, :, 3] = 1.0
     return DynamicGraspTrajectory(
-        time=np.arange(steps, dtype=float) * 0.01,
+        time=np.arange(steps, dtype=float) * SAMPLE_PERIOD_S,
         palm_pose=palm,
         joint_state=np.zeros((steps, joints)),
         actuator_command=np.zeros((steps, actuators)),
         object_pose=pose,
         object_velocity=np.zeros((steps, objects, 6)),
-        stage=tuple([TrajectoryStage.APPROACH] * steps),
+        stage=stage if stage is not None else tuple([TrajectoryStage.APPROACH] * steps),
+        timebase=make_timebase(),
         contact_graph=contact_graph,
+        robot_profile="leap_hand",
+        palm_body="palm_lower",
     )
+
+
+def make_certificate(**overrides) -> CpuReplayCertificate:
+    """A certificate whose hashes are real digests, not placeholder strings."""
+    defaults = {
+        "backend_id": "mujoco_cpu",
+        "capsule_sha256": "a" * 64,
+        "command_sha256": "b" * 64,
+        "model_sha256": "c" * 64,
+        "timestep_s": 0.002,
+        "terminal_certified": True,
+        "safety_certified": True,
+        "outcome_class": "pass",
+    }
+    defaults.update(overrides)
+    return CpuReplayCertificate(**defaults)
