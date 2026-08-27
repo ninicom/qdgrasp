@@ -1,0 +1,175 @@
+[
+  {
+    "hand": "leap_hand",
+    "object": "box",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 4,
+      "static_force_rejected": 1
+    },
+    "max_pos_residual_p50": 0.1289038211107254,
+    "max_pos_residual_min": 0.07687319070100784,
+    "max_norm_residual_p50": 2.537140369415283,
+    "max_norm_residual_min": 1.1139239072799683,
+    "n_with_kinematics": 5
+  },
+  {
+    "hand": "leap_hand",
+    "object": "sphere",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 5
+    },
+    "max_pos_residual_p50": 0.09545174986124039,
+    "max_pos_residual_min": 0.08184339851140976,
+    "max_norm_residual_p50": 1.5093252658843994,
+    "max_norm_residual_min": 1.2399617433547974,
+    "n_with_kinematics": 5
+  },
+  {
+    "hand": "leap_hand",
+    "object": "cylinder",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 4,
+      "collision_rejected": 1
+    },
+    "max_pos_residual_p50": 0.16031067073345184,
+    "max_pos_residual_min": 0.14121250808238983,
+    "max_norm_residual_p50": 2.6057324409484863,
+    "max_norm_residual_min": 2.1034345626831055,
+    "n_with_kinematics": 5
+  },
+  {
+    "hand": "leap_hand",
+    "object": "capsule",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 4,
+      "ik_rejected": 4
+    },
+    "max_pos_residual_p50": 0.11102677136659622,
+    "max_pos_residual_min": 0.05759913846850395,
+    "max_norm_residual_p50": 1.8389608263969421,
+    "max_norm_residual_min": 1.2825425863265991,
+    "n_with_kinematics": 4
+  },
+  {
+    "hand": "wonik_allegro",
+    "object": "box",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 5
+    },
+    "max_pos_residual_p50": 0.1509210467338562,
+    "max_pos_residual_min": 0.08513101935386658,
+    "max_norm_residual_p50": 2.231060743331909,
+    "max_norm_residual_min": 1.4503074884414673,
+    "n_with_kinematics": 5
+  },
+  {
+    "hand": "wonik_allegro",
+    "object": "sphere",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 6,
+      "dynamic_skipped": 1
+    },
+    "max_pos_residual_p50": 0.16255614161491394,
+    "max_pos_residual_min": 0.13477331399917603,
+    "max_norm_residual_p50": 2.508800745010376,
+    "max_norm_residual_min": 1.583211898803711,
+    "n_with_kinematics": 7
+  },
+  {
+    "hand": "wonik_allegro",
+    "object": "cylinder",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 5,
+      "ik_rejected": 3
+    },
+    "max_pos_residual_p50": 0.17913149297237396,
+    "max_pos_residual_min": 0.17485307157039642,
+    "max_norm_residual_p50": 2.388564109802246,
+    "max_norm_residual_min": 2.1555216312408447,
+    "n_with_kinematics": 3
+  },
+  {
+    "hand": "wonik_allegro",
+    "object": "capsule",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 4,
+      "static_force_rejected": 1,
+      "dynamic_skipped": 1
+    },
+    "max_pos_residual_p50": 0.14563123881816864,
+    "max_pos_residual_min": 0.12592723965644836,
+    "max_norm_residual_p50": 2.6381345987319946,
+    "max_norm_residual_min": 1.826272964477539,
+    "n_with_kinematics": 6
+  },
+  {
+    "hand": "shadow_hand",
+    "object": "box",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 6,
+      "ik_rejected": 2
+    },
+    "max_pos_residual_p50": 0.04678292106837034,
+    "max_pos_residual_min": 0.02760891430079937,
+    "max_norm_residual_p50": 2.1335947513580322,
+    "max_norm_residual_min": 1.8199169635772705,
+    "n_with_kinematics": 2
+  },
+  {
+    "hand": "shadow_hand",
+    "object": "sphere",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 4,
+      "ik_rejected": 4
+    },
+    "max_pos_residual_p50": 0.06546777859330177,
+    "max_pos_residual_min": 0.047294314950704575,
+    "max_norm_residual_p50": 1.8317123651504517,
+    "max_norm_residual_min": 1.1474374532699585,
+    "n_with_kinematics": 4
+  },
+  {
+    "hand": "shadow_hand",
+    "object": "cylinder",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 6,
+      "ik_rejected": 2
+    },
+    "max_pos_residual_p50": 0.10660595074295998,
+    "max_pos_residual_min": 0.08548984676599503,
+    "max_norm_residual_p50": 2.6087902784347534,
+    "max_norm_residual_min": 2.2552714347839355,
+    "n_with_kinematics": 2
+  },
+  {
+    "hand": "shadow_hand",
+    "object": "capsule",
+    "per_stage_iter": 40,
+    "reasons": {
+      "proposal_rejected": 6,
+      "ik_rejected": 2
+    },
+    "max_pos_residual_p50": 0.064763518050313,
+    "max_pos_residual_min": 0.059835080057382584,
+    "max_norm_residual_p50": 1.8800857067108154,
+    "max_norm_residual_min": 1.6346054077148438,
+    "n_with_kinematics": 2
+  }
+]

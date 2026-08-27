@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.19.0
+version: 1.20.0
 status: active
 date: 2026-08-27
-revises: ROADMAP-001@1.18.0
+revises: ROADMAP-001@1.19.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260827-001-p3-1-14-regeneration.md
+latest_revision_record: docs/revisions/REV-20260827-002-ik-budget-negative-finding.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -95,9 +95,13 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   200 sample, 18 object, 7 measured positive trên **6/6 shard**,
   `invalidated=false`, `release_blocked=false`, hai clean regeneration
   byte-identical và `scripts/check_phase3.py` PASS. Canonical procedural yield
-  vẫn `0` và không có claim generalization; `max_iter=40` hardcode trong
-  orchestrator được ghi nhận là nút thắt yield toàn cục cho phase sau. P3 tổng
-  vẫn `pending` vì P3.4 contact-rich chưa bắt đầu.
+  vẫn `0` và không có claim generalization. Giả thuyết nâng IK budget đã bị đo
+  và bác bỏ (`REV-20260827-002`): solver dừng cách tolerance 28–179 lần về
+  position và 60–150° về normal, tức không nằm trong basin chứ không phải hết
+  budget, nên canonical `0/12` là bài toán **proposal feasibility** chứ không
+  phải solver tuning. Mọi thí nghiệm P3.1 đã chạy, gồm cả hướng chết, được ghi
+  tại `evidence/phase3_1/EXPERIMENTS.md`. P3 tổng vẫn `pending` vì P3.4
+  contact-rich chưa bắt đầu.
 - Phase 3.3 ([`ROADMAP-P3.3-001`](PHASE3_3_SCENE_GRASP_DATA_PLAN.md)) mở rộng
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object
