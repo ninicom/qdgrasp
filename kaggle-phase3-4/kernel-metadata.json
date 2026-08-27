@@ -1,0 +1,19 @@
+{
+  "id": "niniflo/qdgrasp-phase-3-4-cuda-gate",
+  "title": "QDGrasp Phase 3.4 CUDA Backend Decision",
+  "code_file": "qdgrasp-phase-3-4-cuda-gate.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}
