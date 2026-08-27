@@ -59,15 +59,18 @@ def generated_reachable_rng(profile_name: str, seed: int = 42):
     return get_generator(seed, *parts)
 
 
-#: Default vertical extent of the graspable block.  Release variants may move
-#: this or ``upper_center_z`` inside the calibrated envelope; every variant is
-#: measured by the full pipeline before it is admitted, never assumed.
+#: Default vertical extent of the graspable block.  A release variant may move
+#: ``width``, ``upper_height`` or ``upper_center_z``; each combination is a
+#: different opposition task, so every variant is measured end-to-end by the
+#: full pipeline before admission and none of them is assumed to inherit the
+#: calibrated result.
 _DEFAULT_UPPER_HEIGHT = 0.050
 
 
 def build_grasp_bar(
     profile_name: str,
     *,
+    width: float | None = None,
     upper_height: float = _DEFAULT_UPPER_HEIGHT,
     upper_center_z: float | None = None,
 ) -> GeneratedReachableObject:
@@ -79,10 +82,12 @@ def build_grasp_bar(
     measured; it still carries no joint state, palm pose, contact, or grasp.
     """
     try:
-        width = _PROFILE_WIDTHS[profile_name]
+        calibrated_width = _PROFILE_WIDTHS[profile_name]
     except KeyError as exc:
         raise ValueError(f"unsupported generated-reachable profile: {profile_name}") from exc
 
+    if width is None:
+        width = calibrated_width
     if upper_center_z is None:
         upper_center_z = _PROFILE_UPPER_CENTER_Z[profile_name]
     stem_width = 0.008

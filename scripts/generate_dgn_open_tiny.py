@@ -43,15 +43,22 @@ POSITIVE_CONTROL_BUDGETS = {"leap_hand": 4, "wonik_allegro": 14, "shadow_hand": 
 
 # Release variants of the positive-control grasp bar.  Each entry was measured
 # end-to-end by this pipeline before being admitted (P3.1-14); none of them
-# carries a stored grasp.  A hand with two variants can hold a positive in both
-# splits; ``wonik_allegro`` has one because no second variant produced a
-# measured positive inside its validated envelope.
+# carries a stored grasp.  Two variants per hand let both splits hold a
+# positive.
+#
+# `pc_allegro_02` moves `width`, not the block height: a kinematics grid over
+# the envelope showed Allegro dies at IK, not at palm floor clearance, and that
+# the calibrated 40 mm opposition is a poor operating point.  A 45 mm task
+# measures two dynamic positives where four fixed-width variants measured none.
 POSITIVE_CONTROL_VARIANTS: dict[str, tuple[tuple[str, dict[str, float]], ...]] = {
     "leap_hand": (
         ("pc_leap_01", {}),
         ("pc_leap_02", {"upper_height": 0.055}),
     ),
-    "wonik_allegro": (("pc_allegro_01", {}),),
+    "wonik_allegro": (
+        ("pc_allegro_01", {}),
+        ("pc_allegro_02", {"width": 0.045, "upper_center_z": 0.130}),
+    ),
     "shadow_hand": (
         ("pc_shadow_01", {}),
         ("pc_shadow_02", {"upper_center_z": 0.135}),
