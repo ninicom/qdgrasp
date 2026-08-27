@@ -74,6 +74,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-04
     mapped_to: [G06, G07]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/capsule.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_replay_capsule.py]
+    evidence_refs: [evidence/phase3_4_3/s5/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-05
     category: blocker
@@ -84,6 +90,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-06
     mapped_to: [G03, C01]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/capsule.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_replay_capsule.py]
+    evidence_refs: [evidence/phase3_4_3/s5/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-07
     category: blocker
@@ -224,6 +236,12 @@ requirements:
     category: direct_gate
     normative_source: P3.4.3#G03
     mapped_to: [C01, C06]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/capsule.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_replay_capsule.py]
+    evidence_refs: [evidence/phase3_4_3/s5/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G04
     category: direct_gate
@@ -245,6 +263,12 @@ requirements:
     category: direct_gate
     normative_source: P3.4.3#G06
     mapped_to: [C02]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/capsule.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_replay_capsule.py]
+    evidence_refs: [evidence/phase3_4_3/s5/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G07
     category: direct_gate
@@ -346,6 +370,12 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-03
     mapped_to: [C02, G06]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/capsule.py, qdgrasp/dynamic/wrapped_rollout.py]
+    test_ids: [tests/contactrich_active/test_replay_capsule.py]
+    evidence_refs: [evidence/phase3_4_3/s5/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-04
     category: original_work_package

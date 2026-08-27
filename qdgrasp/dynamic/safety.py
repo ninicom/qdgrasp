@@ -391,8 +391,12 @@ class ContactObserver:
             key = (min(geom_a, geom_b), max(geom_a, geom_b))
 
             mujoco.mj_contactForce(self._model, data, index, wrench)
-            frame = np.asarray(contact.frame, dtype=np.float64).reshape(3, 3)
-            point = np.asarray(contact.pos, dtype=np.float64)
+            # ``np.asarray`` on a MuJoCo field returns a view into the live
+            # solver buffer, so a stored event would keep changing as the
+            # rollout advanced -- and end up holding whatever occupied that
+            # contact slot at the end. These are copies on purpose.
+            frame = np.array(contact.frame, dtype=np.float64).reshape(3, 3)
+            point = np.array(contact.pos, dtype=np.float64)
 
             normal_force = abs(float(wrench[0]))
             tangential_force = float(np.linalg.norm(wrench[1:3]))

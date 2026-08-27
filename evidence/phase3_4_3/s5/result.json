@@ -1,0 +1,47 @@
+{
+  "blockers": [
+    "B-04",
+    "B-06"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "93a32f0ebe432df6073e1a17d0e64b18f9d79317",
+  "device": "cpu",
+  "gates": [
+    "G03",
+    "G06"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dynamic/capsule.py": "17a09a38f627dfc7866bbd508dd11d3614ec5541977c3430b8c9081594a04525",
+    "qdgrasp/dynamic/wrapped_rollout.py": "4784be51b0da9275b44fba151849890cfa1c320e924b08cf3c898c2d196a7ce6"
+  },
+  "implementation_refs": [
+    "qdgrasp/dynamic/capsule.py",
+    "qdgrasp/dynamic/wrapped_rollout.py"
+  ],
+  "note": "S5 trajectory v2 timebase/palm pose and ReplayCapsule v1",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T19:08:27.028062+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S5",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_replay_capsule.py"
+    ],
+    "summary": "22 passed in 3.95s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

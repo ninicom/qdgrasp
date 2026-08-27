@@ -36,9 +36,9 @@ from qdgrasp.dataset.dynamic_contracts import (
     DynamicSearchOutcome,
     TrajectoryStage,
     TrajectoryTimebase,
-    sequence_hash,
 )
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
+from qdgrasp.dynamic.capsule import InitialState, ModelIdentity, ReplayCapsule
 from qdgrasp.dynamic.safety import ContactObserver, SceneRoles, summarise_safety
 from qdgrasp.objects.schema import SubGeomSpec
 
@@ -86,6 +86,9 @@ class _Recorder:
         self.velocities: list[np.ndarray] = []
         self.stages: list[TrajectoryStage] = []
         self.events: list[ContactEvent] = []
+        #: Every step's command, not just the sampled ones. The record stays
+        #: sparse; the capsule has to be exact, and those are different jobs.
+        self.step_commands: list[np.ndarray] = []
 
     def __call__(self, stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         self.calls += 1
@@ -103,6 +106,7 @@ class _Recorder:
                 simulator_step=self.calls,
             )
         )
+        self.step_commands.append(np.array(data.ctrl, dtype=np.float64))
         if self.calls % self.sample_every:
             return
 
@@ -156,6 +160,12 @@ def run_wrapped_contact_rollout(
     """
     recorder: dict[str, _Recorder] = {}
     timebase: dict[str, TrajectoryTimebase] = {}
+    origin: dict[str, InitialState] = {}
+
+    def capture_origin(stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+        """Pin the state the rollout starts from, before any step is taken."""
+        del stage
+        origin.setdefault("state", InitialState.from_data(model, data))
 
     def install(stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         if "r" not in recorder:
@@ -176,10 +186,14 @@ def run_wrapped_contact_rollout(
                     "a trajectory cannot record a palm pose it cannot find"
                 )
             simulator_dt = float(model.opt.timestep)
+            # This first call lands after the first integrator step, and the
+            # first sample is taken on call ``sample_every``. Predicting the
+            # start time rather than reading it back means the contract check
+            # catches a sampler that does not do what it says it does.
             timebase["t"] = TrajectoryTimebase(
                 simulator_dt=simulator_dt,
                 sample_every=int(sample_every),
-                start_time_s=float(data.time) + simulator_dt * int(sample_every),
+                start_time_s=float(data.time) + simulator_dt * (int(sample_every) - 1),
             )
             recorder["r"] = _Recorder(
                 observer=ContactObserver(model, roles, budget),
@@ -194,6 +208,7 @@ def run_wrapped_contact_rollout(
         hand_xml_path,
         collision_geoms,
         fingertip_body_names,
+        initial_observer=capture_origin,
         step_observer=install,
         **rollout_kwargs,
     )
@@ -246,6 +261,17 @@ def run_wrapped_contact_rollout(
         palm_body=palm_body_name,
     )
 
+    model_sha256 = _asset_hash(hand_xml_path)
+    capsule = _build_capsule(
+        record=record,
+        origin=origin.get("state"),
+        model_sha256=model_sha256,
+        robot_profile=robot_profile,
+        budget=budget,
+        trajectory_ref=trajectory_ref,
+        timebase=base,
+    )
+
     peak, cumulative = summarise_safety(trajectory.contact_graph)
     hard = trajectory.hard_reject_events
     if hard:
@@ -282,26 +308,65 @@ def run_wrapped_contact_rollout(
         cpu_replay_evidence=(
             CpuReplayCertificate(
                 backend_id="mujoco_cpu",
-                capsule_sha256=sequence_hash(
-                    np.concatenate(
-                        [
-                            np.asarray(trajectory.joint_state[0]).ravel(),
-                            np.asarray(trajectory.actuator_command).ravel(),
-                        ]
-                    )
-                ),
-                command_sha256=sequence_hash(trajectory.actuator_command),
-                model_sha256=_asset_hash(hand_xml_path),
+                capsule_sha256=capsule.capsule_sha256,
+                command_sha256=capsule.command_sha256,
+                model_sha256=model_sha256,
                 timestep_s=base.simulator_dt,
                 terminal_certified=True,
                 safety_certified=not hard,
                 outcome_class="pass",
             )
-            if passed
+            if passed and capsule is not None
             else None
         ),
     )
     return trajectory, outcome, validation
+
+
+def _build_capsule(
+    *,
+    record: _Recorder,
+    origin: InitialState | None,
+    model_sha256: str,
+    robot_profile: str,
+    budget: ContactSafetyBudget,
+    trajectory_ref: str,
+    timebase: TrajectoryTimebase,
+) -> ReplayCapsule | None:
+    """Capture what a CPU oracle needs to replay this rollout exactly.
+
+    Returns ``None`` when the initial state could not be pinned, because a
+    capsule that guesses where the rollout started is not a capsule.
+    """
+    if origin is None or not record.step_commands:
+        return None
+    commands = np.asarray(record.step_commands, dtype=np.float64)
+    identity = ModelIdentity(
+        robot_profile=robot_profile or budget.robot_profile,
+        scene_signature=f"wrapped:{model_sha256[:16]}",
+        model_sha256=model_sha256,
+        timestep_s=timebase.simulator_dt,
+        integrator=0,
+        solver=0,
+        cone=0,
+        nq=int(origin.qpos.shape[0]),
+        nv=int(origin.qvel.shape[0]),
+        nu=int(commands.shape[1]),
+        ngeom=int(origin.geom_friction.shape[0]),
+        nbody=int(origin.body_mass.shape[0]),
+    )
+    return ReplayCapsule(
+        capsule_id=f"capsule:{trajectory_ref or 'wrapped'}",
+        model=identity,
+        state=origin,
+        control_sequence=commands,
+        control_dtype="float64",
+        seed=0,
+        strategy_id="validated_rollout_protocol",
+        strategy_parameters={"sample_every": float(timebase.sample_every)},
+        safety_budget_id=budget.budget_id,
+        safety_budget_hash=budget.budget_hash,
+    )
 
 
 def _asset_hash(path: str | Path) -> str:
