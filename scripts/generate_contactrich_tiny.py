@@ -32,8 +32,15 @@ from qdgrasp.scenes.release_recipes import build_release_grasp_recipe
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET_ID = "qdgrasp-contactrich-tiny"
 
-HANDS = ("leap_hand", "wonik_allegro", "shadow_hand")
-CFG = {h: f"{h}.yaml" for h in HANDS}
+#: ADR-0008 pauses shadow_hand from default scope on 2026-08-27. It is not
+#: dropped from the record: a missing Shadow result must read
+#: `paused_by_ADR-0008`, never `pass`, `zero`, `unsupported` or a bare
+#: `not_run`, and the three-hand P3.4 contract does not close while it holds.
+ACTIVE_HANDS = ("leap_hand", "wonik_allegro")
+PAUSED_HANDS = ("shadow_hand",)
+HANDS = ACTIVE_HANDS
+CFG = {h: f"{h}.yaml" for h in (*ACTIVE_HANDS, *PAUSED_HANDS)}
+PAUSE_DECISION = "ADR-0008"
 
 #: Pinned per robot profile before generation, and hashed into the manifest.
 #: Impulse is judged over a rolling window: a cumulative limit would reject
@@ -56,7 +63,7 @@ BUDGETS = {
         max_non_target_rotation_rad=0.3,
         max_non_target_velocity_mps=0.2,
     )
-    for hand in HANDS
+    for hand in (*ACTIVE_HANDS, *PAUSED_HANDS)
 }
 
 #: Declared negative controls. Each one changes a physical condition, never a
@@ -163,6 +170,18 @@ def generate(output_dir: Path) -> dict[str, Any]:
         ).stdout.strip()
     )
 
+    for hand in PAUSED_HANDS:
+        records.append(
+            {
+                "hand": hand,
+                "variant": "not_generated",
+                "rationale": f"paused from default scope by {PAUSE_DECISION}",
+                "split": "none",
+                "status": f"paused_by_{PAUSE_DECISION}",
+                "passed": False,
+            }
+        )
+
     positives = [r for r in records if r["passed"]]
     hands_with_positive = sorted({r["hand"] for r in positives})
     manifest = {
@@ -183,13 +202,26 @@ def generate(output_dir: Path) -> dict[str, Any]:
             "negatives": len(records) - len(positives),
             "hands_with_positive": hands_with_positive,
         },
-        "release_blocked": len(hands_with_positive) < len(HANDS),
-        "release_block_reason": (
-            ""
-            if len(hands_with_positive) == len(HANDS)
-            else "no measured dynamic positive for: "
-            + ", ".join(sorted(set(HANDS) - set(hands_with_positive)))
+        "active_hands": list(ACTIVE_HANDS),
+        "paused_hands": list(PAUSED_HANDS),
+        "paused_by": PAUSE_DECISION,
+        "coverage_claim": (
+            "two active hands; this is NOT three-hand coverage and must not be "
+            "described as such"
         ),
+        # The three-hand P3.4 contract cannot close while ADR-0008 holds, and a
+        # two-hand release needs its own successor scope rather than reusing the
+        # P3.4 verdict. So release stays blocked even with both active hands
+        # positive.
+        "release_blocked": True,
+        "release_block_reason": (
+            f"{PAUSE_DECISION} pauses {', '.join(PAUSED_HANDS)}; the three-hand "
+            "P3.4 contract does not close during the pause, and a two-hand "
+            "dynamic-data release requires a successor scope rather than the "
+            "existing P3.4 verdict"
+        ),
+        "active_hands_with_positive": hands_with_positive,
+        "active_coverage_complete": sorted(hands_with_positive) == sorted(ACTIVE_HANDS),
     }
     path = output_dir / "dataset_manifest.json"
     path.parent.mkdir(parents=True, exist_ok=True)

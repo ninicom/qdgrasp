@@ -57,8 +57,8 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-13 trajectory writer/loader": "done",
     "P3.4-14 static-vs-dynamic ablation": "done",
     "P3.4-15 Kaggle CUDA harness": "measured_gate_failed",
-    "P3.4-16 QDGrasp-ContactRich-Tiny": "generated_release_blocked",
-    "P3.4-17 independent review": "todo",
+    "P3.4-16 QDGrasp-ContactRich-Tiny": "paused_by_ADR-0008",
+    "P3.4-17 independent review": "paused_by_ADR-0008",
 }
 
 #: The spike report P3.4-04 produces, if it has been run.
@@ -247,15 +247,30 @@ def main() -> int:
             ),
             "backend_spike": verify_backend_spike(),
             "outstanding_work_packages": outstanding,
+            "adr_0008": {
+                "status": "accepted 2026-08-27",
+                "active_hands": ["leap_hand", "wonik_allegro"],
+                "paused_hands": ["shadow_hand"],
+                "effect": (
+                    "The three-hand P3.4 contract is recorded as not achieved and "
+                    "paused. Dropping Shadow from the old gate and marking P3.4 "
+                    "complete is explicitly forbidden; a two-hand dynamic-data "
+                    "release needs a successor scope instead."
+                ),
+                "missing_shadow_results_read_as": "paused_by_ADR-0008",
+            },
             "closure_blocked_by": [
-                "P3.4-16: generated with 4 measured positives, but release_blocked "
-                "because shadow_hand has no dynamic positive: its recipe drives "
-                "rh_lfproximal into rh_lfmetacarpal at 323 N sustained. See "
-                "evidence/phase3_4/p16-contactrich-tiny/",
-                "P3.4-15: speed criterion now met at 4.444x on 1024 worlds, but "
-                "29 of 1024 worlds went non-finite (2.8%) from identical initial "
-                "state and identical commands -- non-determinism in the GPU "
-                "backend. See evidence/phase3_4/p15-throughput/",
+                (
+                    "ADR-0008: the three-hand contract is paused, not failed and "
+                    "not waived. Both active hands carry measured positives; "
+                    "shadow_hand reads paused_by_ADR-0008, and the phase does "
+                    "not close while the pause holds."
+                ),
+                (
+                    "P3.4-15: speed met at 4.444x on 1024 worlds, but initcheck "
+                    "reports 62919 uninitialized-memory reads while racecheck is "
+                    "clean. See evidence/phase3_4_1/perf-v9-1024/sanitizer/"
+                ),
                 "P3.4-17: independent review cannot be issued by the author",
             ],
         }

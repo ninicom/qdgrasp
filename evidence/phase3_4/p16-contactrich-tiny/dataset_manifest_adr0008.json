@@ -1,0 +1,192 @@
+{
+  "active_coverage_complete": true,
+  "active_hands": [
+    "leap_hand",
+    "wonik_allegro"
+  ],
+  "active_hands_with_positive": [
+    "leap_hand",
+    "wonik_allegro"
+  ],
+  "counts": {
+    "hands_with_positive": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "negatives": 3,
+    "positives": 4,
+    "samples": 7
+  },
+  "coverage_claim": "two active hands; this is NOT three-hand coverage and must not be described as such",
+  "dataset_id": "qdgrasp-contactrich-tiny",
+  "generation_mode": "static_seeded_contact_rollout",
+  "generator_commit": "eeaa9b06edcd84f82e1e4566f684e0e79168a21b",
+  "generator_worktree_dirty": true,
+  "paused_by": "ADR-0008",
+  "paused_hands": [
+    "shadow_hand"
+  ],
+  "protocol": "mocap-weld-v3 via validate_grasp_rollout",
+  "records": [
+    {
+      "contact_events": 2429,
+      "failure_reason": "none",
+      "hand": "leap_hand",
+      "lift_m": 0.0491,
+      "min_budget_margin": 0.879,
+      "passed": true,
+      "peak_normal_force_N": 5.711,
+      "rationale": "validated release recipe, target free to react",
+      "split": "train",
+      "steps": 120,
+      "validated_rollout_passed": true,
+      "variant": "baseline"
+    },
+    {
+      "contact_events": 2429,
+      "failure_reason": "none",
+      "hand": "leap_hand",
+      "lift_m": 0.04848,
+      "min_budget_margin": 0.8718,
+      "passed": true,
+      "peak_normal_force_N": 5.84,
+      "rationale": "target ten times heavier than the validated envelope",
+      "split": "train",
+      "steps": 120,
+      "validated_rollout_passed": true,
+      "variant": "heavy_object"
+    },
+    {
+      "contact_events": 1593,
+      "failure_reason": "validated_rollout_failed",
+      "hand": "leap_hand",
+      "lift_m": 2e-05,
+      "min_budget_margin": 0.8408,
+      "passed": false,
+      "peak_normal_force_N": 1.145,
+      "rationale": "fingers never leave the pregrasp pose",
+      "split": "train",
+      "steps": 80,
+      "validated_rollout_passed": false,
+      "variant": "no_closure"
+    },
+    {
+      "contact_events": 3924,
+      "failure_reason": "none",
+      "hand": "wonik_allegro",
+      "lift_m": 0.04069,
+      "min_budget_margin": 0.7502,
+      "passed": true,
+      "peak_normal_force_N": 0.99,
+      "rationale": "validated release recipe, target free to react",
+      "split": "train",
+      "steps": 160,
+      "validated_rollout_passed": true,
+      "variant": "baseline"
+    },
+    {
+      "contact_events": 3939,
+      "failure_reason": "none",
+      "hand": "wonik_allegro",
+      "lift_m": 0.03857,
+      "min_budget_margin": 0.7489,
+      "passed": true,
+      "peak_normal_force_N": 0.855,
+      "rationale": "target ten times heavier than the validated envelope",
+      "split": "train",
+      "steps": 160,
+      "validated_rollout_passed": true,
+      "variant": "heavy_object"
+    },
+    {
+      "contact_events": 2883,
+      "failure_reason": "validated_rollout_failed",
+      "hand": "wonik_allegro",
+      "lift_m": 1e-05,
+      "min_budget_margin": 0.76,
+      "passed": false,
+      "peak_normal_force_N": 0.123,
+      "rationale": "fingers never leave the pregrasp pose",
+      "split": "train",
+      "steps": 120,
+      "validated_rollout_passed": false,
+      "variant": "no_closure"
+    },
+    {
+      "hand": "shadow_hand",
+      "passed": false,
+      "rationale": "paused from default scope by ADR-0008",
+      "split": "none",
+      "status": "paused_by_ADR-0008",
+      "variant": "not_generated"
+    }
+  ],
+  "release_block_reason": "ADR-0008 pauses shadow_hand; the three-hand P3.4 contract does not close during the pause, and a two-hand dynamic-data release requires a successor scope rather than the existing P3.4 verdict",
+  "release_blocked": true,
+  "safety_budgets": {
+    "leap_hand": {
+      "budget_id": "contactrich-tiny-leap_hand-v1",
+      "contact_duration_s": 20.0,
+      "contact_work_J": 2.0,
+      "environment_class": "table",
+      "impulse_window_s": 0.1,
+      "material_class": "rigid_default",
+      "max_joint_or_tendon_load": 50.0,
+      "max_non_target_rotation_rad": 0.3,
+      "max_non_target_translation_m": 0.02,
+      "max_non_target_velocity_mps": 0.2,
+      "max_penetration_m": 0.005,
+      "max_wrist_force_N": 100.0,
+      "max_wrist_torque_Nm": 20.0,
+      "normal_impulse_Ns": 5.0,
+      "peak_normal_force_N": 50.0,
+      "peak_tangential_force_N": 30.0,
+      "robot_profile": "leap_hand",
+      "tangential_impulse_Ns": 3.0
+    },
+    "shadow_hand": {
+      "budget_id": "contactrich-tiny-shadow_hand-v1",
+      "contact_duration_s": 20.0,
+      "contact_work_J": 2.0,
+      "environment_class": "table",
+      "impulse_window_s": 0.1,
+      "material_class": "rigid_default",
+      "max_joint_or_tendon_load": 50.0,
+      "max_non_target_rotation_rad": 0.3,
+      "max_non_target_translation_m": 0.02,
+      "max_non_target_velocity_mps": 0.2,
+      "max_penetration_m": 0.005,
+      "max_wrist_force_N": 100.0,
+      "max_wrist_torque_Nm": 20.0,
+      "normal_impulse_Ns": 5.0,
+      "peak_normal_force_N": 50.0,
+      "peak_tangential_force_N": 30.0,
+      "robot_profile": "shadow_hand",
+      "tangential_impulse_Ns": 3.0
+    },
+    "wonik_allegro": {
+      "budget_id": "contactrich-tiny-wonik_allegro-v1",
+      "contact_duration_s": 20.0,
+      "contact_work_J": 2.0,
+      "environment_class": "table",
+      "impulse_window_s": 0.1,
+      "material_class": "rigid_default",
+      "max_joint_or_tendon_load": 50.0,
+      "max_non_target_rotation_rad": 0.3,
+      "max_non_target_translation_m": 0.02,
+      "max_non_target_velocity_mps": 0.2,
+      "max_penetration_m": 0.005,
+      "max_wrist_force_N": 100.0,
+      "max_wrist_torque_Nm": 20.0,
+      "normal_impulse_Ns": 5.0,
+      "peak_normal_force_N": 50.0,
+      "peak_tangential_force_N": 30.0,
+      "robot_profile": "wonik_allegro",
+      "tangential_impulse_Ns": 3.0
+    }
+  },
+  "schema": "qdgrasp/contactrich-manifest/v1",
+  "shards": {
+    "shards/train.json": "4bec09e57daceb1ed2641f04ab81ab6f1f0a7b4cfc6778dcb2357ccb96ec725b"
+  }
+}
