@@ -24,7 +24,7 @@
     "Every failure is included in the packet, not only the runs that passed.",
     "Findings at severity S0 to S3 are resolved, or the verdict is not a pass."
   ],
-  "commit": "c513bc9c912293bcfad76bf4b0702ca9c43c0be2",
+  "commit": "f1ea85cf595c0ddcf0c0da8de6762937ae4615c8",
   "dirty_paths": [
     "M PLAN.md",
     " M README.md",
@@ -37,7 +37,7 @@
     " M docs/sessions/SESSION-20260827-P3.4-AND-P3.4.1.md",
     " M evidence/phase3_4_1/perf-v9-1024/sanitizer/README.md"
   ],
-  "manifest_entries": 64,
+  "manifest_entries": 65,
   "reproduction": [
     "scripts/check_phase3_4.py --backend cpu --profile micro",
     "python -m pytest tests/dynamic_grasp/ -q",

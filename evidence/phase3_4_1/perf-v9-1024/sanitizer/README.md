@@ -104,3 +104,47 @@ another in a way the tool cannot follow. The named frames make an upstream solve
 defect the most direct reading, but confirming it means reproducing against
 `mjwarp-testspeed` on the exported model, which section 3.3 step 6 already asks
 for and which has not been run.
+
+## Addendum 2: the wrapper is excluded; the defect is upstream, confirmed
+
+Section 3.3 step 6. Every earlier run reached the solver through
+`MjWarpCudaBackend`, so the backtrace named the kernel but never cleared the
+wrapper. This run drives `put_model`, `put_data` and `step` directly with no
+QDGrasp backend in the call path, on the same exported release model.
+
+It reproduces identically:
+
+```
+upstream path stepped 8 times over 4 worlds, no QDGrasp backend
+========= ERROR SUMMARY: 67531 errors
+========= Uninitialized __global__ memory read of size 4 bytes
+=========   at _linesearch_iterative_kernel__locals__kernel_..._cuda_kernel_forward+0x7be0
+=========   by thread (25,0,0) in block (0,0,0)
+```
+
+Same kernel, same offset, same thread as the run that went through the backend.
+
+### Determination
+
+The root cause is an **uninitialized global memory read inside MuJoCo Warp
+1.16.0's iterative linesearch**, in its own constraint solver. It is not a race:
+`racecheck` reported zero hazards on every run. It is not a QDGrasp defect: the
+wrapper is now excluded by construction rather than by inference.
+
+Nothing in QDGrasp can fix it. Section 3.4's response for this row is a pinned
+patch or a newer MJWarp version through a compatibility spike, with tendon, weld,
+contact, force and CPU parity re-evidenced against whatever version is chosen.
+
+### Consequences for the GPU gate
+
+The speed criterion is met at 4.444x and 4.537x, but a GPU-searched result is not
+reproducible while this holds: worlds seeded identically do not evolve
+identically, and the non-finite ones are the tail of that spread. The gate's
+nonzero exit on NaN is correct and should stay.
+
+### What is still open
+
+67,531 errors reported, 6 printed, and the captured records are all the same
+kernel. That is consistent with one site and does not prove it is the only one.
+Reporting this upstream, or bisecting MJWarp versions, would settle both that and
+whether a fixed release exists.
