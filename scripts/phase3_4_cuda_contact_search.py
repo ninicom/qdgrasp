@@ -215,17 +215,105 @@ def resolve_warp_backend(device: str) -> dict[str, Any]:
     return status
 
 
-def stage_two_not_implemented() -> dict[str, Any]:
-    """P3.4-05 does not exist, so there is nothing to benchmark yet."""
-    return {
-        "status": "not_implemented",
-        "missing": ["P3.4-05 MJWarp CUDA backend"],
-        "note": (
-            "Throughput, VRAM and CPU/GPU parity numbers require the CUDA "
-            "backend. Reporting the CPU oracle here would be a fabricated "
-            "CUDA measurement."
-        ),
-    }
+#: Pinned before the run. The plan forbids looping batch size upward until OOM,
+#: so the cap is fixed and a failure at this size is reported as a failure.
+BENCHMARK_WORLDS = 64
+BENCHMARK_HORIZON = 100
+VRAM_BUDGET_GIB = 14.0
+MIN_GPU_SPEEDUP = 2.0
+
+
+def run_search_benchmark(device: str) -> dict[str, Any]:
+    """Measure GPU throughput against the CPU oracle on the same kernel.
+
+    Compile and warmup are reported apart from steady state, because folding
+    them in is how a slow backend looks fast on a short run.
+    """
+    import numpy as np
+    import torch
+
+    from qdgrasp.dataset.dynamic_contracts import DynamicGraspRequest
+    from qdgrasp.sim.batched.contracts import SceneSignature
+    from qdgrasp.sim.batched.mjwarp_cuda import MjWarpCudaBackend
+    from qdgrasp.sim.batched.mujoco_cpu import MuJoCoCpuBackend
+
+    scene = (REPO_ROOT / "tests" / "dynamic_grasp" / "micro_scene.xml").read_text(
+        encoding="utf-8"
+    )
+    signature = SceneSignature(
+        robot_profile="micro_pusher",
+        environment="table",
+        geom_type_counts=(("box", 2), ("plane", 1)),
+        joint_count=2,
+        support_count=1,
+        solver_profile="default",
+        timestep=0.002,
+    )
+
+    def requests(count: int) -> list[DynamicGraspRequest]:
+        return [
+            DynamicGraspRequest(
+                scene_state_ref="scene:micro#0",
+                observation_ref="obs:micro/cam_top",
+                target_object_id="target",
+                robot_profile="micro_pusher",
+                strategy_id="batched_cem",
+                safety_budget_id="bench",
+                horizon=BENCHMARK_HORIZON,
+                control_dt=0.002,
+                seed=index,
+            )
+            for index in range(count)
+        ]
+
+    result: dict[str, Any] = {"worlds": BENCHMARK_WORLDS, "horizon": BENCHMARK_HORIZON}
+
+    torch.cuda.reset_peak_memory_stats()
+    gpu = MjWarpCudaBackend(scene, device=device)
+    gpu.compile(signature, "micro_pusher", batch_capacity=BENCHMARK_WORLDS)
+    gpu.reset(requests(BENCHMARK_WORLDS))
+    commands = np.full((BENCHMARK_WORLDS, BENCHMARK_HORIZON, gpu.num_actuators), 0.15)
+    gpu_summaries = gpu.rollout(commands)
+    gpu_timing = gpu.timing
+    peak_vram = torch.cuda.max_memory_allocated() / (1024**3)
+
+    cpu = MuJoCoCpuBackend(scene)
+    cpu.compile(signature, "micro_pusher", batch_capacity=BENCHMARK_WORLDS)
+    cpu.reset(requests(BENCHMARK_WORLDS))
+    cpu.rollout(commands)
+    cpu_timing = cpu.timing
+
+    speedup = (
+        gpu_timing.steps_per_second / cpu_timing.steps_per_second
+        if cpu_timing.steps_per_second > 0
+        else float("nan")
+    )
+    rejected = [s.world_index for s in gpu_summaries if s.hard_reject]
+
+    # Every finalist must be replayable on the oracle; the GPU never self-admits.
+    finalists = gpu.export_finalists([0, 1, 2])
+    replayable = all(f.backend_request == "cpu" for f in finalists)
+
+    result.update(
+        {
+            "status": "measured",
+            "gpu_compile_seconds": round(gpu_timing.compile_seconds, 4),
+            "gpu_warmup_seconds": round(gpu_timing.warmup_seconds, 4),
+            "gpu_steady_state_seconds": round(gpu_timing.steady_state_seconds, 4),
+            "gpu_steps_per_second": round(gpu_timing.steps_per_second, 1),
+            "cpu_steps_per_second": round(cpu_timing.steps_per_second, 1),
+            "speedup": round(float(speedup), 3),
+            "min_required_speedup": MIN_GPU_SPEEDUP,
+            "speedup_met": bool(speedup >= MIN_GPU_SPEEDUP),
+            "peak_vram_gib": round(peak_vram, 3),
+            "vram_budget_gib": VRAM_BUDGET_GIB,
+            "vram_within_budget": bool(peak_vram <= VRAM_BUDGET_GIB),
+            "rejected_worlds": rejected,
+            "finalists_routed_to_cpu": replayable,
+            "worlds_ran_without_oom": len(rejected) == 0,
+        }
+    )
+    return result
 
 
 def build_evidence(device: str, profile: str) -> dict[str, Any]:
@@ -242,7 +330,11 @@ def build_evidence(device: str, profile: str) -> dict[str, Any]:
         "cuda_environment": cuda,
         "backend_resolution": warp,
         "blocking_requirements": list(BLOCKING_REQUIREMENTS),
-        "search_benchmark": stage_two_not_implemented(),
+        "search_benchmark": (
+            run_search_benchmark(device)
+            if warp["verdict"] == "supported"
+            else {"status": "skipped", "reason": warp["verdict"]}
+        ),
     }
     evidence["status"] = (
         "BACKEND_SUPPORTED_PENDING_P3.4-05"
@@ -288,9 +380,34 @@ def main() -> int:
         )
         return 1
 
+    bench = evidence["search_benchmark"]
+    if bench.get("status") == "measured":
+        failures = [
+            name
+            for name, ok in (
+                ("speedup", bench["speedup_met"]),
+                ("vram", bench["vram_within_budget"]),
+                ("no_oom", bench["worlds_ran_without_oom"]),
+                ("cpu_routing", bench["finalists_routed_to_cpu"]),
+            )
+            if not ok
+        ]
+        if failures:
+            print(
+                f"Phase 3.4 benchmark failed: {failures}. "
+                f"speedup={bench['speedup']}x against a required "
+                f"{bench['min_required_speedup']}x.",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"Phase 3.4 benchmark passed: {bench['speedup']}x speedup on "
+            f"{bench['worlds']} worlds, {bench['peak_vram_gib']} GiB peak VRAM.",
+            file=sys.stderr,
+        )
     print(
-        "Phase 3.4 backend supported; P3.4-05 and the search benchmark are still "
-        "outstanding. This run does not close the phase.",
+        "Backend supported and benchmarked. The phase still needs a dataset with "
+        "a positive per hand and an independent review; this run does not close it.",
         file=sys.stderr,
     )
     return 0
