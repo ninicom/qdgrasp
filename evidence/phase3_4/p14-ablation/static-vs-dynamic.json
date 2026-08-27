@@ -1,0 +1,56 @@
+{
+  "config_hash": "b108a5183d3b952a4a826330500d0998322b44545bf88fc8b57a4493bce24292",
+  "dynamic_arm": {
+    "candidates": 6,
+    "frozen_target": false,
+    "median_lift_m": -0.00010775542051507866,
+    "reason_ledger": {
+      "failures": {
+        "insufficient_enclosure": 5,
+        "target_teleported": 1
+      },
+      "stages": {
+        "cpu_replay_confirmed": 0,
+        "lift_passed": 0,
+        "numerically_stable": 5,
+        "perturbation_passed": 0,
+        "safe_contact_feasible": 5,
+        "sampled": 6,
+        "support_released": 0,
+        "terminal_enclosure": 0
+      },
+      "yield": 0.0
+    },
+    "unsafe_rejections": 0,
+    "yield": 0.0
+  },
+  "interpretation": "The arms differ only in whether the target may move. A verdict other than dynamic_improves_yield_safely is a legitimate result and must be recorded as such: no threshold may be moved to produce a better one.",
+  "schema": "qdgrasp/evidence/phase3.4-ablation/v1",
+  "scope_limit": "Measured on the micro pusher scene, which has one actuator and cannot enclose or lift. It exercises the ablation machinery and the reason accounting end to end; it is not a claim about the release hands.",
+  "static_arm": {
+    "candidates": 6,
+    "frozen_target": true,
+    "median_lift_m": 0.0,
+    "reason_ledger": {
+      "failures": {
+        "insufficient_enclosure": 6
+      },
+      "stages": {
+        "cpu_replay_confirmed": 0,
+        "lift_passed": 0,
+        "numerically_stable": 6,
+        "perturbation_passed": 0,
+        "safe_contact_feasible": 6,
+        "sampled": 6,
+        "support_released": 0,
+        "terminal_enclosure": 0
+      },
+      "yield": 0.0
+    },
+    "unsafe_rejections": 0,
+    "yield": 0.0
+  },
+  "verdict": "no_measured_difference",
+  "work_package": "P3.4-14",
+  "yield_delta": 0.0
+}

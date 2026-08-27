@@ -6,13 +6,13 @@ import numpy as np
 import pytest
 
 from qdgrasp.dataset.dynamic_contracts import ContactClass, DynamicSearchOutcome
+from qdgrasp.dynamic.cem import ParameterSpace
 from qdgrasp.dynamic.certify import (
     ParityTolerance,
     certify_replay,
     certify_terminal_grasp,
     release_decision,
 )
-from qdgrasp.dynamic.cem import ParameterSpace
 from qdgrasp.dynamic.primitives import Primitive, PrimitiveKind
 from qdgrasp.dynamic.refine import RefineConfig, refine_local
 
