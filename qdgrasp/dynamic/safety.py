@@ -188,10 +188,28 @@ class ContactObserver:
 
             state = self._accumulated.setdefault(
                 key,
-                {"normal_impulse": 0.0, "tangential_impulse": 0.0, "work": 0.0, "duration": 0.0},
+                {
+                    "normal_impulse": 0.0,
+                    "tangential_impulse": 0.0,
+                    "work": 0.0,
+                    "duration": 0.0,
+                    "window_normal": 0.0,
+                    "window_tangential": 0.0,
+                    "window_elapsed": 0.0,
+                },
             )
             state["normal_impulse"] += normal_force * dt
             state["tangential_impulse"] += tangential_force * dt
+
+            # Windowed impulse is what the budget judges: it captures an impact
+            # and stays bounded under a long, gentle hold.
+            state["window_elapsed"] += dt
+            state["window_normal"] += normal_force * dt
+            state["window_tangential"] += tangential_force * dt
+            if state["window_elapsed"] >= self._budget.impulse_window_s:
+                state["window_elapsed"] = 0.0
+                state["window_normal"] = 0.0
+                state["window_tangential"] = 0.0
             # Frictional work: only the tangential force does work through slip.
             state["work"] += tangential_force * slip_rate * dt
             state["duration"] += dt
@@ -201,8 +219,8 @@ class ContactObserver:
                 self._budget,
                 normal_force_N=normal_force,
                 tangential_force_N=tangential_force,
-                normal_impulse_Ns=state["normal_impulse"],
-                tangential_impulse_Ns=state["tangential_impulse"],
+                normal_impulse_Ns=state["window_normal"],
+                tangential_impulse_Ns=state["window_tangential"],
                 penetration_m=penetration,
                 work_J=state["work"],
                 duration_s=state["duration"],

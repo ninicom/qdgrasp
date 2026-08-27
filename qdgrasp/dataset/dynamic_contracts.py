@@ -76,6 +76,13 @@ class ContactSafetyBudget:
     max_non_target_rotation_rad: float
     max_non_target_velocity_mps: float
 
+    #: Impulse is judged over a rolling window, not over the whole rollout.
+    #: Impulse is force times time, so a cumulative limit rejects every
+    #: sustained hold no matter how gentle -- it would measure grasp duration
+    #: rather than safety, and make hands incomparable by how long they held on.
+    #: Sustained load is bounded by peak force and contact_duration_s instead.
+    impulse_window_s: float = 0.1
+
     material_class: str = "rigid_default"
     environment_class: str = "table"
 
