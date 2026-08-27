@@ -1,0 +1,47 @@
+{
+  "blockers": [
+    "B-10"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "d50ea3afff520a8dbb2e5fe9835e03607a52c4fb",
+  "device": "cpu",
+  "gates": [
+    "G05"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/config/active_scope.py": "29f084a4aacee380075cc73d113429397e4b11f2b0808ca818301e90875a465f",
+    "qdgrasp/dataset/schema.py": "b02b4fbf7d972f3d5c9746e143ee3b975b5dca6878c2ced022cf7ea40bbe7505",
+    "qdgrasp/roadmap/scope_audit.py": "d796f8cb41dc2c338099ad51ba53f56d2553b044be9c001cbee2e3b000ecc73a"
+  },
+  "implementation_refs": [
+    "qdgrasp/config/active_scope.py",
+    "qdgrasp/roadmap/scope_audit.py",
+    "qdgrasp/dataset/schema.py"
+  ],
+  "note": "S1 ADR-0008 active-scope registry and repository scan",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T16:52:47.862868+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S1",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_active_scope.py"
+    ],
+    "summary": "16 passed in 3.70s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

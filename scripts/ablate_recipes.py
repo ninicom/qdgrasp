@@ -15,6 +15,7 @@ from typing import Any
 
 import numpy as np
 
+from qdgrasp.config.active_scope import historical_reproduction_scope
 from qdgrasp.dataset.pipeline.contracts import ALLOWED_RECIPES
 from qdgrasp.dataset.pipeline.generated_reachable import (
     build_generated_reachable_object,
@@ -37,7 +38,15 @@ POSITIVE_CONTROL_BUDGETS = {
     "shadow_hand": 10,
 }
 REQUIRED_RECIPES = tuple(ALLOWED_RECIPES)
-REQUIRED_HANDS = ("leap_hand", "wonik_allegro", "shadow_hand")
+#: The P3.2 recipe ablation was run and pinned before ADR-0008, so reproducing
+#: it needs the same three hands. The selection is declared through the registry
+#: as a historical reproduction; nothing it produces is release evidence for the
+#: active scope (G05).
+ABLATION_ARTIFACT_ID = "phase3-2-recipe-ablation"
+ABLATION_SCOPE = historical_reproduction_scope(
+    ABLATION_ARTIFACT_ID, ("leap_hand", "wonik_allegro", "shadow_hand")
+)
+REQUIRED_HANDS = ABLATION_SCOPE.hands
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PROVENANCE_SOURCES = (
     "scripts/ablate_recipes.py",

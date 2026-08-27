@@ -27,7 +27,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from qdgrasp.roadmap import ManifestError, audit_closure, load_manifest
+from qdgrasp.config.active_scope import ACTIVE_HANDS, PAUSED_HANDS
+from qdgrasp.roadmap import ManifestError, audit_active_scope, audit_closure, load_manifest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = REPO_ROOT / "docs" / "roadmap" / "phase3_4_3_requirements.yaml"
@@ -84,6 +85,11 @@ def main() -> int:
     require_release = args.profile == "release"
     closure = audit_closure(manifest, repo_root=REPO_ROOT, require_release=require_release)
 
+    # ADR-0008 is enforced at the point a workload picks its hands, not by
+    # remembering to leave Shadow out; an undeclared default selecting it is a
+    # gate failure whatever the ledger says (G05).
+    scope_findings = audit_active_scope(REPO_ROOT)
+
     result: dict[str, Any] = {
         "phase": "3.4.3",
         "scope": args.scope,
@@ -106,6 +112,11 @@ def main() -> int:
             "open_required": list(closure.open_required),
             "violations": list(closure.violations),
         },
+        "adr_0008_scope_audit": {
+            "registry_active_hands": list(ACTIVE_HANDS),
+            "registry_paused_hands": list(PAUSED_HANDS),
+            "undeclared_paused_selections": [str(finding) for finding in scope_findings],
+        },
         "worktree_dirty": closure.worktree_dirty,
         "manifest": {
             "path": str(args.manifest.relative_to(REPO_ROOT)) if args.manifest.is_absolute() else str(args.manifest),
@@ -121,6 +132,11 @@ def main() -> int:
     }
 
     exit_code = closure.exit_code
+    if scope_findings:
+        result["verdict"] = "FAIL"
+        result["release_verdict"] = "none"
+        result["release_blocked"] = True
+        exit_code = 1
     if not args.skip_tests:
         tests = run_pytest(("tests/dynamic_grasp", "tests/contactrich_active"))
         result["tests"] = tests

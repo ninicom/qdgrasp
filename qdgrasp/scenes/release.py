@@ -16,6 +16,7 @@ import mujoco
 import numpy as np
 import trimesh
 
+from qdgrasp.config.active_scope import historical_reproduction_scope
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import RolloutSceneObject
 from qdgrasp.dataset.pipeline.validators.scene_dynamic import (
@@ -50,7 +51,12 @@ from qdgrasp.scenes.release_recipes import SceneGraspRecipe, build_release_grasp
 
 DATASET_ID = "QDGrasp-Scene-Tiny"
 GENERATOR_VERSION = "1.0.0"
+#: This index was published before ADR-0008 and its bytes are pinned, so it
+#: keeps naming all three hands. The scope is resolved through the registry so
+#: the selection is declared as a historical reproduction rather than read as a
+#: default workload still choosing a paused hand (G05).
 ROBOT_PROFILES = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
+RELEASE_SCOPE = historical_reproduction_scope(DATASET_ID, ROBOT_PROFILES)
 
 
 @dataclass(frozen=True)

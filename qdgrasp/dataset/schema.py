@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ..config.active_scope import DEFAULT_ROBOT_PROFILES
 from ..config.registry import register_document_schema
 from ..config.schema import _Document
 
@@ -26,7 +27,9 @@ class DataConfigV2(_Document):
     pin_memory: bool = False
     drop_last: bool = False
     seed: int = 42
-    robot_profiles: tuple[str, ...] = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
+    #: Defaults to the active corpus of ADR-0008. A paused hand may still be
+    #: listed explicitly in a config file, but nothing selects one by default.
+    robot_profiles: tuple[str, ...] = DEFAULT_ROBOT_PROFILES
 
     @field_validator("point_count", "batch_size")
     @classmethod

@@ -98,6 +98,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-10
     mapped_to: [G05]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/config/active_scope.py, qdgrasp/roadmap/scope_audit.py, qdgrasp/dataset/schema.py]
+    test_ids: [tests/contactrich_active/test_active_scope.py]
+    evidence_refs: [evidence/phase3_4_3/s1/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-11
     category: blocker
@@ -186,6 +192,12 @@ requirements:
     category: direct_gate
     normative_source: P3.4.3#G05
     mapped_to: [R-ADR-01]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/config/active_scope.py, qdgrasp/roadmap/scope_audit.py, qdgrasp/dataset/schema.py]
+    test_ids: [tests/contactrich_active/test_active_scope.py]
+    evidence_refs: [evidence/phase3_4_3/s1/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G06
     category: direct_gate
@@ -482,6 +494,12 @@ requirements:
     category: scope_clause
     normative_source: ADR-0008
     mapped_to: [G05, G09, G11, C05, C06, C08]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/config/active_scope.py, qdgrasp/roadmap/scope_audit.py, qdgrasp/dataset/schema.py]
+    test_ids: [tests/contactrich_active/test_active_scope.py]
+    evidence_refs: [evidence/phase3_4_3/s1/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-UPSTREAM-01
     category: compatibility_clause

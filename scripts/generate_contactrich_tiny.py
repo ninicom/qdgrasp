@@ -22,6 +22,14 @@ from typing import Any
 
 import mujoco
 
+from qdgrasp.config.active_scope import (
+    ACTIVE_HANDS,
+    GOVERNING_DECISION,
+    KNOWN_HANDS,
+    PAUSED_HANDS,
+    profile_of_hand,
+    resolve_workload_hands,
+)
 from qdgrasp.dataset.dynamic_contracts import ContactSafetyBudget
 from qdgrasp.dataset.dynamic_shards import write_trajectory_shard
 from qdgrasp.dynamic.safety import SceneRoles
@@ -36,11 +44,12 @@ DATASET_ID = "qdgrasp-contactrich-tiny"
 #: dropped from the record: a missing Shadow result must read
 #: `paused_by_ADR-0008`, never `pass`, `zero`, `unsupported` or a bare
 #: `not_run`, and the three-hand P3.4 contract does not close while it holds.
-ACTIVE_HANDS = ("leap_hand", "wonik_allegro")
-PAUSED_HANDS = ("shadow_hand",)
-HANDS = ACTIVE_HANDS
-CFG = {h: f"{h}.yaml" for h in (*ACTIVE_HANDS, *PAUSED_HANDS)}
-PAUSE_DECISION = "ADR-0008"
+#: The corpus itself is read from the registry rather than restated here, so
+#: this generator cannot drift from the decision (G05).
+SCOPE = resolve_workload_hands()
+HANDS = SCOPE.hands
+CFG = {h: profile_of_hand(h) for h in KNOWN_HANDS}
+PAUSE_DECISION = GOVERNING_DECISION
 
 #: Pinned per robot profile before generation, and hashed into the manifest.
 #: Impulse is judged over a rolling window: a cumulative limit would reject
