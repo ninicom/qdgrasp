@@ -54,7 +54,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-10 batched MPPI strategy": "todo",
     "P3.4-11 local contact trajectory refinement": "done",
     "P3.4-12 CPU replay + terminal grasp certifier": "done",
-    "P3.4-13 trajectory writer/loader": "todo",
+    "P3.4-13 trajectory writer/loader": "done",
     "P3.4-14 static-vs-dynamic ablation": "todo",
     "P3.4-15 Kaggle CUDA harness": "cpu_pending_gpu",
     "P3.4-16 QDGrasp-ContactRich-Tiny": "todo",
