@@ -1,0 +1,261 @@
+{
+  "active_joint_prefixes": [
+    "rh_FFJ",
+    "rh_THJ",
+    "rh_WRJ"
+  ],
+  "classification": "invalid_posture",
+  "inactive_joints_closed_by_recipe": [
+    "rh_LFJ1",
+    "rh_LFJ2",
+    "rh_LFJ3",
+    "rh_LFJ4",
+    "rh_LFJ5",
+    "rh_MFJ1",
+    "rh_MFJ2",
+    "rh_MFJ3",
+    "rh_MFJ4",
+    "rh_RFJ1",
+    "rh_RFJ2",
+    "rh_RFJ3",
+    "rh_RFJ4"
+  ],
+  "note": "Gravity and control are off in every stage, so a contact here is produced by the commanded joint vector alone.",
+  "rationale": "A neutral posture is clean and opening every inactive finger clears the penetration entirely, while the recipe's values reproduce it. The recipe commands fingers the pinch does not use into the palm; the collision geometry is sound.",
+  "robot_profile": "shadow_hand.yaml",
+  "schema": "qdgrasp/evidence/phase3.4.1-shadow-audit/v1",
+  "stages": {
+    "q_closed_active_only": {
+      "contacts": 41,
+      "inactive_finger_self_contacts": [
+        {
+          "body_a": "rh_mfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_31",
+          "geom_b": "id_18",
+          "normal_force_N": 197.5424921340339,
+          "parent_of_a": "rh_mfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.0001501641680240421,
+          "signed_distance_m": -0.0001501641680240421,
+          "structurally_adjacent": false,
+          "tangential_force_N": 197.5424921340339
+        },
+        {
+          "body_a": "rh_rfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_39",
+          "geom_b": "id_13",
+          "normal_force_N": 199.8159671310972,
+          "parent_of_a": "rh_rfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.00015016416802413578,
+          "signed_distance_m": -0.00015016416802413578,
+          "structurally_adjacent": false,
+          "tangential_force_N": 199.81596713109718
+        },
+        {
+          "body_a": "rh_lfproximal",
+          "body_b": "rh_lfmetacarpal",
+          "geom_a": "id_49",
+          "geom_b": "id_45",
+          "normal_force_N": 318.31947916412963,
+          "parent_of_a": "rh_lfknuckle",
+          "parent_of_b": "rh_palm",
+          "penetration_m": 0.0003601641680240752,
+          "signed_distance_m": -0.0003601641680240752,
+          "structurally_adjacent": false,
+          "tangential_force_N": 271.9603531607444
+        }
+      ],
+      "self_contacts": 3,
+      "worst_self_pair": {
+        "body_a": "rh_lfproximal",
+        "body_b": "rh_lfmetacarpal",
+        "geom_a": "id_49",
+        "geom_b": "id_45",
+        "normal_force_N": 318.31947916412963,
+        "parent_of_a": "rh_lfknuckle",
+        "parent_of_b": "rh_palm",
+        "penetration_m": 0.0003601641680240752,
+        "signed_distance_m": -0.0003601641680240752,
+        "structurally_adjacent": false,
+        "tangential_force_N": 271.9603531607444
+      }
+    },
+    "q_inactive_open": {
+      "contacts": 38,
+      "inactive_finger_self_contacts": [],
+      "self_contacts": 0,
+      "worst_self_pair": null
+    },
+    "q_lf_zero": {
+      "contacts": 40,
+      "inactive_finger_self_contacts": [
+        {
+          "body_a": "rh_mfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_31",
+          "geom_b": "id_18",
+          "normal_force_N": 197.5851933348977,
+          "parent_of_a": "rh_mfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.0001501641680240421,
+          "signed_distance_m": -0.0001501641680240421,
+          "structurally_adjacent": false,
+          "tangential_force_N": 197.58519333489772
+        },
+        {
+          "body_a": "rh_rfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_39",
+          "geom_b": "id_13",
+          "normal_force_N": 199.794213597012,
+          "parent_of_a": "rh_rfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.00015016416802413578,
+          "signed_distance_m": -0.00015016416802413578,
+          "structurally_adjacent": false,
+          "tangential_force_N": 199.794213597012
+        }
+      ],
+      "self_contacts": 2,
+      "worst_self_pair": {
+        "body_a": "rh_rfproximal",
+        "body_b": "rh_palm",
+        "geom_a": "id_39",
+        "geom_b": "id_13",
+        "normal_force_N": 199.794213597012,
+        "parent_of_a": "rh_rfknuckle",
+        "parent_of_b": "rh_wrist",
+        "penetration_m": 0.00015016416802413578,
+        "signed_distance_m": -0.00015016416802413578,
+        "structurally_adjacent": false,
+        "tangential_force_N": 199.794213597012
+      }
+    },
+    "q_neutral_all_zero": {
+      "contacts": 38,
+      "inactive_finger_self_contacts": [],
+      "self_contacts": 0,
+      "worst_self_pair": null
+    },
+    "q_recipe_closed": {
+      "contacts": 41,
+      "inactive_finger_self_contacts": [
+        {
+          "body_a": "rh_mfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_31",
+          "geom_b": "id_18",
+          "normal_force_N": 197.5424921340339,
+          "parent_of_a": "rh_mfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.0001501641680240421,
+          "signed_distance_m": -0.0001501641680240421,
+          "structurally_adjacent": false,
+          "tangential_force_N": 197.5424921340339
+        },
+        {
+          "body_a": "rh_rfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_39",
+          "geom_b": "id_13",
+          "normal_force_N": 199.8159671310972,
+          "parent_of_a": "rh_rfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.00015016416802413578,
+          "signed_distance_m": -0.00015016416802413578,
+          "structurally_adjacent": false,
+          "tangential_force_N": 199.81596713109718
+        },
+        {
+          "body_a": "rh_lfproximal",
+          "body_b": "rh_lfmetacarpal",
+          "geom_a": "id_49",
+          "geom_b": "id_45",
+          "normal_force_N": 318.31947916412963,
+          "parent_of_a": "rh_lfknuckle",
+          "parent_of_b": "rh_palm",
+          "penetration_m": 0.0003601641680240752,
+          "signed_distance_m": -0.0003601641680240752,
+          "structurally_adjacent": false,
+          "tangential_force_N": 271.9603531607444
+        }
+      ],
+      "self_contacts": 3,
+      "worst_self_pair": {
+        "body_a": "rh_lfproximal",
+        "body_b": "rh_lfmetacarpal",
+        "geom_a": "id_49",
+        "geom_b": "id_45",
+        "normal_force_N": 318.31947916412963,
+        "parent_of_a": "rh_lfknuckle",
+        "parent_of_b": "rh_palm",
+        "penetration_m": 0.0003601641680240752,
+        "signed_distance_m": -0.0003601641680240752,
+        "structurally_adjacent": false,
+        "tangential_force_N": 271.9603531607444
+      }
+    },
+    "q_recipe_pregrasp": {
+      "contacts": 41,
+      "inactive_finger_self_contacts": [
+        {
+          "body_a": "rh_mfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_31",
+          "geom_b": "id_18",
+          "normal_force_N": 197.5399849266811,
+          "parent_of_a": "rh_mfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.0001501641680240421,
+          "signed_distance_m": -0.0001501641680240421,
+          "structurally_adjacent": false,
+          "tangential_force_N": 197.5399849266811
+        },
+        {
+          "body_a": "rh_rfproximal",
+          "body_b": "rh_palm",
+          "geom_a": "id_39",
+          "geom_b": "id_13",
+          "normal_force_N": 199.8167935547924,
+          "parent_of_a": "rh_rfknuckle",
+          "parent_of_b": "rh_wrist",
+          "penetration_m": 0.00015016416802413578,
+          "signed_distance_m": -0.00015016416802413578,
+          "structurally_adjacent": false,
+          "tangential_force_N": 199.8167935547924
+        },
+        {
+          "body_a": "rh_lfproximal",
+          "body_b": "rh_lfmetacarpal",
+          "geom_a": "id_49",
+          "geom_b": "id_45",
+          "normal_force_N": 318.31925390815593,
+          "parent_of_a": "rh_lfknuckle",
+          "parent_of_b": "rh_palm",
+          "penetration_m": 0.0003601641680240752,
+          "signed_distance_m": -0.0003601641680240752,
+          "structurally_adjacent": false,
+          "tangential_force_N": 271.9639981726822
+        }
+      ],
+      "self_contacts": 3,
+      "worst_self_pair": {
+        "body_a": "rh_lfproximal",
+        "body_b": "rh_lfmetacarpal",
+        "geom_a": "id_49",
+        "geom_b": "id_45",
+        "normal_force_N": 318.31925390815593,
+        "parent_of_a": "rh_lfknuckle",
+        "parent_of_b": "rh_palm",
+        "penetration_m": 0.0003601641680240752,
+        "signed_distance_m": -0.0003601641680240752,
+        "structurally_adjacent": false,
+        "tangential_force_N": 271.9639981726822
+      }
+    }
+  },
+  "work_package": "P3.4.1-06"
+}
