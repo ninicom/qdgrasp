@@ -47,7 +47,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-03 MuJoCo CPU oracle backend": "done",
     "P3.4-04 MJX-Warp compatibility spike": "done",
     "P3.4-05 MJWarp CUDA backend": "todo",
-    "P3.4-06 contact observer + safety budget": "todo",
+    "P3.4-06 contact observer + safety budget": "done",
     "P3.4-07 primitive-sequence controller": "todo",
     "P3.4-08 static-seeded contact rollout": "todo",
     "P3.4-09 batched CEM search": "todo",
