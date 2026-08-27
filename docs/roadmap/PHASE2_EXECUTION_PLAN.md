@@ -138,7 +138,7 @@ Hai điểm dễ sai:
 | P2-12 | Gate script CPU của P2 | `scripts/check_phase2.py` | |
 | P2-13 | Test suite | `tests/test_robot_*.py`, `tests/test_sim_*.py` | |
 | P2-14 | Contract doc và session report | `docs/configuration/ROBOT_PROFILE.md`, `docs/sessions/` | `document_type: registry` |
-| P2-15 | CUDA FK parity thêm vào harness Kaggle sẵn có | `scripts/phase2_cuda_fk_parity.py`, cell mới trong `kaggle-phase1/` | ngoài gate roadmap, xem §10 |
+| P2-15 | CUDA FK parity thêm vào harness Kaggle sẵn có | `scripts/phase2_cuda_fk_parity.py`, cell mới trong `kaggle-phase1/` | ngoài gate roadmap, xem §10; chạy lần đầu 2026-08-27 trên Tesla T4 qua harness P3.4, max deviation `2.38e-07` so với ngưỡng `1e-04` (`REV-20260827-004`) |
 
 Thứ tự đề xuất: P2-01 → P2-02/03 → P2-04 → P2-05 → P2-06 → P2-07 → P2-08 →
 P2-09/10 → P2-11/12/13/14 → P2-15. P2-02 và P2-03 chạy song song được. P2-15

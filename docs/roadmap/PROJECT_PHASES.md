@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.20.0
+version: 1.21.0
 status: active
 date: 2026-08-27
-revises: ROADMAP-001@1.19.0
+revises: ROADMAP-001@1.20.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260827-002-ik-budget-negative-finding.md
+latest_revision_record: docs/revisions/REV-20260827-003-phase3-5-asset-scene-rl-readiness.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -34,7 +34,7 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
 | P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | complete |
 | P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | complete |
 | P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | complete |
-| P3 — Data layer | Xây procedural objects/scenes, static và contact-rich dynamic grasp generation, physics labels và immutable dataset schema | `DGN-Open-Tiny`, `QDGrasp-Scene-Tiny` và `QDGrasp-ContactRich-Tiny` có manifest, rendered evidence và deterministic regeneration | Object/scene/trajectory regenerate cùng seed/hash; adapter/frame/physics/CPU-GPU audit và tiny loaders pass | pending |
+| P3 — Data layer | Xây procedural objects/scenes, static/contact-rich grasp data và môi trường asset→scene→RL có thể tái lập | `DGN-Open-Tiny`, `QDGrasp-Scene-Tiny`, `QDGrasp-ContactRich-Tiny` và `QDGrasp-RL-Env-Tiny` có manifest/evidence | Object/scene/trajectory regenerate; raw-mesh/CoACD, virtual-drop/settle, Gym API, frame/physics/CPU-GPU audit và tiny loaders pass | pending |
 | P4 — Model MVP | Xây object encoder, HandGraph conditioning và palm+joint flow | QDGrasp-Flow `n` overfit được tiny dataset | CUDA forward/backward, gradient coverage, finite joints/rotations và tiny overfit pass | pending |
 | P5 — Training & evaluation | Hoàn thiện multi-hand training, quality/contact heads, evaluator và ablation | Checkpoint multi-hand đầu tiên cùng benchmark report | CUDA train/eval/resume, held-out protocol, physics success và ablations tái lập | pending |
 | P6 — Scale & delivery | Scale data/model, tối ưu memory/latency, resume, TorchScript và ONNX | Model `n/s/m`, export bundles và reproducible train recipes | CPU/CUDA/AMP parity, export round-trip, memory/latency gates pass | pending |
@@ -100,8 +100,8 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   position và 60–150° về normal, tức không nằm trong basin chứ không phải hết
   budget, nên canonical `0/12` là bài toán **proposal feasibility** chứ không
   phải solver tuning. Mọi thí nghiệm P3.1 đã chạy, gồm cả hướng chết, được ghi
-  tại `evidence/phase3_1/EXPERIMENTS.md`. P3 tổng vẫn `pending` vì P3.4
-  contact-rich chưa bắt đầu.
+  tại `evidence/phase3_1/EXPERIMENTS.md`. P3 tổng vẫn `pending` vì implementation
+  P3.4 contact-rich chưa bắt đầu và P3.5 RL-readiness mới được lập kế hoạch.
 - Phase 3.3 ([`ROADMAP-P3.3-001`](PHASE3_3_SCENE_GRASP_DATA_PLAN.md)) mở rộng
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object
@@ -117,12 +117,29 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   exact candidate `870ef91`; verdict `pass`, không có S0–S3. P3.3 vì vậy
   `complete` (`REV-20260825-007`). External real-source roots chưa cấu hình nên
   closure không tạo source-scale compatibility claim. P3 tổng thể vẫn `pending`
-  vì P3.1 release closure và P3.4 contact-rich trajectory còn độc lập chưa đóng.
+  vì P3.4 contact-rich trajectory và P3.5 RL simulation readiness còn độc lập
+  chưa đóng.
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
   thêm contact-rich trajectory search trực tiếp trong scene: target được phép
   dịch chuyển do physics, support/non-target contact được chấp nhận dưới safety
   budget, GPU batched generation dùng MJX-Warp/MuJoCo Warp và CUDA evidence chạy
   trên Kaggle như Phase 1. CPU vẫn là correctness/oracle replay backend.
+- Phase 3.5 ([`ROADMAP-P3.5-001`](PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md))
+  thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
+  mesh được chuẩn hóa theo mét, tách visual/collision, rồi public Python CoACD
+  API trong library tạo convex parts local-first trước immutable manifest. API
+  được viết mới với full typed CoACD parameters; source
+  `kaggle_pipeline_modular/stage0_coacd` chỉ làm legacy profile/regression
+  reference, không phải implementation bắt buộc. Đây không phải HTTP service và
+  không gửi mesh ra ngoài. Nếu không có scene,
+  hệ thống tạo table/tray/bin ảo, bounded spawn region, thả vật bằng physics và
+  chỉ nhận snapshot sau deterministic settle certification. P3.5 cung cấp
+  Gymnasium single/vector contract, reset/randomization/checkpoint và GPU
+  notebook evidence để sẵn sàng cho RL ở P5. MuJoCo CPU là oracle; MJX-Warp là
+  GPU candidate đầu tiên, ManiSkill 3 là fallback qua 3-hand compatibility gate;
+  Isaac Lab chỉ là optional backend cho persistent RTX/cloud, không chặn v1.
+  P3.5 không chặn việc bắt đầu P4 static/offline sau khi dataset interface đã
+  khóa, nhưng vẫn phải đóng hoặc được scope lại trước khi ghi P3 tổng `complete`.
 - `DGN-Open-Tiny` đủ nhỏ cho CI/overfit và tái tạo từ đầu.
 
 ### P4 — Model MVP

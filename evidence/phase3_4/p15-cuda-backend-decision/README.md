@@ -59,12 +59,18 @@ exactly that reason.
 
 ## Incidental finding
 
-The same run is the first time `scripts/phase2_cuda_fk_parity.py` has ever
-executed. It carried two dead calls — `require_cuda(device=...)` and
-`environment_info(device=...)`, neither of which those functions accept — so the
-Phase 2 CUDA FK parity gate had never run on any host despite Phase 2 being
-recorded complete with that gate in its list. Both are fixed and the parity now
-passes on real hardware.
+This is the first time `scripts/phase2_cuda_fk_parity.py` has ever executed. It
+carried two dead calls — `require_cuda(device=...)` and
+`environment_info(device=...)`, neither of which those functions accept — so it
+would have failed on the first line of any GPU host. Both are fixed and the
+parity now passes on real hardware.
+
+This is a latent defect in an un-exercised script, not a governance failure. The
+project was explicit that the script had not been run: `PHASE2_EXECUTION_PLAN.md`
+§10 places P2-15 outside the phase-transition gate, `REV-20260822-011` and
+`SESSION-20260822-021` both record it as not run, and `check_phase2.py` prints
+that CUDA FK parity is not covered. The P2 gate in `PROJECT_PHASES.md` is
+parse/mesh/FK/MuJoCo fixtures, which did pass. No P2 claim was overstated.
 
 ## SHA-256
 
