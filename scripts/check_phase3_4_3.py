@@ -21,6 +21,7 @@ exited ``0``, which reads to any CI system as a phase pass.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -62,6 +63,107 @@ def run_pytest(selection: tuple[str, ...]) -> dict[str, Any]:
     }
 
 
+def run_command(args: list[str], *, label: str, timeout: int = 3600) -> dict[str, Any]:
+    """Run one gate and report what it said, without interpreting it."""
+    completed = subprocess.run(
+        args, cwd=REPO_ROOT, capture_output=True, text=True, timeout=timeout, check=False
+    )
+    lines = completed.stdout.strip().splitlines()
+    return {
+        "label": label,
+        "command": " ".join(args[1:]) if args and args[0] == sys.executable else " ".join(args),
+        "returncode": completed.returncode,
+        "passed": completed.returncode == 0,
+        "summary": lines[-1] if lines else "",
+        "stderr_tail": completed.stderr[-800:] if completed.returncode != 0 else "",
+    }
+
+
+def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict[str, Any]:
+    """Check GPU evidence produced somewhere this machine cannot reproduce.
+
+    The gate cannot re-run a T4 rollout, so it checks what it can: that the
+    evidence exists, that it is the schema it claims, that its verdict is a
+    pass, and that it was produced from the commit under review. Evidence from
+    a different commit is evidence about a different tree.
+    """
+    if path is None:
+        return {
+            "status": "absent",
+            "detail": (
+                "no CUDA evidence supplied; run kaggle-phase3-4-3/ on a T4 and pass "
+                "--cuda-evidence. A missing GPU gate is not a passed one."
+            ),
+            "passed": False,
+        }
+    if not path.is_file():
+        return {"status": "missing_file", "detail": str(path), "passed": False}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {"status": "unreadable", "detail": str(exc), "passed": False}
+
+    schema = payload.get("schema", "")
+    verdict = payload.get("verdict", "")
+    commit = str(payload.get("commit") or payload.get("cuda_environment", {}).get("commit") or "")
+    problems: list[str] = []
+    if not schema.startswith("qdgrasp/evidence/phase3.4.3-"):
+        problems.append(f"unexpected evidence schema {schema!r}")
+    if verdict != "PASS":
+        problems.append(f"CUDA gate verdict is {verdict!r}, not PASS")
+    if expected_commit and commit and commit != expected_commit:
+        problems.append(
+            f"evidence was produced from commit {commit[:12]}, not the candidate "
+            f"{expected_commit[:12]}"
+        )
+    return {
+        "status": "recorded",
+        "path": str(path),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "schema": schema,
+        "verdict": verdict,
+        "commit": commit,
+        "problems": problems,
+        "passed": not problems,
+    }
+
+
+def verify_review_packet(path: Path | None) -> dict[str, Any]:
+    """Check the independent reviewer's verdict, without standing in for it.
+
+    The author of a change cannot review it, so this only reads what a reviewer
+    signed: a PASS on an exact packet hash with no open S0-S1 findings.
+    """
+    if path is None:
+        return {
+            "status": "absent",
+            "detail": "no review packet supplied; an author cannot review their own work",
+            "passed": False,
+        }
+    if not path.is_file():
+        return {"status": "missing_file", "detail": str(path), "passed": False}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    verdict = payload.get("reviewer_verdict", "")
+    open_findings = payload.get("open_findings", {})
+    blocking = sum(int(open_findings.get(severity, 0)) for severity in ("S0", "S1"))
+    problems: list[str] = []
+    if verdict != "PASS":
+        problems.append(f"reviewer verdict is {verdict!r}, not PASS")
+    if blocking:
+        problems.append(f"{blocking} unresolved S0/S1 finding(s)")
+    if not payload.get("reviewer") or payload.get("reviewer") == payload.get("author"):
+        problems.append("the reviewer must not be the author of the change")
+    return {
+        "status": "recorded",
+        "path": str(path),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "reviewer_verdict": verdict,
+        "open_findings": open_findings,
+        "problems": problems,
+        "passed": not problems,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -73,6 +175,23 @@ def main() -> int:
     parser.add_argument("--profile", choices=("cpu", "release"), default="cpu")
     parser.add_argument("--manifest", type=Path, default=MANIFEST_PATH)
     parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--dataset-root",
+        type=Path,
+        default=REPO_ROOT / "datasets" / "contactrich-active-tiny",
+    )
+    parser.add_argument(
+        "--cuda-evidence",
+        type=Path,
+        default=None,
+        help="CUDA gate evidence from the Kaggle T4 run",
+    )
+    parser.add_argument(
+        "--review-packet",
+        type=Path,
+        default=None,
+        help="the independent reviewer's signed verdict",
+    )
     args = parser.parse_args()
 
     try:
@@ -131,7 +250,56 @@ def main() -> int:
         },
     }
 
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True, check=False
+    ).stdout.strip()
+    result["candidate_commit"] = head
+
+    gates: list[dict[str, Any]] = []
+    if args.dataset_root.is_dir():
+        gates.append(
+            run_command(
+                [
+                    sys.executable,
+                    "scripts/check_contactrich_active.py",
+                    str(args.dataset_root),
+                    *(["--require-release"] if require_release else []),
+                ],
+                label="dataset",
+            )
+        )
+    else:
+        gates.append(
+            {
+                "label": "dataset",
+                "passed": False,
+                "returncode": None,
+                "summary": f"{args.dataset_root} does not exist",
+            }
+        )
+    gates.append(
+        run_command([sys.executable, "scripts/check_docs.py", "--root", "."], label="docs")
+    )
+    gates.append(run_command(["git", "diff", "--check"], label="git_diff_check"))
+    result["gates"] = gates
+
+    result["cuda_evidence"] = verify_external_evidence(args.cuda_evidence, expected_commit=head)
+    result["review_packet"] = verify_review_packet(args.review_packet)
+
     exit_code = closure.exit_code
+    for gate in gates:
+        if not gate["passed"]:
+            result["verdict"] = "FAIL"
+            result["release_blocked"] = True
+            result["release_verdict"] = "none"
+            exit_code = 1
+    if require_release and not (
+        result["cuda_evidence"]["passed"] and result["review_packet"]["passed"]
+    ):
+        result["verdict"] = "BLOCKED"
+        result["release_blocked"] = True
+        result["release_verdict"] = "none"
+        exit_code = max(exit_code, 3)
     if scope_findings:
         result["verdict"] = "FAIL"
         result["release_verdict"] = "none"

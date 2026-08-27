@@ -514,6 +514,30 @@ def _git(*args: str) -> str:
     return completed.stdout.strip() if completed.returncode == 0 else ""
 
 
+def source_is_dirty(output_root: Path) -> bool:
+    """Whether the *source* was dirty when this artifact was generated.
+
+    The artifact's own directory appears as untracked while it is being written,
+    so counting it would make every generation look unreproducible. What matters
+    is whether the code and configuration the artifact came from can be checked
+    out from a commit -- so the output path is excluded, and everything else is
+    not.
+    """
+    status = _git("status", "--porcelain")
+    if not status:
+        return False
+    try:
+        relative = output_root.resolve().relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        relative = ""
+    for line in status.splitlines():
+        path = line[3:].strip().strip('"')
+        if relative and (path == relative or path.startswith(f"{relative}/")):
+            continue
+        return True
+    return False
+
+
 def build_manifest(
     *,
     splits: dict[str, list[Sample]],
@@ -522,6 +546,7 @@ def build_manifest(
     generation_log: list[dict[str, Any]],
     release_blocked: bool,
     blocked_reasons: list[str],
+    output_root: Path,
 ) -> dict[str, Any]:
     every = [sample for group in splits.values() for sample in group]
     dispositions: dict[str, int] = {}
@@ -546,7 +571,7 @@ def build_manifest(
         "version": DATASET_VERSION,
         "generated_at": datetime.now(UTC).isoformat(),
         "commit": _git("rev-parse", "HEAD"),
-        "worktree_dirty": bool(_git("status", "--porcelain")),
+        "worktree_dirty": source_is_dirty(output_root),
         # Scope disclosure travels with the artifact, so a reader cannot mistake
         # a two-hand dataset for the three-hand contract.
         "scope": scope.as_disclosure(),
@@ -723,6 +748,7 @@ def main() -> int:
         generation_log=log,
         release_blocked=True,
         blocked_reasons=blocked_reasons,
+        output_root=root,
     )
     problems = audit_manifest(manifest, root)
     manifest["self_audit"] = {"problems": problems, "clean": not problems}
