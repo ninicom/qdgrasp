@@ -329,3 +329,89 @@ def test_the_generated_artifact_declares_itself_blocked() -> None:
     )
     assert manifest["release_blocked"] is True
     assert manifest["blocked_reasons"]
+
+
+# -- storage does not grow with the integrator timestep --------------------
+
+
+def test_the_stored_contact_stream_is_one_reading_per_contact_per_sample() -> None:
+    """C06.1: a finer timestep is a simulation choice, not more data.
+
+    The observer reads contacts every integrator step, because impulse, work and
+    duration are only honest if it does. What gets *stored* is one reading per
+    contact pair per episode per recorded sample -- so the payload is bounded by
+    the sample count, not by how finely the simulator was stepped.
+    """
+    from qdgrasp.dataset.dynamic_contracts import ContactClass, ContactPairKind
+    from qdgrasp.dynamic.wrapped_rollout import _sparsify_contacts
+
+    from .test_taxonomy_and_terminal import _event
+
+    # Forty readings of the same contact inside one sample, as a fine timestep
+    # would produce, plus one in the next sample.
+    dense = [
+        _event(0, ContactPairKind.TARGET_ROBOT, ContactClass.TARGET_INTENTIONAL,
+               budget_margin=0.9 - step * 0.01, simulator_step=step)
+        for step in range(40)
+    ]
+    dense.append(
+        _event(1, ContactPairKind.TARGET_ROBOT, ContactClass.TARGET_INTENTIONAL,
+               budget_margin=0.5, simulator_step=40)
+    )
+    sparse = _sparsify_contacts(dense, steps=2)
+    assert len(sparse) == 2
+
+    # The reading that survives is the worst one, because that is the one the
+    # safety verdict was made on.
+    assert sparse[0].budget_margin == pytest.approx(0.9 - 39 * 0.01)
+    assert sparse[0].time_index == 0
+    assert sparse[1].time_index == 1
+
+
+def test_halving_the_timestep_does_not_double_the_stored_stream() -> None:
+    from qdgrasp.dataset.dynamic_contracts import ContactClass, ContactPairKind
+    from qdgrasp.dynamic.wrapped_rollout import _sparsify_contacts
+
+    from .test_taxonomy_and_terminal import _event
+
+    def stream(readings_per_sample: int):
+        return [
+            _event(sample, ContactPairKind.TARGET_ROBOT, ContactClass.TARGET_INTENTIONAL,
+                   budget_margin=0.5, simulator_step=sample * readings_per_sample + step)
+            for sample in range(10)
+            for step in range(readings_per_sample)
+        ]
+
+    coarse = _sparsify_contacts(stream(5), steps=10)
+    fine = _sparsify_contacts(stream(10), steps=10)
+    assert len(coarse) == len(fine) == 10
+
+
+def test_separate_contact_pairs_are_both_kept() -> None:
+    from qdgrasp.dataset.dynamic_contracts import ContactClass, ContactPairKind
+    from qdgrasp.dynamic.wrapped_rollout import _sparsify_contacts
+
+    from .test_taxonomy_and_terminal import _event
+
+    events = [
+        _event(0, ContactPairKind.TARGET_ROBOT, ContactClass.TARGET_INTENTIONAL,
+               geom_a="tip_0", body_a="distal_0"),
+        _event(0, ContactPairKind.TARGET_SUPPORT, ContactClass.SUPPORT_ASSISTED,
+               geom_a="target_geom", geom_b="table", body_a="target", body_b="table"),
+    ]
+    assert len(_sparsify_contacts(events, steps=1)) == 2
+
+
+def test_a_recontact_is_kept_apart_from_the_episode_before_it() -> None:
+    from qdgrasp.dataset.dynamic_contracts import ContactClass, ContactPairKind
+    from qdgrasp.dynamic.wrapped_rollout import _sparsify_contacts
+
+    from .test_taxonomy_and_terminal import _event
+
+    events = [
+        _event(0, ContactPairKind.TARGET_ROBOT, ContactClass.TARGET_INTENTIONAL,
+               episode_index=0),
+        _event(0, ContactPairKind.TARGET_ROBOT, ContactClass.TARGET_INTENTIONAL,
+               episode_index=1),
+    ]
+    assert len(_sparsify_contacts(events, steps=1)) == 2

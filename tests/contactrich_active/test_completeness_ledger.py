@@ -244,11 +244,54 @@ def test_closure_gate_does_not_exit_zero_while_incomplete() -> None:
     assert payload["three_hand_coverage"] is False
 
 
-def test_clean_tree_with_open_requirements_reads_as_incomplete(manifest) -> None:
+def test_clean_tree_with_open_requirements_never_reads_as_pass(manifest) -> None:
+    # The live manifest's verdict moves as the work does, so this asserts the
+    # invariant rather than a snapshot: while anything required is open, a clean
+    # tree still does not pass.
     verdict = audit_closure(manifest, repo_root=REPO_ROOT, worktree_dirty=False)
+    assert verdict.open_required
+    assert verdict.verdict != "PASS"
+    assert verdict.exit_code != 0
+    assert verdict.release_blocked is True
+
+
+def test_a_pending_requirement_reads_as_incomplete(tmp_path: Path, document: dict) -> None:
+    document = copy.deepcopy(document)
+    for entry in document["requirements"]:
+        entry.update(status="pending", blocker_reason="not started")
+    verdict = audit_closure(
+        load_manifest(_write(tmp_path, document)), repo_root=REPO_ROOT, worktree_dirty=False
+    )
     assert verdict.verdict == "INCOMPLETE"
     assert verdict.exit_code == 3
     assert verdict.violations == ()
+
+
+def test_a_measured_failure_reads_as_fail(tmp_path: Path, document: dict) -> None:
+    document = copy.deepcopy(document)
+    for entry in document["requirements"]:
+        entry.update(status="pending", blocker_reason="not started")
+    document["requirements"][0].update(
+        status="failed", blocker_reason="measured on the release scenes and not met"
+    )
+    verdict = audit_closure(
+        load_manifest(_write(tmp_path, document)), repo_root=REPO_ROOT, worktree_dirty=False
+    )
+    assert verdict.verdict == "FAIL"
+    assert verdict.exit_code == 1
+
+
+def test_blocked_work_reads_as_blocked_not_failed(tmp_path: Path, document: dict) -> None:
+    document = copy.deepcopy(document)
+    for entry in document["requirements"]:
+        entry.update(
+            status="blocked", blocker_reason="requires a real NVIDIA device"
+        )
+    verdict = audit_closure(
+        load_manifest(_write(tmp_path, document)), repo_root=REPO_ROOT, worktree_dirty=False
+    )
+    assert verdict.verdict == "BLOCKED"
+    assert verdict.exit_code == 3
 
 
 def test_partial_phase_3_4_gate_does_not_exit_zero() -> None:

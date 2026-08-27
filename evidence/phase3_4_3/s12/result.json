@@ -1,0 +1,46 @@
+{
+  "blockers": [],
+  "branch": "feature/phase3-1-closure",
+  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "device": "cpu",
+  "gates": [
+    "G10",
+    "G11"
+  ],
+  "implementation_hashes": {
+    "docs/roadmap/PHASE3_4_3_HANDOFF.md": "26993e81ba4eedcd498708729620cb776ad306ac85b3668c6a39366f9badda1f",
+    "scripts/check_phase3_4_3.py": "63ba10256d40e5e733bbfd76f92dd41d3553d7214745ac3f88a6a08f20ee7348",
+    "scripts/phase3_4_3_review_packet.py": "568aaff3b440af4a6d690d1645b821bad2a936a55b5f10bb602b2f97c0c2a48f"
+  },
+  "implementation_refs": [
+    "scripts/phase3_4_3_review_packet.py",
+    "scripts/check_phase3_4_3.py",
+    "docs/roadmap/PHASE3_4_3_HANDOFF.md"
+  ],
+  "note": "S12 review packet, closure runner and P4 handoff conditions; reviewer verdict outstanding",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T20:35:14.336609+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S12",
+  "tests": {
+    "passed": false,
+    "returncode": 1,
+    "selection": [
+      "tests/contactrich_active"
+    ],
+    "summary": "1 failed, 315 passed in 49.65s",
+    "tail": ".....................................................................F.. [ 22%]\n........................................................................ [ 45%]\n........................................................................ [ 68%]\n........................................................................ [ 91%]\n............................                                             [100%]\n=================================== FAILURES ===================================\n__________ test_clean_tree_with_open_requirements_reads_as_incomplete __________\n\nmanifest = RequirementsManifest(schema='qdgrasp/roadmap-requirements/v1', plan_id='ROADMAP-P3.4.3-001', plan_version='1.1.0', sco...admap/phase3_4_3_requirements.yaml'), source_sha256='3856c405df87aaa3c50c454c5e2e98420ea638f6beecece1eda94e9012f65333')\n\n    def test_clean_tree_with_open_requirements_reads_as_incomplete(manifest) -> None:\n        verdict = audit_closure(manifest, repo_root=REPO_ROOT, worktree_dirty=False)\n>       assert verdict.verdict == \"INCOMPLETE\"\nE       AssertionError: assert 'FAIL' == 'INCOMPLETE'\nE         \nE         - INCOMPLETE\nE         + FAIL\n\ntests/contactrich_active/test_completeness_ledger.py:249: AssertionError\n=========================== short test summary info ============================\nFAILED tests/contactrich_active/test_completeness_ledger.py::test_clean_tree_with_open_requirements_reads_as_incomplete\n1 failed, 315 passed in 49.65s\n"
+  },
+  "worktree_dirty": true
+}

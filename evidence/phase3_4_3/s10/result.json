@@ -1,0 +1,49 @@
+{
+  "blockers": [
+    "B-08",
+    "B-19"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "device": "cpu",
+  "gates": [
+    "G08",
+    "C07"
+  ],
+  "implementation_hashes": {
+    "scripts/build_phase3_4_3_notebook.py": "70a6d254cea20482e6082b2e4d6c3b4f5d2214a1d905d8bf1d29c8ab2caf3646",
+    "scripts/check_phase3_4_3_cuda.py": "3555f61d405778be5dadc8b1d8ab64bd34859b0fb58abd1c9d570b3d0a4da33a",
+    "scripts/phase3_4_cuda_contact_search.py": "0506708043adf159327ed33ed7ec0b9fd69ed55aabc27afb262459f9259e9a31"
+  },
+  "implementation_refs": [
+    "scripts/check_phase3_4_3_cuda.py",
+    "scripts/build_phase3_4_3_notebook.py",
+    "scripts/phase3_4_cuda_contact_search.py"
+  ],
+  "note": "S10 CUDA gate and Kaggle harness; the gate itself needs a real T4",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T20:29:02.674371+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S10",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_cuda_gate_harness.py"
+    ],
+    "summary": "15 passed in 10.29s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

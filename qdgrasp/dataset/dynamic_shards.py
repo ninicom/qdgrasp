@@ -198,7 +198,10 @@ def write_trajectory_shard(
         "count": len(samples),
         "records": [trajectory_to_record(t, o) for t, o in samples],
     }
-    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    # Compact and key-sorted: still byte-stable for a given trajectory, which is
+    # what a manifest hash needs, without spending half the release payload on
+    # indentation nobody reads.
+    text = json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return hashlib.sha256(text.encode("utf-8")).hexdigest()

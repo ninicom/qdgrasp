@@ -1,0 +1,332 @@
+{
+  "assembled_at": "2026-08-27T20:35:18.068164+00:00",
+  "branch": "feature/phase3-1-closure",
+  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "completeness": {
+    "manifest_sha256": "3856c405df87aaa3c50c454c5e2e98420ea638f6beecece1eda94e9012f65333",
+    "open_required": [
+      "C05",
+      "C07",
+      "C08",
+      "G07",
+      "G08",
+      "G10",
+      "G11",
+      "P3.4-04",
+      "P3.4-05",
+      "P3.4-09",
+      "P3.4-15",
+      "P3.4-17",
+      "R-CUDA-01",
+      "R-DOD-03",
+      "R-DOD-04",
+      "R-DOD-05",
+      "R-DOD-08",
+      "R-PARITY-01",
+      "R-RESOURCE-01",
+      "R-RESOURCE-02",
+      "R-TEST-04",
+      "R-UPSTREAM-01"
+    ],
+    "status_counts": {
+      "blocked": 21,
+      "deferred_not_claimed": 1,
+      "failed": 1,
+      "passed": 62,
+      "paused": 0,
+      "pending": 0
+    },
+    "total_requirements": 85,
+    "verdict": "FAIL",
+    "violations": [
+      "B-01: passed claimed on a dirty worktree",
+      "B-02: passed claimed on a dirty worktree",
+      "B-03: passed claimed on a dirty worktree",
+      "B-04: passed claimed on a dirty worktree",
+      "B-05: passed claimed on a dirty worktree",
+      "B-06: passed claimed on a dirty worktree",
+      "B-07: passed claimed on a dirty worktree",
+      "B-08: passed claimed on a dirty worktree",
+      "B-09: passed claimed on a dirty worktree",
+      "B-10: passed claimed on a dirty worktree",
+      "B-11: passed claimed on a dirty worktree",
+      "B-12: passed claimed on a dirty worktree",
+      "B-13: passed claimed on a dirty worktree",
+      "B-14: passed claimed on a dirty worktree",
+      "B-15: passed claimed on a dirty worktree",
+      "B-16: passed claimed on a dirty worktree",
+      "B-17: passed claimed on a dirty worktree",
+      "B-18: passed claimed on a dirty worktree",
+      "B-19: passed claimed on a dirty worktree",
+      "B-20: passed claimed on a dirty worktree",
+      "G00: passed claimed on a dirty worktree",
+      "G01: passed claimed on a dirty worktree",
+      "G02: passed claimed on a dirty worktree",
+      "G03: passed claimed on a dirty worktree",
+      "G04: passed claimed on a dirty worktree",
+      "G05: passed claimed on a dirty worktree",
+      "G06: passed claimed on a dirty worktree",
+      "G09: passed claimed on a dirty worktree",
+      "C01: passed claimed on a dirty worktree",
+      "C02: passed claimed on a dirty worktree",
+      "C03: passed claimed on a dirty worktree",
+      "C04: passed claimed on a dirty worktree",
+      "C06: passed claimed on a dirty worktree",
+      "P3.4-00: passed claimed on a dirty worktree",
+      "P3.4-01: passed claimed on a dirty worktree",
+      "P3.4-02: passed claimed on a dirty worktree",
+      "P3.4-03: passed claimed on a dirty worktree",
+      "P3.4-06: passed claimed on a dirty worktree",
+      "P3.4-07: passed claimed on a dirty worktree",
+      "P3.4-08: passed claimed on a dirty worktree",
+      "P3.4-11: passed claimed on a dirty worktree",
+      "P3.4-12: passed claimed on a dirty worktree",
+      "P3.4-13: passed claimed on a dirty worktree",
+      "P3.4-14: passed claimed on a dirty worktree",
+      "P3.4-16: passed claimed on a dirty worktree",
+      "R-CONTACT-01: passed claimed on a dirty worktree",
+      "R-SAFETY-01: passed claimed on a dirty worktree",
+      "R-TERMINAL-01: passed claimed on a dirty worktree",
+      "R-CONTRACT-01: passed claimed on a dirty worktree",
+      "R-BACKEND-01: passed claimed on a dirty worktree",
+      "R-STRATEGY-01: passed claimed on a dirty worktree",
+      "R-OBJECTIVE-01: passed claimed on a dirty worktree",
+      "R-DATASET-01: passed claimed on a dirty worktree",
+      "R-TEST-01: passed claimed on a dirty worktree",
+      "R-TEST-02: passed claimed on a dirty worktree",
+      "R-TEST-03: passed claimed on a dirty worktree",
+      "R-CLOSURE-01: passed claimed on a dirty worktree",
+      "R-DOD-01: passed claimed on a dirty worktree",
+      "R-DOD-02: passed claimed on a dirty worktree",
+      "R-DOD-06: passed claimed on a dirty worktree",
+      "R-DOD-07: passed claimed on a dirty worktree",
+      "R-ADR-01: passed claimed on a dirty worktree"
+    ]
+  },
+  "cuda_gate": {
+    "detail": "no CUDA gate run is in this packet. The Kaggle T4 notebook has not been executed against this commit, so the GPU gate is not passed -- it is not run, which blocks the release.",
+    "present": false
+  },
+  "dataset": {
+    "blocked_reasons": [
+      "G08 (CUDA gate) has no run yet: GPU-derived samples and the GPU/CPU divergence fixture require the Kaggle T4 harness",
+      "G10 (independent review) has not been issued"
+    ],
+    "counts": {
+      "dispositions": {
+        "negative": 8,
+        "positive": 36
+      },
+      "samples": 44,
+      "train": 36,
+      "val": 8
+    },
+    "coverage": {
+      "cells": [
+        "leap_hand:bin:denser:bounded_cem",
+        "leap_hand:bin:denser:primitive_sequence",
+        "leap_hand:bin:denser:static_seeded",
+        "leap_hand:bin:sparse:bounded_cem",
+        "leap_hand:bin:sparse:primitive_sequence",
+        "leap_hand:bin:sparse:static_seeded",
+        "leap_hand:table:denser:bounded_cem",
+        "leap_hand:table:denser:primitive_sequence",
+        "leap_hand:table:denser:static_seeded",
+        "leap_hand:table:sparse:bounded_cem",
+        "leap_hand:table:sparse:primitive_sequence",
+        "leap_hand:table:sparse:static_seeded",
+        "leap_hand:tray:denser:bounded_cem",
+        "leap_hand:tray:denser:primitive_sequence",
+        "leap_hand:tray:denser:static_seeded",
+        "leap_hand:tray:sparse:bounded_cem",
+        "leap_hand:tray:sparse:primitive_sequence",
+        "leap_hand:tray:sparse:static_seeded",
+        "wonik_allegro:bin:denser:bounded_cem",
+        "wonik_allegro:bin:denser:primitive_sequence",
+        "wonik_allegro:bin:denser:static_seeded",
+        "wonik_allegro:bin:sparse:bounded_cem",
+        "wonik_allegro:bin:sparse:primitive_sequence",
+        "wonik_allegro:bin:sparse:static_seeded",
+        "wonik_allegro:table:denser:bounded_cem",
+        "wonik_allegro:table:denser:primitive_sequence",
+        "wonik_allegro:table:denser:static_seeded",
+        "wonik_allegro:table:sparse:bounded_cem",
+        "wonik_allegro:table:sparse:primitive_sequence",
+        "wonik_allegro:table:sparse:static_seeded",
+        "wonik_allegro:tray:denser:bounded_cem",
+        "wonik_allegro:tray:denser:primitive_sequence",
+        "wonik_allegro:tray:denser:static_seeded",
+        "wonik_allegro:tray:sparse:bounded_cem",
+        "wonik_allegro:tray:sparse:primitive_sequence",
+        "wonik_allegro:tray:sparse:static_seeded"
+      ],
+      "clutter_tiers": [
+        "sparse",
+        "denser"
+      ],
+      "declared_cells": 36,
+      "environment_classes": [
+        "table",
+        "tray",
+        "bin"
+      ],
+      "generation_modes": [
+        "static_seeded",
+        "primitive_sequence",
+        "bounded_cem"
+      ],
+      "observed_cells": 36,
+      "positives_by_hand": {
+        "leap_hand": 18,
+        "wonik_allegro": 18
+      }
+    },
+    "dataset_id": "QDGrasp-ContactRich-Active-Tiny",
+    "manifest_sha256": "1708b7443bb706e90cbf2e816fb8f6761d07c0c8ff2c84c499b850b0be11122a",
+    "present": true,
+    "release_blocked": true,
+    "root": "/run/media/quyen/H_H/Project 2026/qdgrasp/datasets/contactrich-active-tiny",
+    "shard_hashes": {
+      "shards/train.json": "c317321cf0a6db83573cf646ebec62818d26083f05e20e721c757c561a356479",
+      "shards/val.json": "3c35237d5601e941a7f7c7e123e9f2e8badee4d158fa44dc2af918fdcdffe428"
+    }
+  },
+  "known_limitations": [
+    "Simulation-only contact. Nothing here is a hardware safety claim.",
+    "Two active hands under ADR-0008; not three-hand coverage.",
+    "MuJoCo Warp 1.16.0 has an upstream uninitialised-read defect (REV-20260827-010). The compatibility matrix runs in the Kaggle notebook; until a clean version is found the GPU gate stays blocked.",
+    "MPPI (P3.4-10) is deferred_not_claimed and carries no coverage.",
+    "The static-vs-dynamic ablation reports no_measured_difference on the release recipe's scenes. No threshold was moved to avoid it."
+  ],
+  "missing_required_artifacts": [],
+  "packet_sha256": "df96686bfcda30e7181ed5cf80a482769790f743f6ad3ee060f3a63b8b9d4bef",
+  "phase": "3.4.3",
+  "required_artifacts": {
+    "docs/decisions/0008-temporary-shadow-hand-pause.md": {
+      "kind": "file",
+      "sha256": "894cd93574f18b5dfbc987f990c6744d3e2f347b8815b60f3ce089b385743af7"
+    },
+    "docs/revisions/REV-20260827-010-mjwarp-upstream-defect.md": {
+      "kind": "file",
+      "sha256": "64fca537fdcca0c9483767a9792a1e0292022fe6a9db6a3842ee82bf0d906964"
+    },
+    "docs/roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md": {
+      "kind": "file",
+      "sha256": "75e4b7c5d20d9c59ea3a1bbe89dc752c1df6ee092dfc60ac1bba409d8f1c70bd"
+    },
+    "docs/roadmap/PHASE3_4_3_EXECUTION_BREAKDOWN.md": {
+      "kind": "file",
+      "sha256": "ec233870454c06e336777fe69117f4118dcbc635f3e90b123029edf98ad8e687"
+    },
+    "docs/roadmap/phase3_4_3_requirements.yaml": {
+      "kind": "file",
+      "sha256": "3856c405df87aaa3c50c454c5e2e98420ea638f6beecece1eda94e9012f65333"
+    },
+    "environments/environment.lock.yaml": {
+      "kind": "file",
+      "sha256": "26de5a5c37b0a52310732aba5a7f84c9dc36e27aa59d57f66e9f7bc7dba665cb"
+    },
+    "references.lock.yaml": {
+      "kind": "file",
+      "sha256": "921e798163abace643c8a825559425e1bbd16d19476e1464436615fa00b193b7"
+    },
+    "robot_assets.lock.yaml": {
+      "kind": "file",
+      "sha256": "19b4011eec37c2324eb7d9132babff03611946608462bb9f800592646f4b49f9"
+    }
+  },
+  "review_checklist": [
+    "force and impulse arithmetic, including the rolling window endpoints",
+    "that no declared safety limit is left without a sensor",
+    "the exact GPU-to-CPU replay lineage, capsule by capsule",
+    "manifest counts, splits and shard hashes against what is on disk",
+    "the ADR-0008 scope disclosure everywhere it appears",
+    "the checker exit codes under mutation",
+    "that nothing claims three-hand coverage or a historical P3.4 pass"
+  ],
+  "reviewed_implementation": {
+    "qdgrasp/config/active_scope.py": {
+      "kind": "file",
+      "sha256": "29f084a4aacee380075cc73d113429397e4b11f2b0808ca818301e90875a465f"
+    },
+    "qdgrasp/dataset/contactrich_active.py": {
+      "kind": "file",
+      "sha256": "9192d534651fcdc48e50812182225bf66ca9de53603ff7b27a445400155cdd28"
+    },
+    "qdgrasp/dataset/dynamic_contracts.py": {
+      "kind": "file",
+      "sha256": "4827553e49a0863097e3f716ba0721cc41c6ca13e874e32930b99685158fe94b"
+    },
+    "qdgrasp/dataset/dynamic_shards.py": {
+      "kind": "file",
+      "sha256": "9e84900ca649898776f1e2848d6dada52070b3017a0ef6ef4d662457fa5c7393"
+    },
+    "qdgrasp/dynamic": {
+      "files": 12,
+      "kind": "directory",
+      "sha256": "f4dc79d37c2cb8e643437ea069dbb9ec31b1efbe85b4bd61b4a80782e9ef2ed3"
+    },
+    "qdgrasp/roadmap": {
+      "files": 3,
+      "kind": "directory",
+      "sha256": "4e7363339d4db23831d1f53c14f5eab907544cbdd6b586e656973b318b8d7586"
+    },
+    "qdgrasp/sim/batched": {
+      "files": 4,
+      "kind": "directory",
+      "sha256": "94d83ba8d75caae3a5408f0aae0f25bec9338862baf07f3bd4c157bed5b3bbdb"
+    },
+    "scripts/check_contactrich_active.py": {
+      "kind": "file",
+      "sha256": "1d71157b08a82fce57f00a696e2ab4bb11b4996702486fc8bdf308a90b1d2991"
+    },
+    "scripts/check_phase3_4_3.py": {
+      "kind": "file",
+      "sha256": "63ba10256d40e5e733bbfd76f92dd41d3553d7214745ac3f88a6a08f20ee7348"
+    },
+    "scripts/check_phase3_4_3_cuda.py": {
+      "kind": "file",
+      "sha256": "3555f61d405778be5dadc8b1d8ab64bd34859b0fb58abd1c9d570b3d0a4da33a"
+    },
+    "scripts/generate_contactrich_active_tiny.py": {
+      "kind": "file",
+      "sha256": "8c5c3650f41c0d8ddbd5b02a65f169fb832cf799625474ceb5e104d12798ea8e"
+    },
+    "scripts/phase3_4_3_ablation.py": {
+      "kind": "file",
+      "sha256": "be674130c88966c63a23452ad7721fab4786439b4ed4859e7dfee4e95ac62caa"
+    }
+  },
+  "reviewer_instructions": "This packet carries no verdict. The author of a change cannot review it. A reviewer records their verdict in a separate file with reviewer, reviewer_verdict, open_findings and packet_sha256, and scripts/check_phase3_4_3.py reads that file.",
+  "schema": "qdgrasp/evidence/phase3.4.3-review-packet/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false,
+    "verdict_name": "P3.4.3-ACTIVE-PASS"
+  },
+  "sub_phase_evidence": {
+    "evidence/phase3_4_3/s0/result.json": "42e026f6faaa02435b126546b0a2901de7dc5c77e113b7d2fb6deaf18dfda07a",
+    "evidence/phase3_4_3/s1/result.json": "f6ce018e2af246ac35e4d420221281d0067327e52872d9bdf8a7e6f8e6b95705",
+    "evidence/phase3_4_3/s10/result.json": "cd479b4bf19af7e3dce32c304e3579ed0609ab469a6989ca599e133ad419f330",
+    "evidence/phase3_4_3/s11/result.json": "9aa4f6b5e0251a3f0e088d997889bbb1e12ccdbe0a84328309e69202a3cd1e80",
+    "evidence/phase3_4_3/s11/stage-renders.json": "80d2514dc5fdf65ed5502a8e519cb756670f19eb021601703c22af17428fc18d",
+    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "a8842bc9ea89fe35d462dab023587c80d17d22205362fc2c9a3659d17bbd0974",
+    "evidence/phase3_4_3/s12/result.json": "2aebab800bace3908b995078603a5b92779867bb82178bdc42e5bc45794552e2",
+    "evidence/phase3_4_3/s2/result.json": "69ad77c557cce3b9765d234aed898016173fede2e9a57295148f27955bf82afe",
+    "evidence/phase3_4_3/s3/result.json": "41dfc07527063c19517e492e90aa84a20c5fd9d22be58bf39630829a02585210",
+    "evidence/phase3_4_3/s4/result.json": "c2b8a4ea5839bcabf9e998a0c7e9a855788edd5da039524a9a3348049161878a",
+    "evidence/phase3_4_3/s5/result.json": "1982db43dcf28fdcdde3f7a09f5d28ccd87e0ff756639325eea01c025e1d9112",
+    "evidence/phase3_4_3/s6/result.json": "f2ea80169ae48a9371858ccb78945bb5b7b8162752bd74cf376830089aebf71f",
+    "evidence/phase3_4_3/s7/result.json": "8d40865613cc4f097e527c8e867f18b65e4f824baeb81ee493efed728a401378",
+    "evidence/phase3_4_3/s8/result.json": "5115dfe264a3d090bf0bd1e75dde97f1f5f1b5f8d327a19af188059f521c5d21",
+    "evidence/phase3_4_3/s9/result.json": "31f5a09fc54e40e1d2cff0211a611588119115238fb43574d12b5df3f746afff"
+  },
+  "worktree_dirty": true
+}

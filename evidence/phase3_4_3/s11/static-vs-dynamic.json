@@ -7,6 +7,7 @@
       "failure_reason": "none",
       "hand": "leap_hand",
       "lift_m": 0.04950918744971183,
+      "mass_kg": 0.02,
       "min_budget_margin": 0.7714523567909362,
       "passed": true,
       "steps": 120
@@ -17,18 +18,118 @@
       "failure_reason": "none",
       "hand": "wonik_allegro",
       "lift_m": 0.04068782015649702,
+      "mass_kg": 0.02,
       "min_budget_margin": 0.6483082942767747,
       "passed": true,
       "steps": 160
     }
   ],
   "dynamic_yield": 1.0,
-  "generated_at": "2026-08-27T20:24:47.896318+00:00",
+  "generated_at": "2026-08-27T20:33:48.395572+00:00",
   "hands": [
     "leap_hand",
     "wonik_allegro"
   ],
-  "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result.",
+  "mass_sweep": [
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.02,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.05,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.1,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.2,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "leap_hand",
+      "mass_kg": 0.4,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.02,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.05,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.1,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.2,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.4,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    }
+  ],
+  "mass_sweep_kg": [
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.4
+  ],
+  "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result. Across the declared mass sweep the frozen predicate is the *more* permissive of the two -- it admits grasps the physics then refuses -- so the static-fail/dynamic-pass pairing that ROADMAP-P3.4-001 section 16.3 asks for does not exist on these scenes. Showing it needs a scene class where the target has to be repositioned before it can be grasped, which this artifact does not contain.",
   "paired_evidence": [
     {
       "dynamic_passed": true,
@@ -58,6 +159,7 @@
       "contacts": 4,
       "hand": "leap_hand",
       "margin": 0.0,
+      "mass_kg": 0.02,
       "passed": true,
       "reason": ""
     },
@@ -66,8 +168,48 @@
       "contacts": 4,
       "hand": "wonik_allegro",
       "margin": 0.0,
+      "mass_kg": 0.02,
       "passed": true,
       "reason": ""
+    }
+  ],
+  "static_fail_dynamic_pass_cases": [],
+  "static_pass_dynamic_fail_cases": [
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "leap_hand",
+      "mass_kg": 0.4,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.1,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.2,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.4,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     }
   ],
   "static_yield": 1.0,

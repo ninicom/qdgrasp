@@ -1,0 +1,43 @@
+{
+  "blockers": [
+    "B-03"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "device": "cpu",
+  "gates": [
+    "G07"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/sim/batched/mjwarp_cuda.py": "ebd699a32da66da28dad6a76ffca6b8560bd82330deba618b51dd742b3932a01"
+  },
+  "implementation_refs": [
+    "qdgrasp/sim/batched/mjwarp_cuda.py"
+  ],
+  "note": "S9 GPU contact summary fail-closed and capsule finalist export; GPU verdict pending the Kaggle run",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T20:28:52.079066+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S9",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_backend_parity.py"
+    ],
+    "summary": "36 passed in 4.75s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

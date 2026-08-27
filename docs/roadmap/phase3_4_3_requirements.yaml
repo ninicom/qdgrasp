@@ -69,6 +69,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-03
     mapped_to: [G07, C02, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/sim/batched/mjwarp_cuda.py, qdgrasp/sim/batched/contracts.py]
+    test_ids: [tests/contactrich_active/test_backend_parity.py]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-04
     category: blocker
@@ -107,11 +113,23 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-07
     mapped_to: [G09, C05]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-08
     category: blocker
     normative_source: P3.4.3#B-08
     mapped_to: [G08, C07]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/check_phase3_4_3_cuda.py, scripts/phase3_4_cuda_contact_search.py, scripts/build_phase3_4_3_notebook.py]
+    test_ids: [tests/contactrich_active/test_cuda_gate_harness.py]
+    evidence_refs: [evidence/phase3_4_3/s10/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-09
     category: blocker
@@ -205,21 +223,45 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-17
     mapped_to: [C05]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-18
     category: blocker
     normative_source: P3.4.3#B-18
     mapped_to: [C05]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-19
     category: blocker
     normative_source: P3.4.3#B-19
     mapped_to: [C07]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/check_phase3_4_3_cuda.py, scripts/phase3_4_cuda_contact_search.py, scripts/build_phase3_4_3_notebook.py]
+    test_ids: [tests/contactrich_active/test_cuda_gate_harness.py]
+    evidence_refs: [evidence/phase3_4_3/s10/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-20
     category: blocker
     normative_source: P3.4.3#B-20
     mapped_to: [C06]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/contactrich_active.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
 
   # Direct corrective gates.
   - <<: *pending_requirement
@@ -304,26 +346,44 @@ requirements:
     category: direct_gate
     normative_source: P3.4.3#G07
     mapped_to: [C02, C03]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: G08
     category: direct_gate
     normative_source: P3.4.3#G08
     mapped_to: [C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: G09
     category: direct_gate
     normative_source: P3.4.3#G09
     mapped_to: [C05, C06]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: G10
     category: direct_gate
     normative_source: P3.4.3#G10
     mapped_to: [C08]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
   - <<: *pending_requirement
     id: G11
     category: direct_gate
     normative_source: P3.4.3#G11
     mapped_to: [C08]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
 
   # Closed-world completeness gates.
   - <<: *pending_requirement
@@ -375,21 +435,36 @@ requirements:
     category: completeness_gate
     normative_source: P3.4.3#C05
     mapped_to: [P3.4-14, P3.4-16]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: C06
     category: completeness_gate
     normative_source: P3.4.3#C06
     mapped_to: [P3.4-13, P3.4-16]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: C07
     category: completeness_gate
     normative_source: P3.4.3#C07
     mapped_to: [P3.4-15]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: C08
     category: completeness_gate
     normative_source: P3.4.3#C08
     mapped_to: [P3.4-17]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
 
   # Original work packages 00-17.
   - <<: *pending_requirement
@@ -397,11 +472,23 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-00
     mapped_to: [G00, C01, C08]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/dynamic_contracts.py, qdgrasp/dynamic/static_seeded.py, qdgrasp/roadmap/requirements.py]
+    test_ids: [tests/contactrich_active/test_contracts_v2.py, tests/dynamic_grasp/test_static_seeded.py]
+    evidence_refs: [evidence/phase3_4_3/s2/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-01
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-01
     mapped_to: [C01, G03, G04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/dynamic_contracts.py, qdgrasp/dynamic/static_seeded.py, qdgrasp/roadmap/requirements.py]
+    test_ids: [tests/contactrich_active/test_contracts_v2.py, tests/dynamic_grasp/test_static_seeded.py]
+    evidence_refs: [evidence/phase3_4_3/s2/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-02
     category: original_work_package
@@ -429,11 +516,17 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-04
     mapped_to: [C02, G08, C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: P3.4-05
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-05
     mapped_to: [G07, G08, C02]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: P3.4-06
     category: original_work_package
@@ -461,17 +554,20 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-08
     mapped_to: [G03, C03, C05]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dataset/dynamic_contracts.py, qdgrasp/dynamic/static_seeded.py, qdgrasp/roadmap/requirements.py]
+    test_ids: [tests/contactrich_active/test_contracts_v2.py, tests/dynamic_grasp/test_static_seeded.py]
+    evidence_refs: [evidence/phase3_4_3/s2/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-09
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-09
     mapped_to: [G07, C04]
     owner: claude-implementation-agent
-    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
-    test_ids: [tests/contactrich_active/test_search_invariants.py]
-    evidence_refs: [evidence/phase3_4_3/s7/result.json]
-    status: passed
-    blocker_reason: ""
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: P3.4-10
     category: original_work_package
@@ -508,26 +604,50 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-13
     mapped_to: [G03, G09, C01, C06]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-14
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-14
     mapped_to: [C05]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-15
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-15
     mapped_to: [G08, C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: P3.4-16
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-16
     mapped_to: [G09, C05, C06]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-17
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-17
     mapped_to: [G10, G11, C08]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
 
   # Original normative clauses and successor scope.
   - <<: *pending_requirement
@@ -612,56 +732,107 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#9
     mapped_to: [G06, G07, G08, C02]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-CUDA-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#10
     mapped_to: [G08, C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-DATASET-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#11
     mapped_to: [G09, C05, C06]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
+    test_ids: [tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-TEST-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#13-contract-safety
     mapped_to: [C01, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic, qdgrasp/sim/batched]
+    test_ids: [tests/contactrich_active, tests/dynamic_grasp]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-TEST-02
     category: original_clause
     normative_source: ROADMAP-P3.4-001#13-physics
     mapped_to: [C02, C03]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic, qdgrasp/sim/batched]
+    test_ids: [tests/contactrich_active, tests/dynamic_grasp]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-TEST-03
     category: original_clause
     normative_source: ROADMAP-P3.4-001#13-search
     mapped_to: [C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic, qdgrasp/sim/batched]
+    test_ids: [tests/contactrich_active, tests/dynamic_grasp]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-TEST-04
     category: original_clause
     normative_source: ROADMAP-P3.4-001#13-gpu
     mapped_to: [G08, C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-RESOURCE-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#14-local
     mapped_to: [C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-RESOURCE-02
     category: original_clause
     normative_source: ROADMAP-P3.4-001#14-gpu
     mapped_to: [C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-CLOSURE-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#15
     mapped_to: [G00, C08]
+    owner: claude-implementation-agent
+    implementation_refs: [scripts/check_phase3_4_3.py, qdgrasp/roadmap/requirements.py]
+    test_ids: [tests/contactrich_active/test_completeness_ledger.py]
+    evidence_refs: [evidence/phase3_4_3/s0/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-DOD-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.1
     mapped_to: [C03, C05]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety.py, scripts/generate_contactrich_active_tiny.py, scripts/phase3_4_3_ablation.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py, tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-DOD-02
     category: original_clause
@@ -678,31 +849,55 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.3
     mapped_to: [C05]
+    owner: claude-implementation-agent
+    status: failed
+    blocker_reason: "measured, not met: across a ten-point mass sweep on the release recipe scenes there are zero static-fail/dynamic-pass cases and four static-pass/dynamic-fail ones, so the frozen predicate is the more permissive of the two. Showing the pairing needs a scene class where the target must be repositioned before it can be grasped, which this artifact does not contain. See evidence/phase3_4_3/s11/static-vs-dynamic.json"
   - <<: *pending_requirement
     id: R-DOD-04
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.4
     mapped_to: [G08, C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-DOD-05
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.5
     mapped_to: [G06, G07, G08]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
   - <<: *pending_requirement
     id: R-DOD-06
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.6
     mapped_to: [G09, C06]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety.py, scripts/generate_contactrich_active_tiny.py, scripts/phase3_4_3_ablation.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py, tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-DOD-07
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.7
     mapped_to: [C04, C05]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/safety.py, scripts/generate_contactrich_active_tiny.py, scripts/phase3_4_3_ablation.py]
+    test_ids: [tests/contactrich_active/test_taxonomy_and_terminal.py, tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-DOD-08
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.8
     mapped_to: [G10, C08]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
   - <<: *pending_requirement
     id: R-ADR-01
     category: scope_clause
@@ -719,3 +914,6 @@ requirements:
     category: compatibility_clause
     normative_source: REV-20260827-010
     mapped_to: [G07, G08, C07]
+    owner: claude-implementation-agent
+    status: blocked
+    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."

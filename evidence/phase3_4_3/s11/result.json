@@ -1,0 +1,56 @@
+{
+  "blockers": [
+    "B-07",
+    "B-17",
+    "B-18",
+    "B-20"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "device": "cpu",
+  "gates": [
+    "G09",
+    "C05",
+    "C06"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dataset/contactrich_active.py": "9192d534651fcdc48e50812182225bf66ca9de53603ff7b27a445400155cdd28",
+    "scripts/check_contactrich_active.py": "1d71157b08a82fce57f00a696e2ab4bb11b4996702486fc8bdf308a90b1d2991",
+    "scripts/generate_contactrich_active_tiny.py": "8c5c3650f41c0d8ddbd5b02a65f169fb832cf799625474ceb5e104d12798ea8e",
+    "scripts/phase3_4_3_ablation.py": "a7dffadbf8d1f61cb1d3053490a0e0e3810232e141c881fc81fcc4252767efeb",
+    "scripts/render_phase3_4_3_stages.py": "2073100356aca0aebc427f832991187f57e1dd884c90bd355b5cf347e3d9205d"
+  },
+  "implementation_refs": [
+    "scripts/generate_contactrich_active_tiny.py",
+    "qdgrasp/dataset/contactrich_active.py",
+    "scripts/check_contactrich_active.py",
+    "scripts/phase3_4_3_ablation.py",
+    "scripts/render_phase3_4_3_stages.py"
+  ],
+  "note": "S11 ContactRich-Active-Tiny, public loader, ablation and stage renders",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T20:29:17.670905+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S11",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_dataset_contract.py"
+    ],
+    "summary": "20 passed in 13.76s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

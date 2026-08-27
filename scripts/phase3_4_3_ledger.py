@@ -49,8 +49,11 @@ def update_entry(
     blocker_reason: str | None = None,
 ) -> str:
     """Rewrite the managed fields of one requirement entry."""
+    # An entry runs until the next entry, a comment, or the end of the file.
+    # Stopping only at the next entry silently skipped the last requirement of
+    # each section, which is the one followed by a blank line and a comment.
     pattern = re.compile(
-        r"^(  - <<: \*pending_requirement\n(?:    .*\n)*?)(?=  - <<:|\Z)", re.MULTILINE
+        r"^(  - <<: \*pending_requirement\n(?:    \S.*\n)*)", re.MULTILINE
     )
     for match in pattern.finditer(text):
         block = match.group(1)

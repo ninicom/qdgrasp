@@ -273,14 +273,11 @@ def run_wrapped_contact_rollout(
         object_velocity=np.asarray(record.velocities),
         stage=_derive_stages(record.stages, record.events, np.asarray(record.poses)),
         timebase=base,
-        contact_graph=tuple(
-            # The sample association is clamped to the last recorded sample,
-            # but ``simulator_step`` keeps the exact integrator step the reading
-            # came from, so a tail contact is no longer indistinguishable from
-            # one that happened at the final sample (blocker B-06).
-            dataclasses.replace(e, time_index=min(e.time_index, steps - 1))
-            for e in record.events
-        ),
+        # The sample association is clamped to the last recorded sample, but
+        # ``simulator_step`` keeps the exact integrator step the reading came
+        # from, so a tail contact is no longer indistinguishable from one that
+        # happened at the final sample (blocker B-06).
+        contact_graph=_sparsify_contacts(record.events, steps=steps),
         robot_profile=robot_profile,
         palm_body=palm_body_name,
     )
@@ -434,6 +431,35 @@ def _derive_stages(
     if target_held[-1] and result[-1] is TrajectoryStage.PERTURB:
         result[-1] = TrajectoryStage.RETAIN
     return tuple(result)
+
+
+def _sparsify_contacts(
+    events: Sequence[ContactEvent], *, steps: int
+) -> tuple[ContactEvent, ...]:
+    """Reduce the contact stream to one reading per contact per sample.
+
+    The observer reads contacts every integrator step, because impulse, work and
+    duration are only honest if it does. Storing every one of those readings
+    makes the release payload grow with the simulator timestep, which is exactly
+    what the storage contract forbids: a finer timestep is a simulation choice,
+    not more data (C06.1).
+
+    So the stored stream keeps, for each contact pair in each episode at each
+    recorded sample, the reading with the *worst* budget margin. The safety-
+    relevant extreme survives, the classification survives, and the accumulated
+    impulse and work are already carried on the event rather than needing every
+    intermediate step to reconstruct.
+    """
+    worst: dict[tuple[str, str, int, int], ContactEvent] = {}
+    for event in events:
+        index = min(int(event.time_index), max(steps - 1, 0))
+        key = (*event.pair_key, int(event.episode_index), index)
+        current = worst.get(key)
+        if current is None or event.budget_margin < current.budget_margin:
+            worst[key] = dataclasses.replace(event, time_index=index)
+    return tuple(
+        sorted(worst.values(), key=lambda e: (e.time_index, e.geom_a, e.geom_b))
+    )
 
 
 def _build_capsule(
