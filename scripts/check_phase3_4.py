@@ -252,9 +252,10 @@ def main() -> int:
                 "because shadow_hand has no dynamic positive: its recipe drives "
                 "rh_lfproximal into rh_lfmetacarpal at 323 N sustained. See "
                 "evidence/phase3_4/p16-contactrich-tiny/",
-                "P3.4-15: measured on a Tesla T4 and FAILED the performance "
-                "criterion -- 0.764x against a required 2x on the 91-geom hand "
-                "scene. See evidence/phase3_4/p15-throughput/",
+                "P3.4-15: speed criterion now met at 4.444x on 1024 worlds, but "
+                "29 of 1024 worlds went non-finite (2.8%) from identical initial "
+                "state and identical commands -- non-determinism in the GPU "
+                "backend. See evidence/phase3_4/p15-throughput/",
                 "P3.4-17: independent review cannot be issued by the author",
             ],
         }
