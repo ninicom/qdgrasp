@@ -120,12 +120,15 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   vì P3.4 contact-rich trajectory và P3.5 RL simulation readiness còn độc lập
   chưa đóng.
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
-  đạt **14/18 work package** tại `ee6db09` (`REV-20260827-005`), tất cả pass CPU
+  đạt **15/18 work package** tại `461f4e6` (`REV-20260827-005`), tất cả pass CPU
   gate `scripts/check_phase3_4.py` với 117 test. Backend decision đã giải quyết
   trên Tesla T4: MuJoCo Warp 1.16.0 compile được cả ba tay kể cả 4 tendon của
-  Shadow, verdict `supported`. **Phase chưa đóng.** P3.4-16 `blocked`: rollout
-  chưa điều khiển được tay thật, 0 positive trên 9 hand-iteration, chẩn đoán và
-  hướng sửa tại `evidence/phase3_4/p16-dataset-blocked/`. P3.4-05/15 còn thiếu
+  Shadow, verdict `supported`. **Phase chưa đóng.** `QDGrasp-ContactRich-Tiny`
+  đã sinh với 9 sample và **4 measured dynamic positive** (LEAP lift 4.9 cm,
+  Allegro 4.1 cm, có contact `support_assisted` thật), nhưng
+  `release_blocked=true` vì `shadow_hand` chưa có positive: recipe của nó ép
+  `rh_lfproximal` vào `rh_lfmetacarpal` ở 323 N bền vững, thứ mà P3.2.1 không
+  kiểm. Chi tiết tại `evidence/phase3_4/p16-contactrich-tiny/`. P3.4-05/15 còn thiếu
   throughput/VRAM/parity trên GPU; P3.4-17 independent review không thể do tác
   giả tự phát hành; P3.4-10 MPPI deferred theo đúng kế hoạch. Ablation
   static-vs-dynamic chạy được nhưng verdict `no_measured_difference` và **không**

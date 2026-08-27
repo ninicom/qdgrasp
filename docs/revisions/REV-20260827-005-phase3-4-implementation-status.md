@@ -18,7 +18,7 @@ revises:
     revision: 7a7612e432b461682b3547a732a551f9eaf33dff4edab3eaafbaa328cdd86135
 reason: "P3.4 chuyển từ 0 dòng code sang 14/18 work package có test; đồng thời phát hiện rollout không điều khiển được tay thật nên P3.4-16 bị chặn, cần ghi lại chẩn đoán để lần sau không lặp."
 necessity: N2
-impact: "P3.4 có contracts, hai backend, observer, primitives, objective, CEM, refine, certifier, storage và ablation, tất cả pass CPU gate. P3.4-16 blocked, P3.4-17 không thể tự phát hành, P3.4-05/15 cần GPU. Phase 3.4 KHÔNG đóng."
+impact: "P3.4 có contracts, hai backend, observer, primitives, objective, CEM, refine, certifier, storage, ablation và dataset ContactRich-Tiny với 4 measured positive. P3.4-16 release_blocked vì Shadow chưa có positive, P3.4-17 không thể tự phát hành, P3.4-05/15 cần số đo GPU. Phase 3.4 KHÔNG đóng."
 ---
 
 # REV-20260827-005 — Trạng thái triển khai Phase 3.4
@@ -74,6 +74,15 @@ thật, và phát hiện một blocker chưa từng được nêu trong kế ho�
 - `CH-011` P3.4-14 ablation; verdict `no_measured_difference`.
 - `CH-012` P3.4-15 stage 1 harness; verdict backend `supported` trên Tesla T4.
 - `CH-013` Ghi nhận blocker P3.4-16 kèm chẩn đoán và hướng sửa.
+- `CH-014` `qdgrasp/dynamic/wrapped_rollout.py`: gắn contact observer lên
+  `validate_grasp_rollout` qua `step_observer` thay vì viết lại `mocap-weld-v3`.
+  LEAP và Allegro cho dynamic positive ngay (lift 4.9 cm và 4.1 cm).
+- `CH-015` Sửa impulse trong safety budget từ tích luỹ toàn rollout sang cửa sổ
+  trượt. Impulse là lực × thời gian nên giới hạn tích luỹ bác bỏ mọi cú giữ lâu
+  bất kể nhẹ đến đâu; nó đo thời lượng grasp chứ không đo an toàn, và làm các tay
+  không so sánh được với nhau. Áp dụng như nhau cho cả ba tay.
+- `CH-016` P3.4-16 `scripts/generate_contactrich_tiny.py` và dataset: 9 sample,
+  4 positive, 5 negative, `release_blocked=true`.
 
 ## 6. Xác minh
 
@@ -84,7 +93,10 @@ thật, và phát hiện một blocker chưa từng được nêu trong kế ho�
 | `V-003` | `check_phase3_4.py --backend cuda` | fail-closed | exit 1 | pass | log phiên |
 | `V-004` | Kaggle T4, MuJoCo Warp 1.16.0 | verdict backend | `supported`, 4/4 capability | pass | `p15-cuda-backend-decision/` |
 | `V-005` | ablation hai nhánh, 6 candidate mỗi nhánh | có verdict | `no_measured_difference`, yield 0/0 | pass | `p14-ablation/` |
-| `V-006` | probe rollout ba tay thật, ba vòng | tìm positive | **0/9 hand-iterations** | fail | `p16-dataset-blocked/` |
+| `V-006` | probe rollout tự viết, ba tay, ba vòng | tìm positive | **0/9 hand-iterations** | fail | `p16-dataset-blocked/` |
+| `V-007` | rollout bọc `validate_grasp_rollout`, ba tay | tìm positive | LEAP và Allegro pass, Shadow damaging | pass | `p16-contactrich-tiny/` |
+| `V-008` | sinh `QDGrasp-ContactRich-Tiny` | dataset có positive | 9 sample, 4 positive, `release_blocked=true` | pass | `p16-contactrich-tiny/` |
+| `V-009` | đo lực self-contact Shadow | xác định nguyên nhân | `rh_lfproximal`/`rh_lfmetacarpal` 323 N, 28.5% mẫu >100 N | pass | `p16-contactrich-tiny/README.md` |
 
 ## 7. Ảnh hưởng tới báo cáo và quyết định cũ
 
@@ -101,7 +113,13 @@ thật, và phát hiện một blocker chưa từng được nêu trong kế ho�
 
 - Tác giả: claude-primary-agent, 2026-08-27 Asia/Bangkok.
 - Người kiểm tra: chưa có independent reviewer.
-- Kết luận: **Phase 3.4 không đóng.** 14/18 work package hoàn tất trên CPU;
-  P3.4-16 blocked, P3.4-17 không thể do tác giả tự phát hành, P3.4-05/15 còn
-  thiếu số đo throughput/parity trên GPU. P3 tổng vẫn `pending`.
+- Kết luận: **Phase 3.4 không đóng.** 15/18 work package hoàn tất trên CPU và
+  `QDGrasp-ContactRich-Tiny` đã sinh với 4 measured positive, nhưng
+  `release_blocked=true` vì `shadow_hand` chưa có positive. P3.4-17 không thể do
+  tác giả tự phát hành; P3.4-05/15 còn thiếu throughput/VRAM/parity trên GPU.
+  P3 tổng vẫn `pending`.
+- Phát hiện phụ đáng theo dõi: release recipe của Shadow tạo self-contact
+  `rh_lfproximal`/`rh_lfmetacarpal` ở 323 N bền vững. P3.2.1 không bắt vì tiêu
+  chí của nó là contact tay–vật và lift, không kiểm tải self-contact. Đây là
+  ứng viên cho một remediation riêng.
 - Liên kết bản ghi hoàn tất: `REV-20260827-005`.
