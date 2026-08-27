@@ -45,7 +45,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-01 typed trajectory contracts": "done",
     "P3.4-02 batched backend protocol + scene bucketing": "done",
     "P3.4-03 MuJoCo CPU oracle backend": "done",
-    "P3.4-04 MJX-Warp compatibility spike": "cpu_pending_gpu",
+    "P3.4-04 MJX-Warp compatibility spike": "done",
     "P3.4-05 MJWarp CUDA backend": "todo",
     "P3.4-06 contact observer + safety budget": "todo",
     "P3.4-07 primitive-sequence controller": "todo",
@@ -56,7 +56,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-12 CPU replay + terminal grasp certifier": "todo",
     "P3.4-13 trajectory writer/loader": "todo",
     "P3.4-14 static-vs-dynamic ablation": "todo",
-    "P3.4-15 Kaggle CUDA harness": "todo",
+    "P3.4-15 Kaggle CUDA harness": "cpu_pending_gpu",
     "P3.4-16 QDGrasp-ContactRich-Tiny": "todo",
     "P3.4-17 independent review": "todo",
 }

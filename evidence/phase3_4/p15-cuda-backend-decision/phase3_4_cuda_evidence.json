@@ -1,0 +1,132 @@
+{
+  "backend_resolution": {
+    "capabilities": {
+      "equality:mjEQ_WELD": "supported",
+      "mocap_body": "supported",
+      "per_contact_force_and_frame": "supported",
+      "tendon_transmission": "supported"
+    },
+    "modules": {
+      "mujoco.mjx": "not_installed",
+      "mujoco_warp": "available",
+      "warp": "available"
+    },
+    "mujoco": "3.12.0",
+    "per_hand": {
+      "leap_hand": {
+        "compiled": true,
+        "contact_fields": [
+          "dim",
+          "dist",
+          "efc_address",
+          "elem",
+          "flex",
+          "frame",
+          "friction",
+          "geom",
+          "geomcollisionid",
+          "includemargin",
+          "pos",
+          "solimp",
+          "solref",
+          "solreffriction",
+          "type",
+          "vert",
+          "worldid"
+        ],
+        "contact_readback": true,
+        "neq": 1,
+        "nmocap": 1,
+        "ntendon": 0
+      },
+      "shadow_hand": {
+        "compiled": true,
+        "contact_fields": [
+          "dim",
+          "dist",
+          "efc_address",
+          "elem",
+          "flex",
+          "frame",
+          "friction",
+          "geom",
+          "geomcollisionid",
+          "includemargin",
+          "pos",
+          "solimp",
+          "solref",
+          "solreffriction",
+          "type",
+          "vert",
+          "worldid"
+        ],
+        "contact_readback": true,
+        "neq": 1,
+        "nmocap": 1,
+        "ntendon": 4
+      },
+      "wonik_allegro": {
+        "compiled": true,
+        "contact_fields": [
+          "dim",
+          "dist",
+          "efc_address",
+          "elem",
+          "flex",
+          "frame",
+          "friction",
+          "geom",
+          "geomcollisionid",
+          "includemargin",
+          "pos",
+          "solimp",
+          "solref",
+          "solreffriction",
+          "type",
+          "vert",
+          "worldid"
+        ],
+        "contact_readback": true,
+        "neq": 1,
+        "nmocap": 1,
+        "ntendon": 0
+      }
+    },
+    "unsupported": [],
+    "untested_requirements": [],
+    "verdict": "supported",
+    "warp_cuda_devices": [
+      "cuda:0",
+      "cuda:1"
+    ],
+    "warp_version": "1.16.0"
+  },
+  "blocking_requirements": [
+    "tendon_transmission",
+    "equality:mjEQ_WELD",
+    "mocap_body",
+    "per_contact_force_and_frame"
+  ],
+  "cuda_environment": {
+    "capability": "7.5",
+    "device": "cuda:0",
+    "driver": "12.8",
+    "gpu_name": "Tesla T4",
+    "torch": "2.10.0+cu128",
+    "torch_cuda_build": "12.8",
+    "total_memory_gib": 14.56
+  },
+  "profile": "kaggle-t4-micro",
+  "python": "3.12.13",
+  "qdgrasp_version": "0.1.0a1",
+  "schema": "qdgrasp/evidence/phase3.4-cuda/v1",
+  "search_benchmark": {
+    "missing": [
+      "P3.4-05 MJWarp CUDA backend"
+    ],
+    "note": "Throughput, VRAM and CPU/GPU parity numbers require the CUDA backend. Reporting the CPU oracle here would be a fabricated CUDA measurement.",
+    "status": "not_implemented"
+  },
+  "status": "BACKEND_SUPPORTED_PENDING_P3.4-05",
+  "timestamp": "2026-08-27T06:36:10.271073+00:00"
+}
