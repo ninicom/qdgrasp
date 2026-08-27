@@ -1,0 +1,19 @@
+Three probe iterations, all three release hands, generated_reachable fixture.
+
+Iteration 1 -- grip lerped to actuator ctrlrange limits
+  leap_hand      damaging=2433 target_intentional=5    -> damaging_contact
+  wonik_allegro  damaging=5434 target_intentional=382  -> target_teleported
+  shadow_hand    damaging=1899 target_intentional=8    -> target_teleported
+
+Iteration 2 -- grip interpolates the validated recipe open/closed joint targets
+  leap_hand      damaging=1104  lift_m=6080.3          -> damaging_contact
+  wonik_allegro  damaging=4377  lift_m=0.0101          -> target_teleported
+  shadow_hand    damaging=753   lift_m=0.0039          -> damaging_contact
+
+Iteration 3 -- wrist driven through the welded mocap body, hand seeded at the
+               recipe pregrasp pose
+  leap_hand      damaging=429   lift_m=7.031           -> damaging_contact
+  wonik_allegro  damaging=662   lift_m=0.0012          -> target_teleported
+  shadow_hand    damaging=1005  lift_m=-0.0001         -> damaging_contact
+
+Zero positives in nine hand-iterations.

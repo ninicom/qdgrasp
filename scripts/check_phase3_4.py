@@ -51,13 +51,13 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-07 primitive-sequence controller": "done",
     "P3.4-08 static-seeded contact rollout": "done",
     "P3.4-09 batched CEM search": "done",
-    "P3.4-10 batched MPPI strategy": "todo",
+    "P3.4-10 batched MPPI strategy": "deferred_optional",
     "P3.4-11 local contact trajectory refinement": "done",
     "P3.4-12 CPU replay + terminal grasp certifier": "done",
     "P3.4-13 trajectory writer/loader": "done",
-    "P3.4-14 static-vs-dynamic ablation": "todo",
+    "P3.4-14 static-vs-dynamic ablation": "done",
     "P3.4-15 Kaggle CUDA harness": "cpu_pending_gpu",
-    "P3.4-16 QDGrasp-ContactRich-Tiny": "todo",
+    "P3.4-16 QDGrasp-ContactRich-Tiny": "blocked",
     "P3.4-17 independent review": "todo",
 }
 
@@ -217,7 +217,9 @@ def main() -> int:
     args = parser.parse_args()
 
     outstanding = sorted(
-        name for name, status in WORK_PACKAGES.items() if status == "todo"
+        f"{name} [{status}]"
+        for name, status in WORK_PACKAGES.items()
+        if status in ("todo", "blocked", "deferred_optional")
     )
 
     try:
@@ -246,9 +248,12 @@ def main() -> int:
             "backend_spike": verify_backend_spike(),
             "outstanding_work_packages": outstanding,
             "closure_blocked_by": [
-                "CUDA backend and Kaggle GPU evidence (P3.4-05, P3.4-15)",
-                "QDGrasp-ContactRich-Tiny (P3.4-16)",
-                "independent review (P3.4-17)",
+                "P3.4-16: the rollout cannot drive a dexterous hand yet; nine "
+                "hand-iterations produced zero dynamic positives. See "
+                "evidence/phase3_4/p16-dataset-blocked/",
+                "P3.4-05/P3.4-15: CUDA backend kernels and throughput/VRAM "
+                "evidence need a run on real hardware",
+                "P3.4-17: independent review cannot be issued by the author",
             ],
         }
         if not args.skip_tests:

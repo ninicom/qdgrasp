@@ -48,12 +48,28 @@ class RolloutLimits:
 
 @dataclasses.dataclass(frozen=True)
 class SeedPose:
-    """The static candidate a rollout starts from."""
+    """The static candidate a rollout starts from.
+
+    ``open_ctrl`` and ``closed_ctrl`` are the declared endpoints a primitive's
+    grip interpolates between. Supply them for any real hand: interpolating to
+    the raw actuator limits instead drives every joint to its stop at once,
+    which is a hand crushing itself rather than a grasp, and it blows the safety
+    budget on contact one.
+    """
 
     qpos: np.ndarray
     ctrl: np.ndarray
     source_candidate_id: str = ""
     static_verdict: str = "blocked"
+    open_ctrl: np.ndarray | None = None
+    closed_ctrl: np.ndarray | None = None
+    #: Initial wrist pose for the mocap body, when the model welds one.
+    mocap_pos: np.ndarray | None = None
+    mocap_quat: np.ndarray | None = None
+
+    @property
+    def has_grip_endpoints(self) -> bool:
+        return self.open_ctrl is not None and self.closed_ctrl is not None
 
 
 def _actuator_command(
@@ -62,6 +78,8 @@ def _actuator_command(
     wrist_velocity: np.ndarray,
     base_ctrl: np.ndarray,
     control_dt: float,
+    grip_endpoints: tuple[np.ndarray, np.ndarray] | None = None,
+    drives_wrist_through_mocap: bool = False,
 ) -> np.ndarray:
     """Map a primitive's grip and wrist velocity onto actuator commands.
 
@@ -78,12 +96,23 @@ def _actuator_command(
     command = np.array(base_ctrl, dtype=np.float64, copy=True)
     ctrlrange = np.asarray(model.actuator_ctrlrange, dtype=np.float64)
     limited = np.asarray(model.actuator_ctrllimited, dtype=bool)
-    for index in range(int(model.nu)):
-        if limited[index]:
-            low, high = ctrlrange[index]
-            command[index] = low + float(np.clip(grip, 0.0, 1.0)) * (high - low)
-    for axis in range(min(3, int(model.nu))):
-        command[axis] = command[axis] + float(wrist_velocity[axis]) * control_dt
+    alpha = float(np.clip(grip, 0.0, 1.0))
+    if grip_endpoints is not None:
+        open_ctrl, closed_ctrl = grip_endpoints
+        command = open_ctrl + alpha * (closed_ctrl - open_ctrl)
+    else:
+        # No declared endpoints: interpolate the actuator range. Only sane for a
+        # model whose actuators are a single prismatic stage; see SeedPose.
+        for index in range(int(model.nu)):
+            if limited[index]:
+                low, high = ctrlrange[index]
+                command[index] = low + alpha * (high - low)
+    if not drives_wrist_through_mocap:
+        # Only meaningful when actuators 0..2 really are a prismatic wrist. On a
+        # dexterous hand they are finger joints, and adding wrist velocity to
+        # them flings the hand across the scene.
+        for axis in range(min(3, int(model.nu))):
+            command[axis] = command[axis] + float(wrist_velocity[axis]) * control_dt
     for index in range(int(model.nu)):
         if limited[index]:
             command[index] = float(
@@ -110,6 +139,14 @@ def run_static_seeded_rollout(
     limits = limits or RolloutLimits()
     observer = ContactObserver(model, roles, budget)
     controller = PrimitiveSequenceController(primitives, control_dt)
+    grip_endpoints = (
+        (
+            np.asarray(seed.open_ctrl, dtype=np.float64),
+            np.asarray(seed.closed_ctrl, dtype=np.float64),
+        )
+        if seed.has_grip_endpoints
+        else None
+    )
 
     data = mujoco.MjData(model)
     if seed.qpos.shape[0] != int(model.nq):
@@ -117,6 +154,18 @@ def run_static_seeded_rollout(
             f"seed qpos has {seed.qpos.shape[0]} entries, model expects {model.nq}"
         )
     data.qpos[:] = seed.qpos
+
+    # The release hands are driven through a welded mocap body, not through
+    # actuators. Find it once; its absence means a trivial model such as the
+    # micro test scene, which really does actuate its own stage.
+    mocap_body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "hand_mocap")
+    mocap_index: int | None = None
+    if mocap_body >= 0 and int(model.body_mocapid[mocap_body]) >= 0:
+        mocap_index = int(model.body_mocapid[mocap_body])
+        if seed.mocap_pos is not None:
+            data.mocap_pos[mocap_index] = np.asarray(seed.mocap_pos, dtype=np.float64)
+        if seed.mocap_quat is not None:
+            data.mocap_quat[mocap_index] = np.asarray(seed.mocap_quat, dtype=np.float64)
     mujoco.mj_forward(model, data)
 
     target_bodies = sorted({int(model.geom_bodyid[g]) for g in roles.target_geoms})
@@ -140,10 +189,21 @@ def run_static_seeded_rollout(
         events = observer.observe(data, time_index=index, dt=control_dt)
         step = controller.step(events)
         command = _actuator_command(
-            model, step.grip, step.wrist_velocity, data.ctrl, control_dt
+            model,
+            step.grip,
+            step.wrist_velocity,
+            data.ctrl,
+            control_dt,
+            grip_endpoints,
+            mocap_index is not None,
         )
 
         previous = np.array([data.xpos[b] for b in free_bodies]) if free_bodies else None
+        if mocap_index is not None:
+            data.mocap_pos[mocap_index] = (
+                np.asarray(data.mocap_pos[mocap_index], dtype=np.float64)
+                + step.wrist_velocity * control_dt
+            )
         data.ctrl[:] = command
         for _ in range(steps_per_control):
             mujoco.mj_step(model, data)
