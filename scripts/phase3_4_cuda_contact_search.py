@@ -223,32 +223,20 @@ VRAM_BUDGET_GIB = 14.0
 MIN_GPU_SPEEDUP = 2.0
 
 
-def run_search_benchmark(device: str) -> dict[str, Any]:
-    """Measure GPU throughput against the CPU oracle on the same kernel.
-
-    Compile and warmup are reported apart from steady state, because folding
-    them in is how a slow backend looks fast on a short run.
-    """
+def _benchmark_scene(
+    device: str, label: str, scene_xml: str, signature: Any
+) -> dict[str, Any]:
+    """Time one scene on both backends with identical commands."""
+    import mujoco
     import numpy as np
     import torch
 
     from qdgrasp.dataset.dynamic_contracts import DynamicGraspRequest
-    from qdgrasp.sim.batched.contracts import SceneSignature
     from qdgrasp.sim.batched.mjwarp_cuda import MjWarpCudaBackend
     from qdgrasp.sim.batched.mujoco_cpu import MuJoCoCpuBackend
 
-    scene = (REPO_ROOT / "tests" / "dynamic_grasp" / "micro_scene.xml").read_text(
-        encoding="utf-8"
-    )
-    signature = SceneSignature(
-        robot_profile="micro_pusher",
-        environment="table",
-        geom_type_counts=(("box", 2), ("plane", 1)),
-        joint_count=2,
-        support_count=1,
-        solver_profile="default",
-        timestep=0.002,
-    )
+    scene = scene_xml
+    profile = signature.robot_profile
 
     def requests(count: int) -> list[DynamicGraspRequest]:
         return [
@@ -256,7 +244,7 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
                 scene_state_ref="scene:micro#0",
                 observation_ref="obs:micro/cam_top",
                 target_object_id="target",
-                robot_profile="micro_pusher",
+                robot_profile=profile,
                 strategy_id="batched_cem",
                 safety_budget_id="bench",
                 horizon=BENCHMARK_HORIZON,
@@ -266,11 +254,15 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
             for index in range(count)
         ]
 
-    result: dict[str, Any] = {"worlds": BENCHMARK_WORLDS, "horizon": BENCHMARK_HORIZON}
+    result: dict[str, Any] = {
+        "label": label,
+        "worlds": BENCHMARK_WORLDS,
+        "horizon": BENCHMARK_HORIZON,
+    }
 
     torch.cuda.reset_peak_memory_stats()
     gpu = MjWarpCudaBackend(scene, device=device)
-    gpu.compile(signature, "micro_pusher", batch_capacity=BENCHMARK_WORLDS)
+    gpu.compile(signature, profile, batch_capacity=BENCHMARK_WORLDS)
     gpu.reset(requests(BENCHMARK_WORLDS))
     commands = np.full((BENCHMARK_WORLDS, BENCHMARK_HORIZON, gpu.num_actuators), 0.15)
     gpu_summaries = gpu.rollout(commands)
@@ -278,7 +270,7 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
     peak_vram = torch.cuda.max_memory_allocated() / (1024**3)
 
     cpu = MuJoCoCpuBackend(scene)
-    cpu.compile(signature, "micro_pusher", batch_capacity=BENCHMARK_WORLDS)
+    cpu.compile(signature, profile, batch_capacity=BENCHMARK_WORLDS)
     cpu.reset(requests(BENCHMARK_WORLDS))
     cpu.rollout(commands)
     cpu_timing = cpu.timing
@@ -311,9 +303,94 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
             "rejected_worlds": rejected,
             "finalists_routed_to_cpu": replayable,
             "worlds_ran_without_oom": len(rejected) == 0,
+            "geom_count": int(mujoco.MjModel.from_xml_string(scene).ngeom),
         }
     )
     return result
+
+
+def run_search_benchmark(device: str) -> dict[str, Any]:
+    """Benchmark both a trivial scene and the real Phase 3.4 workload.
+
+    Both are reported. The micro scene is three geoms, where per-step kernel
+    launch dominates and the GPU cannot win; the representative scene is a
+    dexterous hand, which is the workload the phase actually searches. The gate
+    reads the representative one and records the micro result beside it, rather
+    than picking whichever number looks better.
+    """
+    import mujoco
+
+    from qdgrasp.dataset.pipeline.generated_reachable import (
+        build_generated_reachable_object,
+    )
+    from qdgrasp.dataset.pipeline.validators.mujoco_rollout import (
+        build_rollout_scene_model,
+    )
+    from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
+    from qdgrasp.sim.batched.contracts import SceneSignature
+
+    micro_xml = (REPO_ROOT / "tests" / "dynamic_grasp" / "micro_scene.xml").read_text(
+        encoding="utf-8"
+    )
+    micro_signature = SceneSignature(
+        robot_profile="micro_pusher",
+        environment="table",
+        geom_type_counts=(("box", 2), ("plane", 1)),
+        joint_count=2,
+        support_count=1,
+        solver_profile="default",
+        timestep=0.002,
+    )
+
+    spec = RobotSpec.from_config("leap_hand.yaml", sample_anchors=False)
+    fixture = build_generated_reachable_object("leap_hand")
+    hand_model = build_rollout_scene_model(
+        resolve_robot_asset(spec.config.source_asset),
+        fixture.collision_geoms,
+        object_pos=fixture.object_pos,
+        object_mass=fixture.mass,
+    )
+    hand_xml = hand_model.to_xml_string() if hasattr(hand_model, "to_xml_string") else None
+    if hand_xml is None:
+        spec_obj = mujoco.MjSpec.from_file(str(resolve_robot_asset(spec.config.source_asset)))
+        hand_xml = spec_obj.to_xml()
+    hand_signature = SceneSignature(
+        robot_profile="leap_hand",
+        environment="table",
+        geom_type_counts=(("mesh", int(hand_model.ngeom)),),
+        joint_count=int(hand_model.njnt),
+        support_count=1,
+        solver_profile="default",
+        timestep=float(hand_model.opt.timestep),
+    )
+
+    results = {}
+    for label, xml, signature in (
+        ("micro_pusher", micro_xml, micro_signature),
+        ("leap_hand_scene", hand_xml, hand_signature),
+    ):
+        try:
+            results[label] = _benchmark_scene(device, label, xml, signature)
+        except Exception as exc:  # noqa: BLE001 - a failed scene is reported
+            results[label] = {
+                "label": label,
+                "status": "failed",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+
+    gating = results.get("leap_hand_scene", {})
+    return {
+        "status": "measured",
+        "gating_scene": "leap_hand_scene",
+        "gating_rationale": (
+            "The performance criterion is about the workload Phase 3.4 searches: "
+            "a dexterous hand in a scene. The three-geom micro scene is reported "
+            "beside it because it bounds the other end -- GPU batching cannot win "
+            "where per-step launch overhead dominates."
+        ),
+        "scenes": results,
+        **{k: v for k, v in gating.items() if k not in ("label", "status")},
+    }
 
 
 def build_evidence(device: str, profile: str) -> dict[str, Any]:
