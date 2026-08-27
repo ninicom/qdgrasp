@@ -46,7 +46,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-02 batched backend protocol + scene bucketing": "done",
     "P3.4-03 MuJoCo CPU oracle backend": "done",
     "P3.4-04 MJX-Warp compatibility spike": "done",
-    "P3.4-05 MJWarp CUDA backend": "cpu_pending_gpu",
+    "P3.4-05 MJWarp CUDA backend": "done",
     "P3.4-06 contact observer + safety budget": "done",
     "P3.4-07 primitive-sequence controller": "done",
     "P3.4-08 static-seeded contact rollout": "done",
@@ -56,7 +56,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-12 CPU replay + terminal grasp certifier": "done",
     "P3.4-13 trajectory writer/loader": "done",
     "P3.4-14 static-vs-dynamic ablation": "done",
-    "P3.4-15 Kaggle CUDA harness": "cpu_pending_gpu",
+    "P3.4-15 Kaggle CUDA harness": "measured_gate_failed",
     "P3.4-16 QDGrasp-ContactRich-Tiny": "generated_release_blocked",
     "P3.4-17 independent review": "todo",
 }
@@ -219,7 +219,7 @@ def main() -> int:
     outstanding = sorted(
         f"{name} [{status}]"
         for name, status in WORK_PACKAGES.items()
-        if status in ("todo", "blocked", "deferred_optional", "generated_release_blocked")
+        if status not in ("done",)
     )
 
     try:
@@ -252,8 +252,9 @@ def main() -> int:
                 "because shadow_hand has no dynamic positive: its recipe drives "
                 "rh_lfproximal into rh_lfmetacarpal at 323 N sustained. See "
                 "evidence/phase3_4/p16-contactrich-tiny/",
-                "P3.4-05/P3.4-15: CUDA backend kernels and throughput/VRAM "
-                "evidence need a run on real hardware",
+                "P3.4-15: measured on a Tesla T4 and FAILED the performance "
+                "criterion -- 0.764x against a required 2x on the 91-geom hand "
+                "scene. See evidence/phase3_4/p15-throughput/",
                 "P3.4-17: independent review cannot be issued by the author",
             ],
         }

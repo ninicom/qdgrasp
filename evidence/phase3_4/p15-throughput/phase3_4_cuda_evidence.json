@@ -1,0 +1,201 @@
+{
+  "backend_resolution": {
+    "capabilities": {
+      "equality:mjEQ_WELD": "supported",
+      "mocap_body": "supported",
+      "per_contact_force_and_frame": "supported",
+      "tendon_transmission": "supported"
+    },
+    "modules": {
+      "mujoco.mjx": "not_installed",
+      "mujoco_warp": "available",
+      "warp": "available"
+    },
+    "mujoco": "3.12.0",
+    "per_hand": {
+      "leap_hand": {
+        "compiled": true,
+        "contact_fields": [
+          "dim",
+          "dist",
+          "efc_address",
+          "elem",
+          "flex",
+          "frame",
+          "friction",
+          "geom",
+          "geomcollisionid",
+          "includemargin",
+          "pos",
+          "solimp",
+          "solref",
+          "solreffriction",
+          "type",
+          "vert",
+          "worldid"
+        ],
+        "contact_readback": true,
+        "neq": 1,
+        "nmocap": 1,
+        "ntendon": 0
+      },
+      "shadow_hand": {
+        "compiled": true,
+        "contact_fields": [
+          "dim",
+          "dist",
+          "efc_address",
+          "elem",
+          "flex",
+          "frame",
+          "friction",
+          "geom",
+          "geomcollisionid",
+          "includemargin",
+          "pos",
+          "solimp",
+          "solref",
+          "solreffriction",
+          "type",
+          "vert",
+          "worldid"
+        ],
+        "contact_readback": true,
+        "neq": 1,
+        "nmocap": 1,
+        "ntendon": 4
+      },
+      "wonik_allegro": {
+        "compiled": true,
+        "contact_fields": [
+          "dim",
+          "dist",
+          "efc_address",
+          "elem",
+          "flex",
+          "frame",
+          "friction",
+          "geom",
+          "geomcollisionid",
+          "includemargin",
+          "pos",
+          "solimp",
+          "solref",
+          "solreffriction",
+          "type",
+          "vert",
+          "worldid"
+        ],
+        "contact_readback": true,
+        "neq": 1,
+        "nmocap": 1,
+        "ntendon": 0
+      }
+    },
+    "unsupported": [],
+    "untested_requirements": [],
+    "verdict": "supported",
+    "warp_cuda_devices": [
+      "cuda:0",
+      "cuda:1"
+    ],
+    "warp_version": "1.16.0"
+  },
+  "blocking_requirements": [
+    "tendon_transmission",
+    "equality:mjEQ_WELD",
+    "mocap_body",
+    "per_contact_force_and_frame"
+  ],
+  "cuda_environment": {
+    "capability": "7.5",
+    "device": "cuda:0",
+    "driver": "12.8",
+    "gpu_name": "Tesla T4",
+    "torch": "2.10.0+cu128",
+    "torch_cuda_build": "12.8",
+    "total_memory_gib": 14.56
+  },
+  "profile": "kaggle-t4-micro",
+  "python": "3.12.13",
+  "qdgrasp_version": "0.1.0a1",
+  "schema": "qdgrasp/evidence/phase3.4-cuda/v1",
+  "search_benchmark": {
+    "cpu_steps_per_second": 3094.9,
+    "finalists_routed_to_cpu": true,
+    "gating_rationale": "The performance criterion is about the workload Phase 3.4 searches: a dexterous hand in a scene. The three-geom micro scene is reported beside it because it bounds the other end -- GPU batching cannot win where per-step launch overhead dominates.",
+    "gating_scene": "leap_hand_scene",
+    "geom_count": 91,
+    "gpu_compile_seconds": 0.0308,
+    "gpu_steady_state_seconds": 2.6793,
+    "gpu_steps_per_second": 2364.8,
+    "gpu_warmup_seconds": 0.834,
+    "horizon": 100,
+    "min_required_speedup": 2.0,
+    "peak_vram_gib": 0.0,
+    "rejected_world_count": 1,
+    "rejected_worlds": [
+      8
+    ],
+    "scenes": {
+      "leap_hand_scene": {
+        "cpu_steps_per_second": 3094.9,
+        "finalists_routed_to_cpu": true,
+        "geom_count": 91,
+        "gpu_compile_seconds": 0.0308,
+        "gpu_steady_state_seconds": 2.6793,
+        "gpu_steps_per_second": 2364.8,
+        "gpu_warmup_seconds": 0.834,
+        "horizon": 100,
+        "label": "leap_hand_scene",
+        "min_required_speedup": 2.0,
+        "peak_vram_gib": 0.0,
+        "rejected_world_count": 1,
+        "rejected_worlds": [
+          8
+        ],
+        "speedup": 0.764,
+        "speedup_met": false,
+        "status": "measured",
+        "surviving_worlds": 63,
+        "vram_budget_gib": 14.0,
+        "vram_within_budget": true,
+        "worlds": 64,
+        "worlds_ran_without_oom": false
+      },
+      "micro_pusher": {
+        "cpu_steps_per_second": 33438.2,
+        "finalists_routed_to_cpu": true,
+        "geom_count": 3,
+        "gpu_compile_seconds": 0.0254,
+        "gpu_steady_state_seconds": 0.9953,
+        "gpu_steps_per_second": 6366.2,
+        "gpu_warmup_seconds": 9.8723,
+        "horizon": 100,
+        "label": "micro_pusher",
+        "min_required_speedup": 2.0,
+        "peak_vram_gib": 0.0,
+        "rejected_world_count": 0,
+        "rejected_worlds": [],
+        "speedup": 0.19,
+        "speedup_met": false,
+        "status": "measured",
+        "surviving_worlds": 64,
+        "vram_budget_gib": 14.0,
+        "vram_within_budget": true,
+        "worlds": 64,
+        "worlds_ran_without_oom": true
+      }
+    },
+    "speedup": 0.764,
+    "speedup_met": false,
+    "status": "measured",
+    "surviving_worlds": 63,
+    "vram_budget_gib": 14.0,
+    "vram_within_budget": true,
+    "worlds": 64,
+    "worlds_ran_without_oom": false
+  },
+  "status": "BACKEND_SUPPORTED_PENDING_P3.4-05",
+  "timestamp": "2026-08-27T11:20:27.844834+00:00"
+}
