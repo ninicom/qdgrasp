@@ -34,29 +34,37 @@ from qdgrasp.sim.batched.mujoco_cpu import MuJoCoCpuBackend
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-#: Work packages of ROADMAP-P3.4-001 and whether this gate covers them yet.
-#: Anything ``False`` is reported as outstanding so the gate can never be read
-#: as evidence that the phase is complete.
-WORK_PACKAGES: dict[str, bool] = {
-    "P3.4-00 hypothesis/safety semantics/entry gate": True,
-    "P3.4-01 typed trajectory contracts": True,
-    "P3.4-02 batched backend protocol + scene bucketing": True,
-    "P3.4-03 MuJoCo CPU oracle backend": True,
-    "P3.4-04 MJX-Warp compatibility spike": False,
-    "P3.4-05 MJWarp CUDA backend": False,
-    "P3.4-06 contact observer + safety budget": False,
-    "P3.4-07 primitive-sequence controller": False,
-    "P3.4-08 static-seeded contact rollout": False,
-    "P3.4-09 batched CEM search": False,
-    "P3.4-10 batched MPPI strategy": False,
-    "P3.4-11 local contact trajectory refinement": False,
-    "P3.4-12 CPU replay + terminal grasp certifier": False,
-    "P3.4-13 trajectory writer/loader": False,
-    "P3.4-14 static-vs-dynamic ablation": False,
-    "P3.4-15 Kaggle CUDA harness": False,
-    "P3.4-16 QDGrasp-ContactRich-Tiny": False,
-    "P3.4-17 independent review": False,
+#: Work packages of ROADMAP-P3.4-001 and how far each one is verified here.
+#:   "done"        verified by this CPU gate
+#:   "cpu_pending_gpu"  everything CPU can establish is done; the rest needs a
+#:                 real NVIDIA device and is not claimed
+#:   "todo"        not started
+#: Nothing here may read as phase closure: that needs the Kaggle GPU evidence.
+WORK_PACKAGES: dict[str, str] = {
+    "P3.4-00 hypothesis/safety semantics/entry gate": "done",
+    "P3.4-01 typed trajectory contracts": "done",
+    "P3.4-02 batched backend protocol + scene bucketing": "done",
+    "P3.4-03 MuJoCo CPU oracle backend": "done",
+    "P3.4-04 MJX-Warp compatibility spike": "cpu_pending_gpu",
+    "P3.4-05 MJWarp CUDA backend": "todo",
+    "P3.4-06 contact observer + safety budget": "todo",
+    "P3.4-07 primitive-sequence controller": "todo",
+    "P3.4-08 static-seeded contact rollout": "todo",
+    "P3.4-09 batched CEM search": "todo",
+    "P3.4-10 batched MPPI strategy": "todo",
+    "P3.4-11 local contact trajectory refinement": "todo",
+    "P3.4-12 CPU replay + terminal grasp certifier": "todo",
+    "P3.4-13 trajectory writer/loader": "todo",
+    "P3.4-14 static-vs-dynamic ablation": "todo",
+    "P3.4-15 Kaggle CUDA harness": "todo",
+    "P3.4-16 QDGrasp-ContactRich-Tiny": "todo",
+    "P3.4-17 independent review": "todo",
 }
+
+#: The spike report P3.4-04 produces, if it has been run.
+SPIKE_REPORT = (
+    REPO_ROOT / "evidence" / "phase3_4" / "p04-backend-spike" / "requirement-matrix.json"
+)
 
 MICRO_SCENE = (REPO_ROOT / "tests" / "dynamic_grasp" / "micro_scene.xml").read_text(
     encoding="utf-8"
@@ -172,6 +180,21 @@ def verify_cpu_backend() -> dict[str, Any]:
     }
 
 
+def verify_backend_spike() -> dict[str, Any]:
+    """Report the P3.4-04 requirement matrix without pretending it is a verdict."""
+    if not SPIKE_REPORT.is_file():
+        return {"status": "not_run", "hint": "scripts/phase3_4_backend_spike.py"}
+    report = json.loads(SPIKE_REPORT.read_text(encoding="utf-8"))
+    verdict = report.get("gpu_backend_status", {}).get("verdict", "unknown")
+    return {
+        "status": "recorded",
+        "required_features": len(report.get("required_feature_set", [])),
+        "blocking_requirements": report.get("blocking_requirements", []),
+        "gpu_support_verdict": verdict,
+        "resolved_here": verdict != "unknown_pending_gpu_environment",
+    }
+
+
 def run_pytest() -> dict[str, Any]:
     completed = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/dynamic_grasp/", "-q", "-p", "no:cacheprovider"],
@@ -193,7 +216,9 @@ def main() -> int:
     parser.add_argument("--skip-tests", action="store_true")
     args = parser.parse_args()
 
-    outstanding = sorted(name for name, done in WORK_PACKAGES.items() if not done)
+    outstanding = sorted(
+        name for name, status in WORK_PACKAGES.items() if status == "todo"
+    )
 
     try:
         if args.backend == "cuda":
@@ -214,9 +239,11 @@ def main() -> int:
             "status": "PARTIAL",
             "contracts": verify_contracts(),
             "cpu_backend": verify_cpu_backend(),
-            "completed_work_packages": sorted(
-                name for name, done in WORK_PACKAGES.items() if done
+            "work_package_status": dict(sorted(WORK_PACKAGES.items())),
+            "verified_on_cpu": sorted(
+                name for name, status in WORK_PACKAGES.items() if status == "done"
             ),
+            "backend_spike": verify_backend_spike(),
             "outstanding_work_packages": outstanding,
             "closure_blocked_by": [
                 "CUDA backend and Kaggle GPU evidence (P3.4-05, P3.4-15)",
@@ -232,7 +259,7 @@ def main() -> int:
 
     print(json.dumps(result, indent=2, sort_keys=True))
     print(
-        f"Phase 3.4: PARTIAL -- {len(result['completed_work_packages'])} of "
+        f"Phase 3.4: PARTIAL -- {len(result['verified_on_cpu'])} of "
         f"{len(WORK_PACKAGES)} work packages verified on CPU. "
         "This is not phase closure.",
         file=sys.stderr,

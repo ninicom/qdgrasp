@@ -1,0 +1,205 @@
+{
+  "blocking_requirements": [
+    "tendon_transmission",
+    "equality:mjEQ_WELD",
+    "mocap_body",
+    "per_contact_force_and_frame"
+  ],
+  "decision_rule": "If the GPU backend cannot carry every blocking requirement, Phase 3.4 stays blocked and a backend decision record is written. Mocking CUDA or dropping Shadow from the gate is not an accepted resolution.",
+  "gpu_backend_status": {
+    "mujoco.mjx": "not_installed",
+    "mujoco_warp": "not_installed",
+    "verdict": "unknown_pending_gpu_environment",
+    "warp": "not_installed"
+  },
+  "mujoco_version": "3.12.0",
+  "per_hand": {
+    "leap_hand": {
+      "contact_observation": {
+        "contacts_after_settle": 20,
+        "mj_contactForce_readable": true,
+        "requires_contact_geom_pair_identity": true,
+        "requires_per_contact_force": true,
+        "requires_per_contact_frame": true
+      },
+      "features": {
+        "actuator_dynamics": {
+          "mjDYN_NONE": 16
+        },
+        "actuator_transmission": {
+          "mjTRN_JOINT": 16
+        },
+        "equality_types": {
+          "mjEQ_WELD": 1
+        },
+        "geom_types": {
+          "mjGEOM_BOX": 68,
+          "mjGEOM_MESH": 21,
+          "mjGEOM_PLANE": 1
+        },
+        "joint_types": {
+          "mjJNT_FREE": 2,
+          "mjJNT_HINGE": 16
+        },
+        "options": {
+          "cone": 1,
+          "integrator": "mjINT_IMPLICITFAST",
+          "iterations": 100,
+          "jacobian": 2,
+          "ls_iterations": 50,
+          "solver": "mjSOL_NEWTON",
+          "timestep": 0.002
+        },
+        "sizes": {
+          "nbody": 20,
+          "nconmax": -1,
+          "neq": 1,
+          "ngeom": 90,
+          "njnt": 18,
+          "nmocap": 1,
+          "nq": 30,
+          "nsensor": 16,
+          "ntendon": 0,
+          "nu": 16,
+          "nv": 28
+        },
+        "uses_equality_weld": true,
+        "uses_mocap": true,
+        "uses_tendon": false
+      }
+    },
+    "shadow_hand": {
+      "contact_observation": {
+        "contacts_after_settle": 5,
+        "mj_contactForce_readable": true,
+        "requires_contact_geom_pair_identity": true,
+        "requires_per_contact_force": true,
+        "requires_per_contact_frame": true
+      },
+      "features": {
+        "actuator_dynamics": {
+          "mjDYN_NONE": 20
+        },
+        "actuator_transmission": {
+          "mjTRN_JOINT": 16,
+          "mjTRN_TENDON": 4
+        },
+        "equality_types": {
+          "mjEQ_WELD": 1
+        },
+        "geom_types": {
+          "mjGEOM_BOX": 13,
+          "mjGEOM_CAPSULE": 10,
+          "mjGEOM_CYLINDER": 7,
+          "mjGEOM_MESH": 30,
+          "mjGEOM_PLANE": 1,
+          "mjGEOM_SPHERE": 3
+        },
+        "joint_types": {
+          "mjJNT_FREE": 2,
+          "mjJNT_HINGE": 24
+        },
+        "options": {
+          "cone": 1,
+          "integrator": "mjINT_EULER",
+          "iterations": 100,
+          "jacobian": 2,
+          "ls_iterations": 50,
+          "solver": "mjSOL_NEWTON",
+          "timestep": 0.002
+        },
+        "sizes": {
+          "nbody": 28,
+          "nconmax": -1,
+          "neq": 1,
+          "ngeom": 64,
+          "njnt": 26,
+          "nmocap": 1,
+          "nq": 38,
+          "nsensor": 0,
+          "ntendon": 4,
+          "nu": 20,
+          "nv": 36
+        },
+        "uses_equality_weld": true,
+        "uses_mocap": true,
+        "uses_tendon": true
+      }
+    },
+    "wonik_allegro": {
+      "contact_observation": {
+        "contacts_after_settle": 45,
+        "mj_contactForce_readable": true,
+        "requires_contact_geom_pair_identity": true,
+        "requires_per_contact_force": true,
+        "requires_per_contact_frame": true
+      },
+      "features": {
+        "actuator_dynamics": {
+          "mjDYN_NONE": 16
+        },
+        "actuator_transmission": {
+          "mjTRN_JOINT": 16
+        },
+        "equality_types": {
+          "mjEQ_WELD": 1
+        },
+        "geom_types": {
+          "mjGEOM_BOX": 18,
+          "mjGEOM_CAPSULE": 4,
+          "mjGEOM_MESH": 21,
+          "mjGEOM_PLANE": 1
+        },
+        "joint_types": {
+          "mjJNT_FREE": 2,
+          "mjJNT_HINGE": 16
+        },
+        "options": {
+          "cone": 1,
+          "integrator": "mjINT_EULER",
+          "iterations": 100,
+          "jacobian": 2,
+          "ls_iterations": 50,
+          "solver": "mjSOL_NEWTON",
+          "timestep": 0.002
+        },
+        "sizes": {
+          "nbody": 24,
+          "nconmax": -1,
+          "neq": 1,
+          "ngeom": 44,
+          "njnt": 18,
+          "nmocap": 1,
+          "nq": 30,
+          "nsensor": 0,
+          "ntendon": 0,
+          "nu": 16,
+          "nv": 28
+        },
+        "uses_equality_weld": true,
+        "uses_mocap": true,
+        "uses_tendon": false
+      }
+    }
+  },
+  "phase": "3.4",
+  "required_feature_set": [
+    "actuator_transmission:mjTRN_JOINT",
+    "actuator_transmission:mjTRN_TENDON",
+    "equality:mjEQ_WELD",
+    "geom:mjGEOM_BOX",
+    "geom:mjGEOM_CAPSULE",
+    "geom:mjGEOM_CYLINDER",
+    "geom:mjGEOM_MESH",
+    "geom:mjGEOM_PLANE",
+    "geom:mjGEOM_SPHERE",
+    "integrator:mjINT_EULER",
+    "integrator:mjINT_IMPLICITFAST",
+    "joint:mjJNT_FREE",
+    "joint:mjJNT_HINGE",
+    "mocap_body",
+    "solver:mjSOL_NEWTON",
+    "tendon_transmission"
+  ],
+  "work_package": "P3.4-04"
+}
