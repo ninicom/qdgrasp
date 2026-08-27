@@ -46,7 +46,7 @@ WORK_PACKAGES: dict[str, str] = {
     "P3.4-02 batched backend protocol + scene bucketing": "done",
     "P3.4-03 MuJoCo CPU oracle backend": "done",
     "P3.4-04 MJX-Warp compatibility spike": "done",
-    "P3.4-05 MJWarp CUDA backend": "todo",
+    "P3.4-05 MJWarp CUDA backend": "cpu_pending_gpu",
     "P3.4-06 contact observer + safety budget": "done",
     "P3.4-07 primitive-sequence controller": "done",
     "P3.4-08 static-seeded contact rollout": "done",
