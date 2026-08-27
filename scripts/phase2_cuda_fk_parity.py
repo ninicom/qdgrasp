@@ -19,7 +19,9 @@ from qdgrasp.runtime import environment_info, require_cuda
 
 
 def run_cuda_fk_parity(device_str: str = "cuda:0", out_path: Path | None = None) -> int:
-    env = require_cuda(device=device_str)
+    if not device_str.startswith("cuda"):
+        raise SystemExit(f"--device must be a CUDA device, got {device_str!r}")
+    require_cuda()
     device = torch.device(device_str)
 
     torch.manual_seed(42)
