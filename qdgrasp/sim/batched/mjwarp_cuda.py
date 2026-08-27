@@ -52,7 +52,10 @@ class MjWarpCudaBackend:
 
     backend_id = "mjwarp_cuda"
 
-    def __init__(self, model_xml: str, *, device: str = "cuda:0") -> None:
+    def __init__(
+        self, model_source: str | mujoco.MjModel, *, device: str = "cuda:0"
+    ) -> None:
+        """Accept a compiled model as well as XML; see the CPU oracle for why."""
         if not device.startswith("cuda"):
             raise BackendUnavailableError(
                 f"this backend is CUDA-only; got device {device!r}. Use "
@@ -72,7 +75,8 @@ class MjWarpCudaBackend:
                 "Warp reports no CUDA device; refusing to run a CUDA backend"
             )
         self._device = device
-        self._model_xml = model_xml
+        self._model_xml = model_source if isinstance(model_source, str) else None
+        self._prebuilt = None if isinstance(model_source, str) else model_source
         self._cpu_model: mujoco.MjModel | None = None
         self._warp_model = None
         self._warp_data = None
@@ -95,7 +99,11 @@ class MjWarpCudaBackend:
                 f"requested {robot_profile!r}"
             )
         started = time.perf_counter()
-        model = mujoco.MjModel.from_xml_string(self._model_xml)
+        model = (
+            self._prebuilt
+            if self._prebuilt is not None
+            else mujoco.MjModel.from_xml_string(self._model_xml)
+        )
         model.opt.timestep = signature.timestep
         try:
             self._warp_model = self._mjwarp.put_model(model)

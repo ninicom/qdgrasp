@@ -45,8 +45,15 @@ class MuJoCoCpuBackend:
 
     backend_id = "mujoco_cpu"
 
-    def __init__(self, model_xml: str) -> None:
-        self._model_xml = model_xml
+    def __init__(self, model_source: str | mujoco.MjModel) -> None:
+        """Accept a compiled model as well as XML.
+
+        A mesh-based hand cannot survive a round trip through an XML string:
+        the serialised model references its assets by relative path and fails
+        to reopen them. Passing the compiled model keeps those meshes attached.
+        """
+        self._model_xml = model_source if isinstance(model_source, str) else None
+        self._prebuilt = None if isinstance(model_source, str) else model_source
         self._model: mujoco.MjModel | None = None
         self._worlds: list[mujoco.MjData] = []
         self._requests: tuple[DynamicGraspRequest, ...] = ()
@@ -71,7 +78,11 @@ class MuJoCoCpuBackend:
                 f"requested {robot_profile!r}"
             )
         started = time.perf_counter()
-        model = mujoco.MjModel.from_xml_string(self._model_xml)
+        model = (
+            self._prebuilt
+            if self._prebuilt is not None
+            else mujoco.MjModel.from_xml_string(self._model_xml)
+        )
         self._assert_supported(model)
         model.opt.timestep = signature.timestep
         self._model = model

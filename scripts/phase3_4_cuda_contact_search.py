@@ -224,7 +224,7 @@ MIN_GPU_SPEEDUP = 2.0
 
 
 def _benchmark_scene(
-    device: str, label: str, scene_xml: str, signature: Any
+    device: str, label: str, scene_source: Any, signature: Any
 ) -> dict[str, Any]:
     """Time one scene on both backends with identical commands."""
     import mujoco
@@ -235,7 +235,7 @@ def _benchmark_scene(
     from qdgrasp.sim.batched.mjwarp_cuda import MjWarpCudaBackend
     from qdgrasp.sim.batched.mujoco_cpu import MuJoCoCpuBackend
 
-    scene = scene_xml
+    scene = scene_source
     profile = signature.robot_profile
 
     def requests(count: int) -> list[DynamicGraspRequest]:
@@ -303,7 +303,11 @@ def _benchmark_scene(
             "rejected_worlds": rejected,
             "finalists_routed_to_cpu": replayable,
             "worlds_ran_without_oom": len(rejected) == 0,
-            "geom_count": int(mujoco.MjModel.from_xml_string(scene).ngeom),
+            "geom_count": int(
+                scene.ngeom
+                if hasattr(scene, "ngeom")
+                else mujoco.MjModel.from_xml_string(scene).ngeom
+            ),
         }
     )
     return result
@@ -318,7 +322,6 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
     reads the representative one and records the micro result beside it, rather
     than picking whichever number looks better.
     """
-    import mujoco
 
     from qdgrasp.dataset.pipeline.generated_reachable import (
         build_generated_reachable_object,
@@ -350,10 +353,7 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
         object_pos=fixture.object_pos,
         object_mass=fixture.mass,
     )
-    hand_xml = hand_model.to_xml_string() if hasattr(hand_model, "to_xml_string") else None
-    if hand_xml is None:
-        spec_obj = mujoco.MjSpec.from_file(str(resolve_robot_asset(spec.config.source_asset)))
-        hand_xml = spec_obj.to_xml()
+    # Pass the compiled model, not XML: serialising it loses the mesh assets.
     hand_signature = SceneSignature(
         robot_profile="leap_hand",
         environment="table",
@@ -367,7 +367,7 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
     results = {}
     for label, xml, signature in (
         ("micro_pusher", micro_xml, micro_signature),
-        ("leap_hand_scene", hand_xml, hand_signature),
+        ("leap_hand_scene", hand_model, hand_signature),
     ):
         try:
             results[label] = _benchmark_scene(device, label, xml, signature)
