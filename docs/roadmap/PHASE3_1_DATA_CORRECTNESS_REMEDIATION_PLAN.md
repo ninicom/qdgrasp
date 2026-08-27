@@ -2,10 +2,10 @@
 document_id: ROADMAP-P3.1-001
 document_type: plan
 title: Kế hoạch Phase 3.1 — Data Correctness Remediation
-version: 1.9.0
-status: active
+version: 1.10.0
+status: complete
 date: 2026-08-27
-revises: ROADMAP-P3.1-001@1.8.0
+revises: ROADMAP-P3.1-001@1.9.0
 related_plan: ROADMAP-P3-001
 literature_cutoff: 2026-08-23
 latest_revision_record: docs/revisions/REV-20260827-001-p3-1-14-regeneration.md
@@ -494,7 +494,7 @@ Thứ tự bắt buộc: `00 → 01 → (02 → 03 → 04) || (05 → 06) || (08
 → 07 → 11 → (12 || 13) → 14 → 15`. Không regenerate release trước khi cả ba
 recipe và static/dynamic validator pass correctness fixture.
 
-### Trạng thái triển khai tại 2026-08-27
+### Trạng thái triển khai tại 2026-08-27 (P3.1 complete)
 
 | Module | Trạng thái | Evidence / blocker |
 | --- | --- | --- |
@@ -502,8 +502,8 @@ recipe và static/dynamic validator pass correctness fixture.
 | P3.1-11 | completed | Component fixtures pass trong Phase 3.2; P3.2.1 bổ sung generated-reachable full flow cho LEAP, Allegro và Shadow, transmission Shadow 24-state/20-control, measured rollout và independent review (`REV-20260824-001`), mở khóa `release_blocked: false` |
 | P3.1-12 | completed | Fabricated positive substitution đã bị xóa; `tests/test_no_positive_substitution.py` pass 6/6 và P3.2.1 gate pin source/profile/protocol hashes cùng raw trajectory evidence |
 | P3.1-13 | completed | Official positive-control matrix chạy `84/84` candidates từ commit `79a997b`, chọn duy nhất `region_opposition_v1`: dynamic positive `3/3` hand, 3 accepted contact signatures. Canonical matrix 72 candidates vẫn inconclusive và được giữ như giới hạn generalization; xem `REV-20260825-001` |
-| P3.1-14 | partial | Regeneration đã chạy tại `790f5c6` (`REV-20260827-001`). Mười hai object procedural cho **0 positive ở cả sáu shard**, nên release nhận thêm positive-control object gắn theo hand. Kết quả: measured positive ở 5/6 shard, `invalidated=false`, hai clean regeneration byte-identical. `wonik_allegro` không có variant thứ hai (0/4 geometry, kể cả ở ceiling budget 16) nên split `val` của nó vẫn 0 positive và `release_blocked` vẫn `true` |
-| P3.1-15 | blocked | Điều kiện §10.2 (positive coverage cho cả ba hand và hai split) chưa đạt vì split `val` của `wonik_allegro`. Không đóng P3.1 và không mở P4 cho tới khi có measured positive hợp lệ cho ô đó, hoặc release rule được định nghĩa lại bằng revision |
+| P3.1-14 | completed | Regeneration tại `07e1835` (`REV-20260827-001`). Mười hai object procedural cho **0 positive ở cả sáu shard**, nên release nhận sáu positive-control object gắn theo hand. Lưới kinematics định vị nút thắt Allegro là IK chứ không phải floor clearance; mở opposition sang 45 mm cho 2 measured positive. Kết quả: 200 sample, 18 object, 7 measured positive trên **6/6 shard**, `invalidated=false`, `release_blocked=false`, hai clean regeneration byte-identical |
+| P3.1-15 | completed | `scripts/check_phase3.py` PASS cả sáu hạng mục; `check_dataset_manifest` PASS; full suite 443 passed / 1 skipped; docs gate 103 file. Điều kiện §10 đã đạt, P3.1 đóng và không còn chặn P4 |
 
 Do máy development từng bị hard-freeze trong ablation, mọi verification còn lại
 phải chạy tuần tự với `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,

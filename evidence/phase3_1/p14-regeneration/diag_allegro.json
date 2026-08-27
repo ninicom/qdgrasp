@@ -1,0 +1,469 @@
+[
+  {
+    "hand": "wonik_allegro",
+    "width": 0.03,
+    "upper_center_z": 0.085,
+    "reasons": {
+      "proposal_rejected": 5,
+      "ik_rejected": 6,
+      "static_force_rejected": 5
+    },
+    "stages": {
+      "proposal": 5,
+      "static_force": 5,
+      "ik": 6
+    },
+    "reached_dynamic": 0,
+    "seconds": 51.4
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.03,
+    "upper_center_z": 0.1,
+    "reasons": {
+      "proposal_rejected": 6,
+      "ik_rejected": 7,
+      "static_force_rejected": 2,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 6,
+      "ik": 7,
+      "dynamic": 1,
+      "static_force": 2
+    },
+    "reached_dynamic": 1,
+    "seconds": 45.9
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.03,
+    "upper_center_z": 0.115,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 11,
+      "collision_rejected": 1,
+      "static_force_rejected": 1,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 11,
+      "static_force": 1,
+      "dynamic": 1,
+      "collision": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 53.0
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.03,
+    "upper_center_z": 0.13,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 10,
+      "static_force_rejected": 3,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 10,
+      "static_force": 3,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 53.3
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.03,
+    "upper_center_z": 0.14,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 14
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 14
+    },
+    "reached_dynamic": 0,
+    "seconds": 53.0
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.035,
+    "upper_center_z": 0.085,
+    "reasons": {
+      "proposal_rejected": 8,
+      "ik_rejected": 6,
+      "static_force_rejected": 2
+    },
+    "stages": {
+      "proposal": 8,
+      "static_force": 2,
+      "ik": 6
+    },
+    "reached_dynamic": 0,
+    "seconds": 40.6
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.035,
+    "upper_center_z": 0.1,
+    "reasons": {
+      "proposal_rejected": 5,
+      "ik_rejected": 11
+    },
+    "stages": {
+      "proposal": 5,
+      "ik": 11
+    },
+    "reached_dynamic": 0,
+    "seconds": 47.7
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.035,
+    "upper_center_z": 0.115,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 10,
+      "static_force_rejected": 2,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 3,
+      "ik": 10,
+      "static_force": 2,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 50.5
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.035,
+    "upper_center_z": 0.13,
+    "reasons": {
+      "proposal_rejected": 4,
+      "ik_rejected": 9,
+      "collision_rejected": 1,
+      "static_force_rejected": 1,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 4,
+      "ik": 9,
+      "static_force": 1,
+      "dynamic": 1,
+      "collision": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 48.5
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.035,
+    "upper_center_z": 0.14,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 11,
+      "static_force_rejected": 2,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 11,
+      "static_force": 2,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 52.2
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.04,
+    "upper_center_z": 0.085,
+    "reasons": {
+      "proposal_rejected": 7,
+      "ik_rejected": 6,
+      "static_force_rejected": 2,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 7,
+      "ik": 6,
+      "static_force": 2,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 43.1
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.04,
+    "upper_center_z": 0.1,
+    "reasons": {
+      "proposal_rejected": 7,
+      "ik_rejected": 7,
+      "static_force_rejected": 1,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 7,
+      "ik": 7,
+      "static_force": 1,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 42.8
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.04,
+    "upper_center_z": 0.115,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 10,
+      "static_force_rejected": 4
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 10,
+      "static_force": 4
+    },
+    "reached_dynamic": 0,
+    "seconds": 52.5
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.04,
+    "upper_center_z": 0.13,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 9,
+      "static_force_rejected": 4,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 9,
+      "static_force": 4,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 54.3
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.04,
+    "upper_center_z": 0.14,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 7,
+      "static_force_rejected": 4,
+      "dynamic_skipped": 2
+    },
+    "stages": {
+      "proposal": 3,
+      "ik": 7,
+      "static_force": 4,
+      "dynamic": 2
+    },
+    "reached_dynamic": 2,
+    "seconds": 54.9
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.045,
+    "upper_center_z": 0.085,
+    "reasons": {
+      "proposal_rejected": 5,
+      "ik_rejected": 7,
+      "static_force_rejected": 2,
+      "dynamic_skipped": 2
+    },
+    "stages": {
+      "proposal": 5,
+      "static_force": 2,
+      "dynamic": 2,
+      "ik": 7
+    },
+    "reached_dynamic": 2,
+    "seconds": 46.4
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.045,
+    "upper_center_z": 0.1,
+    "reasons": {
+      "proposal_rejected": 7,
+      "ik_rejected": 8,
+      "static_force_rejected": 1
+    },
+    "stages": {
+      "proposal": 7,
+      "ik": 8,
+      "static_force": 1
+    },
+    "reached_dynamic": 0,
+    "seconds": 42.6
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.045,
+    "upper_center_z": 0.115,
+    "reasons": {
+      "proposal_rejected": 3,
+      "ik_rejected": 7,
+      "static_force_rejected": 5,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 3,
+      "ik": 7,
+      "static_force": 5,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 50.1
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.045,
+    "upper_center_z": 0.13,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 8,
+      "collision_rejected": 1,
+      "static_force_rejected": 4,
+      "dynamic_skipped": 2
+    },
+    "stages": {
+      "proposal": 1,
+      "ik": 8,
+      "static_force": 4,
+      "dynamic": 2,
+      "collision": 1
+    },
+    "reached_dynamic": 2,
+    "seconds": 54.7
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.045,
+    "upper_center_z": 0.14,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 7,
+      "collision_rejected": 1,
+      "static_force_rejected": 4,
+      "dynamic_skipped": 3
+    },
+    "stages": {
+      "proposal": 1,
+      "ik": 7,
+      "static_force": 4,
+      "dynamic": 3,
+      "collision": 1
+    },
+    "reached_dynamic": 3,
+    "seconds": 55.4
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.05,
+    "upper_center_z": 0.085,
+    "reasons": {
+      "proposal_rejected": 5,
+      "ik_rejected": 7,
+      "static_force_rejected": 3,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 5,
+      "ik": 7,
+      "dynamic": 1,
+      "static_force": 3
+    },
+    "reached_dynamic": 1,
+    "seconds": 46.4
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.05,
+    "upper_center_z": 0.1,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 10,
+      "static_force_rejected": 3,
+      "dynamic_skipped": 2
+    },
+    "stages": {
+      "proposal": 1,
+      "ik": 10,
+      "static_force": 3,
+      "dynamic": 2
+    },
+    "reached_dynamic": 2,
+    "seconds": 54.7
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.05,
+    "upper_center_z": 0.115,
+    "reasons": {
+      "proposal_rejected": 4,
+      "ik_rejected": 8,
+      "static_force_rejected": 2,
+      "dynamic_skipped": 2
+    },
+    "stages": {
+      "proposal": 4,
+      "dynamic": 2,
+      "ik": 8,
+      "static_force": 2
+    },
+    "reached_dynamic": 2,
+    "seconds": 48.7
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.05,
+    "upper_center_z": 0.13,
+    "reasons": {
+      "proposal_rejected": 2,
+      "ik_rejected": 10,
+      "collision_rejected": 1,
+      "static_force_rejected": 3
+    },
+    "stages": {
+      "proposal": 2,
+      "ik": 10,
+      "static_force": 3,
+      "collision": 1
+    },
+    "reached_dynamic": 0,
+    "seconds": 52.5
+  },
+  {
+    "hand": "wonik_allegro",
+    "width": 0.05,
+    "upper_center_z": 0.14,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 11,
+      "static_force_rejected": 3,
+      "dynamic_skipped": 1
+    },
+    "stages": {
+      "proposal": 1,
+      "ik": 11,
+      "static_force": 3,
+      "dynamic": 1
+    },
+    "reached_dynamic": 1,
+    "seconds": 54.9
+  }
+]

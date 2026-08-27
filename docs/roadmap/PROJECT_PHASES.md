@@ -2,10 +2,10 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.18.0
+version: 1.19.0
 status: active
 date: 2026-08-27
-revises: ROADMAP-001@1.17.0
+revises: ROADMAP-001@1.18.0
 related_plan: PLAN-V2
 latest_revision_record: docs/revisions/REV-20260827-001-p3-1-14-regeneration.md
 ---
@@ -86,15 +86,18 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   Shadow được gỡ release block bởi `REV-20260824-001`. Controlled ablation
   P3.1-13 đã chọn `region_opposition_v1` trong validated positive-control scope
   (`REV-20260825-001`), nhưng canonical-independent yield vẫn `0/12` và không
-  chứng minh generalization. Regeneration P3.1-14 đã chạy (`REV-20260827-001`):
-  mười hai object procedural cho `0` positive ở cả sáu shard, nên release nhận
-  thêm positive-control object gắn theo hand và nay có measured positive ở 5/6
-  shard cùng `invalidated=false`, hai clean regeneration byte-identical. Ba
-  positive-control cell tái lập được ngoài harness ablation (3/3 hand).
-  `wonik_allegro` không có variant thứ hai hợp lệ (0/4 geometry đã khai báo, kể
-  cả ở ceiling budget 16) nên split `val` của nó vẫn `0` positive,
-  `release_blocked` vẫn `true` và `scripts/check_phase3.py` vẫn fail. P3.1-15
-  do đó blocked và P4 chưa được mở.
+  chứng minh generalization. P3.1 đã đóng bằng `REV-20260827-001`: regeneration
+  cho thấy mười hai object procedural sinh `0` positive ở cả sáu shard, nên
+  release nhận sáu positive-control object gắn theo hand. Blocker `wonik_allegro`
+  được gỡ sau khi lưới kinematics định vị nút thắt là IK convergence chứ không
+  phải palm floor clearance: mở opposition task sang 45 mm đo được 2 dynamic
+  positive, trong khi bốn variant giữ 40 mm đo được 0. `DGN-Open-Tiny` hiện có
+  200 sample, 18 object, 7 measured positive trên **6/6 shard**,
+  `invalidated=false`, `release_blocked=false`, hai clean regeneration
+  byte-identical và `scripts/check_phase3.py` PASS. Canonical procedural yield
+  vẫn `0` và không có claim generalization; `max_iter=40` hardcode trong
+  orchestrator được ghi nhận là nút thắt yield toàn cục cho phase sau. P3 tổng
+  vẫn `pending` vì P3.4 contact-rich chưa bắt đầu.
 - Phase 3.3 ([`ROADMAP-P3.3-001`](PHASE3_3_SCENE_GRASP_DATA_PLAN.md)) mở rộng
   pipeline sang clutter scene: adapter GraspNet-1Billion, DexGraspNet 2.0 và
   GraspClutter6D; native scene builders; whole-scene collision; multi-object

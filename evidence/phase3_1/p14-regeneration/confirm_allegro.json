@@ -1,0 +1,44 @@
+[
+  {
+    "width": 0.045,
+    "upper_center_z": 0.14,
+    "budget": 16,
+    "dynamic_positive": 2,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 7,
+      "collision_rejected": 1,
+      "static_force_rejected": 4,
+      "dynamic_rejected": 1,
+      "accepted": 2
+    },
+    "seconds": 54.2
+  },
+  {
+    "width": 0.045,
+    "upper_center_z": 0.13,
+    "budget": 16,
+    "dynamic_positive": 2,
+    "reasons": {
+      "proposal_rejected": 1,
+      "ik_rejected": 8,
+      "collision_rejected": 1,
+      "static_force_rejected": 4,
+      "accepted": 2
+    },
+    "seconds": 56.3
+  },
+  {
+    "width": 0.05,
+    "upper_center_z": 0.115,
+    "budget": 16,
+    "dynamic_positive": 0,
+    "reasons": {
+      "proposal_rejected": 4,
+      "ik_rejected": 8,
+      "static_force_rejected": 2,
+      "dynamic_rejected": 2
+    },
+    "seconds": 48.8
+  }
+]

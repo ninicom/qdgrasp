@@ -2,7 +2,7 @@
 document_id: REV-20260827-001
 document_type: revision_record
 revision_schema: 2
-title: Regenerate DGN-Open-Tiny bằng measured positive và giữ release blocked cho Allegro
+title: Regenerate DGN-Open-Tiny bằng measured positive và gỡ release block
 status: complete
 date: 2026-08-27
 record_id: REV-20260827-001
@@ -18,7 +18,7 @@ revises:
     revision: 8377a7e4635405b20fbd58add8c87af4c2409a92696beedda87a86641bd3ccfd
 reason: "Release DGN-Open-Tiny cũ bị REV-20260823-009 vô hiệu vì positive là fixture bịa; regeneration đo thật cho thấy mười hai object procedural không sinh positive nào nên release phải đổi thành phần object thay vì đổi ngưỡng."
 necessity: N2
-impact: "P3.1-14 hoàn tất một phần: dataset mới có measured positive ở 5/6 shard và invalidated=false, nhưng val shard của wonik_allegro vẫn 0 positive nên release_blocked=true. P3.1-15 và P3 tiếp tục pending."
+impact: "P3.1-14 hoàn tất: cả sáu shard có measured positive, release_blocked=false, invalidated=false và check_phase3 pass. Điều kiện §10.2 của P3.1 đạt; P3 tổng vẫn pending vì P3.4 chưa bắt đầu."
 ---
 
 # REV-20260827-001 — P3.1-14 regeneration
@@ -58,9 +58,9 @@ chứ không phải ngưỡng hay recipe, là thứ phải thay đổi.
 | --- | --- | --- | --- | --- |
 | Hành vi/runtime | generator chỉ sinh object procedural | thêm positive-control object gắn theo hand | trung bình | giữ frozen stream và budget |
 | API/schema/config | không đổi | `build_grasp_bar` mới; `build_generated_reachable_object` giữ nguyên geometry | thấp | không |
-| Dữ liệu/checkpoint | 144 sample, 6 positive bịa, invalidated | 186 sample, 5 measured positive, invalidated=false | cao | pin exact revision |
+| Dữ liệu/checkpoint | 144 sample, 6 positive bịa, invalidated | 200 sample, 7 measured positive trên 6/6 shard, invalidated=false, release_blocked=false | cao | pin exact revision |
 | Tương thích CPU/GPU/export | CPU lock | không đổi | không | không |
-| Số liệu/kết luận đã công bố | P3.1-14 `ready` | hoàn tất một phần, còn blocker Allegro | cao | không claim P3.1 đóng |
+| Số liệu/kết luận đã công bố | P3.1-14 `ready` | complete; P3.1-15 mở khóa | cao | không claim procedural generalization |
 
 ## 5. Nội dung thay đổi đã hoàn tất trong phiên này
 
@@ -68,7 +68,7 @@ chứ không phải ngưỡng hay recipe, là thứ phải thay đổi.
   `build_grasp_bar(profile, upper_height, upper_center_z)` và giữ
   `build_generated_reachable_object` trả về geometry **byte-identical** (mesh
   sha256 ba hand không đổi), nên fixture pin của P3.2.1 không bị ảnh hưởng.
-- `CH-002` `scripts/generate_dgn_open_tiny.py` nhận năm positive-control object.
+- `CH-002` `scripts/generate_dgn_open_tiny.py` nhận sáu positive-control object.
   Mỗi object đi qua đúng `create_object_asset` như object procedural, chỉ ghép
   với hand đã calibrate, dùng frozen proposal stream `generated_reachable_rng`
   và candidate budget đã validated (LEAP 4, Allegro 14, Shadow 10), có guard
@@ -77,6 +77,15 @@ chứ không phải ngưỡng hay recipe, là thứ phải thay đổi.
 - `CH-004` Thay nội dung `datasets/dgn-open-tiny/`; xóa `dataset_stats.json`
   (artifact của generator cũ, không còn code hay tài liệu nào tham chiếu).
 - `CH-005` Lưu evidence P3.1-14 và cập nhật roadmap P3.1 cùng `PROJECT_PHASES`.
+- `CH-006` Chẩn đoán và gỡ blocker `wonik_allegro`. Lưới kinematics 5 width × 5
+  block height (budget 16, không physics) cho thấy chẩn đoán "floor clearance"
+  là sai: `palm_hypothesis_unavailable` chỉ trội quanh điểm calibrate, còn ràng
+  buộc thật trên toàn envelope là IK convergence (`max_iter=40` hardcode trong
+  orchestrator), giết 7–8 trên mỗi 16 candidate kể cả ở ô tốt nhất. Bốn variant
+  thất bại trước đó đều giữ `width=0.040`. Mở rộng opposition sang 45 mm đo được
+  **2 dynamic positive**, so với 1 của fixture calibrate. `build_grasp_bar` nay
+  nhận `width` tường minh và `pc_allegro_02` dùng `width=0.045`,
+  `upper_center_z=0.130`.
 
 ## 6. Xác minh
 
@@ -87,7 +96,11 @@ chứ không phải ngưỡng hay recipe, là thứ phải thay đổi.
 | `V-003` | probe Allegro ở ceiling budget 16 | trong envelope đã validated | vẫn 0/4 variant | pass | `variant-probe.json` |
 | `V-004` | hai clean regeneration | byte-identical | 6/6 shard, 34/34 object, manifest trùng khớp | pass | `release-run1.log`, `release-run2.log` |
 | `V-005` | mesh hash `build_generated_reachable_object` trước/sau refactor | không đổi | ba hand trùng khớp | pass | preflight commit `790f5c6` |
-| `V-006` | `check_dataset_manifest.py --root datasets/dgn-open-tiny` | fail-closed đúng lý do | FAIL `release_blocked=True` | pass | terminal log |
+| `V-006` | lưới kinematics Allegro 25 ô | định vị stage chết thật | IK trội toàn envelope, không phải floor clearance | pass | `diag_allegro.json` |
+| `V-007` | dynamic confirmation 3 ô tốt nhất | tìm variant val-side | `width=0.045` cho 2 positive ở hai block height | pass | `confirm_allegro.json` |
+| `V-008` | hai clean regeneration cuối | byte-identical | 6/6 shard, 36/36 object, manifest trùng khớp | pass | `release-final-run1.log`, `release-final-run2.log` |
+| `V-009` | `check_dataset_manifest.py --root datasets/dgn-open-tiny` | audit pass | PASS, 200 sample, 18 object, 7 positive | pass | terminal log |
+| `V-010` | `scripts/check_phase3.py` | gate P3/P3.1 pass | PASS cả sáu hạng mục, train loss 1.1948 | pass | terminal log |
 
 - Regression đã chạy: `tests/test_generated_reachable.py`,
   `test_dataset_manifest_audit.py`, `test_objects_manifest.py`,
@@ -104,6 +117,11 @@ chứ không phải ngưỡng hay recipe, là thứ phải thay đổi.
 - Đính chính bắt buộc: canonical procedural yield là `0`, không phải "thấp".
   Positive của release đến từ positive-control object, và điều đó phải được ghi
   ở mọi nơi trích dẫn tiny dataset; đây không phải bằng chứng generalization.
+- Finding mở cho phase sau: `max_iter=40` hardcode trong
+  `qdgrasp/dataset/pipeline/orchestrator.py` là nút thắt yield toàn cục. Nâng nó
+  có thể tấn công trực tiếp canonical `0/12`, nhưng sẽ đổi mọi kết quả pipeline
+  và làm mất hiệu lực bằng chứng chọn recipe P3.1-13 cùng chuỗi P3.2.1, nên phải
+  đi qua revision riêng chứ không sửa kèm ở đây.
 - Người chấp nhận rủi ro/ngoại lệ: không có ngoại lệ. Không hạ threshold, không
   sửa quy tắc `release_blocked`, không nhét positive thủ công.
 
@@ -112,6 +130,7 @@ chứ không phải ngưỡng hay recipe, là thứ phải thay đổi.
 - Tác giả: claude-primary-agent, 2026-08-27 Asia/Bangkok.
 - Người kiểm tra: chưa có independent reviewer; hồ sơ này không tự phát hành
   verdict cho P3.1.
-- Kết luận: P3.1-14 hoàn tất một phần. `wonik_allegro` không có positive ở split
-  `val` nên `release_blocked` vẫn `true`; P3.1-15 và P3 tiếp tục pending.
+- Kết luận: P3.1-14 hoàn tất. Cả sáu shard có measured positive,
+  `release_blocked=false` và `scripts/check_phase3.py` pass, nên điều kiện §10.2
+  của `ROADMAP-P3.1-001` đã đạt. P3 tổng vẫn pending vì P3.4 chưa bắt đầu.
 - Liên kết bản ghi hoàn tất: `REV-20260827-001`.
