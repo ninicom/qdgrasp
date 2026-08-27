@@ -80,22 +80,30 @@ document was wrong and is withdrawn.
 
 ### Why 0.0 rad fails actuator tracking
 
-`rh_LFJ1` and `rh_LFJ2` have **no individual actuators**. They are driven
-together by one tendon actuator, `rh_A_LFJ0` on tendon `rh_LFJ0`, whose
-ctrlrange is `[0.000, 3.142]` -- the tendon coordinate is the sum of the two
-joints. `rh_MFJ0` and `rh_RFJ0` are the same.
+`rh_LFJ1` and `rh_LFJ2` have no individual actuators. One tendon actuator,
+`rh_A_LFJ0` on tendon `rh_LFJ0` with ctrlrange `[0.000, 3.142]`, drives both;
+the tendon coordinate is the sum. `rh_MFJ0` and `rh_RFJ0` are the same.
 
-So commanding `rh_LFJ1 = rh_LFJ2 = 0.0` puts the tendon at exactly the bottom of
-its control range, which is the hardest point to hold, and the sweep's
-intermediate values were setting two coupled joints as if they were independent.
+Commanding both joints to 0.0 therefore puts that tendon at the exact bottom of
+its control range, which is the hardest point for a position actuator to hold.
+That is a plausible mechanism for the tracking error and it has not been
+confirmed further.
 
-That makes the sweep above an invalid parameterisation of the problem, not a
-refutation of option A. A correct version varies the **tendon coordinate**, and
-should avoid the range boundary rather than land on it.
+**Correction.** An earlier version of this section went on to claim the sweep was
+an invalid parameterisation because it set coupled joints as if they were
+independent. That is wrong. `FixedTendonTransmission`
+(`qdgrasp/robot/transmission/fixed_tendon.py`) is exactly the component Phase 2
+built for this, and it converts joint-space targets into the 20 actuator
+commands correctly. The sweep's targets were valid and its results stand.
 
 ### Handoff
 
 Option A remains the right direction and its safety result stands: 323 N to
-0.6 N with damaging contacts eliminated. What it needs is a clearance posture
-expressed in tendon coordinates, off the boundary, for `rh_MFJ0`, `rh_RFJ0` and
-`rh_LFJ0` -- not per-joint values on coupled joints. That has not been run.
+0.6 N with damaging contacts eliminated, target still lifted 5.6 cm, duty cycle
+`[1, 0, 0, 0, 1]`.
+
+What is unresolved is narrower than previously written: a clearance posture is
+needed that keeps the inactive fingers out of the palm **and** sits somewhere a
+position actuator can hold. 0.0 satisfies the first and not the second; 0.15 and
+0.30 satisfy neither. Whether such a posture exists in this hand's coupled
+transmission is an open question, not a parameter left to pick.

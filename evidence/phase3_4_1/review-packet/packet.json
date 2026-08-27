@@ -24,12 +24,13 @@
     "Every failure is included in the packet, not only the runs that passed.",
     "Findings at severity S0 to S3 are resolved, or the verdict is not a pass."
   ],
-  "commit": "55356d22b0bc8d2b097f65fb5bd04a7bcc52a1aa",
+  "commit": "84ecc5c6481c6677294090babb6233de5539447c",
   "dirty_paths": [
     "M docs/roadmap/PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md",
-    " M docs/roadmap/PROJECT_PHASES.md"
+    " M docs/roadmap/PROJECT_PHASES.md",
+    " M evidence/phase3_4_1/shadow-corrective-delta/recipe-diff/option-a-measured.md"
   ],
-  "manifest_entries": 56,
+  "manifest_entries": 60,
   "reproduction": [
     "scripts/check_phase3_4.py --backend cpu --profile micro",
     "python -m pytest tests/dynamic_grasp/ -q",
