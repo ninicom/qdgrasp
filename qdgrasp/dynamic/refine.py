@@ -16,7 +16,12 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from qdgrasp.dataset.dynamic_contracts import DynamicGraspTrajectory, DynamicSearchOutcome
+from qdgrasp.dataset.dynamic_contracts import (
+    CpuReplayCertificate,
+    DynamicGraspTrajectory,
+    DynamicSearchOutcome,
+    canonical_hash,
+)
 from qdgrasp.dynamic.cem import ParameterSpace, RolloutFn
 from qdgrasp.dynamic.objective import ObjectiveWeights, score_outcome
 from qdgrasp.dynamic.primitives import Primitive
@@ -51,6 +56,11 @@ class RefineResult:
     improved: bool
     evaluated: int
     rejected_regressions: int
+    #: Hashes of the objective and the bounds the refinement ran under. They are
+    #: recorded rather than assumed so a reviewer can check that refinement did
+    #: not quietly change what "better" means (C04.7).
+    weights_hash: str = ""
+    space_hash: str = ""
 
 
 def refine_local(
@@ -69,6 +79,14 @@ def refine_local(
         raise ValueError(
             "local refinement starts from a passing trajectory; refining a "
             "failure would let a near-miss be relabelled as a success"
+        )
+    if not isinstance(seed_outcome.cpu_replay_evidence, CpuReplayCertificate):
+        # A ValueError, not a TypeError: the argument is the right type, it just
+        # has not been through the CPU oracle yet.
+        raise ValueError(  # noqa: TRY004
+            "local refinement starts from a CPU-confirmed positive: refining "
+            "something only the GPU ranked would improve a result nobody has "
+            "checked (C04.7)"
         )
     space = space or ParameterSpace()
     config = config or RefineConfig()
@@ -117,4 +135,6 @@ def refine_local(
         improved=best_score > score_outcome(seed_outcome, weights),
         evaluated=evaluated,
         rejected_regressions=rejected,
+        weights_hash=weights.weights_hash,
+        space_hash=canonical_hash(dataclasses.asdict(space)),
     )

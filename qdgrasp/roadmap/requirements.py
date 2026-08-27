@@ -303,14 +303,17 @@ def audit_closure(
                 "(deferral is not coverage)"
             )
 
-    # A deferred item must not be leaned on by anything that claims to be closed.
-    for requirement in manifest.requirements:
-        if requirement.status != "passed":
-            continue
-        leaned_on = sorted(set(requirement.mapped_to) & deferred)
-        if leaned_on:
+    # Deferral is an allowed disposition for an optional package -- the plan
+    # says so for MPPI -- but not for a required one: dropping something the
+    # contract requires needs a revision, not a status change. ``mapped_to`` is
+    # a traceability link in both directions, so a gate that passes while
+    # explicitly not claiming a deferred item is doing exactly what it should.
+    for requirement_id in sorted(deferred):
+        requirement = manifest.by_id(requirement_id)
+        if requirement.required:
             violations.append(
-                f"{requirement.id}: passed while depending on deferred items {leaned_on}"
+                f"{requirement_id}: deferred_not_claimed while still required; "
+                "deferring a required item needs a revision, not a status change"
             )
 
     scope = manifest.scope

@@ -6,11 +6,13 @@ whole point of the oracle is that its contact numbers are trustworthy.
 
 from __future__ import annotations
 
+import mujoco
 import numpy as np
 import pytest
 
 from qdgrasp.dataset.dynamic_contracts import DynamicGraspRequest
 from qdgrasp.sim.batched.contracts import (
+    BackendStateError,
     SceneSignature,
     WorldRejected,
     validate_control_batch,
@@ -40,14 +42,11 @@ MICRO_SCENE = """
 </mujoco>
 """
 
-SIGNATURE = SceneSignature(
+SIGNATURE = SceneSignature.from_model(
+    mujoco.MjModel.from_xml_string(MICRO_SCENE),
     robot_profile="micro_pusher",
     environment="table",
-    geom_type_counts=(("box", 2), ("plane", 1)),
-    joint_count=2,
     support_count=1,
-    solver_profile="default",
-    timestep=0.002,
 )
 
 
@@ -211,14 +210,27 @@ def test_the_cpu_oracle_is_deterministic_across_identical_rollouts():
     assert np.array_equal(first, second), "the oracle must replay bit-identically"
 
 
-def test_export_finalists_returns_replayable_requests(backend):
+def test_export_finalists_returns_replayable_capsules(backend):
+    # A request names the scene and the seed, not the controls that were
+    # applied; exporting one made the CPU regenerate a candidate and confirm
+    # whatever came out (blocker B-04).
     requests = [make_request(7), make_request(8)]
     backend.reset(requests)
-    backend.rollout(np.full((2, 10, 1), 0.1))
-    finalists = backend.export_finalists([1])
-    assert finalists == (requests[1],)
+    commands = np.full((2, 10, 1), 0.1)
+    backend.rollout(commands)
+    (finalist,) = backend.export_finalists([1])
+    assert finalist.seed == requests[1].seed
+    assert finalist.horizon == 10
+    assert np.array_equal(finalist.control_sequence, commands[1])
+    assert len(finalist.capsule_sha256) == 64
     with pytest.raises(IndexError):
         backend.export_finalists([9])
+
+
+def test_export_before_rollout_is_a_state_error(backend):
+    backend.reset([make_request(0)])
+    with pytest.raises(BackendStateError, match="before rollout"):
+        backend.export_finalists([0])
 
 
 def test_standalone_validators_match_backend_behaviour():

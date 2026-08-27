@@ -43,14 +43,10 @@ def build_reproducer(worlds: int, horizon: int) -> dict[str, Any]:
         object_pos=fixture.object_pos,
         object_mass=fixture.mass,
     )
-    signature = SceneSignature(
-        robot_profile="leap_hand",
-        environment="table",
-        geom_type_counts=(("mesh", int(model.ngeom)),),
-        joint_count=int(model.njnt),
-        support_count=1,
-        solver_profile="default",
-        timestep=float(model.opt.timestep),
+    # Derived from the compiled model rather than written out by hand: a field
+    # nobody remembered to fill in is how two different models share a bucket.
+    signature = SceneSignature.from_model(
+        model, robot_profile="leap_hand", environment="table", support_count=1
     )
 
     backend = MjWarpCudaBackend(model, device="cuda:0")

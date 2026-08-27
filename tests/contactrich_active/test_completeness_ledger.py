@@ -142,6 +142,7 @@ def test_deferred_item_may_not_carry_evidence(tmp_path: Path, document: dict) ->
     document = copy.deepcopy(document)
     document["requirements"][0].update(
         status="deferred_not_claimed",
+        required=False,
         blocker_reason="optional strategy not implemented",
         evidence_refs=["docs/roadmap/phase3_4_3_requirements.yaml"],
     )
@@ -149,6 +150,46 @@ def test_deferred_item_may_not_carry_evidence(tmp_path: Path, document: dict) ->
         load_manifest(_write(tmp_path, document)), repo_root=REPO_ROOT, worktree_dirty=False
     )
     assert any("deferral is not coverage" in v for v in verdict.violations)
+
+
+def test_a_required_item_cannot_be_deferred(tmp_path: Path, document: dict) -> None:
+    # Deferral is an allowed disposition for an optional package -- the plan
+    # says so for MPPI -- but dropping something the contract requires needs a
+    # revision, not a status change.
+    document = copy.deepcopy(document)
+    document["requirements"][0].update(
+        status="deferred_not_claimed",
+        required=True,
+        blocker_reason="we ran out of time",
+    )
+    verdict = audit_closure(
+        load_manifest(_write(tmp_path, document)), repo_root=REPO_ROOT, worktree_dirty=False
+    )
+    assert verdict.verdict == "FAIL"
+    assert any("while still required" in v for v in verdict.violations)
+
+
+def test_an_optional_deferred_item_does_not_block_closure(tmp_path: Path, document: dict) -> None:
+    document = copy.deepcopy(document)
+    for entry in document["requirements"]:
+        entry.update(
+            status="passed",
+            implementation_refs=["qdgrasp/roadmap/requirements.py"],
+            test_ids=["tests/contactrich_active/test_completeness_ledger.py"],
+            evidence_refs=["docs/roadmap/phase3_4_3_requirements.yaml"],
+            blocker_reason="",
+        )
+    document["requirements"][0].update(
+        status="deferred_not_claimed",
+        required=False,
+        evidence_refs=[],
+        blocker_reason="optional in the plan and not implemented",
+    )
+    verdict = audit_closure(
+        load_manifest(_write(tmp_path, document)), repo_root=REPO_ROOT, worktree_dirty=False
+    )
+    assert verdict.violations == ()
+    assert verdict.verdict == "PASS"
 
 
 def test_historical_three_hand_state_cannot_be_relabelled(tmp_path: Path, document: dict) -> None:

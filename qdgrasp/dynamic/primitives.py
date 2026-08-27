@@ -18,7 +18,12 @@ from enum import Enum
 
 import numpy as np
 
-from qdgrasp.dataset.dynamic_contracts import ContactClass, ContactEvent, TrajectoryStage
+from qdgrasp.dataset.dynamic_contracts import (
+    ContactClass,
+    ContactEvent,
+    TrajectoryStage,
+    canonical_hash,
+)
 
 
 class PrimitiveKind(str, Enum):
@@ -309,3 +314,126 @@ def table_pivot_sequence(approach_axis: np.ndarray) -> tuple[Primitive, ...]:
             until=TransitionCondition.SUPPORT_RELEASED,
         ),
     )
+
+
+@dataclasses.dataclass(frozen=True)
+class PrimitiveCapability:
+    """What one primitive actually does, as opposed to what its name suggests.
+
+    An enum member is not an implementation. This records, per kind, the command
+    it emits and the transition semantics it carries, so a capability claim can
+    be checked rather than assumed (C04.1). A kind with no command semantics is
+    ``deferred_not_claimed`` and must not appear in any coverage claim.
+    """
+
+    kind: PrimitiveKind
+    stage: TrajectoryStage
+    command_semantics: str
+    transition_semantics: str
+    status: str = "implemented"
+
+    def as_dict(self) -> dict[str, str]:
+        return {
+            "kind": self.kind.value,
+            "stage": self.stage.value,
+            "command_semantics": self.command_semantics,
+            "transition_semantics": self.transition_semantics,
+            "status": self.status,
+        }
+
+
+_WRIST_VELOCITY = "wrist linear velocity = direction * speed, applied to the mocap weld"
+_GRIP = "normalised finger closure in [0, 1] mapped onto the actuator envelope"
+_OBSERVED = "advances on observed contact or object state; the clock is only a ceiling"
+_DURATION = "advances when its declared duration elapses; the duration *is* the condition"
+
+CAPABILITY_MATRIX: dict[PrimitiveKind, PrimitiveCapability] = {
+    PrimitiveKind.PUSH: PrimitiveCapability(
+        PrimitiveKind.PUSH, TrajectoryStage.REPOSITION,
+        f"{_WRIST_VELOCITY}, grip held at its declared value", _OBSERVED,
+    ),
+    PrimitiveKind.SLIDE: PrimitiveCapability(
+        PrimitiveKind.SLIDE, TrajectoryStage.REPOSITION,
+        f"{_WRIST_VELOCITY} tangent to the support", _OBSERVED,
+    ),
+    PrimitiveKind.ROLL: PrimitiveCapability(
+        PrimitiveKind.ROLL, TrajectoryStage.REPOSITION,
+        f"{_WRIST_VELOCITY} across the target's face", _OBSERVED,
+    ),
+    PrimitiveKind.PIVOT_ON_SUPPORT: PrimitiveCapability(
+        PrimitiveKind.PIVOT_ON_SUPPORT, TrajectoryStage.REPOSITION,
+        f"{_WRIST_VELOCITY} into the support, so the target tips against it", _OBSERVED,
+    ),
+    PrimitiveKind.HOOK: PrimitiveCapability(
+        PrimitiveKind.HOOK, TrajectoryStage.REPOSITION,
+        f"{_WRIST_VELOCITY} with {_GRIP} partially closed to catch an edge", _OBSERVED,
+    ),
+    PrimitiveKind.CAGE: PrimitiveCapability(
+        PrimitiveKind.CAGE, TrajectoryStage.ENCLOSE,
+        f"{_GRIP} to a partial closure while the wrist holds station", _OBSERVED,
+    ),
+    PrimitiveKind.SQUEEZE: PrimitiveCapability(
+        PrimitiveKind.SQUEEZE, TrajectoryStage.ENCLOSE,
+        f"{_GRIP} to full closure while the wrist holds station", _DURATION,
+    ),
+    PrimitiveKind.SUPPORT_RELEASE: PrimitiveCapability(
+        PrimitiveKind.SUPPORT_RELEASE, TrajectoryStage.SUPPORT_RELEASE,
+        f"{_WRIST_VELOCITY} away from the support with the grip held", _OBSERVED,
+    ),
+    PrimitiveKind.LIFT: PrimitiveCapability(
+        PrimitiveKind.LIFT, TrajectoryStage.LIFT,
+        f"{_WRIST_VELOCITY} along the lift axis with the grip held", _OBSERVED,
+    ),
+    PrimitiveKind.PERTURB: PrimitiveCapability(
+        PrimitiveKind.PERTURB, TrajectoryStage.PERTURB,
+        f"{_WRIST_VELOCITY} as a bounded disturbance with the grip held", _DURATION,
+    ),
+}
+
+#: Strategies named in the plan that are not implemented here. They are listed
+#: so that "we did not do this" is a recorded position rather than a silence,
+#: and so no coverage claim can quietly include them (C04.8).
+DEFERRED_STRATEGIES: dict[str, str] = {
+    "mppi": (
+        "MPPI is optional in ROADMAP-P3.4-001 (P3.4-10) and is not implemented. "
+        "It carries no coverage claim; implementing it later requires the same "
+        "capsule, safety and parity gates as CEM."
+    ),
+}
+
+
+def primitive_sequence_hash(sequence: Sequence[Primitive]) -> str:
+    """Hash a sequence's parameters, order, frames, bounds and durations.
+
+    Two sequences that produce different commands must not share a hash, so the
+    direction vector and the transition condition are both in the digest.
+    """
+    return canonical_hash(
+        [
+            {
+                "kind": primitive.kind.value,
+                "direction": [float(v) for v in primitive.direction],
+                "speed": float(primitive.speed),
+                "grip": float(primitive.grip),
+                "max_duration_s": float(primitive.max_duration_s),
+                "until": primitive.until.value,
+                "required_contacts": int(primitive.required_contacts),
+            }
+            for primitive in sequence
+        ]
+    )
+
+
+def capability_report() -> dict[str, object]:
+    """The capability matrix as evidence, including what is not claimed."""
+    return {
+        "primitives": {
+            kind.value: capability.as_dict() for kind, capability in CAPABILITY_MATRIX.items()
+        },
+        "implemented": sorted(
+            kind.value
+            for kind, capability in CAPABILITY_MATRIX.items()
+            if capability.status == "implemented"
+        ),
+        "deferred_not_claimed": dict(sorted(DEFERRED_STRATEGIES.items())),
+    }

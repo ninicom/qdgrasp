@@ -28,6 +28,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import mujoco
 import numpy as np
 
 from qdgrasp.config.schema import ConfigError
@@ -88,14 +89,11 @@ MICRO_SCENE = (REPO_ROOT / "tests" / "dynamic_grasp" / "micro_scene.xml").read_t
     encoding="utf-8"
 )
 
-MICRO_SIGNATURE = SceneSignature(
+MICRO_SIGNATURE = SceneSignature.from_model(
+    mujoco.MjModel.from_xml_string(MICRO_SCENE),
     robot_profile="micro_pusher",
     environment="table",
-    geom_type_counts=(("box", 2), ("plane", 1)),
-    joint_count=2,
     support_count=1,
-    solver_profile="default",
-    timestep=0.002,
 )
 
 

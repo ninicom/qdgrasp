@@ -1,0 +1,49 @@
+{
+  "blockers": [
+    "B-16"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "ef5fba2ae05d823b545c8c3c9f48007aefd03aa5",
+  "device": "cpu",
+  "gates": [
+    "C04"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/dynamic/cem.py": "ac1519354fe39a1718a8b4bc732c25deb9286b798f26a8c0c09533cc05900d5d",
+    "qdgrasp/dynamic/objective.py": "622d0655189635860ef68be310aa2c4e28af8cbac119c83dbdd081c310bef413",
+    "qdgrasp/dynamic/primitives.py": "52ac1e9e6b5b8296f8cc01f5cc5c1fc7ecc70242544fb6fb44f5be0beb474632",
+    "qdgrasp/dynamic/refine.py": "b9725ed5da21242a78bf83a12ba90a3d2a5fbb614b5bd3343dfaefdd85aa84de"
+  },
+  "implementation_refs": [
+    "qdgrasp/dynamic/objective.py",
+    "qdgrasp/dynamic/cem.py",
+    "qdgrasp/dynamic/refine.py",
+    "qdgrasp/dynamic/primitives.py"
+  ],
+  "note": "S7 objective/CEM/refinement fail-closed and the primitive capability matrix",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T19:34:59.432922+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S7",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_search_invariants.py"
+    ],
+    "summary": "43 passed in 3.96s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

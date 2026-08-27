@@ -46,12 +46,30 @@ class WorldRejected(RuntimeError):
     """
 
 
+class BackendStateError(RuntimeError):
+    """A backend method was called out of order.
+
+    compile, reset, step/rollout, observe and export form a state machine.
+    Calling one of them early used to raise whatever happened to fail first --
+    an AttributeError here, an IndexError there -- which made "the backend is
+    not ready" indistinguishable from "the backend is broken" (C02.9).
+    """
+
+
 @dataclasses.dataclass(frozen=True)
 class SceneSignature:
     """Bucket key for compiled-model reuse.
 
     Two scenes share a compiled model only if every field here matches.  Object
-    poses and masses are deliberately absent: those are batched data.
+    poses are deliberately absent: those are batched data.
+
+    v1 hashed seven fields, which meant two models with different actuator
+    counts, different contact capacities or a different integrator could land in
+    the same bucket and reuse each other's compiled model (blocker B-13). Every
+    field below changes what the solver does, so every field is in the key.
+    Mass and friction are *not* here: they are per-world data, and a backend
+    that cannot vary them per world has to say so at preflight rather than
+    quietly share one value.
     """
 
     robot_profile: str
@@ -62,6 +80,27 @@ class SceneSignature:
     solver_profile: str
     timestep: float
 
+    # -- topology, all of which changes the compiled model -----------------
+    robot_asset_sha256: str = ""
+    dof_count: int = 0
+    actuator_count: int = 0
+    tendon_count: int = 0
+    equality_count: int = 0
+    site_count: int = 0
+    mocap_count: int = 0
+    body_count: int = 0
+    collision_geom_count: int = 0
+    non_target_count: int = 0
+    #: Contact and constraint capacities. A world that overflows them is
+    #: rejected, so two models with different capacities are different worlds.
+    contact_capacity: int = 0
+    constraint_capacity: int = 0
+    #: Integrator and solver options.
+    integrator: int = 0
+    solver: int = 0
+    cone: int = 0
+    solver_iterations: int = 0
+
     def __post_init__(self) -> None:
         if not (np.isfinite(self.timestep) and self.timestep > 0.0):
             raise ValueError(f"timestep must be finite and positive, got {self.timestep}")
@@ -69,10 +108,67 @@ class SceneSignature:
         if counts != sorted(counts):
             raise ValueError("geom_type_counts must be sorted by geom type for a stable key")
 
+    @classmethod
+    def from_model(
+        cls,
+        model: Any,
+        *,
+        robot_profile: str,
+        environment: str,
+        support_count: int,
+        solver_profile: str = "default",
+        robot_asset_sha256: str = "",
+        non_target_count: int = 0,
+    ) -> SceneSignature:
+        """Derive the whole signature from a compiled model.
+
+        Preferred over building one by hand: a field nobody remembered to fill
+        in is exactly how two different models end up sharing a bucket.
+        """
+        geom_counts: dict[str, int] = {}
+        collision_geoms = 0
+        for geom in range(int(model.ngeom)):
+            name = str(int(model.geom_type[geom]))
+            geom_counts[name] = geom_counts.get(name, 0) + 1
+            if int(model.geom_contype[geom]) or int(model.geom_conaffinity[geom]):
+                collision_geoms += 1
+        return cls(
+            robot_profile=robot_profile,
+            environment=environment,
+            geom_type_counts=tuple(sorted(geom_counts.items())),
+            joint_count=int(model.njnt),
+            support_count=int(support_count),
+            solver_profile=solver_profile,
+            timestep=float(model.opt.timestep),
+            robot_asset_sha256=robot_asset_sha256,
+            dof_count=int(model.nv),
+            actuator_count=int(model.nu),
+            tendon_count=int(model.ntendon),
+            equality_count=int(model.neq),
+            site_count=int(model.nsite),
+            mocap_count=int(model.nmocap),
+            body_count=int(model.nbody),
+            collision_geom_count=collision_geoms,
+            non_target_count=int(non_target_count),
+            contact_capacity=int(getattr(model, "nconmax", 0) or 0),
+            constraint_capacity=int(getattr(model, "njmax", 0) or 0),
+            integrator=int(model.opt.integrator),
+            solver=int(model.opt.solver),
+            cone=int(model.opt.cone),
+            solver_iterations=int(model.opt.iterations),
+        )
+
     @property
     def bucket_key(self) -> str:
         payload = json.dumps(dataclasses.asdict(self), sort_keys=True, default=str)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @property
+    def topology_fields(self) -> tuple[str, ...]:
+        """Fields that must differ for two scenes to need different models."""
+        return tuple(
+            field.name for field in dataclasses.fields(self) if field.name != "robot_asset_sha256"
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -87,6 +183,33 @@ class BackendState:
     invalid_worlds: tuple[int, ...] = ()
 
 
+#: Schema of the summary both backends emit. The CPU oracle and the CUDA
+#: backend have to describe a world the same way, or "parity" compares two
+#: different things (blockers B-03, B-14).
+ROLLOUT_SUMMARY_SCHEMA_V2 = "qdgrasp/rollout-summary/v2"
+
+
+@dataclasses.dataclass(frozen=True)
+class ContactTelemetry:
+    """What the solver reported about contact, including what it could not.
+
+    Overflow and truncation are first-class: a world whose contact buffer filled
+    up did not observe fewer contacts, it observed an unknown number of them,
+    and ranking it against worlds that did observe theirs is meaningless.
+    """
+
+    contact_count: int = 0
+    max_contact_count: int = 0
+    class_counts: dict[str, int] = dataclasses.field(default_factory=dict)
+    buffer_overflow: bool = False
+    stream_truncated: bool = False
+    unavailable_fields: tuple[str, ...] = ()
+
+    @property
+    def observed(self) -> bool:
+        return not (self.buffer_overflow or self.stream_truncated or self.unavailable_fields)
+
+
 @dataclasses.dataclass(frozen=True)
 class RolloutSummary:
     """What a strategy needs to rank one world without pulling full state."""
@@ -99,6 +222,29 @@ class RolloutSummary:
     hard_reject: bool
     failure_stage: str
     failure_reason: str
+    contact: ContactTelemetry = dataclasses.field(default_factory=ContactTelemetry)
+    schema: str = ROLLOUT_SUMMARY_SCHEMA_V2
+    backend_id: str = ""
+
+    def __post_init__(self) -> None:
+        if self.schema != ROLLOUT_SUMMARY_SCHEMA_V2:
+            raise ValueError(f"unknown rollout summary schema {self.schema!r}")
+        for name in ("objective_terms", "peak_safety_metrics", "cumulative_safety_metrics"):
+            for key, value in getattr(self, name).items():
+                if not np.isfinite(float(value)):
+                    raise WorldRejected(f"{name}[{key!r}] is not finite: {value!r}")
+        # A world that survived cannot also be a hard reject, and one that was
+        # rejected cannot claim reason "none": the two fields are one verdict.
+        if self.hard_reject and self.failure_reason == "none":
+            raise ValueError("a hard-rejected world must name a failure reason")
+        if not self.hard_reject and self.failure_reason != "none":
+            raise ValueError(
+                f"a surviving world must carry failure_reason 'none', got {self.failure_reason!r}"
+            )
+
+    @property
+    def survived(self) -> bool:
+        return not self.hard_reject
 
 
 @dataclasses.dataclass(frozen=True)
@@ -137,8 +283,12 @@ class BatchedContactBackend(Protocol):
     ) -> None:
         """Build one model for a bucket and size the world pool."""
 
-    def reset(self, requests: Sequence[DynamicGraspRequest]) -> BackendState:
-        """Seat one request per world and return the initial state."""
+    def reset(
+        self,
+        requests: Sequence[DynamicGraspRequest],
+        initial_states: Sequence[Any] | None = None,
+    ) -> BackendState:
+        """Seat one request per world, hydrating each world's own state."""
 
     def step(self, control_batch: np.ndarray, steps: int = 1) -> BackendState:
         """Advance every live world by ``steps`` under ``control_batch`` [W, U]."""
@@ -149,8 +299,13 @@ class BatchedContactBackend(Protocol):
     def rollout(self, control_sequences: np.ndarray) -> tuple[RolloutSummary, ...]:
         """Run ``[W, T, U]`` commands to completion and summarise each world."""
 
-    def export_finalists(self, indices: Sequence[int]) -> tuple[DynamicGraspRequest, ...]:
-        """Return replayable CPU requests for the given worlds."""
+    def export_finalists(self, indices: Sequence[int]) -> tuple[Any, ...]:
+        """Return a :class:`~qdgrasp.dynamic.capsule.ReplayCapsule` per world.
+
+        A request is not a candidate: it names the scene and the seed, not the
+        controls that were applied. Exporting one meant the CPU regenerated
+        something from the seed and confirmed whatever came out (blocker B-04).
+        """
 
     @property
     def timing(self) -> BackendTiming:

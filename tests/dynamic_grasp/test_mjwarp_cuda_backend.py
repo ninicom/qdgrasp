@@ -65,11 +65,14 @@ def test_the_two_backends_agree_on_method_signatures():
         assert list(cpu.parameters) == list(gpu.parameters), name
 
 
-def test_exported_finalists_are_rewritten_as_cpu_requests():
-    # The rewrite is what makes "GPU ranks, CPU admits" structural rather than a
-    # convention someone has to remember.
+def test_exported_finalists_are_capsules_the_cpu_can_replay():
+    # Handing back a capsule rather than a request is what makes "GPU ranks, CPU
+    # admits" structural: the oracle replays the exact controls that were
+    # applied instead of regenerating something from the seed (blocker B-04).
     source = inspect.getsource(MjWarpCudaBackend.export_finalists)
-    assert 'backend_request="cpu"' in source
+    assert "ReplayCapsule" in source
+    assert "self._capsule_for(index)" in source
+    assert "tuple[ReplayCapsule, ...]" in source
 
 
 def test_a_request_carries_its_backend_choice():

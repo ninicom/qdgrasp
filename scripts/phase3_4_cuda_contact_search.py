@@ -110,6 +110,8 @@ def resolve_warp_backend(device: str) -> dict[str, Any]:
         return status
 
     # Compile each release hand and record which blocking requirement survives.
+    import mujoco
+
     from qdgrasp.dataset.pipeline.validators.mujoco_rollout import (
         build_rollout_scene_model,
     )
@@ -424,6 +426,8 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
     than picking whichever number looks better.
     """
 
+    import mujoco
+
     from qdgrasp.dataset.pipeline.generated_reachable import (
         build_generated_reachable_object,
     )
@@ -436,14 +440,11 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
     micro_xml = (REPO_ROOT / "tests" / "dynamic_grasp" / "micro_scene.xml").read_text(
         encoding="utf-8"
     )
-    micro_signature = SceneSignature(
+    micro_signature = SceneSignature.from_model(
+        mujoco.MjModel.from_xml_string(micro_xml),
         robot_profile="micro_pusher",
         environment="table",
-        geom_type_counts=(("box", 2), ("plane", 1)),
-        joint_count=2,
         support_count=1,
-        solver_profile="default",
-        timestep=0.002,
     )
 
     spec = RobotSpec.from_config("leap_hand.yaml", sample_anchors=False)
@@ -455,14 +456,8 @@ def run_search_benchmark(device: str) -> dict[str, Any]:
         object_mass=fixture.mass,
     )
     # Pass the compiled model, not XML: serialising it loses the mesh assets.
-    hand_signature = SceneSignature(
-        robot_profile="leap_hand",
-        environment="table",
-        geom_type_counts=(("mesh", int(hand_model.ngeom)),),
-        joint_count=int(hand_model.njnt),
-        support_count=1,
-        solver_profile="default",
-        timestep=float(hand_model.opt.timestep),
+    hand_signature = SceneSignature.from_model(
+        hand_model, robot_profile="leap_hand", environment="table", support_count=1
     )
 
     results = {}

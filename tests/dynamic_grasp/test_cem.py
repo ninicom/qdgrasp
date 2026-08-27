@@ -161,8 +161,9 @@ def test_the_distribution_moves_toward_better_samples():
     assert speeds[-1] > speeds[0]
 
 
-def test_all_candidates_hard_rejected_still_returns_a_usable_report():
-    # Every score is -inf. The search must not crash, and must not claim a best.
+def test_all_candidates_hard_rejected_stops_instead_of_refitting():
+    # Every score is -inf. Refitting from rejects would move the distribution
+    # towards whatever failed least badly, which is not information (C04.5).
     def rollout(primitives):
         return make_trajectory(), outcome(reason="damaging_contact")
 
@@ -171,8 +172,10 @@ def test_all_candidates_hard_rejected_still_returns_a_usable_report():
     )
     assert result.best_score == float("-inf")
     assert result.best_outcome is None
+    assert result.stop_reason == "no_feasible_elite"
+    assert result.iterations_run == 1
     assert result.reason_ledger["yield"] == 0.0
-    assert result.reason_ledger["failures"]["damaging_contact"] == 8
+    assert result.reason_ledger["failures"]["damaging_contact"] == 4
 
 
 def test_samples_stay_inside_the_declared_bounds():

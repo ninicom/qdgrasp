@@ -1,0 +1,50 @@
+{
+  "blockers": [
+    "B-13",
+    "B-14"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "ef5fba2ae05d823b545c8c3c9f48007aefd03aa5",
+  "device": "cpu",
+  "gates": [
+    "C02"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/sim/batched/contracts.py": "0b80a17a523b2ce136ab299a74a50685d8e7bf3cf5c1fc7db31fa1d624a10784",
+    "qdgrasp/sim/batched/mjwarp_cuda.py": "baef1865e2c38c2c56a706dcaf04b0a3aa4ac72f313ef44886705fba1a480049",
+    "qdgrasp/sim/batched/mujoco_cpu.py": "94f1005359479b91899367b6ff1ccc2f62121c8480ce25afefc7db94eb6e2249"
+  },
+  "implementation_refs": [
+    "qdgrasp/sim/batched/contracts.py",
+    "qdgrasp/sim/batched/mujoco_cpu.py",
+    "qdgrasp/sim/batched/mjwarp_cuda.py"
+  ],
+  "note": "S8 request hydration, complete scene signature and CPU oracle summary v2",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T19:35:04.929619+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S8",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_backend_parity.py",
+      "tests/dynamic_grasp/test_mujoco_cpu_backend.py",
+      "tests/dynamic_grasp/test_mjwarp_cuda_backend.py"
+    ],
+    "summary": "58 passed in 0.33s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

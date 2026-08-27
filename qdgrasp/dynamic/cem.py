@@ -16,8 +16,12 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from qdgrasp.dataset.dynamic_contracts import DynamicGraspTrajectory, DynamicSearchOutcome
-from qdgrasp.dynamic.objective import ObjectiveWeights, ReasonLedger, score_outcome
+from qdgrasp.dataset.dynamic_contracts import (
+    DynamicGraspTrajectory,
+    DynamicSearchOutcome,
+    canonical_hash,
+)
+from qdgrasp.dynamic.objective import ObjectiveWeights, ReasonLedger, evaluate_objective
 from qdgrasp.dynamic.primitives import Primitive
 
 
@@ -32,10 +36,19 @@ class CemConfig:
     #: sample and report a confident result from a single lucky rollout.
     min_std: float = 1e-3
     seed: int = 0
+    #: Hard ceiling on simultaneous worlds. A search that sizes its batch from
+    #: whatever fits is a search that behaves differently on every machine.
+    max_worlds: int = 1024
 
     def __post_init__(self) -> None:
         if self.population < 2:
             raise ValueError(f"population must be >= 2, got {self.population}")
+        if self.max_worlds < 1:
+            raise ValueError(f"max_worlds must be >= 1, got {self.max_worlds}")
+        if self.population > self.max_worlds:
+            raise ValueError(
+                f"population {self.population} exceeds max_worlds {self.max_worlds}"
+            )
         if not 0.0 < self.elite_fraction <= 1.0:
             raise ValueError(
                 f"elite_fraction must lie in (0, 1], got {self.elite_fraction}"
@@ -48,6 +61,10 @@ class CemConfig:
     @property
     def elite_count(self) -> int:
         return max(1, round(self.population * self.elite_fraction))
+
+    @property
+    def config_hash(self) -> str:
+        return canonical_hash(dataclasses.asdict(self))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -96,6 +113,33 @@ class ParameterSpace:
         )
 
 
+#: Why a search stopped. ``budget_exhausted`` means the declared budget ran out
+#: with nothing feasible; ``no_feasible_elite`` means an iteration produced no
+#: candidate worth refitting from, which is a stop rather than a licence to
+#: refit from rejects (C04.5).
+STOP_REASONS: frozenset[str] = frozenset(
+    {"budget_exhausted", "no_feasible_elite", "none"}
+)
+
+
+@dataclasses.dataclass(frozen=True)
+class CandidateRecord:
+    """One evaluated candidate, and where it lived.
+
+    The mapping from candidate index to world index to capsule is stable and
+    recorded, because a ranking that cannot be traced back to the world it came
+    from cannot be replayed (C04.5).
+    """
+
+    candidate_index: int
+    iteration: int
+    world_index: int
+    sample: tuple[float, ...]
+    score: float
+    rejected: bool
+    reason: str
+
+
 @dataclasses.dataclass(frozen=True)
 class CemResult:
     """Outcome of a bounded search."""
@@ -108,6 +152,29 @@ class CemResult:
     evaluated: int
     reason_ledger: dict[str, object]
     mean_history: tuple[tuple[float, ...], ...]
+    stop_reason: str = "none"
+    candidates: tuple[CandidateRecord, ...] = ()
+    config_hash: str = ""
+    weights_hash: str = ""
+
+    def __post_init__(self) -> None:
+        if self.stop_reason not in STOP_REASONS:
+            raise ValueError(f"unknown stop reason {self.stop_reason!r}")
+        # ``stop_reason == "none"`` is the success verdict: the search neither
+        # ran out of budget nor ran out of feasible candidates. A search cannot
+        # report that with nothing to hand back (C04.5).
+        if self.stop_reason == "none" and self.best_outcome is None:
+            raise ValueError(
+                "a search that reports no failure stop must carry the outcome it succeeded with"
+            )
+
+    @property
+    def succeeded(self) -> bool:
+        return bool(self.best_outcome is not None and self.best_outcome.passed)
+
+    @property
+    def elite_count(self) -> int:
+        return sum(1 for record in self.candidates if not record.rejected)
 
 
 RolloutFn = Callable[
@@ -140,8 +207,12 @@ def search_cem(
     best_trajectory: DynamicGraspTrajectory | None = None
     evaluated = 0
     means: list[tuple[float, ...]] = []
+    records: list[CandidateRecord] = []
+    stop_reason = "none"
+    iterations_run = 0
 
-    for _ in range(config.iterations):
+    for iteration in range(config.iterations):
+        iterations_run = iteration + 1
         samples = rng.normal(mean, std, size=(config.population, space.dimensions))
         samples = np.clip(samples, lower, upper)
 
@@ -150,27 +221,54 @@ def search_cem(
             trajectory, outcome = rollout(space.apply(template, samples[index]))
             ledger.record(outcome)
             evaluated += 1
-            score = score_outcome(outcome, weights)
-            scores[index] = score
-            if score > best_score:
-                best_score, best_sample = score, samples[index].copy()
+            evaluation = evaluate_objective(outcome, weights)
+            scores[index] = evaluation.score
+            records.append(
+                CandidateRecord(
+                    candidate_index=evaluated - 1,
+                    iteration=iteration,
+                    # One candidate per world, in sampling order, every
+                    # iteration: the mapping is positional and stable.
+                    world_index=index,
+                    sample=tuple(float(v) for v in samples[index]),
+                    score=evaluation.score,
+                    rejected=evaluation.rejected,
+                    reason=evaluation.reason,
+                )
+            )
+            if evaluation.score > best_score:
+                best_score, best_sample = evaluation.score, samples[index].copy()
                 best_outcome, best_trajectory = outcome, trajectory
 
-        # A hard-rejected candidate scores -inf; rank it last without letting
-        # the arithmetic mean of the elite set become nan.
-        finite = np.where(np.isneginf(scores), -np.finfo(float).max, scores)
-        elite = samples[np.argsort(finite)[-config.elite_count :]]
+        feasible = np.flatnonzero(np.isfinite(scores))
+        if feasible.size == 0:
+            # Every candidate was rejected. Refitting from rejects would move
+            # the distribution towards whatever failed least badly, which is not
+            # information (C04.5).
+            stop_reason = "no_feasible_elite"
+            break
+
+        take = min(config.elite_count, int(feasible.size))
+        order = feasible[np.argsort(scores[feasible])]
+        elite = samples[order[-take:]]
         mean = elite.mean(axis=0)
         std = np.maximum(elite.std(axis=0), config.min_std)
         means.append(tuple(float(v) for v in mean))
+
+    if stop_reason == "none" and (best_outcome is None or not best_outcome.passed):
+        stop_reason = "budget_exhausted"
 
     return CemResult(
         best_sample=best_sample,
         best_score=best_score,
         best_outcome=best_outcome,
         best_trajectory=best_trajectory,
-        iterations_run=config.iterations,
+        iterations_run=iterations_run,
         evaluated=evaluated,
         reason_ledger=ledger.to_dict(),
         mean_history=tuple(means),
+        stop_reason=stop_reason,
+        candidates=tuple(records),
+        config_hash=config.config_hash,
+        weights_hash=weights.weights_hash,
     )

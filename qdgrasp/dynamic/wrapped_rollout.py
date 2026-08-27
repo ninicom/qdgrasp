@@ -92,6 +92,12 @@ class _Recorder:
         #: Every step's command, not just the sampled ones. The record stays
         #: sparse; the capsule has to be exact, and those are different jobs.
         self.step_commands: list[np.ndarray] = []
+        #: Mechanical work done at the actuators, and the simulator clock at the
+        #: last step. Control energy and elapsed time are two measurements, not
+        #: one step count standing in for both (C04.2).
+        self.control_energy_J = 0.0
+        self.final_time_s = 0.0
+        self.first_time_s = 0.0
 
     def __call__(self, stage: str, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         self.calls += 1
@@ -110,6 +116,13 @@ class _Recorder:
             )
         )
         self.step_commands.append(np.array(data.ctrl, dtype=np.float64))
+        if self.calls == 1:
+            self.first_time_s = float(data.time) - self.simulator_dt
+        self.final_time_s = float(data.time)
+        if int(model.nu):
+            force = np.asarray(data.actuator_force, dtype=np.float64)
+            velocity = np.asarray(data.actuator_velocity, dtype=np.float64)
+            self.control_energy_J += float(np.sum(np.abs(force * velocity))) * self.simulator_dt
         if self.calls % self.sample_every:
             return
 
@@ -325,6 +338,9 @@ def run_wrapped_contact_rollout(
             "steps": float(steps),
             "contact_events": float(len(trajectory.contact_graph)),
             "min_budget_margin": float(evaluation.min_margin),
+            "control_energy_J": float(record.control_energy_J),
+            "elapsed_time_s": float(record.final_time_s - record.first_time_s),
+            "enclosure_links": float(terminal.metrics.get("enclosure_links", 0.0)),
             **{f"terminal_{k}": v for k, v in terminal.metrics.items()},
         },
         peak_safety_metrics={**peak, **dict(evaluation.measurements)},

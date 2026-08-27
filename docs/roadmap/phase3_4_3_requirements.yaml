@@ -161,11 +161,23 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-13
     mapped_to: [C02]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/sim/batched/contracts.py, qdgrasp/sim/batched/mujoco_cpu.py, qdgrasp/sim/batched/mjwarp_cuda.py]
+    test_ids: [tests/contactrich_active/test_backend_parity.py]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-14
     category: blocker
     normative_source: P3.4.3#B-14
     mapped_to: [C02]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/sim/batched/contracts.py, qdgrasp/sim/batched/mujoco_cpu.py, qdgrasp/sim/batched/mjwarp_cuda.py]
+    test_ids: [tests/contactrich_active/test_backend_parity.py]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-15
     category: blocker
@@ -182,6 +194,12 @@ requirements:
     category: blocker
     normative_source: P3.4.3#B-16
     mapped_to: [C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: B-17
     category: blocker
@@ -324,6 +342,12 @@ requirements:
     category: completeness_gate
     normative_source: P3.4.3#C02
     mapped_to: [P3.4-02, P3.4-03, P3.4-04, P3.4-05]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/sim/batched/contracts.py, qdgrasp/sim/batched/mujoco_cpu.py, qdgrasp/sim/batched/mjwarp_cuda.py]
+    test_ids: [tests/contactrich_active/test_backend_parity.py]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: C03
     category: completeness_gate
@@ -340,6 +364,12 @@ requirements:
     category: completeness_gate
     normative_source: P3.4.3#C04
     mapped_to: [P3.4-07, P3.4-09, P3.4-10, P3.4-11]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: C05
     category: completeness_gate
@@ -377,6 +407,12 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-02
     mapped_to: [C02]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/sim/batched/contracts.py, qdgrasp/sim/batched/mujoco_cpu.py, qdgrasp/sim/batched/mjwarp_cuda.py]
+    test_ids: [tests/contactrich_active/test_backend_parity.py]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-03
     category: original_work_package
@@ -414,6 +450,12 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-07
     mapped_to: [C03, C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-08
     category: original_work_package
@@ -424,16 +466,32 @@ requirements:
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-09
     mapped_to: [G07, C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-10
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-10
     mapped_to: [C04]
+    owner: claude-implementation-agent
+    required: false
+    status: deferred_not_claimed
+    blocker_reason: "MPPI is optional in ROADMAP-P3.4-001; not implemented, recorded in DEFERRED_STRATEGIES and excluded from every coverage claim"
   - <<: *pending_requirement
     id: P3.4-11
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-11
     mapped_to: [C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-12
     category: original_work_package
@@ -521,16 +579,34 @@ requirements:
     category: original_clause
     normative_source: ROADMAP-P3.4-001#6
     mapped_to: [C02, G07]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/sim/batched/contracts.py, qdgrasp/sim/batched/mujoco_cpu.py, qdgrasp/sim/batched/mjwarp_cuda.py]
+    test_ids: [tests/contactrich_active/test_backend_parity.py]
+    evidence_refs: [evidence/phase3_4_3/s8/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-STRATEGY-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#7
     mapped_to: [C03, C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-OBJECTIVE-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#8
     mapped_to: [C04]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/dynamic/objective.py, qdgrasp/dynamic/cem.py, qdgrasp/dynamic/refine.py, qdgrasp/dynamic/primitives.py]
+    test_ids: [tests/contactrich_active/test_search_invariants.py]
+    evidence_refs: [evidence/phase3_4_3/s7/result.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-PARITY-01
     category: original_clause

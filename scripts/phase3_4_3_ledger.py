@@ -21,7 +21,15 @@ from qdgrasp.roadmap import ALLOWED_STATUS, audit_closure, load_manifest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = REPO_ROOT / "docs" / "roadmap" / "phase3_4_3_requirements.yaml"
 
-_MANAGED = ("owner", "implementation_refs", "test_ids", "evidence_refs", "status", "blocker_reason")
+_MANAGED = (
+    "owner",
+    "required",
+    "implementation_refs",
+    "test_ids",
+    "evidence_refs",
+    "status",
+    "blocker_reason",
+)
 
 
 def _format_list(values: list[str]) -> str:
@@ -34,6 +42,7 @@ def update_entry(
     *,
     status: str,
     owner: str | None = None,
+    required: bool | None = None,
     implementation_refs: list[str] | None = None,
     test_ids: list[str] | None = None,
     evidence_refs: list[str] | None = None,
@@ -56,6 +65,8 @@ def update_entry(
         additions: list[str] = []
         if owner is not None:
             additions.append(f"    owner: {owner}")
+        if required is not None:
+            additions.append(f"    required: {'true' if required else 'false'}")
         if implementation_refs is not None:
             additions.append(f"    implementation_refs: {_format_list(implementation_refs)}")
         if test_ids is not None:
@@ -85,6 +96,11 @@ def main() -> int:
     parser.add_argument("--id", required=True, action="append", dest="ids")
     parser.add_argument("--status", required=True, choices=sorted(ALLOWED_STATUS))
     parser.add_argument("--owner")
+    parser.add_argument(
+        "--optional",
+        action="store_true",
+        help="mark the requirement not required; only for packages the plan declares optional",
+    )
     parser.add_argument("--implementation")
     parser.add_argument("--tests")
     parser.add_argument("--evidence")
@@ -108,6 +124,7 @@ def main() -> int:
             requirement_id,
             status=args.status,
             owner=args.owner,
+            required=False if args.optional else None,
             implementation_refs=_split(args.implementation),
             test_ids=_split(args.tests),
             evidence_refs=_split(args.evidence),
