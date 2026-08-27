@@ -97,6 +97,8 @@ thật, và phát hiện một blocker chưa từng được nêu trong kế ho�
 | `V-007` | rollout bọc `validate_grasp_rollout`, ba tay | tìm positive | LEAP và Allegro pass, Shadow damaging | pass | `p16-contactrich-tiny/` |
 | `V-008` | sinh `QDGrasp-ContactRich-Tiny` | dataset có positive | 9 sample, 4 positive, `release_blocked=true` | pass | `p16-contactrich-tiny/` |
 | `V-009` | đo lực self-contact Shadow | xác định nguyên nhân | `rh_lfproximal`/`rh_lfmetacarpal` 323 N, 28.5% mẫu >100 N | pass | `p16-contactrich-tiny/README.md` |
+| `V-010` | CEM 40 candidate trên closure scale Shadow | tìm control hợp lệ | **40/40 hard-reject** | fail | `p16-contactrich-tiny/shadow-search-exhausted.md` |
+| `V-011` | throughput GPU vs CPU, Tesla T4, 64 world | speedup >= 2x | **0.764x** trên scene tay 91 geom (0.19x trên scene 3 geom) | **fail** | `p15-throughput/` |
 
 ## 7. Ảnh hưởng tới báo cáo và quyết định cũ
 
@@ -113,7 +115,10 @@ thật, và phát hiện một blocker chưa từng được nêu trong kế ho�
 
 - Tác giả: claude-primary-agent, 2026-08-27 Asia/Bangkok.
 - Người kiểm tra: chưa có independent reviewer.
-- Kết luận: **Phase 3.4 không đóng.** 15/18 work package hoàn tất trên CPU và
+- Kết luận: **Phase 3.4 không đóng, và lý do nay là một gate đã đo và trượt.**
+  Tiêu chí hiệu năng §10 yêu cầu GPU nhanh hơn CPU ít nhất `2x` ở batch đã pin;
+  đo trên Tesla T4 cho `0.764x`, tức chậm hơn 1.3 lần. Đây không phải mục chưa
+  đo mà là mục đã đo và không đạt. 15/18 work package hoàn tất trên CPU và
   `QDGrasp-ContactRich-Tiny` đã sinh với 4 measured positive, nhưng
   `release_blocked=true` vì `shadow_hand` chưa có positive. P3.4-17 không thể do
   tác giả tự phát hành; P3.4-05/15 còn thiếu throughput/VRAM/parity trên GPU.

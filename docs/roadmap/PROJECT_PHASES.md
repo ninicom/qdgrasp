@@ -120,7 +120,7 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   vì P3.4 contact-rich trajectory và P3.5 RL simulation readiness còn độc lập
   chưa đóng.
 - Phase 3.4 ([`ROADMAP-P3.4-001`](PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md))
-  đạt **15/18 work package** tại `461f4e6` (`REV-20260827-005`), tất cả pass CPU
+  đạt **15/18 work package** tại `16d74c5` (`REV-20260827-005`), tất cả pass CPU
   gate `scripts/check_phase3_4.py` với 117 test. Backend decision đã giải quyết
   trên Tesla T4: MuJoCo Warp 1.16.0 compile được cả ba tay kể cả 4 tendon của
   Shadow, verdict `supported`. **Phase chưa đóng.** `QDGrasp-ContactRich-Tiny`
@@ -128,7 +128,12 @@ là nguồn chuẩn cho chi tiết kỹ thuật, license và tiêu chí nghiệm
   Allegro 4.1 cm, có contact `support_assisted` thật), nhưng
   `release_blocked=true` vì `shadow_hand` chưa có positive: recipe của nó ép
   `rh_lfproximal` vào `rh_lfmetacarpal` ở 323 N bền vững, thứ mà P3.2.1 không
-  kiểm. Chi tiết tại `evidence/phase3_4/p16-contactrich-tiny/`. P3.4-05/15 còn thiếu
+  kiểm. Chi tiết tại `evidence/phase3_4/p16-contactrich-tiny/`; CEM 40 candidate
+  trên closure scale của Shadow cho 40/40 hard-reject, nên đây không phải bài
+  toán search control mà là recipe/collision model, thuộc P3.2/P3.3. Ngoài ra
+  **tiêu chí hiệu năng §10 đã đo và trượt**: GPU đạt `0.764x` so với CPU oracle
+  trên scene tay 91 geom, yêu cầu là `2x`
+  (`evidence/phase3_4/p15-throughput/`). P3.4-05/15 còn thiếu
   throughput/VRAM/parity trên GPU; P3.4-17 independent review không thể do tác
   giả tự phát hành; P3.4-10 MPPI deferred theo đúng kế hoạch. Ablation
   static-vs-dynamic chạy được nhưng verdict `no_measured_difference` và **không**
