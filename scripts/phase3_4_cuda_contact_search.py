@@ -283,8 +283,13 @@ def _benchmark_scene(
     rejected = [s.world_index for s in gpu_summaries if s.hard_reject]
 
     # Every finalist must be replayable on the oracle; the GPU never self-admits.
-    finalists = gpu.export_finalists([0, 1, 2])
-    replayable = all(f.backend_request == "cpu" for f in finalists)
+    # Pick from worlds that survived: a rejected world is a measurement, not a
+    # crash, and exporting one is correctly refused by the backend.
+    survivors = [s.world_index for s in gpu_summaries if not s.hard_reject][:3]
+    finalists = gpu.export_finalists(survivors) if survivors else ()
+    replayable = bool(survivors) and all(
+        f.backend_request == "cpu" for f in finalists
+    )
 
     result.update(
         {
@@ -301,6 +306,8 @@ def _benchmark_scene(
             "vram_budget_gib": VRAM_BUDGET_GIB,
             "vram_within_budget": bool(peak_vram <= VRAM_BUDGET_GIB),
             "rejected_worlds": rejected,
+            "rejected_world_count": len(rejected),
+            "surviving_worlds": len(gpu_summaries) - len(rejected),
             "finalists_routed_to_cpu": replayable,
             "worlds_ran_without_oom": len(rejected) == 0,
             "geom_count": int(
