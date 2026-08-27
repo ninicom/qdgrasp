@@ -1,0 +1,276 @@
+{
+  "generated_at": "2026-08-27T20:24:58.913886+00:00",
+  "hands": [
+    {
+      "failure_reason": "none",
+      "hand": "leap_hand",
+      "images": [
+        {
+          "present": true,
+          "sample_index": 0,
+          "stage": "approach",
+          "time_s": 0.01,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/approach.front.png",
+              "sha256": "8b7654993a3777cb19ccac5862f2dfb2e30e598bfbe59c2f7f40a1972709a417"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/approach.side.png",
+              "sha256": "a126fd79f5a54efb8faf1a05833a31384b5e9d0d18f9729051c5b33e3fafa06c"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 20,
+          "stage": "enclose",
+          "time_s": 0.21000000000000016,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/enclose.front.png",
+              "sha256": "d277bdae3b638c7dfa1179e924261c99a9c51efe0811269bc26c0a8c48cd13b2"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/enclose.side.png",
+              "sha256": "e4bce9d4a41be9649c4c24b8989303784e7d02db4230c00203352a4a2c455b90"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 84,
+          "stage": "support_release",
+          "time_s": 0.8500000000000006,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/support_release.front.png",
+              "sha256": "c994e703e7c5514b2d2a4716d7f9048c0abc1eef1925553693324bbb7d5045bd"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/support_release.side.png",
+              "sha256": "d607e922fe274a6593d7369323199966cbbb4a9bcb4f27fe73859da76ceb96a9"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 87,
+          "stage": "lift",
+          "time_s": 0.8800000000000007,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/lift.front.png",
+              "sha256": "2a9a4d58a95aa8d32b89cc8d3433b81af33bc083195e7b7f7d5090b10008e283"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/lift.side.png",
+              "sha256": "7e680a76f81a48af31914004732a2741c854277ed1f84379fd43445015dedc14"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 110,
+          "stage": "perturb",
+          "time_s": 1.1100000000000008,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/perturb.front.png",
+              "sha256": "b565934cd364c0b4a18e0ee73576d85d58f0b4ba52c0820adf2510917b2f46c5"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/perturb.side.png",
+              "sha256": "bebd7220f70c167b5031f504eeb9fa18bcda4b61c56ff169863e343addbb8f9f"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 119,
+          "stage": "retain",
+          "time_s": 1.2000000000000008,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/retain.front.png",
+              "sha256": "f3560106537fe49abdeb6f14d1060747437905ccb06ba5a8061e507329d74adb"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/leap_hand/retain.side.png",
+              "sha256": "b251b518ec62a853f111177c873aecdbed7850614e6918189cdf4adb987ca620"
+            }
+          }
+        }
+      ],
+      "missing_stages": [],
+      "passed": true,
+      "samples": 120,
+      "stages_reached": [
+        "approach",
+        "enclose",
+        "lift",
+        "perturb",
+        "retain",
+        "support_release"
+      ],
+      "trajectory_hash": "95fe3d0af8b07b8d0f0050db475a348577f332e37bd18f887fac9215a47c76f1",
+      "views": [
+        "front",
+        "side"
+      ]
+    },
+    {
+      "failure_reason": "none",
+      "hand": "wonik_allegro",
+      "images": [
+        {
+          "present": true,
+          "sample_index": 0,
+          "stage": "approach",
+          "time_s": 0.01,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/approach.front.png",
+              "sha256": "2b3b752a0c2e6eaed0c3012438ed868dd12d8e9c8cc7c554f8f8fc76b0df6f23"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/approach.side.png",
+              "sha256": "155f191baa989cb42d8d3f9900d8506aea9a1d4886d8e38cb40eef2d1d241584"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 20,
+          "stage": "enclose",
+          "time_s": 0.21000000000000016,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/enclose.front.png",
+              "sha256": "1b58810c712f4773615fbc176036377a99e5ab06d0a62491ac7a22d78d25758f"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/enclose.side.png",
+              "sha256": "4de53294e0c2e48d8e22e6cc0bc7b9c5fbdac217fcfe1f6c58b81762b5dc888d"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 126,
+          "stage": "support_release",
+          "time_s": 1.270000000000001,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/support_release.front.png",
+              "sha256": "d565bdc27a1e414185288486caf0e010a2abd2b91e5e774a5f648ce49c878bb3"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/support_release.side.png",
+              "sha256": "2ec2a2c8e98253a97b1ac3cba0d06b9ad55f77fbe279b24a007844383a7f3883"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 128,
+          "stage": "lift",
+          "time_s": 1.290000000000001,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/lift.front.png",
+              "sha256": "bb57bf2135681d3087005fd4353a7706d322a3ac04180094b164557e61acf79f"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/lift.side.png",
+              "sha256": "7596e540a8937ceb30c065ddbecbf990c9162800d3e32193b265829a86f5cdba"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 150,
+          "stage": "perturb",
+          "time_s": 1.5100000000000011,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/perturb.front.png",
+              "sha256": "ba6e0c8df0f97b621ef50d158f8e5eedece7891d5cd32032b8f09a47243b3122"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/perturb.side.png",
+              "sha256": "6ebc1618368b84ebc087e01831f1707d298719b55d2d54715a0f38cbf7dea7e0"
+            }
+          }
+        },
+        {
+          "present": true,
+          "sample_index": 159,
+          "stage": "retain",
+          "time_s": 1.6000000000000012,
+          "views": {
+            "front": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/retain.front.png",
+              "sha256": "e2b68ef4603e06d094e4c7cbe19b9e32cb9a7e765525f7c1f0d2445644722f53"
+            },
+            "side": {
+              "path": "evidence/phase3_4_3/s11/renders/wonik_allegro/retain.side.png",
+              "sha256": "8857992aad1b4a6cf0235f398cc041984776755bef361e8c4cba98329faacfa9"
+            }
+          }
+        }
+      ],
+      "missing_stages": [],
+      "passed": true,
+      "samples": 160,
+      "stages_reached": [
+        "approach",
+        "enclose",
+        "lift",
+        "perturb",
+        "retain",
+        "support_release"
+      ],
+      "trajectory_hash": "b1d6e820386965d4d2b35843c6c68f087c4d8d252de32ffd8a8ea33c6652660d",
+      "views": [
+        "front",
+        "side"
+      ]
+    }
+  ],
+  "note": "These images are for visual QA of target identity, support release and orientation. The renderer never decides an outcome: the physics verdict stays with the contact observer and the certifier.",
+  "renderer": "egl",
+  "required_stages": [
+    "approach",
+    "enclose",
+    "support_release",
+    "lift",
+    "perturb",
+    "retain"
+  ],
+  "resolution": [
+    360,
+    480
+  ],
+  "schema": "qdgrasp/evidence/phase3.4.3-stage-render/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "coverage": "2/2_active",
+    "experimental_shadow": false,
+    "governing_decision": "ADR-0008",
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "non_release": false,
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "purpose": "",
+    "selected_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "three_hand_coverage": false
+  }
+}

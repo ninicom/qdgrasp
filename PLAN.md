@@ -2,17 +2,17 @@
 document_id: PLAN-V2
 document_type: plan
 title: QDGrasp — thư viện dexterous grasp cộng đồng dưới AGPL-3.0
-version: 4.3.0
+version: 4.4.0
 status: active
 date: 2026-08-22
 approved_date: 2026-08-22
-revises: PLAN-V2@4.2.0
+revises: PLAN-V2@4.3.0
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260827-012-phase3-4-3-completeness-expansion.md
-revision_reason: Mở rộng P3.4.3 thành closed-world contract đối chiếu toàn bộ P3.4-00–17, §4–§16 và các defect audit.
+latest_revision_record: docs/revisions/REV-20260828-013-phase3-4-3-execution.md
+revision_reason: Thi công P3.4.3 phần CPU; ghi rõ hai điều kiện còn lại là CUDA gate trên Kaggle và review độc lập.
 necessity: N3
-impact: ContactRich v1 tiếp tục release-blocked; P4 contact-rich input chỉ mở khi completeness map không còn requirement unmapped/open và P3.4.3-ACTIVE-PASS cho LEAP+Allegro được reviewer độc lập ký.
+impact: ContactRich v1 tiếp tục release-blocked; ContactRich-Active-Tiny tồn tại nhưng cũng release-blocked cho tới khi CUDA gate và reviewer độc lập xong. P4 static/offline không bị chặn.
 ---
 
 # QDGrasp — kế hoạch triển khai chính thức
@@ -41,6 +41,11 @@ Corrective execution plan hiện hành cho contact-rich data là
 CUDA parity/sanitizer, dataset count/split và default-scope enforcement trước
 khi mở contact-rich input cho P4. Verdict của nó chỉ là 2/2 active hand; không
 được dùng để ghi P3.4 three-hand `pass`.
+
+Thi công theo `docs/roadmap/PHASE3_4_3_EXECUTION_BREAKDOWN.md`. Phần CPU đã
+xong với code, test và evidence; gate CUDA chạy trên Kaggle T4 và review độc
+lập vẫn là hai điều kiện còn lại, nên `QDGrasp-ContactRich-Active-Tiny` giữ
+`release_blocked=true` và loader public từ chối nó theo mặc định.
 
 ## 1. Mục tiêu và quyết định nền
 

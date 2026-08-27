@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.26.0
+version: 1.27.0
 status: active
 date: 2026-08-27
-revises: ROADMAP-001@1.25.0
+revises: ROADMAP-001@1.26.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260827-012-phase3-4-3-completeness-expansion.md
+latest_revision_record: docs/revisions/REV-20260828-013-phase3-4-3-execution.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -192,6 +192,16 @@ P3.4 ba-hand chưa đóng thì giữ paused, không đổi thành pass.
   independent verdict `P3.4.3-ACTIVE-PASS`. Revision 1.1 bổ sung closed-world
   completeness contract: mọi P3.4-00–17, §4–§16, blocker B-01–B-20 và gate
   G00–G11/C01–C08 phải có mapping, test, evidence và zero-unmapped verdict.
+  Thực thi theo `ROADMAP-P3.4.3-002` chia thành sub-phase S0–S12. S0–S9 và S11
+  đã có code, test và evidence trên CPU: ledger/closure checker, active-scope
+  registry, typed contract v2, SafetyBudget v2 với đủ mười ba sensor, rolling
+  impulse, contact taxonomy, ReplayCapsule v1, certification/release invariants,
+  objective/CEM/refinement fail-closed, backend hydration/summary v2, và
+  `QDGrasp-ContactRich-Active-Tiny` phủ 2 hand × 3 environment × 2 clutter × 3
+  mode với negative control có predicate. S10 (CUDA gate) chờ run thật trên
+  Kaggle T4 qua `kaggle-phase3-4-3/`; S12 chờ reviewer độc lập. Artifact giữ
+  `release_blocked=true` cho tới khi cả hai xong, và điều kiện bàn giao P4 nằm
+  trong [`ROADMAP-P3.4.3-003`](PHASE3_4_3_HANDOFF.md).
 - Phase 3.5 ([`ROADMAP-P3.5-001`](PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md))
   thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
   mesh được chuẩn hóa theo mét, tách visual/collision, rồi public Python CoACD

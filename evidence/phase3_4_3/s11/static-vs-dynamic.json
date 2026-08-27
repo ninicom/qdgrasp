@@ -1,0 +1,78 @@
+{
+  "controlled_factor": "whether the scene is simulated. Both arms use the same hand, scene, target pose, planned fingertip contacts and safety budget.",
+  "dynamic_arm": [
+    {
+      "arm": "dynamic_reactive",
+      "cpu_confirmed": true,
+      "failure_reason": "none",
+      "hand": "leap_hand",
+      "lift_m": 0.04950918744971183,
+      "min_budget_margin": 0.7714523567909362,
+      "passed": true,
+      "steps": 120
+    },
+    {
+      "arm": "dynamic_reactive",
+      "cpu_confirmed": true,
+      "failure_reason": "none",
+      "hand": "wonik_allegro",
+      "lift_m": 0.04068782015649702,
+      "min_budget_margin": 0.6483082942767747,
+      "passed": true,
+      "steps": 160
+    }
+  ],
+  "dynamic_yield": 1.0,
+  "generated_at": "2026-08-27T20:24:47.896318+00:00",
+  "hands": [
+    "leap_hand",
+    "wonik_allegro"
+  ],
+  "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result.",
+  "paired_evidence": [
+    {
+      "dynamic_passed": true,
+      "hand": "leap_hand",
+      "scene": "table/sparse",
+      "static_fail_dynamic_pass": false,
+      "static_passed": true
+    },
+    {
+      "dynamic_passed": true,
+      "hand": "wonik_allegro",
+      "scene": "table/sparse",
+      "static_fail_dynamic_pass": false,
+      "static_passed": true
+    }
+  ],
+  "parameter_hash": "252909f4ac1e2e318c7fbe222d2da396fc9a02a72331731109abf931d22ad753",
+  "pinned_parameters": {
+    "friction_mu": 0.5,
+    "target_mass_kg": 0.02,
+    "torsional_friction": 0.005
+  },
+  "schema": "qdgrasp/evidence/phase3.4.3-ablation/v1",
+  "static_arm": [
+    {
+      "arm": "static_frozen",
+      "contacts": 4,
+      "hand": "leap_hand",
+      "margin": 0.0,
+      "passed": true,
+      "reason": ""
+    },
+    {
+      "arm": "static_frozen",
+      "contacts": 4,
+      "hand": "wonik_allegro",
+      "margin": 0.0,
+      "passed": true,
+      "reason": ""
+    }
+  ],
+  "static_yield": 1.0,
+  "unsafe_dynamic_outcomes": 0,
+  "verdict": "no_measured_difference",
+  "work_package": "P3.4-14",
+  "yield_delta": 0.0
+}

@@ -2,14 +2,14 @@
 document_id: DOCS-INDEX
 document_type: index
 title: Chỉ mục tài liệu QDGrasp
-version: 1.6.0
+version: 1.7.0
 status: active
 date: 2026-08-21
-revises: DOCS-INDEX@1.5.0
-latest_revision_record: docs/revisions/REV-20260827-012-phase3-4-3-completeness-expansion.md
-revision_reason: Mở rộng corrective plan bằng closed-world traceability và completeness checker contract.
+revises: DOCS-INDEX@1.6.0
+latest_revision_record: docs/revisions/REV-20260828-013-phase3-4-3-execution.md
+revision_reason: Thêm breakdown thi công S0–S12 và điều kiện bàn giao P4 vào chỉ mục.
 necessity: N3
-impact: Chỉ mục điều hướng implementation tới full B/G/C gate matrix; không requirement P3.4 nào được phép unmapped khi phát hành active-two-hand artifact.
+impact: Chỉ mục dẫn tới thứ tự thi công và tới điều kiện mở P4; không đổi trạng thái gate nào.
 ---
 
 # Bộ tài liệu kiểm chứng QDGrasp
@@ -66,6 +66,11 @@ PLAN.md
 - `roadmap/phase3_4_3_requirements.yaml`: inventory 85 requirement dùng
   zero-unmapped completeness rule; mọi mục giữ `pending` cho tới khi có
   implementation, test, evidence và review tương ứng.
+- `roadmap/PHASE3_4_3_EXECUTION_BREAKDOWN.md`: thứ tự thi công S0–S12 của
+  corrective plan, kèm quy tắc chuyển trạng thái bốn phần
+  (implemented/tested/evidenced/reviewed).
+- `roadmap/PHASE3_4_3_HANDOFF.md`: interface freeze và ba điều kiện mở
+  contact-rich input cho P4; static/offline không bị chặn.
 - `archive/`: tài liệu đã bị thay thế nhưng không bị xóa; `archive/README.md`
   là sidecar trạng thái/hash cho raw archive bất biến.
 
