@@ -1,0 +1,220 @@
+"""S10 — the parts of the CUDA gate that can be checked without a device.
+
+The gate itself has to run on a real NVIDIA device, and this machine has none.
+What can be checked here is everything that decides *whether a result counts*:
+the exit codes, the refusal to run on a CPU host, the resource estimate, the
+atomic checkpoint, and the thresholds the plan pinned.
+
+**B-08** is pinned here. The old harness read ``peak_vram_gib`` on its own
+success path -- a key it never set -- so a passing run crashed; and when the
+benchmark had not run at all it fell through to the success message. Both are
+paths that only execute when things go *right*, which is why nobody hit them.
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+GATE = REPO_ROOT / "scripts" / "check_phase3_4_3_cuda.py"
+OLD_HARNESS = REPO_ROOT / "scripts" / "phase3_4_cuda_contact_search.py"
+NOTEBOOK_DIR = REPO_ROOT / "kaggle-phase3-4-3"
+
+
+def run(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(GATE), *args],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+
+
+# -- refusing a CPU host --------------------------------------------------
+
+
+def test_a_cpu_host_can_never_produce_cuda_evidence() -> None:
+    completed = run("--device", "cuda:0")
+    assert completed.returncode != 0
+    payload = json.loads(completed.stdout)
+    assert payload["verdict"] in {"FAIL", "CONFIG_ERROR"}
+    assert "not CUDA evidence" in json.dumps(payload)
+
+
+def test_a_non_cuda_device_is_refused() -> None:
+    completed = run("--device", "cpu")
+    assert completed.returncode != 0
+
+
+# -- thresholds are pinned, not negotiated --------------------------------
+
+
+def test_the_pinned_thresholds_match_the_plan() -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cuda_gate", GATE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert module.MIN_GPU_SPEEDUP == 2.0
+    assert module.VRAM_BUDGET_GIB == 14.0
+    assert module.MIN_SIMULTANEOUS_WORLDS == 64
+    # The operating point is chosen before the run, not after seeing it.
+    assert module.BENCHMARK_WORLDS >= module.MIN_SIMULTANEOUS_WORLDS
+    assert module.BENCHMARK_RUNS >= 3
+
+
+def test_a_world_count_below_the_declared_floor_is_a_config_error() -> None:
+    completed = run("--worlds", "8")
+    assert completed.returncode == 4
+    payload = json.loads(completed.stdout)
+    assert payload["verdict"] == "CONFIG_ERROR"
+    assert "below the declared floor" in payload["error"]
+
+
+# -- resource estimate before the run -------------------------------------
+
+
+def test_dry_run_reports_the_cost_before_anything_is_allocated() -> None:
+    completed = run("--dry-run", "--worlds", "1024")
+    assert completed.returncode == 0
+    payload = json.loads(completed.stdout)
+    assert payload["worlds"] == 1024
+    assert payload["world_steps"] == payload["worlds"] * payload["steps"]
+    assert payload["estimated_total_bytes"] > 0
+    assert payload["vram_budget_gib"] == 14.0
+
+
+# -- checkpointing --------------------------------------------------------
+
+
+def test_a_checkpoint_is_written_atomically(tmp_path: Path) -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cuda_gate", GATE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    target = tmp_path / "nested" / "checkpoint.json"
+    digest = module.write_atomically(target, '{"stage": "capability"}')
+    assert target.is_file()
+    assert len(digest) == 64
+    # Nothing partial is left behind for a resume to pick up.
+    assert not list(tmp_path.rglob("*.partial"))
+
+
+def test_a_truncated_checkpoint_is_discarded_not_half_trusted(tmp_path: Path) -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cuda_gate", GATE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    broken = tmp_path / "checkpoint.json"
+    broken.write_text('{"stage": "capa', encoding="utf-8")
+    assert module.load_checkpoint(broken) == {}
+    assert module.load_checkpoint(None) == {}
+
+
+def test_a_complete_checkpoint_is_resumed(tmp_path: Path) -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cuda_gate", GATE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    path = tmp_path / "checkpoint.json"
+    path.write_text(json.dumps({"capability": {"verdict": "supported"}}), encoding="utf-8")
+    assert module.load_checkpoint(path) == {"capability": {"verdict": "supported"}}
+
+
+# -- the defect the old harness carried -----------------------------------
+
+
+def test_the_old_harness_no_longer_reads_a_key_it_never_sets() -> None:
+    source = OLD_HARNESS.read_text(encoding="utf-8")
+    # The success path used bench['peak_vram_gib']; the benchmark only ever set
+    # device_peak_vram_gib, so a *passing* run raised KeyError (blocker B-08).
+    assert "bench['peak_vram_gib']" not in source
+    assert "device_peak_vram_gib" in source
+
+
+def test_a_benchmark_that_did_not_run_is_not_a_benchmark_that_passed() -> None:
+    source = OLD_HARNESS.read_text(encoding="utf-8")
+    assert 'if bench.get("status") != "measured"' in source
+
+
+def test_the_gate_success_path_only_reads_keys_it_sets() -> None:
+    source = GATE.read_text(encoding="utf-8")
+    # The summary line reads speedup and device_peak_vram_gib, both of which
+    # run_performance always writes for every hand.
+    assert "entry['speedup']" in source
+    assert "entry['device_peak_vram_gib']" in source
+    assert '"speedup": round(float(speedup), 3)' in source
+    assert '"device_peak_vram_gib"' in source
+
+
+# -- the notebook that runs it --------------------------------------------
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_the_notebook_carries_no_credentials_or_private_paths() -> None:
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+    for forbidden in ("kaggle.json", "KAGGLE_KEY", "/home/", "/run/media", "api_token"):
+        assert forbidden not in source, forbidden
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_the_notebook_runs_the_prior_gates_and_the_sanitizer() -> None:
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+    assert "phase1_cuda_smoke.py" in source
+    assert "phase2_cuda_fk_parity.py" in source
+    assert "compute-sanitizer" in source
+    assert "check_phase3_4_3_cuda.py" in source
+    # The Warp defect is confronted rather than worked around.
+    assert "mujoco-warp==" in source
+    assert "initcheck" in source
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_the_notebook_pins_an_exact_commit() -> None:
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+    assert "CODE_REVISION = " in source
+    marker = source.split("CODE_REVISION = ")[1].split("\n")[0].strip().strip('"')
+    assert len(marker) == 40, marker
+    assert all(c in "0123456789abcdef" for c in marker)
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "kernel-metadata.json").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_the_kernel_asks_for_a_gpu() -> None:
+    metadata = json.loads((NOTEBOOK_DIR / "kernel-metadata.json").read_text(encoding="utf-8"))
+    assert metadata["enable_gpu"] is True
+    assert metadata["machine_shape"] == "NvidiaTeslaT4"

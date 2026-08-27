@@ -77,6 +77,10 @@ class _Recorder:
     free_bodies: Sequence[int]
     palm_body_id: int
     sample_every: int = 5
+    #: Called once per recorded sample, with the sample index. Used by the
+    #: renderer so a stage image is the frame that sample was taken at, rather
+    #: than a re-simulation that only resembles it.
+    frame_observer: Callable[[int, mujoco.MjModel, mujoco.MjData], None] | None = None
 
     def __post_init__(self) -> None:
         self.index = 0
@@ -148,6 +152,8 @@ class _Recorder:
         self.poses.append(poses)
         self.velocities.append(velocities)
         self.stages.append(_stage_of(stage))
+        if self.frame_observer is not None:
+            self.frame_observer(self.index, model, data)
         self.index += 1
 
 
@@ -163,6 +169,7 @@ def run_wrapped_contact_rollout(
     sample_every: int = 5,
     robot_profile: str = "",
     trajectory_ref: str = "",
+    frame_observer: Callable[[int, mujoco.MjModel, mujoco.MjData], None] | None = None,
 ) -> tuple[DynamicGraspTrajectory, DynamicSearchOutcome, object]:
     """Run the validated rollout and observe it as a Phase 3.4 trajectory.
 
@@ -217,6 +224,7 @@ def run_wrapped_contact_rollout(
                 free_bodies=free_bodies,
                 palm_body_id=int(palm_body_id),
                 sample_every=int(sample_every),
+                frame_observer=frame_observer,
             )
         recorder["r"](stage, model, data)
 

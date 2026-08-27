@@ -340,6 +340,7 @@ def generate_one(
     clutter: str,
     mode: str,
     overrides: dict[str, Any] | None = None,
+    frame_observer: Any = None,
 ) -> tuple[DynamicGraspTrajectory, DynamicSearchOutcome]:
     spec = RobotSpec.from_config(profile_of_hand(hand), sample_anchors=False)
     recipe = build_release_grasp_recipe(profile_of_hand(hand))
@@ -375,6 +376,7 @@ def generate_one(
         palm_body_name=spec.palm_link,
         robot_profile=hand,
         trajectory_ref=f"{hand}/{environment}/{clutter}/{mode}",
+        frame_observer=frame_observer,
     )
     return trajectory, outcome
 
