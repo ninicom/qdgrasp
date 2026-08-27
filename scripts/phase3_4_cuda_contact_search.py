@@ -118,6 +118,7 @@ def resolve_warp_backend(device: str) -> dict[str, Any]:
 
     probe_geoms = (SubGeomSpec(type="box", size=(0.02, 0.02, 0.02), pos=(0.0, 0.0, 0.0)),)
     unsupported: list[str] = []
+    tested: set[str] = set()
     per_hand: dict[str, Any] = {}
     for hand, config_name in (
         ("leap_hand", "leap_hand.yaml"),
@@ -133,28 +134,84 @@ def resolve_warp_backend(device: str) -> dict[str, Any]:
             "neq": int(model.neq),
             "nmocap": int(model.nmocap),
         }
+        warp_model = None
         try:
             put_model = getattr(mjwarp, "put_model", None)
             if put_model is None:
                 raise AttributeError("mujoco_warp exposes no put_model")
-            put_model(model)
+            warp_model = put_model(model)
             entry["compiled"] = True
+            tested.add("equality:mjEQ_WELD")
+            tested.add("mocap_body")
+            if int(model.ntendon) > 0:
+                tested.add("tendon_transmission")
         except Exception as exc:  # noqa: BLE001 - the verdict is the point
             entry["compiled"] = False
             entry["error"] = f"{type(exc).__name__}: {exc}"
             if int(model.ntendon) > 0:
                 unsupported.append("tendon_transmission")
             unsupported.append("equality:mjEQ_WELD")
+            unsupported.append("mocap_body")
+
+        # Compiling proves the model is accepted. It does not prove contact
+        # force can be read back, and the whole safety budget depends on that,
+        # so step the model and look for the arrays.
+        if warp_model is not None:
+            try:
+                import mujoco as _mj
+
+                put_data = getattr(mjwarp, "put_data", None)
+                step = getattr(mjwarp, "step", None)
+                if put_data is None or step is None:
+                    raise AttributeError(
+                        "mujoco_warp exposes no put_data/step: "
+                        f"{sorted(n for n in dir(mjwarp) if not n.startswith('_'))[:40]}"
+                    )
+                cpu_data = _mj.MjData(model)
+                _mj.mj_forward(model, cpu_data)
+                warp_data = put_data(model, cpu_data)
+                for _ in range(20):
+                    step(warp_model, warp_data)
+                contact = getattr(warp_data, "contact", None)
+                fields = (
+                    sorted(n for n in dir(contact) if not n.startswith("_"))
+                    if contact is not None
+                    else []
+                )
+                entry["contact_fields"] = fields[:30]
+                has_force = any(
+                    f in fields for f in ("force", "efc_force", "frame", "dist", "pos")
+                )
+                entry["contact_readback"] = bool(contact is not None and has_force)
+                tested.add("per_contact_force_and_frame")
+                if not entry["contact_readback"]:
+                    unsupported.append("per_contact_force_and_frame")
+            except Exception as exc:  # noqa: BLE001
+                entry["contact_readback"] = False
+                entry["contact_error"] = f"{type(exc).__name__}: {exc}"
+                unsupported.append("per_contact_force_and_frame")
         per_hand[hand] = entry
 
     status["per_hand"] = per_hand
     status["unsupported"] = sorted(set(unsupported))
+    # Tri-state: never report a capability as supported unless it was exercised.
     status["capabilities"] = {
-        req: req not in status["unsupported"] for req in BLOCKING_REQUIREMENTS
+        req: (
+            "unsupported"
+            if req in status["unsupported"]
+            else ("supported" if req in tested else "not_tested")
+        )
+        for req in BLOCKING_REQUIREMENTS
     }
-    status["verdict"] = (
-        "supported" if not status["unsupported"] else "blocked_missing_capability"
+    status["untested_requirements"] = sorted(
+        req for req, state in status["capabilities"].items() if state == "not_tested"
     )
+    if status["unsupported"]:
+        status["verdict"] = "blocked_missing_capability"
+    elif status["untested_requirements"]:
+        status["verdict"] = "incomplete_untested_requirements"
+    else:
+        status["verdict"] = "supported"
     return status
 
 
