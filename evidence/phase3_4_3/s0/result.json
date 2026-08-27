@@ -1,0 +1,49 @@
+{
+  "blockers": [
+    "B-09"
+  ],
+  "branch": "feature/phase3-1-closure",
+  "commit": "a3eb0164826ab323ff0ce79f05f25be7651ec3fa",
+  "device": "cpu",
+  "gates": [
+    "G00"
+  ],
+  "implementation_hashes": {
+    "qdgrasp/roadmap/__init__.py": "ddaa8f840d8091170a84ff88410f90a9d4453c3e853fc0c1f61ad0d52a92e54f",
+    "qdgrasp/roadmap/requirements.py": "d00eb680b1e057193ceab3e5e5835ef17086b76d3b9dd8f820527ef69fbe1c82",
+    "scripts/check_phase3_4.py": "b9c5b89cfc9b826618ccc2477d5efb722e9cce60eec63de2991318230cbd8950",
+    "scripts/check_phase3_4_3.py": "fc2a8b29096449b4aef8507f00b7f6703cc2eca0afd6f0f78fb56fffb9102bc5"
+  },
+  "implementation_refs": [
+    "qdgrasp/roadmap/requirements.py",
+    "qdgrasp/roadmap/__init__.py",
+    "scripts/check_phase3_4_3.py",
+    "scripts/check_phase3_4.py"
+  ],
+  "note": "S0 ledger, closure checker and exit-code semantics",
+  "python": "3.11.16",
+  "recorded_at": "2026-08-27T16:39:58.266262+00:00",
+  "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "three_hand_coverage": false
+  },
+  "sub_phase": "S0",
+  "tests": {
+    "passed": true,
+    "returncode": 0,
+    "selection": [
+      "tests/contactrich_active/test_completeness_ledger.py"
+    ],
+    "summary": "18 passed in 18.16s",
+    "tail": ""
+  },
+  "worktree_dirty": true
+}

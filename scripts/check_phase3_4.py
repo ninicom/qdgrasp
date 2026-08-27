@@ -4,6 +4,19 @@ The gate is staged: it verifies the work packages that exist and reports the
 ones that do not, rather than passing silently on an empty phase. A green run
 here proves CPU correctness only. Phase 3.4 cannot close on it -- the CUDA
 backend and throughput evidence come from the Kaggle harness (plan section 15).
+
+Exit codes follow the Phase 3.4.3 convention (G00), because the previous
+behaviour -- printing ``PARTIAL`` and exiting ``0`` -- reads to CI as a phase
+pass (blocker B-09):
+
+    0  the exact requested check passed
+    1  the check failed
+    2  the requested scope is paused or not applicable
+    3  the requested scope is incomplete or partial
+
+The successor gate for the active two-hand scope is
+``scripts/check_phase3_4_3.py``; this script keeps reporting the historical
+three-hand contract, which ADR-0008 leaves paused.
 """
 
 from __future__ import annotations
@@ -33,6 +46,11 @@ from qdgrasp.sim.batched.contracts import (
 from qdgrasp.sim.batched.mujoco_cpu import MuJoCoCpuBackend
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+#: Exit codes shared with the Phase 3.4.3 gate. Only an exact pass may be 0.
+FAIL_EXIT = 1
+PAUSED_EXIT = 2
+INCOMPLETE_EXIT = 3
 
 #: Work packages of ROADMAP-P3.4-001 and how far each one is verified here.
 #:   "done"        verified by this CPU gate
@@ -214,7 +232,44 @@ def main() -> int:
     parser.add_argument("--backend", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--profile", choices=("micro", "release"), default="micro")
     parser.add_argument("--skip-tests", action="store_true")
+    parser.add_argument(
+        "--command",
+        choices=("cpu-correctness", "historical-status"),
+        default="cpu-correctness",
+        help=(
+            "cpu-correctness runs the CPU checks and reports how far they get; "
+            "historical-status reports the paused three-hand contract without "
+            "running anything. The active release-candidate check lives in "
+            "scripts/check_phase3_4_3.py."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.command == "historical-status":
+        print(
+            json.dumps(
+                {
+                    "phase": "3.4",
+                    "scope": "historical_three_hand",
+                    "status": "PAUSED",
+                    "verdict": "paused_by_ADR-0008",
+                    "release_blocked": True,
+                    "three_hand_coverage": False,
+                    "active_hands": ["leap_hand", "wonik_allegro"],
+                    "paused_hands": ["shadow_hand"],
+                    "work_package_status": dict(sorted(WORK_PACKAGES.items())),
+                    "successor_gate": "scripts/check_phase3_4_3.py",
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        print(
+            "Phase 3.4 historical three-hand contract: PAUSED by ADR-0008. "
+            "This is not a pass and not a failure.",
+            file=sys.stderr,
+        )
+        return PAUSED_EXIT
 
     outstanding = sorted(
         f"{name} [{status}]"
@@ -278,7 +333,7 @@ def main() -> int:
             result["tests"] = run_pytest()
     except (ConfigError, OSError, subprocess.SubprocessError) as exc:
         print(f"Phase 3.4 gate failed: {exc}", file=sys.stderr)
-        return 1
+        return FAIL_EXIT
 
     print(json.dumps(result, indent=2, sort_keys=True))
     print(
@@ -287,7 +342,9 @@ def main() -> int:
         "This is not phase closure.",
         file=sys.stderr,
     )
-    return 0
+    # PARTIAL is not a pass. Exiting 0 here is exactly how a partial phase gets
+    # read as a green gate, so the incomplete code is returned instead (B-09).
+    return INCOMPLETE_EXIT
 
 
 if __name__ == "__main__":

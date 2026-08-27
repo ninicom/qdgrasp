@@ -2,14 +2,14 @@
 document_id: DOCS-INDEX
 document_type: index
 title: Chỉ mục tài liệu QDGrasp
-version: 1.4.0
+version: 1.6.0
 status: active
 date: 2026-08-21
-revises: DOCS-INDEX@1.3.0
-latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
-revision_reason: Thêm ADR-0008 vào chỉ mục và công bố active corpus tạm thời LEAP/Allegro.
+revises: DOCS-INDEX@1.5.0
+latest_revision_record: docs/revisions/REV-20260827-012-phase3-4-3-completeness-expansion.md
+revision_reason: Mở rộng corrective plan bằng closed-world traceability và completeness checker contract.
 necessity: N3
-impact: Chỉ mục điều hướng người thực hiện tới policy tạm dừng Shadow trước khi tạo workload/release artifact mới.
+impact: Chỉ mục điều hướng implementation tới full B/G/C gate matrix; không requirement P3.4 nào được phép unmapped khi phát hành active-two-hand artifact.
 ---
 
 # Bộ tài liệu kiểm chứng QDGrasp
@@ -60,6 +60,12 @@ PLAN.md
 - `decisions/0008-temporary-shadow-hand-pause.md`: active corpus tạm thời chỉ
   gồm LEAP/Allegro; giữ Shadow preset/evidence nhưng dừng dùng trong workload,
   release gate và RL pipeline mới cho tới quyết định mở lại.
+- `roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md`: corrective plan hiện
+  hành để hoàn tất safety, trajectory, GPU-to-CPU replay, CUDA và dataset gate
+  cho LEAP/Allegro mà không đổi P3.4 ba-hand paused thành pass.
+- `roadmap/phase3_4_3_requirements.yaml`: inventory 85 requirement dùng
+  zero-unmapped completeness rule; mọi mục giữ `pending` cho tới khi có
+  implementation, test, evidence và review tương ứng.
 - `archive/`: tài liệu đã bị thay thế nhưng không bị xóa; `archive/README.md`
   là sidecar trạng thái/hash cho raw archive bất biến.
 

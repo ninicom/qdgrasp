@@ -1,0 +1,489 @@
+schema: qdgrasp/roadmap-requirements/v1
+plan_id: ROADMAP-P3.4.3-001
+plan_version: 1.1.0
+date: 2026-08-27
+scope:
+  verdict: P3.4.3-ACTIVE-PASS
+  active_hands: [leap_hand, wonik_allegro]
+  paused_hands: [shadow_hand]
+  three_hand_coverage: false
+  historical_p3_4_state: paused_by_ADR-0008
+closure_rule:
+  require_all_required_passed: true
+  allow_unmapped: false
+  allow_unknown: false
+  allow_dirty_candidate: false
+  allow_deferred_claimed: false
+  required_independent_review: true
+  allowed_status:
+    - pending
+    - passed
+    - failed
+    - blocked
+    - paused
+    - deferred_not_claimed
+defaults: &pending_requirement
+  required: true
+  owner: unassigned
+  implementation_refs: []
+  test_ids: []
+  evidence_refs: []
+  status: pending
+  blocker_reason: implementation_not_started
+  supersession_policy: revision_required
+
+normative_sources:
+  - docs/roadmap/PHASE3_4_CONTACT_RICH_DYNAMIC_GRASP_PLAN.md
+  - docs/roadmap/PHASE3_4_1_FIX_PLAN.md
+  - docs/roadmap/PHASE3_4_2_CORRECTNESS_RECOVERY_PLAN.md
+  - docs/roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md
+  - docs/decisions/0008-temporary-shadow-hand-pause.md
+  - docs/revisions/REV-20260827-010-mjwarp-upstream-defect.md
+
+requirements:
+  # Static-audit blocker inventory.
+  - <<: *pending_requirement
+    id: B-01
+    category: blocker
+    normative_source: P3.4.3#B-01
+    mapped_to: [G01, C03]
+  - <<: *pending_requirement
+    id: B-02
+    category: blocker
+    normative_source: P3.4.3#B-02
+    mapped_to: [G02, C03]
+  - <<: *pending_requirement
+    id: B-03
+    category: blocker
+    normative_source: P3.4.3#B-03
+    mapped_to: [G07, C02, C03]
+  - <<: *pending_requirement
+    id: B-04
+    category: blocker
+    normative_source: P3.4.3#B-04
+    mapped_to: [G06, G07]
+  - <<: *pending_requirement
+    id: B-05
+    category: blocker
+    normative_source: P3.4.3#B-05
+    mapped_to: [G04]
+  - <<: *pending_requirement
+    id: B-06
+    category: blocker
+    normative_source: P3.4.3#B-06
+    mapped_to: [G03, C01]
+  - <<: *pending_requirement
+    id: B-07
+    category: blocker
+    normative_source: P3.4.3#B-07
+    mapped_to: [G09, C05]
+  - <<: *pending_requirement
+    id: B-08
+    category: blocker
+    normative_source: P3.4.3#B-08
+    mapped_to: [G08, C07]
+  - <<: *pending_requirement
+    id: B-09
+    category: blocker
+    normative_source: P3.4.3#B-09
+    mapped_to: [G00, C08]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/roadmap/requirements.py, scripts/check_phase3_4_3.py, scripts/check_phase3_4.py]
+    test_ids: [tests/contactrich_active/test_completeness_ledger.py]
+    evidence_refs: [evidence/phase3_4_3/s0/result.json]
+    status: passed
+    blocker_reason: ""
+  - <<: *pending_requirement
+    id: B-10
+    category: blocker
+    normative_source: P3.4.3#B-10
+    mapped_to: [G05]
+  - <<: *pending_requirement
+    id: B-11
+    category: blocker
+    normative_source: P3.4.3#B-11
+    mapped_to: [C01]
+  - <<: *pending_requirement
+    id: B-12
+    category: blocker
+    normative_source: P3.4.3#B-12
+    mapped_to: [C03]
+  - <<: *pending_requirement
+    id: B-13
+    category: blocker
+    normative_source: P3.4.3#B-13
+    mapped_to: [C02]
+  - <<: *pending_requirement
+    id: B-14
+    category: blocker
+    normative_source: P3.4.3#B-14
+    mapped_to: [C02]
+  - <<: *pending_requirement
+    id: B-15
+    category: blocker
+    normative_source: P3.4.3#B-15
+    mapped_to: [C03, C04]
+  - <<: *pending_requirement
+    id: B-16
+    category: blocker
+    normative_source: P3.4.3#B-16
+    mapped_to: [C04]
+  - <<: *pending_requirement
+    id: B-17
+    category: blocker
+    normative_source: P3.4.3#B-17
+    mapped_to: [C05]
+  - <<: *pending_requirement
+    id: B-18
+    category: blocker
+    normative_source: P3.4.3#B-18
+    mapped_to: [C05]
+  - <<: *pending_requirement
+    id: B-19
+    category: blocker
+    normative_source: P3.4.3#B-19
+    mapped_to: [C07]
+  - <<: *pending_requirement
+    id: B-20
+    category: blocker
+    normative_source: P3.4.3#B-20
+    mapped_to: [C06]
+
+  # Direct corrective gates.
+  - <<: *pending_requirement
+    id: G00
+    category: direct_gate
+    normative_source: P3.4.3#G00
+    mapped_to: [C08]
+    owner: claude-implementation-agent
+    implementation_refs: [qdgrasp/roadmap/requirements.py, scripts/check_phase3_4_3.py, scripts/check_phase3_4.py]
+    test_ids: [tests/contactrich_active/test_completeness_ledger.py]
+    evidence_refs: [evidence/phase3_4_3/s0/result.json]
+    status: passed
+    blocker_reason: ""
+  - <<: *pending_requirement
+    id: G01
+    category: direct_gate
+    normative_source: P3.4.3#G01
+    mapped_to: [C03]
+  - <<: *pending_requirement
+    id: G02
+    category: direct_gate
+    normative_source: P3.4.3#G02
+    mapped_to: [C03]
+  - <<: *pending_requirement
+    id: G03
+    category: direct_gate
+    normative_source: P3.4.3#G03
+    mapped_to: [C01, C06]
+  - <<: *pending_requirement
+    id: G04
+    category: direct_gate
+    normative_source: P3.4.3#G04
+    mapped_to: [C01, C04]
+  - <<: *pending_requirement
+    id: G05
+    category: direct_gate
+    normative_source: P3.4.3#G05
+    mapped_to: [R-ADR-01]
+  - <<: *pending_requirement
+    id: G06
+    category: direct_gate
+    normative_source: P3.4.3#G06
+    mapped_to: [C02]
+  - <<: *pending_requirement
+    id: G07
+    category: direct_gate
+    normative_source: P3.4.3#G07
+    mapped_to: [C02, C03]
+  - <<: *pending_requirement
+    id: G08
+    category: direct_gate
+    normative_source: P3.4.3#G08
+    mapped_to: [C07]
+  - <<: *pending_requirement
+    id: G09
+    category: direct_gate
+    normative_source: P3.4.3#G09
+    mapped_to: [C05, C06]
+  - <<: *pending_requirement
+    id: G10
+    category: direct_gate
+    normative_source: P3.4.3#G10
+    mapped_to: [C08]
+  - <<: *pending_requirement
+    id: G11
+    category: direct_gate
+    normative_source: P3.4.3#G11
+    mapped_to: [C08]
+
+  # Closed-world completeness gates.
+  - <<: *pending_requirement
+    id: C01
+    category: completeness_gate
+    normative_source: P3.4.3#C01
+    mapped_to: [P3.4-00, P3.4-01, P3.4-13]
+  - <<: *pending_requirement
+    id: C02
+    category: completeness_gate
+    normative_source: P3.4.3#C02
+    mapped_to: [P3.4-02, P3.4-03, P3.4-04, P3.4-05]
+  - <<: *pending_requirement
+    id: C03
+    category: completeness_gate
+    normative_source: P3.4.3#C03
+    mapped_to: [P3.4-06, P3.4-07, P3.4-08, P3.4-12]
+  - <<: *pending_requirement
+    id: C04
+    category: completeness_gate
+    normative_source: P3.4.3#C04
+    mapped_to: [P3.4-07, P3.4-09, P3.4-10, P3.4-11]
+  - <<: *pending_requirement
+    id: C05
+    category: completeness_gate
+    normative_source: P3.4.3#C05
+    mapped_to: [P3.4-14, P3.4-16]
+  - <<: *pending_requirement
+    id: C06
+    category: completeness_gate
+    normative_source: P3.4.3#C06
+    mapped_to: [P3.4-13, P3.4-16]
+  - <<: *pending_requirement
+    id: C07
+    category: completeness_gate
+    normative_source: P3.4.3#C07
+    mapped_to: [P3.4-15]
+  - <<: *pending_requirement
+    id: C08
+    category: completeness_gate
+    normative_source: P3.4.3#C08
+    mapped_to: [P3.4-17]
+
+  # Original work packages 00-17.
+  - <<: *pending_requirement
+    id: P3.4-00
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-00
+    mapped_to: [G00, C01, C08]
+  - <<: *pending_requirement
+    id: P3.4-01
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-01
+    mapped_to: [C01, G03, G04]
+  - <<: *pending_requirement
+    id: P3.4-02
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-02
+    mapped_to: [C02]
+  - <<: *pending_requirement
+    id: P3.4-03
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-03
+    mapped_to: [C02, G06]
+  - <<: *pending_requirement
+    id: P3.4-04
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-04
+    mapped_to: [C02, G08, C07]
+  - <<: *pending_requirement
+    id: P3.4-05
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-05
+    mapped_to: [G07, G08, C02]
+  - <<: *pending_requirement
+    id: P3.4-06
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-06
+    mapped_to: [G01, G02, C03]
+  - <<: *pending_requirement
+    id: P3.4-07
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-07
+    mapped_to: [C03, C04]
+  - <<: *pending_requirement
+    id: P3.4-08
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-08
+    mapped_to: [G03, C03, C05]
+  - <<: *pending_requirement
+    id: P3.4-09
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-09
+    mapped_to: [G07, C04]
+  - <<: *pending_requirement
+    id: P3.4-10
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-10
+    mapped_to: [C04]
+  - <<: *pending_requirement
+    id: P3.4-11
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-11
+    mapped_to: [C04]
+  - <<: *pending_requirement
+    id: P3.4-12
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-12
+    mapped_to: [G04, G06, C03]
+  - <<: *pending_requirement
+    id: P3.4-13
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-13
+    mapped_to: [G03, G09, C01, C06]
+  - <<: *pending_requirement
+    id: P3.4-14
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-14
+    mapped_to: [C05]
+  - <<: *pending_requirement
+    id: P3.4-15
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-15
+    mapped_to: [G08, C07]
+  - <<: *pending_requirement
+    id: P3.4-16
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-16
+    mapped_to: [G09, C05, C06]
+  - <<: *pending_requirement
+    id: P3.4-17
+    category: original_work_package
+    normative_source: ROADMAP-P3.4-001#P3.4-17
+    mapped_to: [G10, G11, C08]
+
+  # Original normative clauses and successor scope.
+  - <<: *pending_requirement
+    id: R-CONTACT-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#4.1
+    mapped_to: [C03]
+  - <<: *pending_requirement
+    id: R-SAFETY-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#4.2
+    mapped_to: [G01, G02, C03]
+  - <<: *pending_requirement
+    id: R-TERMINAL-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#4.3
+    mapped_to: [G04, C03]
+  - <<: *pending_requirement
+    id: R-CONTRACT-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#5
+    mapped_to: [G03, G04, G06, C01]
+  - <<: *pending_requirement
+    id: R-BACKEND-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#6
+    mapped_to: [C02, G07]
+  - <<: *pending_requirement
+    id: R-STRATEGY-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#7
+    mapped_to: [C03, C04]
+  - <<: *pending_requirement
+    id: R-OBJECTIVE-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#8
+    mapped_to: [C04]
+  - <<: *pending_requirement
+    id: R-PARITY-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#9
+    mapped_to: [G06, G07, G08, C02]
+  - <<: *pending_requirement
+    id: R-CUDA-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#10
+    mapped_to: [G08, C07]
+  - <<: *pending_requirement
+    id: R-DATASET-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#11
+    mapped_to: [G09, C05, C06]
+  - <<: *pending_requirement
+    id: R-TEST-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#13-contract-safety
+    mapped_to: [C01, C03]
+  - <<: *pending_requirement
+    id: R-TEST-02
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#13-physics
+    mapped_to: [C02, C03]
+  - <<: *pending_requirement
+    id: R-TEST-03
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#13-search
+    mapped_to: [C04]
+  - <<: *pending_requirement
+    id: R-TEST-04
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#13-gpu
+    mapped_to: [G08, C07]
+  - <<: *pending_requirement
+    id: R-RESOURCE-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#14-local
+    mapped_to: [C07]
+  - <<: *pending_requirement
+    id: R-RESOURCE-02
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#14-gpu
+    mapped_to: [C07]
+  - <<: *pending_requirement
+    id: R-CLOSURE-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#15
+    mapped_to: [G00, C08]
+  - <<: *pending_requirement
+    id: R-DOD-01
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.1
+    mapped_to: [C03, C05]
+  - <<: *pending_requirement
+    id: R-DOD-02
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.2
+    mapped_to: [G01, G02, C03]
+  - <<: *pending_requirement
+    id: R-DOD-03
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.3
+    mapped_to: [C05]
+  - <<: *pending_requirement
+    id: R-DOD-04
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.4
+    mapped_to: [G08, C07]
+  - <<: *pending_requirement
+    id: R-DOD-05
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.5
+    mapped_to: [G06, G07, G08]
+  - <<: *pending_requirement
+    id: R-DOD-06
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.6
+    mapped_to: [G09, C06]
+  - <<: *pending_requirement
+    id: R-DOD-07
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.7
+    mapped_to: [C04, C05]
+  - <<: *pending_requirement
+    id: R-DOD-08
+    category: original_clause
+    normative_source: ROADMAP-P3.4-001#16.8
+    mapped_to: [G10, C08]
+  - <<: *pending_requirement
+    id: R-ADR-01
+    category: scope_clause
+    normative_source: ADR-0008
+    mapped_to: [G05, G09, G11, C05, C06, C08]
+  - <<: *pending_requirement
+    id: R-UPSTREAM-01
+    category: compatibility_clause
+    normative_source: REV-20260827-010
+    mapped_to: [G07, G08, C07]

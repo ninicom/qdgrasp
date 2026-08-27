@@ -2,17 +2,17 @@
 document_id: PLAN-V2
 document_type: plan
 title: QDGrasp — thư viện dexterous grasp cộng đồng dưới AGPL-3.0
-version: 4.1.0
+version: 4.3.0
 status: active
 date: 2026-08-22
 approved_date: 2026-08-22
-revises: PLAN-V2@4.0.0
+revises: PLAN-V2@4.2.0
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
-revision_reason: Maintainer tạm dừng Shadow Hand khỏi active corpus vì chi phí cấu hình underactuated/contact-control; giữ preset/evidence để có thể mở lại.
+latest_revision_record: docs/revisions/REV-20260827-012-phase3-4-3-completeness-expansion.md
+revision_reason: Mở rộng P3.4.3 thành closed-world contract đối chiếu toàn bộ P3.4-00–17, §4–§16 và các defect audit.
 necessity: N3
-impact: Active corpus/gate mới chuyển từ LEAP+Allegro+Shadow sang LEAP+Allegro; giữ Shadow preset/evidence ở trạng thái paused và chặn mọi claim three-hand mới.
+impact: ContactRich v1 tiếp tục release-blocked; P4 contact-rich input chỉ mở khi completeness map không còn requirement unmapped/open và P3.4.3-ACTIVE-PASS cho LEAP+Allegro được reviewer độc lập ký.
 ---
 
 # QDGrasp — kế hoạch triển khai chính thức
@@ -34,6 +34,13 @@ Phạm vi robot hiện hành được sửa bởi
 `docs/decisions/0008-temporary-shadow-hand-pause.md`: active corpus chỉ gồm LEAP
 và Wonik Allegro. Shadow Hand được giữ như paused/experimental compatibility
 profile, không tham gia workload/gate/release mới cho tới ADR mở lại.
+
+Corrective execution plan hiện hành cho contact-rich data là
+`docs/roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md`. Plan này buộc sửa
+đủ safety-budget coverage, trajectory time/frame, exact GPU-to-CPU replay,
+CUDA parity/sanitizer, dataset count/split và default-scope enforcement trước
+khi mở contact-rich input cho P4. Verdict của nó chỉ là 2/2 active hand; không
+được dùng để ghi P3.4 three-hand `pass`.
 
 ## 1. Mục tiêu và quyết định nền
 
