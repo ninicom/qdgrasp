@@ -24,6 +24,7 @@ notebook that cannot run, so the builder refuses it.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import subprocess
 from pathlib import Path
@@ -466,30 +467,22 @@ if install.returncode != 0:
     print("mjx install failed")
 else:
     probe = (
-        "import json, mujoco\n"
-        "from mujoco import mjx\n"
-        "import jax\n"
-        "from qdgrasp.dataset.pipeline.generated_reachable import "
-        "build_generated_reachable_object as f\n"
-        "from qdgrasp.dataset.pipeline.validators.mujoco_rollout import "
-        "build_rollout_scene_model as b\n"
-        "from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset\n"
-        "s = RobotSpec.from_config('leap_hand.yaml', sample_anchors=False)\n"
-        "x = f('leap_hand')\n"
-        "m = b(resolve_robot_asset(s.config.source_asset), x.collision_geoms,"
-        " object_pos=x.object_pos, object_mass=x.mass)\n"
-        "mx = mjx.put_model(m)\n"
-        "d = mujoco.MjData(m); mujoco.mj_forward(m, d)\n"
-        "dx = mjx.put_data(m, d)\n"
-        "dx = jax.jit(mjx.step)(mx, dx)\n"
-        "fields = [n for n in ('efc_force','contact','ncon') if hasattr(dx, n)]\n"
-        "cf = getattr(dx.contact, 'frame', None) if hasattr(dx,'contact') else None\n"
-        "out = dict(stepped=True, jax_devices=str(jax.devices()),"
-        " fields=fields,"
-        " has_efc_force=hasattr(dx,'efc_force'),"
-        " contact_attrs=sorted(a for a in dir(dx.contact) if not a.startswith('_'))[:20],"
-        " ncon=int(getattr(dx,'ncon', -1)) if hasattr(dx,'ncon') else -1)\n"
-        "print('MJX_PROBE_JSON ' + json.dumps(out))\n"
+        "import json, mujoco\\n"
+        "from mujoco import mjx\\n"
+        "import jax\\n"
+        "from qdgrasp.dataset.pipeline.generated_reachable import build_generated_reachable_object as f\\n"
+        "from qdgrasp.dataset.pipeline.validators.mujoco_rollout import build_rollout_scene_model as b\\n"
+        "from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset\\n"
+        "s = RobotSpec.from_config('leap_hand.yaml', sample_anchors=False)\\n"
+        "x = f('leap_hand')\\n"
+        "m = b(resolve_robot_asset(s.config.source_asset), x.collision_geoms, object_pos=x.object_pos, object_mass=x.mass)\\n"
+        "mx = mjx.put_model(m)\\n"
+        "d = mujoco.MjData(m); mujoco.mj_forward(m, d)\\n"
+        "dx = mjx.put_data(m, d)\\n"
+        "dx = jax.jit(mjx.step)(mx, dx)\\n"
+        "cattrs = sorted(a for a in dir(dx.contact) if not a.startswith('_'))\\n"
+        "out = dict(stepped=True, jax_devices=str(jax.devices()), has_efc_force=hasattr(dx, 'efc_force'), contact_attrs=cattrs, ncon=int(dx.ncon) if hasattr(dx, 'ncon') else -1)\\n"
+        "print('MJX_PROBE_JSON ' + json.dumps(out))\\n"
     )
     open("/tmp/mjx_probe.py", "w").write(probe)
     run = subprocess.run(
@@ -673,6 +666,22 @@ print("and it is not three-hand coverage.")
     }
 
     NOTEBOOK_DIR.mkdir(parents=True, exist_ok=True)
+    # Refuse to emit a notebook that cannot run. A cell whose source is broken
+    # costs a full GPU run to discover, and has twice: once from an unescaped
+    # newline in v4, once from the same mistake in v9. A test can be run against
+    # a stale artifact; this cannot.
+    for index, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] != "code":
+            continue
+        source = "".join(cell["source"])
+        try:
+            ast.parse(source)
+        except SyntaxError as error:
+            raise SystemExit(
+                f"cell {index} does not parse: {error}. The notebook was not "
+                "written; fix the builder before pinning a revision."
+            ) from error
+
     NOTEBOOK_PATH.write_text(json.dumps(notebook, indent=1) + "\n", encoding="utf-8")
     METADATA_PATH.write_text(
         json.dumps(
