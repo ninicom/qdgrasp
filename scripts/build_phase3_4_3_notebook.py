@@ -437,6 +437,82 @@ print("clean solver variants:", CLEAN_SOLVER or "none")
 '''
         ),
         _markdown(
+            """## 3c. Does the sanctioned fallback exist?
+
+Section 3.7 allows exactly two resolutions when no MJWarp version is clean: a
+fallback backend that passes capability and parity on its own evidence, or a
+blocked GPU gate. We have been asserting the first is "new work needing its own
+plan" without checking whether it is possible at all, which is an assumption
+wearing the clothes of a finding.
+
+MJX is the other batched GPU backend for MuJoCo. The contract's capability gate
+needs one thing above all: per-contact force, readable. If MJX cannot supply it,
+the fallback branch is closed too and the only remaining path is upstream --
+which is worth knowing precisely, because it is the difference between "two
+options" and "none of ours".
+
+This installs MJX and asks. It is a capability probe, never performance evidence.
+"""
+        ),
+        _code(
+            '''MJX_RESULT = {{"attempted": True}}
+install = subprocess.run(
+    [sys.executable, "-m", "pip", "install", "--quiet", "mujoco-mjx"],
+    capture_output=True, text=True,
+)
+MJX_RESULT["install_ok"] = install.returncode == 0
+if install.returncode != 0:
+    MJX_RESULT["detail"] = (install.stderr or install.stdout)[-600:]
+    print("mjx install failed")
+else:
+    probe = (
+        "import json, mujoco\n"
+        "from mujoco import mjx\n"
+        "import jax\n"
+        "from qdgrasp.dataset.pipeline.generated_reachable import "
+        "build_generated_reachable_object as f\n"
+        "from qdgrasp.dataset.pipeline.validators.mujoco_rollout import "
+        "build_rollout_scene_model as b\n"
+        "from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset\n"
+        "s = RobotSpec.from_config('leap_hand.yaml', sample_anchors=False)\n"
+        "x = f('leap_hand')\n"
+        "m = b(resolve_robot_asset(s.config.source_asset), x.collision_geoms,"
+        " object_pos=x.object_pos, object_mass=x.mass)\n"
+        "mx = mjx.put_model(m)\n"
+        "d = mujoco.MjData(m); mujoco.mj_forward(m, d)\n"
+        "dx = mjx.put_data(m, d)\n"
+        "dx = jax.jit(mjx.step)(mx, dx)\n"
+        "fields = [n for n in ('efc_force','contact','ncon') if hasattr(dx, n)]\n"
+        "cf = getattr(dx.contact, 'frame', None) if hasattr(dx,'contact') else None\n"
+        "out = dict(stepped=True, jax_devices=str(jax.devices()),"
+        " fields=fields,"
+        " has_efc_force=hasattr(dx,'efc_force'),"
+        " contact_attrs=sorted(a for a in dir(dx.contact) if not a.startswith('_'))[:20],"
+        " ncon=int(getattr(dx,'ncon', -1)) if hasattr(dx,'ncon') else -1)\n"
+        "print('MJX_PROBE_JSON ' + json.dumps(out))\n"
+    )
+    open("/tmp/mjx_probe.py", "w").write(probe)
+    run = subprocess.run(
+        [sys.executable, "/tmp/mjx_probe.py"], capture_output=True, text=True, timeout=1800,
+    )
+    blob = run.stdout + run.stderr
+    line = [ln for ln in blob.splitlines() if ln.startswith("MJX_PROBE_JSON ")]
+    if line:
+        MJX_RESULT["probe"] = json.loads(line[0][len("MJX_PROBE_JSON "):])
+        MJX_RESULT["status"] = "stepped"
+    else:
+        MJX_RESULT["status"] = "probe_did_not_run"
+        MJX_RESULT["verbatim_tail"] = blob[-1200:]
+    print(json.dumps(MJX_RESULT, indent=2)[:1500])
+
+json.dump(
+    MJX_RESULT,
+    open("/kaggle/working/phase3_4_3_evidence/mjx_capability.json", "w"),
+    indent=2, sort_keys=True,
+)
+'''
+        ),
+        _markdown(
             """## 4. Dry run: what the gate will cost
 
 `C07.1` requires the resource estimate to be printed before the run, not
