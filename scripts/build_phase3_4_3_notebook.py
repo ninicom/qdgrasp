@@ -293,21 +293,50 @@ for pin in WARP_MATRIX:
     )
     text = run.stdout + run.stderr
     records = [ln.strip() for ln in text.splitlines() if ln.lstrip().startswith("=========")]
+    summary = [ln for ln in records if "ERROR SUMMARY" in ln]
     errors = [ln for ln in records if "error" in ln.lower() and "0 errors" not in ln.lower()]
+    stepped = "stepped 8 times over 4 worlds" in run.stdout
+
+    # "Clean" needs positive proof, not the absence of an error line: a probe
+    # that died before the first instrumented call also prints no errors, and
+    # that is the reading that produced a false clean in the previous run.
+    if not stepped:
+        status = "probe_did_not_run"
+    elif errors:
+        status = "uninitialized_reads"
+    elif summary and "0 errors" in summary[0]:
+        status = "clean"
+    else:
+        status = "inconclusive_no_error_summary"
+
     WARP_MATRIX_RESULT[pin] = {{
-        "status": "clean" if not errors else "uninitialized_reads",
+        "status": status,
+        "probe_stepped": stepped,
         "sanitizer_lines": len(records),
+        "error_summary": summary[:2],
         "first_errors": errors[:5],
+        "verbatim_tail": records[-8:],
+        "probe_stdout_tail": run.stdout[-400:],
     }}
-    print(WARP_MATRIX_RESULT[pin]["status"], f"({{len(records)}} sanitizer lines)")
+    print(status, f"({{len(records)}} sanitizer lines, stepped={{stepped}})")
+    for ln in summary[:2]:
+        print("   ", ln[:160])
 
 try:
     import warp as _warp
-    WARP_MATRIX_RESULT["_warp_lang_version"] = getattr(_warp, "__version__", "unknown")
+    _warp_version = getattr(_warp, "__version__", "unknown")
 except Exception as _exc:
-    WARP_MATRIX_RESULT["_warp_lang_version"] = f"unavailable: {{type(_exc).__name__}}"
-json.dump(WARP_MATRIX_RESULT, open("/kaggle/working/phase3_4_3_evidence/warp_matrix.json", "w"), indent=2, sort_keys=True)
-CLEAN = [pin for pin, r in WARP_MATRIX_RESULT.items() if r.get("status") == "clean"]
+    _warp_version = f"unavailable: {{type(_exc).__name__}}"
+
+# The runtime version goes beside the results, not among them: mixing a scalar
+# into a dict of per-pin dicts is what broke the previous run.
+WARP_MATRIX_REPORT = {{"warp_lang_version": _warp_version, "pins": WARP_MATRIX_RESULT}}
+json.dump(
+    WARP_MATRIX_REPORT,
+    open("/kaggle/working/phase3_4_3_evidence/warp_matrix.json", "w"),
+    indent=2, sort_keys=True,
+)
+CLEAN = [pin for pin, r in WARP_MATRIX_RESULT.items() if r["status"] == "clean"]
 print()
 print("clean versions:", CLEAN or "none — the GPU gate stays BLOCKED")
 '''
@@ -431,7 +460,7 @@ PACKET = {
     "commit": CODE_REVISION,
     "menagerie": MENAGERIE_REVISION,
     "environment": FINGERPRINT,
-    "warp_matrix": WARP_MATRIX_RESULT,
+    "warp_matrix": WARP_MATRIX_REPORT,
     "sanitizer": SANITIZER_RESULT,
     "gate_verdict": GATE["verdict"],
     "artifact_hashes": {},
