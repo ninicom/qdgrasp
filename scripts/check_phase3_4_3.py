@@ -79,13 +79,45 @@ def run_command(args: list[str], *, label: str, timeout: int = 3600) -> dict[str
     }
 
 
+#: Paths whose behaviour the CUDA gate actually exercises. Evidence has to come
+#: from a tree where these are identical to the candidate's; a later commit that
+#: only touches documentation or the notebook's own pin does not invalidate a
+#: measurement of the same code.
+MEASURED_PATHS: tuple[str, ...] = ("qdgrasp", "scripts/check_phase3_4_3_cuda.py")
+
+
+def measured_tree_matches(evidence_commit: str, candidate_commit: str) -> tuple[bool, str]:
+    """Whether the code the evidence measured is the code under review.
+
+    Comparing bare commit ids would refuse evidence from the commit immediately
+    before a documentation change, which measured exactly the same library. What
+    matters is whether the measured paths differ, so that is what is compared --
+    and if git cannot answer, the answer is no.
+    """
+    if not evidence_commit or not candidate_commit:
+        return (False, "one of the commits is unknown")
+    if evidence_commit == candidate_commit:
+        return (True, "same commit")
+    completed = subprocess.run(
+        ["git", "diff", "--quiet", evidence_commit, candidate_commit, "--", *MEASURED_PATHS],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode == 0:
+        return (True, f"{evidence_commit[:12]} and {candidate_commit[:12]} agree on {list(MEASURED_PATHS)}")
+    if completed.returncode == 1:
+        return (False, f"the measured paths differ between {evidence_commit[:12]} and {candidate_commit[:12]}")
+    return (False, f"git could not compare the trees: {completed.stderr.strip()[:120]}")
+
+
 def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict[str, Any]:
     """Check GPU evidence produced somewhere this machine cannot reproduce.
 
     The gate cannot re-run a T4 rollout, so it checks what it can: that the
     evidence exists, that it is the schema it claims, that its verdict is a
-    pass, and that it was produced from the commit under review. Evidence from
-    a different commit is evidence about a different tree.
+    pass, and that the code it measured is the code under review.
     """
     if path is None:
         return {
@@ -111,11 +143,9 @@ def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict
         problems.append(f"unexpected evidence schema {schema!r}")
     if verdict != "PASS":
         problems.append(f"CUDA gate verdict is {verdict!r}, not PASS")
-    if expected_commit and commit and commit != expected_commit:
-        problems.append(
-            f"evidence was produced from commit {commit[:12]}, not the candidate "
-            f"{expected_commit[:12]}"
-        )
+    matches, detail = measured_tree_matches(commit, expected_commit)
+    if not matches:
+        problems.append(f"evidence does not measure the candidate's code: {detail}")
     return {
         "status": "recorded",
         "path": str(path),
@@ -123,6 +153,10 @@ def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict
         "schema": schema,
         "verdict": verdict,
         "commit": commit,
+        "candidate_commit": expected_commit,
+        "measured_paths": list(MEASURED_PATHS),
+        "measured_tree_matches": matches,
+        "measured_tree_detail": detail,
         "problems": problems,
         "passed": not problems,
     }

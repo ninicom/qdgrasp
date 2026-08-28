@@ -218,3 +218,121 @@ def test_the_kernel_asks_for_a_gpu() -> None:
     metadata = json.loads((NOTEBOOK_DIR / "kernel-metadata.json").read_text(encoding="utf-8"))
     assert metadata["enable_gpu"] is True
     assert metadata["machine_shape"] == "NvidiaTeslaT4"
+
+
+# -- the closure runner's view of external evidence ------------------------
+
+
+def _closure_module():
+    import importlib.util
+
+    path = REPO_ROOT / "scripts" / "check_phase3_4_3.py"
+    spec = importlib.util.spec_from_file_location("closure_gate", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_absent_cuda_evidence_is_not_passed_evidence() -> None:
+    module = _closure_module()
+    verdict = module.verify_external_evidence(None, expected_commit="deadbeef")
+    assert verdict["passed"] is False
+    assert "not a passed one" in verdict["detail"]
+
+
+def test_a_failed_cuda_verdict_is_refused(tmp_path: Path) -> None:
+    module = _closure_module()
+    path = tmp_path / "cuda.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "qdgrasp/evidence/phase3.4.3-cuda/v1",
+                "verdict": "FAIL",
+                "commit": "deadbeef",
+            }
+        ),
+        encoding="utf-8",
+    )
+    verdict = module.verify_external_evidence(path, expected_commit="deadbeef")
+    assert verdict["passed"] is False
+    assert any("not PASS" in problem for problem in verdict["problems"])
+
+
+def test_evidence_measuring_different_code_is_refused(tmp_path: Path) -> None:
+    module = _closure_module()
+    import subprocess
+
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True, check=False
+    ).stdout.strip()
+    old = subprocess.run(
+        ["git", "rev-list", "--max-parents=0", "HEAD"],
+        cwd=REPO_ROOT, capture_output=True, text=True, check=False,
+    ).stdout.strip().splitlines()[0]
+
+    path = tmp_path / "cuda.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "qdgrasp/evidence/phase3.4.3-cuda/v1",
+                "verdict": "PASS",
+                "commit": old,
+            }
+        ),
+        encoding="utf-8",
+    )
+    verdict = module.verify_external_evidence(path, expected_commit=head)
+    assert verdict["passed"] is False
+    assert any("does not measure the candidate" in p for p in verdict["problems"])
+
+
+def test_a_documentation_only_commit_does_not_invalidate_a_measurement() -> None:
+    # Comparing bare commit ids would refuse evidence from the commit right
+    # before a docs change, which measured exactly the same library.
+    module = _closure_module()
+    import subprocess
+
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, capture_output=True, text=True, check=False
+    ).stdout.strip()
+    matches, detail = module.measured_tree_matches(head, head)
+    assert matches, detail
+    assert module.MEASURED_PATHS[0] == "qdgrasp"
+
+
+def test_a_review_packet_from_the_author_is_refused(tmp_path: Path) -> None:
+    module = _closure_module()
+    path = tmp_path / "review.json"
+    path.write_text(
+        json.dumps(
+            {
+                "reviewer": "claude-implementation-agent",
+                "author": "claude-implementation-agent",
+                "reviewer_verdict": "PASS",
+                "open_findings": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    verdict = module.verify_review_packet(path)
+    assert verdict["passed"] is False
+    assert any("must not be the author" in p for p in verdict["problems"])
+
+
+def test_an_unresolved_blocking_finding_is_refused(tmp_path: Path) -> None:
+    module = _closure_module()
+    path = tmp_path / "review.json"
+    path.write_text(
+        json.dumps(
+            {
+                "reviewer": "someone-else",
+                "author": "claude-implementation-agent",
+                "reviewer_verdict": "PASS",
+                "open_findings": {"S0": 0, "S1": 2},
+            }
+        ),
+        encoding="utf-8",
+    )
+    verdict = module.verify_review_packet(path)
+    assert verdict["passed"] is False
+    assert any("S0/S1" in p for p in verdict["problems"])

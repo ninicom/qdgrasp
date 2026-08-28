@@ -427,8 +427,12 @@ print("and it is not three-hand coverage.")
     METADATA_PATH.write_text(
         json.dumps(
             {
-                "id": f"{kaggle_slug}/qdgrasp-phase-3-4-3-cuda-gate",
-                "title": "QDGrasp Phase 3.4.3 CUDA Gate (Active Hands)",
+                # Kaggle derives the real slug from the title, so the two have
+                # to agree: a title that resolves elsewhere silently creates a
+                # second kernel, and the plan forbids using a mutable notebook
+                # name as the pin.
+                "id": f"{kaggle_slug}/qdgrasp-phase-3-4-3-cuda-gate-active-hands",
+                "title": "QDGrasp Phase 3 4 3 CUDA Gate Active Hands",
                 "code_file": NOTEBOOK_PATH.name,
                 "language": "python",
                 "kernel_type": "notebook",
