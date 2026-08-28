@@ -721,23 +721,32 @@ def validate_status_snapshots(
     except ImportError:  # pragma: no cover - the checker must still run bare
         return
     digest = manifest_digest(manifest)
-    for number, line in enumerate(text.splitlines(), start=1):
-        if not STATUS_SNAPSHOT_PATTERN.search(line):
+    # Paragraph-scoped, not line-scoped: a wrapped sentence puts the count and
+    # the citation on different lines, and a rule that a line break defeats is
+    # not a rule.
+    lines = text.splitlines()
+    start = 0
+    while start < len(lines):
+        if not lines[start].strip():
+            start += 1
             continue
-        if digest in line:
-            continue
-        issues.append(
-            Issue(
-                path,
-                number,
-                (
-                    "status snapshot without a manifest hash: the requirements "
-                    f"manifest is the only source of truth, so cite it as "
-                    f"`manifest {digest}` or delete the count"
-                ),
+        end = start
+        while end < len(lines) and lines[end].strip():
+            end += 1
+        paragraph = "\n".join(lines[start:end])
+        if STATUS_SNAPSHOT_PATTERN.search(paragraph) and digest not in paragraph:
+            issues.append(
+                Issue(
+                    path,
+                    start + 1,
+                    (
+                        "status snapshot without a manifest hash: the requirements "
+                        f"manifest is the only source of truth, so cite it as "
+                        f"`manifest {digest}` or delete the count"
+                    ),
+                )
             )
-        )
-
+        start = end
 
 def validate_root(root: Path) -> tuple[list[Issue], int]:
     issues: list[Issue] = []
