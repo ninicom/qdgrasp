@@ -1,0 +1,29 @@
+{
+  "pin": "mujoco-warp==3.12.0",
+  "variants": {
+    "baseline": {
+      "error_summary": "========= ERROR SUMMARY: 68406 errors were not printed. Use --print-limit option to adjust the number of printed errors",
+      "probe_stepped": true,
+      "status": "errors",
+      "verbatim_tail": "_locals__kernel_998aae36 0a09f5c load on device 'cuda:0' took 1.70 ms  (cached)\nModule _update_gradient_cholesky__locals__kernel_6146ea36 2da21ea load on device 'cuda:0' took 68.53 ms  (cached)\nModule _linesearch_iterative_kernel__locals__kernel_cf7b70d1 ab97c48 load on device 'cuda:0' took 1.80 ms  (cached)\nModule _solve_done__locals__kernel_5444f735 5444f73 load on device 'cuda:0' took 2521.54 ms  (cached)\nModule mujoco_warp._src.derivative 1bec8db load on device 'cuda:0' took 1.77 ms  (cached)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.82 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 68506 errors\n========= ERROR SUMMARY: 68406 errors were not printed. Use --print-limit option to adjust the number of printed errors\n"
+    },
+    "ls_iterations_1": {
+      "error_summary": "========= ERROR SUMMARY: 12782 errors were not printed. Use --print-limit option to adjust the number of printed errors",
+      "probe_stepped": true,
+      "status": "errors",
+      "verbatim_tail": "ls__kernel_998aae36 0a09f5c load on device 'cuda:0' took 1.63 ms  (cached)\nModule _update_gradient_cholesky__locals__kernel_6146ea36 2da21ea load on device 'cuda:0' took 69.06 ms  (cached)\nModule _linesearch_iterative_kernel__locals__kernel_87daeb70 ff733be load on device 'cuda:0' took 2625.55 ms  (compiled)\nModule _solve_done__locals__kernel_5444f735 5444f73 load on device 'cuda:0' took 1798.13 ms  (cached)\nModule mujoco_warp._src.derivative 1bec8db load on device 'cuda:0' took 1.58 ms  (cached)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.75 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 12882 errors\n========= ERROR SUMMARY: 12782 errors were not printed. Use --print-limit option to adjust the number of printed errors\n"
+    },
+    "ls_parallel": {
+      "error_summary": "========= ERROR SUMMARY: 0 errors",
+      "probe_stepped": false,
+      "status": "probe_did_not_run",
+      "verbatim_tail": " nq 30 nu 16\nWarp 1.16.0 initialized:\n   CUDA Toolkit 12.9, Driver 13.0\n   Devices:\n     \"cpu\"      : \"x86_64\"\n     \"cuda:0\"   : \"Tesla T4\" (15 GiB, sm_75, mempool enabled)\n     \"cuda:1\"   : \"Tesla T4\" (15 GiB, sm_75, mempool enabled)\n   CUDA peer access:\n     Supported fully (all-directional)\n   Kernel cache:\n     /root/.cache/warp/1.16.0\n========= Target application returned an error\n========= ERROR SUMMARY: 0 errors\nTraceback (most recent call last):\n  File \"/tmp/solver_probe.py\", line 11, in <module>\n    wm.opt.ls_parallel = True\n    ^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/mujoco_warp/_src/types.py\", line 911, in ls_parallel\n    raise AttributeError(\"ls_parallel was removed in MuJoCo Warp 3.9.1.\")\nAttributeError: ls_parallel was removed in MuJoCo Warp 3.9.1.\n"
+    },
+    "solver_cg": {
+      "error_summary": "========= ERROR SUMMARY: 792443 errors were not printed. Use --print-limit option to adjust the number of printed errors",
+      "probe_stepped": true,
+      "status": "errors",
+      "verbatim_tail": "ecbd4 45aabd4 load on device 'cuda:0' took 651.93 ms  (compiled)\nModule _tile_cholesky_solve_block__locals__kernel_ed742e28 d33115c load on device 'cuda:0' took 3457.72 ms  (compiled)\nModule _linesearch_iterative_kernel__locals__kernel_cf7b70d1 ab97c48 load on device 'cuda:0' took 1.44 ms  (cached)\nModule _solve_cg_finalize__locals__kernel_e7109e12 e7109e1 load on device 'cuda:0' took 606.01 ms  (compiled)\nModule mujoco_warp._src.derivative 1bec8db load on device 'cuda:0' took 1.73 ms  (cached)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.78 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 792543 errors\n========= ERROR SUMMARY: 792443 errors were not printed. Use --print-limit option to adjust the number of printed errors\n"
+    }
+  }
+}

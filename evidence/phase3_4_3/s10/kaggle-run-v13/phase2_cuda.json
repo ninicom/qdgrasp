@@ -1,0 +1,34 @@
+{
+  "device": "cuda:0",
+  "environment": {
+    "cuda_available": true,
+    "cuda_build": "12.8",
+    "cuda_device_count": 2,
+    "cuda_device_name": "Tesla T4",
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128"
+  },
+  "max_deviation_overall": 2.384185791015625e-07,
+  "parity_threshold": 0.0001,
+  "pass": true,
+  "profile_hashes": {
+    "leap_hand.yaml": "7f002e8e70028ac5ff62dedb2602d23dbc1f3603f28187d58a7078e9ffcea7ba",
+    "shadow_hand.yaml": "afde7a6a3aab3d560b06d695f23c70d012438b230f7846e1c72f68adc8b84dd1",
+    "wonik_allegro.yaml": "c2539640ca6ec35c37131bb09930c57102a7a6d2bb3351bdaf1924079bac3ef7"
+  },
+  "results": {
+    "leap_hand.yaml": {
+      "fingertip_deviation": 7.450580596923828e-09,
+      "max_link_deviation": 1.1920928955078125e-07
+    },
+    "shadow_hand.yaml": {
+      "fingertip_deviation": 1.1920928955078125e-07,
+      "max_link_deviation": 2.384185791015625e-07
+    },
+    "wonik_allegro.yaml": {
+      "fingertip_deviation": 2.9802322387695312e-08,
+      "max_link_deviation": 1.1920928955078125e-07
+    }
+  },
+  "schema": "qdgrasp/evidence/phase2-cuda-fk/v1"
+}
