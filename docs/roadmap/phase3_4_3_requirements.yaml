@@ -348,7 +348,7 @@ requirements:
     mapped_to: [C02, C03]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: G08
     category: direct_gate
@@ -356,7 +356,7 @@ requirements:
     mapped_to: [C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: G09
     category: direct_gate
@@ -456,7 +456,7 @@ requirements:
     mapped_to: [P3.4-15]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: C08
     category: completeness_gate
@@ -518,7 +518,7 @@ requirements:
     mapped_to: [C02, G08, C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: P3.4-05
     category: original_work_package
@@ -526,7 +526,7 @@ requirements:
     mapped_to: [G07, G08, C02]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: P3.4-06
     category: original_work_package
@@ -567,7 +567,7 @@ requirements:
     mapped_to: [G07, C04]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: P3.4-10
     category: original_work_package
@@ -628,7 +628,7 @@ requirements:
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: P3.4-16
     category: original_work_package
@@ -734,7 +734,7 @@ requirements:
     mapped_to: [G06, G07, G08, C02]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-CUDA-01
     category: original_clause
@@ -742,7 +742,7 @@ requirements:
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-DATASET-01
     category: original_clause
@@ -794,7 +794,7 @@ requirements:
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-RESOURCE-01
     category: original_clause
@@ -802,7 +802,7 @@ requirements:
     mapped_to: [C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "resource preflight, dry-run, atomic checkpoint and wall-time guard are implemented and exercised on the T4 run, but the throughput and VRAM numbers they gate cannot be taken from a backend that fails the sanitizer. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-RESOURCE-02
     category: original_clause
@@ -810,7 +810,7 @@ requirements:
     mapped_to: [C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "resource preflight, dry-run, atomic checkpoint and wall-time guard are implemented and exercised on the T4 run, but the throughput and VRAM numbers they gate cannot be taken from a backend that fails the sanitizer. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-CLOSURE-01
     category: original_clause
@@ -859,7 +859,7 @@ requirements:
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-DOD-05
     category: original_clause
@@ -867,7 +867,7 @@ requirements:
     mapped_to: [G06, G07, G08]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
   - <<: *pending_requirement
     id: R-DOD-06
     category: original_clause
@@ -916,4 +916,4 @@ requirements:
     mapped_to: [G07, G08, C07]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    blocker_reason: "measured on a Kaggle T4: mujoco-warp 3.10.0.3, 3.11.0 and 3.12.0 on warp-lang 1.16.0 all report tens of thousands of uninitialised reads in _linesearch_iterative_kernel on the REV-20260827-010 reproducer scene (65248/66181/68224 errors), racecheck clean. warp-lang 1.16.0 is the newest release, so no newer runtime exists. See evidence/phase3_4_3/s10/kaggle-run-v5/"

@@ -1,0 +1,59 @@
+{
+  "active_hands": [
+    "leap_hand",
+    "wonik_allegro"
+  ],
+  "capability": {
+    "contact_force_readable": false,
+    "missing_contact_fields": [
+      "efc_force"
+    ],
+    "overflow_telemetry": {
+      "buffer_overflow": false,
+      "class_counts": {},
+      "contact_count": 0,
+      "max_contact_count": 0,
+      "stream_truncated": true,
+      "unavailable_fields": [
+        "efc_force"
+      ]
+    },
+    "required_contact_fields": [
+      "dist",
+      "pos",
+      "frame",
+      "geom",
+      "efc_address"
+    ],
+    "verdict": "unsupported",
+    "warp_available": true
+  },
+  "cuda_environment": {
+    "capability": "7.5",
+    "device": "cuda:0",
+    "gpu_name": "Tesla T4",
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "torch_cuda_build": "12.8",
+    "total_memory_gib": 14.562
+  },
+  "historical_p3_4_state": "paused_by_ADR-0008",
+  "paused_hands": [
+    "shadow_hand"
+  ],
+  "phase": "3.4.3",
+  "qdgrasp_version": "0.1.0a1",
+  "resumed_stages": [],
+  "schema": "qdgrasp/evidence/phase3.4.3-cuda/v1",
+  "three_hand_coverage": false,
+  "thresholds": {
+    "benchmark_horizon": 60,
+    "benchmark_runs": 3,
+    "benchmark_worlds": 1024,
+    "min_gpu_speedup": 2.0,
+    "min_simultaneous_worlds": 64,
+    "vram_budget_gib": 14.0
+  },
+  "timestamp": "2026-08-28T01:12:27.494854+00:00",
+  "verdict": "BLOCKED"
+}

@@ -33,6 +33,7 @@ import hashlib
 import json
 import platform
 import statistics
+import subprocess
 import sys
 import time
 from datetime import UTC, datetime
@@ -73,6 +74,28 @@ class GateFailure(RuntimeError):
 
 def _sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _repo_commit() -> str:
+    """The commit this gate is measuring.
+
+    Evidence that does not say which code it ran on cannot be tied to the code
+    under review, and the closure runner has no way to accept it. Reported as an
+    empty string when git cannot answer, so the absence is visible rather than
+    invented.
+    """
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return completed.stdout.strip() if completed.returncode == 0 else ""
 
 
 # ---------------------------------------------------------------------------
@@ -466,6 +489,7 @@ def build_evidence(
         "schema": EVIDENCE_SCHEMA,
         "phase": "3.4.3",
         "timestamp": datetime.now(UTC).isoformat(),
+        "commit": _repo_commit(),
         "qdgrasp_version": qdgrasp_version,
         "active_hands": list(ACTIVE_HANDS),
         "paused_hands": list(PAUSED_HANDS),

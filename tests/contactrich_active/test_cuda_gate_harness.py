@@ -415,3 +415,24 @@ def test_evidence_goes_where_kaggle_can_hand_it_back() -> None:
     source = "".join("".join(cell["source"]) for cell in notebook["cells"])
     assert "/kaggle/working/phase3_4_3_evidence" in source
     assert "/tmp/phase3_4_3_evidence" not in source
+
+
+def test_the_gate_records_the_commit_it_measured() -> None:
+    """Evidence that does not say which code it ran on cannot be tied to it.
+
+    The first T4 run produced evidence with no commit field at all, so the
+    closure runner could only refuse it -- not because the measurement was bad
+    but because nothing connected it to a tree.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cuda_gate", GATE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    commit = module._repo_commit()
+    assert len(commit) == 40, commit
+    assert all(c in "0123456789abcdef" for c in commit)
+
+    source = GATE.read_text(encoding="utf-8")
+    assert '"commit": _repo_commit(),' in source

@@ -4,25 +4,25 @@
     "B-19"
   ],
   "branch": "feature/phase3-1-closure",
-  "commit": "49f69cfda22cf9acd9937b04b640984b227d375b",
+  "commit": "bd7868183d4173cfb7d07699470879564ee0df6d",
   "device": "cpu",
   "gates": [
     "G08",
     "C07"
   ],
   "implementation_hashes": {
-    "scripts/build_phase3_4_3_notebook.py": "70a6d254cea20482e6082b2e4d6c3b4f5d2214a1d905d8bf1d29c8ab2caf3646",
-    "scripts/check_phase3_4_3_cuda.py": "3555f61d405778be5dadc8b1d8ab64bd34859b0fb58abd1c9d570b3d0a4da33a",
-    "scripts/phase3_4_cuda_contact_search.py": "0506708043adf159327ed33ed7ec0b9fd69ed55aabc27afb262459f9259e9a31"
+    "qdgrasp/sim/batched/mjwarp_cuda.py": "225dd8b0911ce3563f867cf97f731b2582f3b8cc44ca6cd455942726ffc8d131",
+    "scripts/build_phase3_4_3_notebook.py": "a70317030b41edd93ece2fde312e80a25adb3a8fcdb520d4cd46e8caa72338bf",
+    "scripts/check_phase3_4_3_cuda.py": "3555f61d405778be5dadc8b1d8ab64bd34859b0fb58abd1c9d570b3d0a4da33a"
   },
   "implementation_refs": [
     "scripts/check_phase3_4_3_cuda.py",
     "scripts/build_phase3_4_3_notebook.py",
-    "scripts/phase3_4_cuda_contact_search.py"
+    "qdgrasp/sim/batched/mjwarp_cuda.py"
   ],
-  "note": "S10 CUDA gate and Kaggle harness; the gate itself needs a real T4",
+  "note": "S10 CUDA gate ran on a Kaggle T4 (kernel v5): P1/P2 gates pass, Warp compatibility matrix finds no clean mujoco-warp version, gate BLOCKED",
   "python": "3.11.16",
-  "recorded_at": "2026-08-27T20:29:02.674371+00:00",
+  "recorded_at": "2026-08-28T01:23:11.950174+00:00",
   "schema": "qdgrasp/phase3_4_3-subphase-evidence/v1",
   "scope": {
     "active_hands": [
@@ -40,9 +40,10 @@
     "passed": true,
     "returncode": 0,
     "selection": [
-      "tests/contactrich_active/test_cuda_gate_harness.py"
+      "tests/contactrich_active/test_cuda_gate_harness.py",
+      "tests/contactrich_active/test_backend_parity.py"
     ],
-    "summary": "15 passed in 10.29s",
+    "summary": "69 passed in 13.19s",
     "tail": ""
   },
   "worktree_dirty": true

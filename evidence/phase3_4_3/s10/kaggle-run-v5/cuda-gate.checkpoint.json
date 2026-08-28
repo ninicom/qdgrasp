@@ -1,0 +1,27 @@
+{
+  "capability": {
+    "contact_force_readable": false,
+    "missing_contact_fields": [
+      "efc_force"
+    ],
+    "overflow_telemetry": {
+      "buffer_overflow": false,
+      "class_counts": {},
+      "contact_count": 0,
+      "max_contact_count": 0,
+      "stream_truncated": true,
+      "unavailable_fields": [
+        "efc_force"
+      ]
+    },
+    "required_contact_fields": [
+      "dist",
+      "pos",
+      "frame",
+      "geom",
+      "efc_address"
+    ],
+    "verdict": "unsupported",
+    "warp_available": true
+  }
+}

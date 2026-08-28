@@ -368,12 +368,26 @@ class _StubContact:
             setattr(self, name, value)
 
 
+class _StubEfc:
+    def __init__(self, force) -> None:
+        self.force = force
+
+
 class _StubWarpData:
-    def __init__(self, contact_fields: dict[str, object] | None, efc_force=None) -> None:
+    def __init__(
+        self,
+        contact_fields: dict[str, object] | None,
+        efc_force=None,
+        *,
+        nested_efc=False,
+    ) -> None:
         if contact_fields is not None:
             self.contact = _StubContact(contact_fields)
         if efc_force is not None:
-            self.efc_force = efc_force
+            if nested_efc:
+                self.efc = _StubEfc(efc_force)
+            else:
+                self.efc_force = efc_force
 
 
 def _gpu_backend_stub(*, warp_data, capacity: int = 2, model=None) -> MjWarpCudaBackend:
@@ -505,3 +519,42 @@ def test_an_overflowed_contact_buffer_hard_rejects_the_world(model) -> None:
     summary = backend._summarise(0, state, horizon=10)
     assert summary.hard_reject is True
     assert summary.failure_reason == "contact_buffer_overflow"
+
+
+def test_the_constraint_force_is_found_under_either_name(model) -> None:
+    """MuJoCo Warp has moved this between ``efc_force`` and ``efc.force``.
+
+    The T4 run reported ``contact_force_readable: false`` on a build that had
+    the field under the other name -- a false capability claim, not a
+    conservative one.
+    """
+    fields = {
+        "dist": np.zeros(2),
+        "pos": np.zeros((2, 3)),
+        "frame": np.zeros((2, 9)),
+        "geom": np.zeros((2, 2)),
+        "efc_address": np.array([0, 1]),
+    }
+    forces = np.array([4.0, -6.0])
+
+    flat = _gpu_backend_stub(warp_data=_StubWarpData(fields, forces), model=model)
+    nested = _gpu_backend_stub(
+        warp_data=_StubWarpData(fields, forces, nested_efc=True), model=model
+    )
+    assert flat.missing_contact_fields() == ()
+    assert nested.missing_contact_fields() == ()
+    assert flat.read_contact_forces().tolist() == [4.0, 6.0]
+    assert nested.read_contact_forces().tolist() == [4.0, 6.0]
+
+
+def test_a_build_with_no_constraint_force_at_all_is_still_refused(model) -> None:
+    fields = {
+        "dist": np.zeros(1),
+        "pos": np.zeros((1, 3)),
+        "frame": np.zeros((1, 9)),
+        "geom": np.zeros((1, 2)),
+        "efc_address": np.array([0]),
+    }
+    backend = _gpu_backend_stub(warp_data=_StubWarpData(fields), model=model)
+    assert backend.missing_contact_fields() == ("constraint_force",)
+    assert backend.read_contact_forces() is None

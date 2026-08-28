@@ -1,0 +1,593 @@
+[{"stream_name":"stderr","time":7.137381871,"data":"/usr/local/lib/python3.12/dist-packages/nbformat/__init__.py:96: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":7.137472248,"data":"  validate(nb)\n"}
+,{"stream_name":"stderr","time":8.125932164,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.125964564,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.12597217,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.12597999,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":8.851110098,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.851144778,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.851148619,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.851151349,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":12.94751704,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 1.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":13.149797885,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 1.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":13.299094821,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 232.7/232.7 kB 6.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":13.501641501,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 232.7/232.7 kB 6.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.288608556,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.1/62.1 kB 3.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.490792064,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.1/62.1 kB 3.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.294606286,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 109.4/109.4 kB 7.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.496784058,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 109.4/109.4 kB 7.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":18.999058862,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 848.6/848.6 kB 23.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.201550855,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 848.6/848.6 kB 23.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.219627572,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.8/19.8 MB 80.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.405566375,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.6/16.6 MB 82.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.421689793,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.8/19.8 MB 80.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.42171591,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.6/16.6 MB 82.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.726570193,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.2/35.2 MB 55.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.766378156000002,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 741.0/741.0 kB 33.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.801551421,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 516.0/516.0 kB 30.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.843423023,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 472.3/472.3 kB 25.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.876945534,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 310.5/310.5 kB 20.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.911862564,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 122.9/122.9 kB 8.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.928852694,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 35.2/35.2 MB 55.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.928888723,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 741.0/741.0 kB 33.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.928900562,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 516.0/516.0 kB 30.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.928906284,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 472.3/472.3 kB 25.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.928911839,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 310.5/310.5 kB 20.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.928917647,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 122.9/122.9 kB 8.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.042992253,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 81.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.087313333,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 386.5/386.5 kB 20.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.154049641,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 43.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.185638378,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 53.2/53.2 kB 3.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.220525772,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 248.5/248.5 kB 15.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.245023999,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.0/7.0 MB 81.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.245052887,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 386.5/386.5 kB 20.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.245058832,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 43.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.245063854,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 53.2/53.2 kB 3.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":20.245068692,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 248.5/248.5 kB 15.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":61.607063214,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":61.607103829,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":61.607111708,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":61.607121976,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.4.6 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607126964,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.17.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607147027,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607153308,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607159395,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607165544,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.6072783,"data":"bigframes 2.39.0 requires rich\u003c14,\u003e=12.4.4, but you have rich 14.3.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607291646,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.4.6 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607298403,"data":"gradio 5.50.0 requires pillow\u003c12.0,\u003e=8.0, but you have pillow 12.1.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.607304811,"data":"gradio 5.50.0 requires pydantic\u003c=2.12.3,\u003e=2.0, but you have pydantic 2.13.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812860144,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":61.812901822,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":61.812908408,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":61.812912302,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.4.6 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.81293561,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.17.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812938362,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812940928,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812943351,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812945838,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812948401,"data":"bigframes 2.39.0 requires rich\u003c14,\u003e=12.4.4, but you have rich 14.3.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.81295092,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.4.6 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812953437,"data":"gradio 5.50.0 requires pillow\u003c12.0,\u003e=8.0, but you have pillow 12.1.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812955946,"data":"gradio 5.50.0 requires pydantic\u003c=2.12.3,\u003e=2.0, but you have pydantic 2.13.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812958503,"data":"\n"}
+,{"stream_name":"stderr","time":61.81296082,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":61.812963437,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":61.812965963,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":61.812968486,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.4.6 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812970987,"data":"ydata-profiling 4.18.4 requires scipy\u003c1.17,\u003e=1.8, but you have scipy 1.17.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812973508,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.81297721,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812979716,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812982181,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812984703,"data":"bigframes 2.39.0 requires rich\u003c14,\u003e=12.4.4, but you have rich 14.3.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812990423,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.4.6 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812993178,"data":"gradio 5.50.0 requires pillow\u003c12.0,\u003e=8.0, but you have pillow 12.1.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":61.812995771,"data":"gradio 5.50.0 requires pydantic\u003c=2.12.3,\u003e=2.0, but you have pydantic 2.13.4 which is incompatible.\n"}
+,{"stream_name":"stderr","time":73.713832823,"data":"Cloning into '/tmp/qdgrasp_repo'...\n"}
+,{"stream_name":"stderr","time":73.916374122,"data":"Cloning into '/tmp/qdgrasp_repo'...\n"}
+,{"stream_name":"stderr","time":73.916414432,"data":"\n"}
+,{"stream_name":"stderr","time":73.916427017,"data":"Cloning into '/tmp/qdgrasp_repo'...\n"}
+,{"stream_name":"stderr","time":75.340089907,"data":"From https://github.com/ninicom/qdgrasp\n"}
+,{"stream_name":"stderr","time":75.340123283,"data":" * branch            144c585005a374b5c6b2daa37c2d47d67a86b318 -\u003e FETCH_HEAD\n"}
+,{"stream_name":"stderr","time":75.542565624,"data":"From https://github.com/ninicom/qdgrasp\n"}
+,{"stream_name":"stderr","time":75.542604567,"data":" * branch            144c585005a374b5c6b2daa37c2d47d67a86b318 -\u003e FETCH_HEAD\n"}
+,{"stream_name":"stderr","time":75.542610199,"data":"\n"}
+,{"stream_name":"stderr","time":75.542613859,"data":"From https://github.com/ninicom/qdgrasp\n"}
+,{"stream_name":"stderr","time":75.542617881,"data":" * branch            144c585005a374b5c6b2daa37c2d47d67a86b318 -\u003e FETCH_HEAD\n"}
+,{"stream_name":"stderr","time":77.09623682,"data":"HEAD is now at 144c585 fix(p3.4.3): probe the scene that showed the defect, and parse the notebook first\n"}
+,{"stream_name":"stderr","time":77.102251729,"data":"Cloning into '/tmp/robot-assets/mujoco-menagerie'...\n"}
+,{"stream_name":"stderr","time":77.298693336,"data":"HEAD is now at 144c585 fix(p3.4.3): probe the scene that showed the defect, and parse the notebook first\n"}
+,{"stream_name":"stderr","time":77.298733507,"data":"Cloning into '/tmp/robot-assets/mujoco-menagerie'...\n"}
+,{"stream_name":"stderr","time":77.298739093,"data":"\n"}
+,{"stream_name":"stderr","time":77.298743204,"data":"HEAD is now at 144c585 fix(p3.4.3): probe the scene that showed the defect, and parse the notebook first\n"}
+,{"stream_name":"stderr","time":77.298753615,"data":"Cloning into '/tmp/robot-assets/mujoco-menagerie'...\n"}
+,{"stream_name":"stderr","time":77.94760665,"data":"From https://github.com/google-deepmind/mujoco_menagerie\n"}
+,{"stream_name":"stderr","time":77.947635936,"data":" * branch            da76818e269b82289eba39808e2fb91d679d6994 -\u003e FETCH_HEAD\n"}
+,{"stream_name":"stderr","time":78.150135138,"data":"From https://github.com/google-deepmind/mujoco_menagerie\n"}
+,{"stream_name":"stderr","time":78.150180328,"data":" * branch            da76818e269b82289eba39808e2fb91d679d6994 -\u003e FETCH_HEAD\n"}
+,{"stream_name":"stderr","time":78.150184965,"data":"\n"}
+,{"stream_name":"stderr","time":78.150187669,"data":"From https://github.com/google-deepmind/mujoco_menagerie\n"}
+,{"stream_name":"stderr","time":78.150190541,"data":" * branch            da76818e269b82289eba39808e2fb91d679d6994 -\u003e FETCH_HEAD\n"}
+,{"stream_name":"stderr","time":195.948871282,"data":"HEAD is now at da76818 Add Seeed Studio reBot DevArm (RobStride) (#300)\n"}
+,{"stream_name":"stdout","time":195.999908863,"data":"Pinned QDGrasp revision: 144c585005a374b5c6b2daa37c2d47d67a86b318\n"}
+,{"stream_name":"stdout","time":195.999940543,"data":"Pinned Menagerie revision: da76818e269b82289eba39808e2fb91d679d6994\n"}
+,{"stream_name":"stderr","time":196.001198696,"data":"HEAD is now at da76818 Add Seeed Studio reBot DevArm (RobStride) (#300)\n"}
+,{"stream_name":"stderr","time":196.001241542,"data":"\n"}
+,{"stream_name":"stderr","time":196.001249045,"data":"HEAD is now at da76818 Add Seeed Studio reBot DevArm (RobStride) (#300)\n"}
+,{"stream_name":"stdout","time":201.660622005,"data":"{\n"}
+,{"stream_name":"stdout","time":201.660665723,"data":"  \"capability\": \"7.5\",\n"}
+,{"stream_name":"stdout","time":201.660669806,"data":"  \"driver\": \"580.159.04\\n580.159.04\",\n"}
+,{"stream_name":"stdout","time":201.660672801,"data":"  \"gpu\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":201.660676029,"data":"  \"python\": \"3.12.13\",\n"}
+,{"stream_name":"stdout","time":201.660678897,"data":"  \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":201.660681828,"data":"  \"torch_cuda_build\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":201.660699782,"data":"  \"vram_gib\": 14.562\n"}
+,{"stream_name":"stdout","time":201.660704831,"data":"}\n"}
+,{"stream_name":"stdout","time":201.862239849,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":201.862283176,"data":"running scripts/phase1_cuda_smoke.py\n"}
+,{"stream_name":"stdout","time":231.930417979,"data":"{\n"}
+,{"stream_name":"stdout","time":231.930455153,"data":"  \"checks\": {\n"}
+,{"stream_name":"stdout","time":231.930462993,"data":"    \"amp\": {\n"}
+,{"stream_name":"stdout","time":231.930468547,"data":"      \"final_loss\": 0.924542248249054,\n"}
+,{"stream_name":"stdout","time":231.930473935,"data":"      \"precision\": \"16-mixed\",\n"}
+,{"stream_name":"stdout","time":231.93047924,"data":"      \"steps\": 8\n"}
+,{"stream_name":"stdout","time":231.930484661,"data":"    },\n"}
+,{"stream_name":"stdout","time":231.930490262,"data":"    \"cpu_cuda_fp32_parity\": {\n"}
+,{"stream_name":"stdout","time":231.930495819,"data":"      \"tolerance\": 0.0001,\n"}
+,{"stream_name":"stdout","time":231.930501753,"data":"      \"translation_max_abs_deviation\": 2.9802322387695312e-08\n"}
+,{"stream_name":"stdout","time":231.930507663,"data":"    },\n"}
+,{"stream_name":"stdout","time":231.930512666,"data":"    \"export\": {\n"}
+,{"stream_name":"stdout","time":231.930518092,"data":"      \"artifact_sha256\": \"b22061a524627b71bfc4f73d6f749471b3bd2eacee9325cadfb41681465ec4f8\",\n"}
+,{"stream_name":"stdout","time":231.930524812,"data":"      \"format\": \"torchscript\",\n"}
+,{"stream_name":"stdout","time":231.930530511,"data":"      \"round_trip_max_abs_deviation\": {\n"}
+,{"stream_name":"stdout","time":231.930536062,"data":"        \"joints\": 0.0,\n"}
+,{"stream_name":"stdout","time":231.93054158,"data":"        \"rotation\": 0.0,\n"}
+,{"stream_name":"stdout","time":231.930546565,"data":"        \"score\": 0.0,\n"}
+,{"stream_name":"stdout","time":231.930552535,"data":"        \"translation\": 0.0\n"}
+,{"stream_name":"stdout","time":231.930557914,"data":"      }\n"}
+,{"stream_name":"stdout","time":231.930563077,"data":"    },\n"}
+,{"stream_name":"stdout","time":231.930568388,"data":"    \"fp32\": {\n"}
+,{"stream_name":"stdout","time":231.930573734,"data":"      \"bundle_hash\": \"e147e7882069f263ba9a5190dbea8531e45799a5337f6546d4e3af7b8d40d3e5\",\n"}
+,{"stream_name":"stdout","time":231.930580085,"data":"      \"effective_runtime\": {\n"}
+,{"stream_name":"stdout","time":231.930585196,"data":"        \"accelerator\": \"cuda\",\n"}
+,{"stream_name":"stdout","time":231.930590262,"data":"        \"amp\": false,\n"}
+,{"stream_name":"stdout","time":231.930595117,"data":"        \"deterministic\": true,\n"}
+,{"stream_name":"stdout","time":231.9306113,"data":"        \"device\": \"cuda:0\",\n"}
+,{"stream_name":"stdout","time":231.930615559,"data":"        \"device_index\": 0,\n"}
+,{"stream_name":"stdout","time":231.930619983,"data":"        \"precision\": \"32-true\",\n"}
+,{"stream_name":"stdout","time":231.930623727,"data":"        \"seed\": 0,\n"}
+,{"stream_name":"stdout","time":231.930628335,"data":"        \"workers\": 0\n"}
+,{"stream_name":"stdout","time":231.930631927,"data":"      },\n"}
+,{"stream_name":"stdout","time":231.930635712,"data":"      \"final_loss\": 0.9242877960205078,\n"}
+,{"stream_name":"stdout","time":231.930639659,"data":"      \"metrics\": {\n"}
+,{"stream_name":"stdout","time":231.930643476,"data":"        \"joint_error\": 0.41669104993343353,\n"}
+,{"stream_name":"stdout","time":231.930647613,"data":"        \"loss\": 0.9307821393013,\n"}
+,{"stream_name":"stdout","time":231.930651701,"data":"        \"rotation_error\": 2.5891536474227905,\n"}
+,{"stream_name":"stdout","time":231.930655439,"data":"        \"translation_error\": 0.1449953019618988\n"}
+,{"stream_name":"stdout","time":231.930659584,"data":"      },\n"}
+,{"stream_name":"stdout","time":231.930663372,"data":"      \"steps\": 8\n"}
+,{"stream_name":"stdout","time":231.93066745,"data":"    },\n"}
+,{"stream_name":"stdout","time":231.930671127,"data":"    \"predict\": {\n"}
+,{"stream_name":"stdout","time":231.930674988,"data":"      \"count\": 4,\n"}
+,{"stream_name":"stdout","time":231.930678988,"data":"      \"device\": \"cuda:0\",\n"}
+,{"stream_name":"stdout","time":231.930683146,"data":"      \"joints_within_limits\": true,\n"}
+,{"stream_name":"stdout","time":231.930686932,"data":"      \"rotation_finite\": true\n"}
+,{"stream_name":"stdout","time":231.930690994,"data":"    },\n"}
+,{"stream_name":"stdout","time":231.930694606,"data":"    \"resume\": {\n"}
+,{"stream_name":"stdout","time":231.930698522,"data":"      \"bit_exact\": true,\n"}
+,{"stream_name":"stdout","time":231.93070216,"data":"      \"continuous\": [\n"}
+,{"stream_name":"stdout","time":231.930705838,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930709515,"data":"          1,\n"}
+,{"stream_name":"stdout","time":231.930713147,"data":"          0.9393895268440247\n"}
+,{"stream_name":"stdout","time":231.930716974,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930720913,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930724643,"data":"          2,\n"}
+,{"stream_name":"stdout","time":231.930728446,"data":"          0.97804856300354\n"}
+,{"stream_name":"stdout","time":231.930732455,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930736346,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930740211,"data":"          3,\n"}
+,{"stream_name":"stdout","time":231.930744143,"data":"          0.9233159422874451\n"}
+,{"stream_name":"stdout","time":231.930748211,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930752097,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930764393,"data":"          4,\n"}
+,{"stream_name":"stdout","time":231.930768174,"data":"          0.8918845057487488\n"}
+,{"stream_name":"stdout","time":231.930772087,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930776029,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930779598,"data":"          5,\n"}
+,{"stream_name":"stdout","time":231.93078308,"data":"          0.8363461494445801\n"}
+,{"stream_name":"stdout","time":231.930786866,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.93080066,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930804868,"data":"          6,\n"}
+,{"stream_name":"stdout","time":231.930808662,"data":"          0.8143664002418518\n"}
+,{"stream_name":"stdout","time":231.930829356,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930834198,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930837676,"data":"          7,\n"}
+,{"stream_name":"stdout","time":231.930841385,"data":"          0.8932704925537109\n"}
+,{"stream_name":"stdout","time":231.93084531,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930849057,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930852534,"data":"          8,\n"}
+,{"stream_name":"stdout","time":231.930856475,"data":"          0.9242877960205078\n"}
+,{"stream_name":"stdout","time":231.930860064,"data":"        ]\n"}
+,{"stream_name":"stdout","time":231.930863639,"data":"      ],\n"}
+,{"stream_name":"stdout","time":231.930867254,"data":"      \"resumed\": [\n"}
+,{"stream_name":"stdout","time":231.930871081,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930874747,"data":"          1,\n"}
+,{"stream_name":"stdout","time":231.9308785,"data":"          0.9393895268440247\n"}
+,{"stream_name":"stdout","time":231.930882105,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930885698,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930889281,"data":"          2,\n"}
+,{"stream_name":"stdout","time":231.930892923,"data":"          0.97804856300354\n"}
+,{"stream_name":"stdout","time":231.930896606,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930900348,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930904016,"data":"          3,\n"}
+,{"stream_name":"stdout","time":231.930910878,"data":"          0.9233159422874451\n"}
+,{"stream_name":"stdout","time":231.930914628,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930918297,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930921958,"data":"          4,\n"}
+,{"stream_name":"stdout","time":231.930925789,"data":"          0.8918845057487488\n"}
+,{"stream_name":"stdout","time":231.930929612,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930933218,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930937081,"data":"          5,\n"}
+,{"stream_name":"stdout","time":231.93094084,"data":"          0.8363461494445801\n"}
+,{"stream_name":"stdout","time":231.93094436,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930948001,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930951796,"data":"          6,\n"}
+,{"stream_name":"stdout","time":231.930955509,"data":"          0.8143664002418518\n"}
+,{"stream_name":"stdout","time":231.93095944,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930963135,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.93096725,"data":"          7,\n"}
+,{"stream_name":"stdout","time":231.93097115,"data":"          0.8932704925537109\n"}
+,{"stream_name":"stdout","time":231.930975016,"data":"        ],\n"}
+,{"stream_name":"stdout","time":231.930979167,"data":"        [\n"}
+,{"stream_name":"stdout","time":231.930982891,"data":"          8,\n"}
+,{"stream_name":"stdout","time":231.930986508,"data":"          0.9242877960205078\n"}
+,{"stream_name":"stdout","time":231.930990391,"data":"        ]\n"}
+,{"stream_name":"stdout","time":231.930994274,"data":"      ]\n"}
+,{"stream_name":"stdout","time":231.930997913,"data":"    }\n"}
+,{"stream_name":"stdout","time":231.931006973,"data":"  },\n"}
+,{"stream_name":"stdout","time":231.931010995,"data":"  \"created_utc\": \"2026-08-28T00:57:10+00:00\",\n"}
+,{"stream_name":"stdout","time":231.931015295,"data":"  \"environment\": {\n"}
+,{"stream_name":"stdout","time":231.931019191,"data":"    \"cuda_available\": true,\n"}
+,{"stream_name":"stdout","time":231.931023242,"data":"    \"cuda_build\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":231.931027104,"data":"    \"cuda_device_count\": 2,\n"}
+,{"stream_name":"stdout","time":231.931031049,"data":"    \"cuda_device_name\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":231.931035221,"data":"    \"python\": \"3.12.13\",\n"}
+,{"stream_name":"stdout","time":231.93103915,"data":"    \"torch\": \"2.10.0+cu128\"\n"}
+,{"stream_name":"stdout","time":231.931043126,"data":"  },\n"}
+,{"stream_name":"stdout","time":231.931046851,"data":"  \"payload_sha256\": \"e9d3c344ca9145b2055f562e82021c673fff112ca34f1f751e029eab4cf2a21e\",\n"}
+,{"stream_name":"stdout","time":231.931051191,"data":"  \"qdgrasp_version\": \"0.1.0a1\",\n"}
+,{"stream_name":"stdout","time":231.931055181,"data":"  \"schema\": \"qdgrasp/evidence/phase1-cuda/v1\"\n"}
+,{"stream_name":"stdout","time":231.931059249,"data":"}\n"}
+,{"stream_name":"stdout","time":231.931062932,"data":"evidence written to /kaggle/working/phase3_4_3_evidence/phase1_cuda.json\n"}
+,{"stream_name":"stdout","time":231.931067028,"data":"\n"}
+,{"stream_name":"stdout","time":231.931070735,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":231.931074588,"data":"running scripts/phase2_cuda_fk_parity.py\n"}
+,{"stream_name":"stderr","time":231.93176319,"data":"Using 16-bit Automatic Mixed Precision (AMP)\n"}
+,{"stream_name":"stderr","time":231.931802512,"data":"INFO qdgrasp.engine: resumed from runs/cuda-part/resume.pt at step 4\n"}
+,{"stream_name":"stderr","time":231.931806615,"data":"\n"}
+,{"stream_name":"stderr","time":231.931809249,"data":"\n"}
+,{"stream_name":"stderr","time":231.931811759,"data":"Using 16-bit Automatic Mixed Precision (AMP)\n"}
+,{"stream_name":"stderr","time":231.931814766,"data":"INFO qdgrasp.engine: resumed from runs/cuda-part/resume.pt at step 4\n"}
+,{"stream_name":"stderr","time":231.931817604,"data":"\n"}
+,{"stream_name":"stdout","time":245.462899569,"data":"Wrote CUDA FK parity evidence to /kaggle/working/phase3_4_3_evidence/phase2_cuda.json\n"}
+,{"stream_name":"stdout","time":245.462941942,"data":"{\n"}
+,{"stream_name":"stdout","time":245.462949231,"data":"  \"device\": \"cuda:0\",\n"}
+,{"stream_name":"stdout","time":245.462954873,"data":"  \"environment\": {\n"}
+,{"stream_name":"stdout","time":245.462960805,"data":"    \"cuda_available\": true,\n"}
+,{"stream_name":"stdout","time":245.462966306,"data":"    \"cuda_build\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":245.462971804,"data":"    \"cuda_device_count\": 2,\n"}
+,{"stream_name":"stdout","time":245.462977497,"data":"    \"cuda_device_name\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":245.462983376,"data":"    \"python\": \"3.12.13\",\n"}
+,{"stream_name":"stdout","time":245.462988877,"data":"    \"torch\": \"2.10.0+cu128\"\n"}
+,{"stream_name":"stdout","time":245.46299452,"data":"  },\n"}
+,{"stream_name":"stdout","time":245.463000151,"data":"  \"max_deviation_overall\": 2.384185791015625e-07,\n"}
+,{"stream_name":"stdout","time":245.463005802,"data":"  \"parity_threshold\": 0.0001,\n"}
+,{"stream_name":"stdout","time":245.463011537,"data":"  \"pass\": true,\n"}
+,{"stream_name":"stdout","time":245.46301735,"data":"  \"profile_hashes\": {\n"}
+,{"stream_name":"stdout","time":245.463049593,"data":"    \"leap_hand.yaml\": \"7f002e8e70028ac5ff62dedb2602d23dbc1f3603f28187d58a7078e9ffcea7ba\",\n"}
+,{"stream_name":"stdout","time":245.463055279,"data":"    \"shadow_hand.yaml\": \"afde7a6a3aab3d560b06d695f23c70d012438b230f7846e1c72f68adc8b84dd1\",\n"}
+,{"stream_name":"stdout","time":245.463060932,"data":"    \"wonik_allegro.yaml\": \"c2539640ca6ec35c37131bb09930c57102a7a6d2bb3351bdaf1924079bac3ef7\"\n"}
+,{"stream_name":"stdout","time":245.463066399,"data":"  },\n"}
+,{"stream_name":"stdout","time":245.46307224,"data":"  \"results\": {\n"}
+,{"stream_name":"stdout","time":245.463077732,"data":"    \"leap_hand.yaml\": {\n"}
+,{"stream_name":"stdout","time":245.463083525,"data":"      \"fingertip_deviation\": 7.450580596923828e-09,\n"}
+,{"stream_name":"stdout","time":245.463089241,"data":"      \"max_link_deviation\": 1.1920928955078125e-07\n"}
+,{"stream_name":"stdout","time":245.46309494,"data":"    },\n"}
+,{"stream_name":"stdout","time":245.463100491,"data":"    \"shadow_hand.yaml\": {\n"}
+,{"stream_name":"stdout","time":245.463106121,"data":"      \"fingertip_deviation\": 1.1920928955078125e-07,\n"}
+,{"stream_name":"stdout","time":245.463112025,"data":"      \"max_link_deviation\": 2.384185791015625e-07\n"}
+,{"stream_name":"stdout","time":245.463117742,"data":"    },\n"}
+,{"stream_name":"stdout","time":245.463123339,"data":"    \"wonik_allegro.yaml\": {\n"}
+,{"stream_name":"stdout","time":245.463128997,"data":"      \"fingertip_deviation\": 2.9802322387695312e-08,\n"}
+,{"stream_name":"stdout","time":245.463143739,"data":"      \"max_link_deviation\": 1.1920928955078125e-07\n"}
+,{"stream_name":"stdout","time":245.463149562,"data":"    }\n"}
+,{"stream_name":"stdout","time":245.463155106,"data":"  },\n"}
+,{"stream_name":"stdout","time":245.463160751,"data":"  \"schema\": \"qdgrasp/evidence/phase2-cuda-fk/v1\"\n"}
+,{"stream_name":"stdout","time":245.463166894,"data":"}\n"}
+,{"stream_name":"stdout","time":245.463172354,"data":"Phase 2 CUDA FK parity: PASS\n"}
+,{"stream_name":"stdout","time":245.463177966,"data":"\n"}
+,{"stream_name":"stderr","time":245.464181971,"data":"\n"}
+,{"stream_name":"stderr","time":245.46425262,"data":"\n"}
+,{"stream_name":"stderr","time":245.464260128,"data":"\n"}
+,{"stream_name":"stdout","time":245.663121579,"data":"compute-sanitizer: /usr/local/cuda/bin/compute-sanitizer\n"}
+,{"stream_name":"stdout","time":245.663160369,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":245.663166359,"data":"trying mujoco-warp==3.12.0\n"}
+,{"stream_name":"stdout","time":645.332903357,"data":"uninitialized_reads (187 sanitizer lines, stepped=True)\n"}
+,{"stream_name":"stdout","time":645.332964955,"data":"    ========= ERROR SUMMARY: 68224 errors\n"}
+,{"stream_name":"stdout","time":645.332972406,"data":"    ========= ERROR SUMMARY: 68216 errors were not printed. Use --print-limit option to adjust the number of printed errors\n"}
+,{"stream_name":"stdout","time":645.332978467,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":645.332983376,"data":"trying mujoco-warp==3.11.0\n"}
+,{"stream_name":"stdout","time":1009.464100514,"data":"uninitialized_reads (187 sanitizer lines, stepped=True)\n"}
+,{"stream_name":"stdout","time":1009.46413989,"data":"    ========= ERROR SUMMARY: 66181 errors\n"}
+,{"stream_name":"stdout","time":1009.464146965,"data":"    ========= ERROR SUMMARY: 66173 errors were not printed. Use --print-limit option to adjust the number of printed errors\n"}
+,{"stream_name":"stdout","time":1009.464152697,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":1009.464167072,"data":"trying mujoco-warp==3.10.0.3\n"}
+,{"stream_name":"stdout","time":1134.500641775,"data":"uninitialized_reads (187 sanitizer lines, stepped=True)\n"}
+,{"stream_name":"stdout","time":1134.500682979,"data":"    ========= ERROR SUMMARY: 65248 errors\n"}
+,{"stream_name":"stdout","time":1134.500695945,"data":"    ========= ERROR SUMMARY: 65240 errors were not printed. Use --print-limit option to adjust the number of printed errors\n"}
+,{"stream_name":"stdout","time":1134.636437908,"data":"\n"}
+,{"stream_name":"stdout","time":1134.636473944,"data":"clean versions: none — the GPU gate stays BLOCKED\n"}
+,{"stream_name":"stdout","time":1134.782370376,"data":"{\n"}
+,{"stream_name":"stdout","time":1134.782411632,"data":"  \"estimated_command_bytes\": 7864320,\n"}
+,{"stream_name":"stdout","time":1134.782419734,"data":"  \"estimated_host_state_bytes\": 483328,\n"}
+,{"stream_name":"stdout","time":1134.782425145,"data":"  \"estimated_total_bytes\": 8347648,\n"}
+,{"stream_name":"stdout","time":1134.782430304,"data":"  \"steps\": 60,\n"}
+,{"stream_name":"stdout","time":1134.782435587,"data":"  \"vram_budget_gib\": 14.0,\n"}
+,{"stream_name":"stdout","time":1134.782441232,"data":"  \"world_steps\": 61440,\n"}
+,{"stream_name":"stdout","time":1134.782446383,"data":"  \"worlds\": 1024\n"}
+,{"stream_name":"stdout","time":1134.782451676,"data":"}\n"}
+,{"stream_name":"stdout","time":1134.782457157,"data":"\n"}
+,{"stream_name":"stdout","time":1150.285983373,"data":"Warp 1.16.0 initialized:\n"}
+,{"stream_name":"stdout","time":1150.286026172,"data":"   CUDA Toolkit 12.9, Driver 13.0\n"}
+,{"stream_name":"stdout","time":1150.286033358,"data":"   Devices:\n"}
+,{"stream_name":"stdout","time":1150.28603907,"data":"     \"cpu\"      : \"x86_64\"\n"}
+,{"stream_name":"stdout","time":1150.286044201,"data":"     \"cuda:0\"   : \"Tesla T4\" (15 GiB, sm_75, mempool enabled)\n"}
+,{"stream_name":"stdout","time":1150.286050723,"data":"     \"cuda:1\"   : \"Tesla T4\" (15 GiB, sm_75, mempool enabled)\n"}
+,{"stream_name":"stdout","time":1150.286056292,"data":"   CUDA peer access:\n"}
+,{"stream_name":"stdout","time":1150.286061523,"data":"     Not supported\n"}
+,{"stream_name":"stdout","time":1150.286066082,"data":"   Kernel cache:\n"}
+,{"stream_name":"stdout","time":1150.286071028,"data":"     /root/.cache/warp/1.16.0\n"}
+,{"stream_name":"stdout","time":1150.286075628,"data":"{\n"}
+,{"stream_name":"stdout","time":1150.286080091,"data":"  \"active_hands\": [\n"}
+,{"stream_name":"stdout","time":1150.286085533,"data":"    \"leap_hand\",\n"}
+,{"stream_name":"stdout","time":1150.286090714,"data":"    \"wonik_allegro\"\n"}
+,{"stream_name":"stdout","time":1150.286095753,"data":"  ],\n"}
+,{"stream_name":"stdout","time":1150.286100663,"data":"  \"capability\": {\n"}
+,{"stream_name":"stdout","time":1150.286106028,"data":"    \"contact_force_readable\": false,\n"}
+,{"stream_name":"stdout","time":1150.286111049,"data":"    \"missing_contact_fields\": [\n"}
+,{"stream_name":"stdout","time":1150.286115783,"data":"      \"efc_force\"\n"}
+,{"stream_name":"stdout","time":1150.286127424,"data":"    ],\n"}
+,{"stream_name":"stdout","time":1150.286131018,"data":"    \"overflow_telemetry\": {\n"}
+,{"stream_name":"stdout","time":1150.28613436,"data":"      \"buffer_overflow\": false,\n"}
+,{"stream_name":"stdout","time":1150.286138061,"data":"      \"class_counts\": {},\n"}
+,{"stream_name":"stdout","time":1150.286141456,"data":"      \"contact_count\": 0,\n"}
+,{"stream_name":"stdout","time":1150.286144851,"data":"      \"max_contact_count\": 0,\n"}
+,{"stream_name":"stdout","time":1150.286183225,"data":"      \"stream_truncated\": true,\n"}
+,{"stream_name":"stdout","time":1150.28618826,"data":"      \"unavailable_fields\": [\n"}
+,{"stream_name":"stdout","time":1150.286192378,"data":"        \"efc_force\"\n"}
+,{"stream_name":"stdout","time":1150.286196347,"data":"      ]\n"}
+,{"stream_name":"stdout","time":1150.286200141,"data":"    },\n"}
+,{"stream_name":"stdout","time":1150.286204228,"data":"    \"required_contact_fields\": [\n"}
+,{"stream_name":"stdout","time":1150.286232278,"data":"      \"dist\",\n"}
+,{"stream_name":"stdout","time":1150.286236933,"data":"      \"pos\",\n"}
+,{"stream_name":"stdout","time":1150.286240977,"data":"      \"frame\",\n"}
+,{"stream_name":"stdout","time":1150.286244558,"data":"      \"geom\",\n"}
+,{"stream_name":"stdout","time":1150.286248482,"data":"      \"efc_address\"\n"}
+,{"stream_name":"stdout","time":1150.28625278,"data":"    ],\n"}
+,{"stream_name":"stdout","time":1150.286256703,"data":"    \"verdict\": \"unsupported\",\n"}
+,{"stream_name":"stdout","time":1150.286260814,"data":"    \"warp_available\": true\n"}
+,{"stream_name":"stdout","time":1150.286264968,"data":"  },\n"}
+,{"stream_name":"stdout","time":1150.286268904,"data":"  \"cuda_environment\": {\n"}
+,{"stream_name":"stdout","time":1150.286272059,"data":"    \"capability\": \"7.5\",\n"}
+,{"stream_name":"stdout","time":1150.286276241,"data":"    \"device\": \"cuda:0\",\n"}
+,{"stream_name":"stdout","time":1150.286280534,"data":"    \"gpu_name\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":1150.286284805,"data":"    \"python\": \"3.12.13\",\n"}
+,{"stream_name":"stdout","time":1150.286289331,"data":"    \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":1150.286293208,"data":"    \"torch_cuda_build\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":1150.286296458,"data":"    \"total_memory_gib\": 14.562\n"}
+,{"stream_name":"stdout","time":1150.286299824,"data":"  },\n"}
+,{"stream_name":"stdout","time":1150.28630309,"data":"  \"historical_p3_4_state\": \"paused_by_ADR-0008\",\n"}
+,{"stream_name":"stdout","time":1150.286306536,"data":"  \"paused_hands\": [\n"}
+,{"stream_name":"stdout","time":1150.286310062,"data":"    \"shadow_hand\"\n"}
+,{"stream_name":"stdout","time":1150.286313536,"data":"  ],\n"}
+,{"stream_name":"stdout","time":1150.286316931,"data":"  \"phase\": \"3.4.3\",\n"}
+,{"stream_name":"stdout","time":1150.286320793,"data":"  \"qdgrasp_version\": \"0.1.0a1\",\n"}
+,{"stream_name":"stdout","time":1150.286324548,"data":"  \"resumed_stages\": [],\n"}
+,{"stream_name":"stdout","time":1150.286328691,"data":"  \"schema\": \"qdgrasp/evidence/phase3.4.3-cuda/v1\",\n"}
+,{"stream_name":"stdout","time":1150.286333494,"data":"  \"three_hand_coverage\": false,\n"}
+,{"stream_name":"stdout","time":1150.286336892,"data":"  \"thresholds\": {\n"}
+,{"stream_name":"stdout","time":1150.286340342,"data":"    \"benchmark_horizon\": 60,\n"}
+,{"stream_name":"stdout","time":1150.286344193,"data":"    \"benchmark_runs\": 3,\n"}
+,{"stream_name":"stdout","time":1150.286347765,"data":"    \"benchmark_worlds\": 1024,\n"}
+,{"stream_name":"stdout","time":1150.286351451,"data":"    \"min_gpu_speedup\": 2.0,\n"}
+,{"stream_name":"stdout","time":1150.286354888,"data":"    \"min_simultaneous_worlds\": 64,\n"}
+,{"stream_name":"stdout","time":1150.286358288,"data":"    \"vram_budget_gib\": 14.0\n"}
+,{"stream_name":"stdout","time":1150.286361855,"data":"  },\n"}
+,{"stream_name":"stdout","time":1150.286365464,"data":"  \"timestamp\": \"2026-08-28T01:12:27.494854+00:00\",\n"}
+,{"stream_name":"stdout","time":1150.286369438,"data":"  \"verdict\": \"BLOCKED\"\n"}
+,{"stream_name":"stdout","time":1150.28638098,"data":"}\n"}
+,{"stream_name":"stdout","time":1150.286384636,"data":"\n"}
+,{"stream_name":"stdout","time":1150.28638818,"data":"gate exit: 3\n"}
+,{"stream_name":"stdout","time":1150.286391872,"data":"VERDICT: BLOCKED\n"}
+,{"stream_name":"stderr","time":1150.28710676,"data":"evidence_sha256=3907d429a3d85519e8bef683dc8cd90d40ab0b1abf08150006219a58eacab203\n"}
+,{"stream_name":"stderr","time":1150.287122986,"data":"Phase 3.4.3 CUDA gate: BLOCKED -- unsupported. A blocked gate is not a passed gate and not a failed one.\n"}
+,{"stream_name":"stderr","time":1150.287125985,"data":"\n"}
+,{"stream_name":"stderr","time":1150.287142954,"data":"\n"}
+,{"stream_name":"stderr","time":1150.287147118,"data":"evidence_sha256=3907d429a3d85519e8bef683dc8cd90d40ab0b1abf08150006219a58eacab203\n"}
+,{"stream_name":"stderr","time":1150.287151376,"data":"Phase 3.4.3 CUDA gate: BLOCKED -- unsupported. A blocked gate is not a passed gate and not a failed one.\n"}
+,{"stream_name":"stderr","time":1150.287155485,"data":"\n"}
+,{"stream_name":"stdout","time":1186.488213527,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":1186.488251235,"data":"racecheck -- 2 report lines\n"}
+,{"stream_name":"stdout","time":1186.488256734,"data":"========= COMPUTE-SANITIZER\n"}
+,{"stream_name":"stdout","time":1186.488275143,"data":"========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)\n"}
+,{"stream_name":"stdout","time":1316.609771605,"data":"======================================================================\n"}
+,{"stream_name":"stdout","time":1316.609817428,"data":"initcheck -- 1043 report lines\n"}
+,{"stream_name":"stdout","time":1316.609822684,"data":"========= COMPUTE-SANITIZER\n"}
+,{"stream_name":"stdout","time":1316.609826502,"data":"========= Uninitialized __global__ memory read of size 4 bytes\n"}
+,{"stream_name":"stdout","time":1316.609830189,"data":"=========     at _linesearch_iterative_kernel__locals__kernel_cbb38e10_cuda_kernel_forward+0x7890\n"}
+,{"stream_name":"stdout","time":1316.609833785,"data":"=========     by thread (25,0,0) in block (0,0,0)\n"}
+,{"stream_name":"stdout","time":1316.609837304,"data":"=========     Address 0x12927f4734\n"}
+,{"stream_name":"stdout","time":1316.609841031,"data":"=========     Saved host backtrace up to driver entry point at kernel launch time\n"}
+,{"stream_name":"stdout","time":1316.609844641,"data":"=========         Host Frame: wp_cuda_launch_kernel [0xb51ca4] in warp.so\n"}
+,{"stream_name":"stdout","time":1316.609848104,"data":"=========         Host Frame: launch in context.py:10878\n"}
+,{"stream_name":"stdout","time":1316.609851514,"data":"=========         Host Frame: launch_tiled in context.py:10970\n"}
+,{"stream_name":"stdout","time":1316.609854929,"data":"=========         Host Frame: _linesearch_iterative in solver.py:1328\n"}
+,{"stream_name":"stdout","time":1316.609858639,"data":"=========         Host Frame: _linesearch in solver.py:1514\n"}
+,{"stream_name":"stdout","time":1316.609862043,"data":"=========         Host Frame: wrapper in warp_util.py:97\n"}
+,{"stream_name":"stdout","time":1316.609865454,"data":"=========         Host Frame: _solver_iteration in solver.py:3784\n"}
+,{"stream_name":"stdout","time":1316.609868984,"data":"=========         Host Frame: wrapper in warp_util.py:97\n"}
+,{"stream_name":"stdout","time":1316.609872382,"data":"=========         Host Frame: capture_while in context.py:12494\n"}
+,{"stream_name":"stdout","time":1316.609875791,"data":"=========         Host Frame: _solve in solver.py:3992\n"}
+,{"stream_name":"stdout","time":1316.609879174,"data":"=========         Host Frame: solve in solver.py:3952\n"}
+,{"stream_name":"stdout","time":1316.609900872,"data":"=========         Host Frame: wrapper in warp_util.py:97\n"}
+,{"stream_name":"stdout","time":1316.609903815,"data":"=========         Host Frame: forward in forward.py:1359\n"}
+,{"stream_name":"stdout","time":1316.609906475,"data":"=========         Host Frame: wrapper in warp_util.py:97\n"}
+,{"stream_name":"stdout","time":1316.638523632,"data":"{\n"}
+,{"stream_name":"stdout","time":1316.638553764,"data":"  \"artifact_hashes\": {\n"}
+,{"stream_name":"stdout","time":1316.638559897,"data":"    \"cuda-gate.checkpoint.json\": \"dd8ea577981cf0f58181631763b212714dd1b5200c02a130c3ce4f198212ebf1\",\n"}
+,{"stream_name":"stdout","time":1316.638564441,"data":"    \"cuda-gate.json\": \"3907d429a3d85519e8bef683dc8cd90d40ab0b1abf08150006219a58eacab203\",\n"}
+,{"stream_name":"stdout","time":1316.63856857,"data":"    \"phase1_cuda.json\": \"efb9feb3e84c0aa651642a37ee25358dec8b20e4a5e4551e8b4eab41995e2f88\",\n"}
+,{"stream_name":"stdout","time":1316.638573144,"data":"    \"phase2_cuda.json\": \"20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086\",\n"}
+,{"stream_name":"stdout","time":1316.638577516,"data":"    \"warp_matrix.json\": \"7ae43642b25ff6446886acfe83fb88c8475a84b176e54184b75fdf5712bea1a4\"\n"}
+,{"stream_name":"stdout","time":1316.638582097,"data":"  },\n"}
+,{"stream_name":"stdout","time":1316.638586356,"data":"  \"commit\": \"144c585005a374b5c6b2daa37c2d47d67a86b318\",\n"}
+,{"stream_name":"stdout","time":1316.638590524,"data":"  \"environment\": {\n"}
+,{"stream_name":"stdout","time":1316.638594008,"data":"    \"capability\": \"7.5\",\n"}
+,{"stream_name":"stdout","time":1316.638597936,"data":"    \"driver\": \"580.159.04\\n580.159.04\",\n"}
+,{"stream_name":"stdout","time":1316.638601846,"data":"    \"gpu\": \"Tesla T4\",\n"}
+,{"stream_name":"stdout","time":1316.638605774,"data":"    \"python\": \"3.12.13\",\n"}
+,{"stream_name":"stdout","time":1316.638609766,"data":"    \"torch\": \"2.10.0+cu128\",\n"}
+,{"stream_name":"stdout","time":1316.638613831,"data":"    \"torch_cuda_build\": \"12.8\",\n"}
+,{"stream_name":"stdout","time":1316.638618077,"data":"    \"vram_gib\": 14.562\n"}
+,{"stream_name":"stdout","time":1316.638622496,"data":"  },\n"}
+,{"stream_name":"stdout","time":1316.638626279,"data":"  \"gate_verdict\": \"BLOCKED\",\n"}
+,{"stream_name":"stdout","time":1316.638630409,"data":"  \"menagerie\": \"da76818e269b82289eba39808e2fb91d679d6994\",\n"}
+,{"stream_name":"stdout","time":1316.63863461,"data":"  \"sanitizer\": {\n"}
+,{"stream_name":"stdout","time":1316.638638544,"data":"    \"initcheck\": {\n"}
+,{"stream_name":"stdout","time":1316.638642486,"data":"      \"head\": [\n"}
+,{"stream_name":"stdout","time":1316.638646464,"data":"        \"========= COMPUTE-SANITIZER\",\n"}
+,{"stream_name":"stdout","time":1316.638650739,"data":"        \"========= Uninitialized __global__ memory read of size 4 bytes\",\n"}
+,{"stream_name":"stdout","time":1316.638654644,"data":"        \"=========     at _linesearch_iterative_kernel__locals__kernel_cbb38e10_cuda_kernel_forward+0x7890\",\n"}
+,{"stream_name":"stdout","time":1316.638658795,"data":"        \"=========     by thread (25,0,0) in block (0,0,0)\",\n"}
+,{"stream_name":"stdout","time":1316.638663319,"data":"        \"=========     Address 0x12927f4734\",\n"}
+,{"stream_name":"stdout","time":1316.638667224,"data":"        \"=========     Saved host backtrace up to driver entry point at kernel launch time\",\n"}
+,{"stream_name":"stdout","time":1316.638671448,"data":"        \"=========         Host Frame: wp_cuda_launch_kernel [0xb51ca4] in warp.so\",\n"}
+,{"stream_name":"stdout","time":1316.638696786,"data":"        \"=========         Host Frame: launch in context.py:10878\",\n"}
+,{"stream_name":"stdout","time":1316.63870209,"data":"        \"=========         Host Frame: launch_tiled in context.py:10970\",\n"}
+,{"stream_name":"stdout","time":1316.638706802,"data":"        \"=========         Host Frame: _linesearch_iterative in solver.py:1328\",\n"}
+,{"stream_name":"stdout","time":1316.638710828,"data":"        \"=========         Host Frame: _linesearch in solver.py:1514\",\n"}
+,{"stream_name":"stdout","time":1316.638714613,"data":"        \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.638718384,"data":"        \"=========         Host Frame: _solver_iteration in solver.py:3784\",\n"}
+,{"stream_name":"stdout","time":1316.638722399,"data":"        \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.638726275,"data":"        \"=========         Host Frame: capture_while in context.py:12494\",\n"}
+,{"stream_name":"stdout","time":1316.638733574,"data":"        \"=========         Host Frame: _solve in solver.py:3992\",\n"}
+,{"stream_name":"stdout","time":1316.638737375,"data":"        \"=========         Host Frame: solve in solver.py:3952\",\n"}
+,{"stream_name":"stdout","time":1316.638741419,"data":"        \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.638746011,"data":"        \"=========         Host Frame: forward in forward.py:1359\",\n"}
+,{"stream_name":"stdout","time":1316.638749978,"data":"        \"=========         Host Frame: wrapper in warp_util.py:97\"\n"}
+,{"stream_name":"stdout","time":1316.638754136,"data":"      ],\n"}
+,{"stream_name":"stdout","time":1316.638759011,"data":"      \"lines\": 1043\n"}
+,{"stream_name":"stdout","time":1316.638763421,"data":"    },\n"}
+,{"stream_name":"stdout","time":1316.638770559,"data":"    \"racecheck\": {\n"}
+,{"stream_name":"stdout","time":1316.638774707,"data":"      \"head\": [\n"}
+,{"stream_name":"stdout","time":1316.638778556,"data":"        \"========= COMPUTE-SANITIZER\",\n"}
+,{"stream_name":"stdout","time":1316.638782432,"data":"        \"========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)\"\n"}
+,{"stream_name":"stdout","time":1316.638786369,"data":"      ],\n"}
+,{"stream_name":"stdout","time":1316.638794796,"data":"      \"lines\": 2\n"}
+,{"stream_name":"stdout","time":1316.638798336,"data":"    },\n"}
+,{"stream_name":"stdout","time":1316.638803727,"data":"    \"tool_available\": true\n"}
+,{"stream_name":"stdout","time":1316.638811469,"data":"  },\n"}
+,{"stream_name":"stdout","time":1316.638814151,"data":"  \"schema\": \"qdgrasp/evidence/phase3.4.3-kaggle/v1\",\n"}
+,{"stream_name":"stdout","time":1316.638816996,"data":"  \"warp_matrix\": {\n"}
+,{"stream_name":"stdout","time":1316.638819491,"data":"    \"pins\": {\n"}
+,{"stream_name":"stdout","time":1316.638822007,"data":"      \"mujoco-warp==3.10.0.3\": {\n"}
+,{"stream_name":"stdout","time":1316.638824641,"data":"        \"error_summary\": [\n"}
+,{"stream_name":"stdout","time":1316.638827177,"data":"          \"========= ERROR SUMMARY: 65248 errors\",\n"}
+,{"stream_name":"stdout","time":1316.638829819,"data":"          \"========= ERROR SUMMARY: 65240 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.638832594,"data":"        ],\n"}
+,{"stream_name":"stdout","time":1316.638835095,"data":"        \"first_errors\": [\n"}
+,{"stream_name":"stdout","time":1316.638837644,"data":"          \"========= ERROR SUMMARY: 65248 errors\"\n"}
+,{"stream_name":"stdout","time":1316.63887062,"data":"        ],\n"}
+,{"stream_name":"stdout","time":1316.638879371,"data":"        \"probe_stdout_tail\": \"s  (cached)\\nModule mujoco_warp._src.derivative 31cd557 load on device 'cuda:0' took 1.73 ms  (cached)\\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.80 ms  (cached)\\nstepped 8 times over 4 worlds\\n========= ERROR SUMMARY: 65248 errors\\n========= ERROR SUMMARY: 65240 errors were not printed. Use --print-limit option to adjust the number of printed errors\\n\",\n"}
+,{"stream_name":"stdout","time":1316.638888569,"data":"        \"probe_stepped\": true,\n"}
+,{"stream_name":"stdout","time":1316.638893057,"data":"        \"sanitizer_lines\": 187,\n"}
+,{"stream_name":"stdout","time":1316.638897644,"data":"        \"status\": \"uninitialized_reads\",\n"}
+,{"stream_name":"stdout","time":1316.638901687,"data":"        \"verbatim_tail\": [\n"}
+,{"stream_name":"stdout","time":1316.638905721,"data":"          \"=========         Host Frame: forward in forward.py:1359\",\n"}
+,{"stream_name":"stdout","time":1316.638909904,"data":"          \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.638914264,"data":"          \"=========         Host Frame: step in forward.py:1366\",\n"}
+,{"stream_name":"stdout","time":1316.638919251,"data":"          \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.638923885,"data":"          \"=========         Host Frame: \u003cmodule\u003e in \u003cstring\u003e:12\",\n"}
+,{"stream_name":"stdout","time":1316.638929336,"data":"          \"=========\",\n"}
+,{"stream_name":"stdout","time":1316.638933719,"data":"          \"========= ERROR SUMMARY: 65248 errors\",\n"}
+,{"stream_name":"stdout","time":1316.638939055,"data":"          \"========= ERROR SUMMARY: 65240 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.638944001,"data":"        ]\n"}
+,{"stream_name":"stdout","time":1316.63894804,"data":"      },\n"}
+,{"stream_name":"stdout","time":1316.638952844,"data":"      \"mujoco-warp==3.11.0\": {\n"}
+,{"stream_name":"stdout","time":1316.638957074,"data":"        \"error_summary\": [\n"}
+,{"stream_name":"stdout","time":1316.638960624,"data":"          \"========= ERROR SUMMARY: 66181 errors\",\n"}
+,{"stream_name":"stdout","time":1316.63896429,"data":"          \"========= ERROR SUMMARY: 66173 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.638968375,"data":"        ],\n"}
+,{"stream_name":"stdout","time":1316.638972218,"data":"        \"first_errors\": [\n"}
+,{"stream_name":"stdout","time":1316.638975795,"data":"          \"========= ERROR SUMMARY: 66181 errors\",\n"}
+,{"stream_name":"stdout","time":1316.638980459,"data":"          \"========= ERROR SUMMARY: 66173 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.638984896,"data":"        ],\n"}
+,{"stream_name":"stdout","time":1316.638988582,"data":"        \"probe_stdout_tail\": \"piled)\\nModule mujoco_warp._src.derivative 31cd557 load on device 'cuda:0' took 2450.39 ms  (compiled)\\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.88 ms  (cached)\\nstepped 8 times over 4 worlds\\n========= ERROR SUMMARY: 66181 errors\\n========= ERROR SUMMARY: 66173 errors were not printed. Use --print-limit option to adjust the number of printed errors\\n\",\n"}
+,{"stream_name":"stdout","time":1316.638994194,"data":"        \"probe_stepped\": true,\n"}
+,{"stream_name":"stdout","time":1316.638997861,"data":"        \"sanitizer_lines\": 187,\n"}
+,{"stream_name":"stdout","time":1316.639007884,"data":"        \"status\": \"uninitialized_reads\",\n"}
+,{"stream_name":"stdout","time":1316.639012484,"data":"        \"verbatim_tail\": [\n"}
+,{"stream_name":"stdout","time":1316.639016891,"data":"          \"=========         Host Frame: forward in forward.py:1359\",\n"}
+,{"stream_name":"stdout","time":1316.639021194,"data":"          \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.639025417,"data":"          \"=========         Host Frame: step in forward.py:1366\",\n"}
+,{"stream_name":"stdout","time":1316.639037238,"data":"          \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.639041665,"data":"          \"=========         Host Frame: \u003cmodule\u003e in \u003cstring\u003e:12\",\n"}
+,{"stream_name":"stdout","time":1316.639047058,"data":"          \"=========\",\n"}
+,{"stream_name":"stdout","time":1316.639052001,"data":"          \"========= ERROR SUMMARY: 66181 errors\",\n"}
+,{"stream_name":"stdout","time":1316.639056668,"data":"          \"========= ERROR SUMMARY: 66173 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.639061529,"data":"        ]\n"}
+,{"stream_name":"stdout","time":1316.639065191,"data":"      },\n"}
+,{"stream_name":"stdout","time":1316.639068844,"data":"      \"mujoco-warp==3.12.0\": {\n"}
+,{"stream_name":"stdout","time":1316.639072635,"data":"        \"error_summary\": [\n"}
+,{"stream_name":"stdout","time":1316.639076626,"data":"          \"========= ERROR SUMMARY: 68224 errors\",\n"}
+,{"stream_name":"stdout","time":1316.63908078,"data":"          \"========= ERROR SUMMARY: 68216 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.639085624,"data":"        ],\n"}
+,{"stream_name":"stdout","time":1316.639089366,"data":"        \"first_errors\": [\n"}
+,{"stream_name":"stdout","time":1316.639093056,"data":"          \"========= ERROR SUMMARY: 68224 errors\",\n"}
+,{"stream_name":"stdout","time":1316.639098343,"data":"          \"========= ERROR SUMMARY: 68216 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.639103287,"data":"        ],\n"}
+,{"stream_name":"stdout","time":1316.639107231,"data":"        \"probe_stdout_tail\": \"d)\\nModule mujoco_warp._src.derivative 1bec8db load on device 'cuda:0' took 2289.99 ms  (compiled)\\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 188.11 ms  (compiled)\\nstepped 8 times over 4 worlds\\n========= ERROR SUMMARY: 68224 errors\\n========= ERROR SUMMARY: 68216 errors were not printed. Use --print-limit option to adjust the number of printed errors\\n\",\n"}
+,{"stream_name":"stdout","time":1316.63911285,"data":"        \"probe_stepped\": true,\n"}
+,{"stream_name":"stdout","time":1316.639117282,"data":"        \"sanitizer_lines\": 187,\n"}
+,{"stream_name":"stdout","time":1316.63912159,"data":"        \"status\": \"uninitialized_reads\",\n"}
+,{"stream_name":"stdout","time":1316.639125504,"data":"        \"verbatim_tail\": [\n"}
+,{"stream_name":"stdout","time":1316.639129285,"data":"          \"=========         Host Frame: forward in forward.py:1364\",\n"}
+,{"stream_name":"stdout","time":1316.639133281,"data":"          \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.639137217,"data":"          \"=========         Host Frame: step in forward.py:1371\",\n"}
+,{"stream_name":"stdout","time":1316.639141096,"data":"          \"=========         Host Frame: wrapper in warp_util.py:97\",\n"}
+,{"stream_name":"stdout","time":1316.639151762,"data":"          \"=========         Host Frame: \u003cmodule\u003e in \u003cstring\u003e:12\",\n"}
+,{"stream_name":"stdout","time":1316.639156427,"data":"          \"=========\",\n"}
+,{"stream_name":"stdout","time":1316.639162168,"data":"          \"========= ERROR SUMMARY: 68224 errors\",\n"}
+,{"stream_name":"stdout","time":1316.639166291,"data":"          \"========= ERROR SUMMARY: 68216 errors were not printed. Use --print-limit option to adjust the number of printed errors\"\n"}
+,{"stream_name":"stdout","time":1316.639171003,"data":"        ]\n"}
+,{"stream_name":"stdout","time":1316.639175181,"data":"      }\n"}
+,{"stream_name":"stdout","time":1316.639179086,"data":"    },\n"}
+,{"stream_name":"stdout","time":1316.639182823,"data":"    \"warp_lang_version\": \"1.16.0\"\n"}
+,{"stream_name":"stdout","time":1316.639187246,"data":"  }\n"}
+,{"stream_name":"stdout","time":1316.63921172,"data":"}\n"}
+,{"stream_name":"stdout","time":1316.639223222,"data":"\n"}
+,{"stream_name":"stdout","time":1316.639227904,"data":"packet sha256: 945e2eed60a8de9f966312a1a548bd26a6dcca96e442fac67d3e02d28deaf812\n"}
+,{"stream_name":"stdout","time":1316.639232406,"data":"\n"}
+,{"stream_name":"stdout","time":1316.639236323,"data":"Download /kaggle/working/phase3_4_3_evidence/ and commit it under evidence/phase3_4_3/s10/.\n"}
+,{"stream_name":"stdout","time":1316.63924004,"data":"A PASS here is GPU evidence for two active hands. It is not phase closure,\n"}
+,{"stream_name":"stdout","time":1316.639243796,"data":"and it is not three-hand coverage.\n"}
+,{"stream_name":"stderr","time":1320.277927137,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":1320.277972154,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":1320.454724801,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":1320.454754787,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":1321.25269288,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":1321.637467943,"data":"[NbConvertApp] Writing 54850 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":1324.480055463,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":1325.493609499,"data":"[NbConvertApp] Writing 362809 bytes to __results__.html\n"}
+]

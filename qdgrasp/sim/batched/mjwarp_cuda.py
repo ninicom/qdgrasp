@@ -426,9 +426,26 @@ class MjWarpCudaBackend:
         if contact is None:
             return REQUIRED_CONTACT_FIELDS
         missing = [field for field in REQUIRED_CONTACT_FIELDS if not hasattr(contact, field)]
-        if not hasattr(self._warp_data, "efc_force"):
-            missing.append("efc_force")
+        if self._constraint_force() is None:
+            missing.append("constraint_force")
         return tuple(missing)
+
+    def _constraint_force(self) -> object | None:
+        """The solver's constraint force array, whatever this build calls it.
+
+        MuJoCo Warp has moved this between a flat ``efc_force`` on the data root
+        and a ``force`` field on an ``efc`` sub-struct. Looking for one name only
+        reports "this build cannot supply contact force" when it can, which is a
+        false capability claim rather than a conservative one -- the T4 run
+        reported exactly that.
+        """
+        for holder, name in (
+            (self._warp_data, "efc_force"),
+            (getattr(self._warp_data, "efc", None), "force"),
+        ):
+            if holder is not None and hasattr(holder, name):
+                return getattr(holder, name)
+        return None
 
     def read_contact_forces(self) -> np.ndarray | None:
         """Per-contact normal force, or ``None`` when the build cannot supply it.
@@ -442,7 +459,7 @@ class MjWarpCudaBackend:
         if contact is None or self.missing_contact_fields():
             return None
         address = self._as_numpy(contact.efc_address)
-        forces = self._as_numpy(self._warp_data.efc_force)
+        forces = self._as_numpy(self._constraint_force())
         if address is None or forces is None:
             return None
         flat_address = np.asarray(address).astype(int).ravel()
