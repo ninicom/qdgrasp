@@ -255,7 +255,10 @@ def test_a_failed_cuda_verdict_is_refused(tmp_path: Path) -> None:
     )
     verdict = module.verify_external_evidence(path, expected_commit="deadbeef")
     assert verdict["passed"] is False
-    assert any("not PASS" in problem for problem in verdict["problems"])
+    # WRK-R3: the declared verdict is no longer what decides this. A bundle with
+    # no metrics recomputes to FAIL because there is nothing in it that passes.
+    assert verdict["computed_verdict"] == "FAIL"
+    assert verdict["problems"]
 
 
 def test_evidence_measuring_different_code_is_refused(tmp_path: Path) -> None:
@@ -314,7 +317,7 @@ def test_a_review_packet_from_the_author_is_refused(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    verdict = module.verify_review_packet(path)
+    verdict = module.verify_review_packet(path, expected_commit="deadbeef")
     assert verdict["passed"] is False
     assert any("must not be the author" in p for p in verdict["problems"])
 
@@ -333,9 +336,10 @@ def test_an_unresolved_blocking_finding_is_refused(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    verdict = module.verify_review_packet(path)
+    verdict = module.verify_review_packet(path, expected_commit="deadbeef")
     assert verdict["passed"] is False
-    assert any("S0/S1" in p for p in verdict["problems"])
+    # WRK-R3 widened the blocking band from S0/S1 to S0-S3.
+    assert any("open S1" in p for p in verdict["problems"])
 
 
 # -- the notebook has to be runnable before it is run ---------------------

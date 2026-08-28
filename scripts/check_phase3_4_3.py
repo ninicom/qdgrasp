@@ -30,9 +30,14 @@ from typing import Any
 
 from qdgrasp.config.active_scope import ACTIVE_HANDS, PAUSED_HANDS
 from qdgrasp.roadmap import ManifestError, audit_active_scope, audit_closure, load_manifest
+from qdgrasp.roadmap.review_packet import canonical_packet_digest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = REPO_ROOT / "docs" / "roadmap" / "phase3_4_3_requirements.yaml"
+
+#: The one schema the CUDA verifier accepts. A bundle that calls itself something
+#: else is not a bundle this gate knows how to check.
+CUDA_EVIDENCE_SCHEMA: str = "qdgrasp/evidence/phase3.4.3-cuda/v1"
 
 #: Only this verdict may be used to unblock the Phase 4 contact-rich input.
 ACTIVE_VERDICT = "P3.4.3-ACTIVE-PASS"
@@ -112,12 +117,79 @@ def measured_tree_matches(evidence_commit: str, candidate_commit: str) -> tuple[
     return (False, f"git could not compare the trees: {completed.stderr.strip()[:120]}")
 
 
+def recompute_cuda_verdict(payload: dict[str, Any]) -> tuple[str, list[str]]:
+    """Derive the CUDA verdict from the metrics, never from the declared field.
+
+    WRK-R3. A verdict the producer wrote is a claim; a verdict computed here from
+    the numbers is a check. Reading ``payload["verdict"]`` let a bundle assert its
+    own pass, which is the false-pass path RRV-01 names. The declared value is
+    still compared, because a producer and a verifier disagreeing about the same
+    numbers is itself a finding.
+    """
+    problems: list[str] = []
+
+    capability = payload.get("capability") or {}
+    if capability.get("verdict") != "supported":
+        problems.append(f"capability verdict is {capability.get('verdict')!r}, not 'supported'")
+    if not capability.get("contact_force_readable"):
+        problems.append("contact force is not readable")
+    missing = capability.get("missing_contact_fields") or []
+    if missing:
+        problems.append(f"missing contact fields {missing}")
+    overflow = capability.get("overflow_telemetry") or {}
+    if overflow.get("buffer_overflow"):
+        problems.append("contact buffer overflowed")
+    if overflow.get("stream_truncated"):
+        problems.append("contact stream was truncated")
+
+    parity = payload.get("parity") or {}
+    for stage in ("no_contact", "single_contact", "full_trajectory"):
+        section = parity.get(stage) or {}
+        if not section.get("passed"):
+            problems.append(f"parity stage {stage} did not pass")
+
+    sanitizer = payload.get("sanitizer") or {}
+    if sanitizer.get("status") != "recorded":
+        problems.append(f"sanitizer status is {sanitizer.get('status')!r}, not 'recorded'")
+    if not sanitizer.get("clean"):
+        problems.append("sanitizer reported errors")
+    tools = sanitizer.get("tools") or {}
+    for required in ("initcheck", "racecheck"):
+        if required not in tools:
+            problems.append(f"sanitizer tool {required} was not run")
+        elif not tools[required].get("clean"):
+            problems.append(f"sanitizer tool {required} is not clean")
+
+    performance = payload.get("performance") or {}
+    hands = performance.get("hands") or {}
+    if not hands:
+        problems.append("no per-hand performance measurements")
+    for hand, metrics in sorted(hands.items()):
+        if not metrics.get("speedup_met"):
+            problems.append(f"{hand}: speedup {metrics.get('speedup')} below the criterion")
+        if not metrics.get("vram_within_budget"):
+            problems.append(f"{hand}: VRAM outside the budget")
+        if not metrics.get("worlds_met"):
+            problems.append(f"{hand}: simultaneous-world floor not met")
+        if int(metrics.get("overflow_worlds", 0)):
+            problems.append(f"{hand}: {metrics['overflow_worlds']} world(s) overflowed")
+        rejected = int(metrics.get("rejected_worlds", 0))
+        if rejected:
+            problems.append(f"{hand}: {rejected} world(s) rejected as non-finite")
+
+    if payload.get("three_hand_coverage"):
+        problems.append("evidence claims three-hand coverage, which ADR-0008 forbids")
+
+    return ("PASS" if not problems else "FAIL"), problems
+
+
 def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict[str, Any]:
     """Check GPU evidence produced somewhere this machine cannot reproduce.
 
-    The gate cannot re-run a T4 rollout, so it checks what it can: that the
-    evidence exists, that it is the schema it claims, that its verdict is a
-    pass, and that the code it measured is the code under review.
+    The gate cannot re-run a T4 rollout. What it can do is refuse to take the
+    bundle's word for anything: the schema is pinned, the verdict is recomputed
+    from the metrics, the raw log is bound by hash, and the measured tree has to
+    be the candidate's.
     """
     if path is None:
         return {
@@ -134,15 +206,29 @@ def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         return {"status": "unreadable", "detail": str(exc), "passed": False}
+    if not isinstance(payload, dict):
+        return {"status": "unreadable", "detail": "evidence is not an object", "passed": False}
 
     schema = payload.get("schema", "")
-    verdict = payload.get("verdict", "")
+    declared = payload.get("verdict", "")
     commit = str(payload.get("commit") or payload.get("cuda_environment", {}).get("commit") or "")
     problems: list[str] = []
-    if not schema.startswith("qdgrasp/evidence/phase3.4.3-"):
-        problems.append(f"unexpected evidence schema {schema!r}")
-    if verdict != "PASS":
-        problems.append(f"CUDA gate verdict is {verdict!r}, not PASS")
+    if schema != CUDA_EVIDENCE_SCHEMA:
+        problems.append(f"evidence schema is {schema!r}, not {CUDA_EVIDENCE_SCHEMA!r}")
+
+    computed, metric_problems = recompute_cuda_verdict(payload)
+    problems.extend(metric_problems)
+    if declared != computed:
+        problems.append(
+            f"declared verdict {declared!r} disagrees with the verdict computed "
+            f"from the metrics ({computed!r})"
+        )
+
+    # The raw log is what makes the metrics auditable after the fact.
+    raw_log = _raw_log_binding(path, payload)
+    if raw_log["problems"]:
+        problems.extend(raw_log["problems"])
+
     matches, detail = measured_tree_matches(commit, expected_commit)
     if not matches:
         problems.append(f"evidence does not measure the candidate's code: {detail}")
@@ -151,47 +237,134 @@ def verify_external_evidence(path: Path | None, *, expected_commit: str) -> dict
         "path": str(path),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "schema": schema,
-        "verdict": verdict,
+        "declared_verdict": declared,
+        "computed_verdict": computed,
         "commit": commit,
         "candidate_commit": expected_commit,
         "measured_paths": list(MEASURED_PATHS),
         "measured_tree_matches": matches,
         "measured_tree_detail": detail,
+        "raw_log": raw_log,
         "problems": problems,
         "passed": not problems,
     }
 
 
-def verify_review_packet(path: Path | None) -> dict[str, Any]:
+def _raw_log_binding(evidence_path: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    """Bind the bundle to the raw run log that produced it."""
+    declared = payload.get("raw_log_sha256")
+    bundle_dir = evidence_path.parent
+    candidates = sorted(bundle_dir.glob("*.log")) + sorted(bundle_dir.glob("raw*.json"))
+    if not declared:
+        return {
+            "status": "absent",
+            "problems": [
+                (
+                    "evidence declares no raw_log_sha256, so its metrics cannot "
+                    "be audited against the run that produced them"
+                )
+            ],
+        }
+    for candidate in candidates:
+        digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+        if digest == declared:
+            return {"status": "bound", "path": str(candidate), "sha256": digest, "problems": []}
+    return {
+        "status": "unbound",
+        "declared": declared,
+        "problems": [f"no file beside the evidence hashes to {declared}"],
+    }
+
+
+def verify_review_packet(
+    path: Path | None,
+    *,
+    expected_commit: str,
+    packet_path: Path | None = None,
+) -> dict[str, Any]:
     """Check the independent reviewer's verdict, without standing in for it.
 
-    The author of a change cannot review it, so this only reads what a reviewer
-    signed: a PASS on an exact packet hash with no open S0-S1 findings.
+    The author of a change cannot review it, so this never issues a verdict. What
+    it does do is refuse an unbound one: the signature has to name the packet
+    digest it reviewed and the commit that packet describes, and both have to be
+    the candidate's. Two self-declared strings claiming reviewer != author were
+    the whole identity check before, which is no check at all.
     """
     if path is None:
         return {
             "status": "absent",
-            "detail": "no review packet supplied; an author cannot review their own work",
+            "detail": "no reviewer verdict supplied; an author cannot review their own work",
             "passed": False,
         }
     if not path.is_file():
         return {"status": "missing_file", "detail": str(path), "passed": False}
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {"status": "unreadable", "detail": str(exc), "passed": False}
+    if not isinstance(payload, dict):
+        return {"status": "unreadable", "detail": "verdict is not an object", "passed": False}
+
     verdict = payload.get("reviewer_verdict", "")
     open_findings = payload.get("open_findings", {})
-    blocking = sum(int(open_findings.get(severity, 0)) for severity in ("S0", "S1"))
     problems: list[str] = []
+
     if verdict != "PASS":
         problems.append(f"reviewer verdict is {verdict!r}, not PASS")
-    if blocking:
-        problems.append(f"{blocking} unresolved S0/S1 finding(s)")
-    if not payload.get("reviewer") or payload.get("reviewer") == payload.get("author"):
+
+    # WRK-R3: zero open S0-S3, not just the two most severe.
+    blocking = 0
+    for severity in ("S0", "S1", "S2", "S3"):
+        count = int(open_findings.get(severity, 0))
+        blocking += count
+        if count:
+            problems.append(f"{count} open {severity} finding(s)")
+    if blocking == 0 and not open_findings:
+        problems.append("verdict declares no finding counts at all, not even zeros")
+
+    reviewer = str(payload.get("reviewer") or "")
+    author = str(payload.get("author") or "")
+    if not reviewer:
+        problems.append("verdict names no reviewer")
+    if not author:
+        problems.append("verdict names no author to distinguish the reviewer from")
+    if reviewer and reviewer == author:
         problems.append("the reviewer must not be the author of the change")
+
+    signed_commit = str(payload.get("candidate_commit") or "")
+    if signed_commit != expected_commit:
+        problems.append(
+            f"verdict signs commit {signed_commit or '(none)'!r}, not the candidate {expected_commit!r}"
+        )
+
+    signed_digest = str(payload.get("packet_sha256") or "")
+    packet_binding: dict[str, Any] = {"status": "unbound"}
+    if not signed_digest:
+        problems.append("verdict signs no packet digest")
+    elif packet_path is None or not packet_path.is_file():
+        problems.append("no review packet supplied to bind the signed digest against")
+    else:
+        actual = canonical_packet_digest(packet_path)
+        packet_binding = {
+            "status": "bound" if actual == signed_digest else "mismatched",
+            "path": str(packet_path),
+            "signed": signed_digest,
+            "actual": actual,
+        }
+        if actual != signed_digest:
+            problems.append(
+                f"the packet on disk digests to {actual}, not the {signed_digest} that was signed"
+            )
+
     return {
         "status": "recorded",
         "path": str(path),
         "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         "reviewer_verdict": verdict,
+        "reviewer": reviewer,
+        "author": author,
+        "candidate_commit": signed_commit,
+        "packet_binding": packet_binding,
         "open_findings": open_findings,
         "problems": problems,
         "passed": not problems,
@@ -224,9 +397,36 @@ def main() -> int:
         "--review-packet",
         type=Path,
         default=None,
-        help="the independent reviewer's signed verdict",
+        help="the immutable review packet the reviewer read",
+    )
+    parser.add_argument(
+        "--reviewer-verdict",
+        type=Path,
+        default=None,
+        help=(
+            "the independent reviewer's signed verdict, which must name the "
+            "packet digest and candidate commit it covers"
+        ),
     )
     args = parser.parse_args()
+
+    # WRK-R3: a release verdict cannot rest on tests nobody ran.
+    if args.profile == "release" and args.skip_tests:
+        print(
+            json.dumps(
+                {
+                    "verdict": "CONFIG_ERROR",
+                    "error": "--skip-tests is refused on the release profile",
+                },
+                indent=2,
+            )
+        )
+        print(
+            "Phase 3.4.3 release profile refuses --skip-tests: a missing suite is "
+            "a failure, not an omission.",
+            file=sys.stderr,
+        )
+        return CONFIG_ERROR_EXIT
 
     try:
         manifest = load_manifest(args.manifest)
@@ -318,7 +518,11 @@ def main() -> int:
     result["gates"] = gates
 
     result["cuda_evidence"] = verify_external_evidence(args.cuda_evidence, expected_commit=head)
-    result["review_packet"] = verify_review_packet(args.review_packet)
+    result["review_packet"] = verify_review_packet(
+        args.reviewer_verdict,
+        expected_commit=head,
+        packet_path=args.review_packet,
+    )
 
     exit_code = closure.exit_code
     for gate in gates:
