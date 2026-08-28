@@ -2,14 +2,14 @@
 document_id: DOCS-INDEX
 document_type: index
 title: Chỉ mục tài liệu QDGrasp
-version: 1.7.0
+version: 1.8.0
 status: active
-date: 2026-08-21
-revises: DOCS-INDEX@1.6.0
-latest_revision_record: docs/revisions/REV-20260828-013-phase3-4-3-execution.md
-revision_reason: Thêm breakdown thi công S0–S12 và điều kiện bàn giao P4 vào chỉ mục.
+date: 2026-08-29
+revises: DOCS-INDEX@1.7.0
+latest_revision_record: docs/revisions/REV-20260829-001-temporary-grasp-policy-mvp.md
+revision_reason: Thêm đường thực thi Grasp Policy MVP tạm thời và hạ ưu tiên P3.5.
 necessity: N3
-impact: Chỉ mục dẫn tới thứ tự thi công và tới điều kiện mở P4; không đổi trạng thái gate nào.
+impact: Chỉ mục dẫn tới vertical slice LEAP ưu tiên; các gate correctness/release cũ giữ nguyên.
 ---
 
 # Bộ tài liệu kiểm chứng QDGrasp
@@ -42,6 +42,9 @@ PLAN.md
   environment smoke gate, cùng contract cài QDGrasp như thư viện.
 - `roadmap/PROJECT_PHASES.md`: roadmap cấp cao gồm tám phase cân bằng từ nền
   dự án đến release/paper/community.
+- `roadmap/GRASP_POLICY_MVP_TEMPORARY_PLAN.md`: đường thực thi ưu tiên tạm thời
+  để ra checkpoint LEAP state-based gắp một object family trước; artifact là
+  experimental/non-release và không đóng giả P3.4.3, P3.5, P4 hoặc P5.
 - `configuration/TRAIN_ARGUMENTS.md`: bảng đủ 127 tên trong public train/config
   surface Ultralytics đã pin, disposition và quy tắc CPU/CUDA.
 - `configuration/TRAIN_ARGUMENTS.yaml`: registry máy đọc được; checker từ chối

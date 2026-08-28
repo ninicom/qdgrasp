@@ -2,12 +2,12 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.27.0
+version: 1.28.0
 status: active
-date: 2026-08-27
-revises: ROADMAP-001@1.26.0
+date: 2026-08-29
+revises: ROADMAP-001@1.27.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260828-013-phase3-4-3-execution.md
+latest_revision_record: docs/revisions/REV-20260829-001-temporary-grasp-policy-mvp.md
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -20,6 +20,20 @@ Wonik Allegro. Shadow Hand tạm dừng vì khó cấu hình underactuated/conta
 preset/evidence lịch sử được giữ nhưng không dùng trong default workload,
 release hoặc RL pipeline. Các phase ba-hand đã đóng vẫn là historical truth;
 P3.4 ba-hand chưa đóng thì giữ paused, không đổi thành pass.
+
+## Đường thực thi MVP tạm thời
+
+Từ 2026-08-29, [`ROADMAP-MVP-001`](GRASP_POLICY_MVP_TEMPORARY_PLAN.md) có quyền
+ưu tiên thực thi tạm thời so với phần việc còn lại của P3.4.3, P3.5, P4 và P5.
+Mục tiêu là tạo trước một policy **LEAP + one-object-on-table + state observation**
+chạy end-to-end và đạt locked-eval success cao, bằng controller prior, behavior
+cloning và residual PPO. Artifact chỉ là `experimental_non_release`.
+
+Roadmap tám phase bên dưới vẫn là backlog correctness/release chuẩn. Việc đổi
+ưu tiên không đóng gate cũ, không hợp thức hóa artifact release-blocked và không
+tạo claim multi-hand/generalization. Sau khi MVP đạt gate hoặc có failure
+evidence qua ba vòng tune, dự án quay lại roadmap này với thứ tự được điều chỉnh
+từ dữ liệu thực tế.
 
 ## Nhịp thực hiện
 
@@ -37,6 +51,7 @@ P3.4 ba-hand chưa đóng thì giữ paused, không đổi thành pass.
 
 | Phase | Mục tiêu chính | Artifact cuối phase | Gate chuyển phase | Trạng thái |
 | --- | --- | --- | --- | --- |
+| MVP-T — Grasp policy vertical slice | Ra sớm policy LEAP gắp một cuboid family trong MuJoCo CPU | `QDGrasp-Leap-Grasp-MVP` checkpoint + locked-eval ledger | Tier A `>=95%`, Tier B `>=85%` với Wilson lower bound `>=80%`, Tier C `>=70%`; zero invalid/safety violation | **active — temporary priority** |
 | P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | complete |
 | P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | complete |
 | P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | complete |
@@ -203,6 +218,8 @@ P3.4 ba-hand chưa đóng thì giữ paused, không đổi thành pass.
   `release_blocked=true` cho tới khi cả hai xong, và điều kiện bàn giao P4 nằm
   trong [`ROADMAP-P3.4.3-003`](PHASE3_4_3_HANDOFF.md).
 - Phase 3.5 ([`ROADMAP-P3.5-001`](PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md))
+  hiện **tạm hạ ưu tiên thực thi bởi `ROADMAP-MVP-001`**; contract bên dưới vẫn
+  là backlog dài hạn và không được coi là đã pass.
   thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
   mesh được chuẩn hóa theo mét, tách visual/collision, rồi public Python CoACD
   API trong library tạo convex parts local-first trước immutable manifest. API

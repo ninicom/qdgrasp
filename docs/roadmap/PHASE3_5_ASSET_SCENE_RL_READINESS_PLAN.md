@@ -2,17 +2,18 @@
 document_id: ROADMAP-P3.5-001
 document_type: plan
 title: Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
-version: 1.1.0
+version: 1.2.0
 status: active
-date: 2026-08-27
-revises: ROADMAP-P3.5-001@1.0.0
+date: 2026-08-29
+revises: ROADMAP-P3.5-001@1.1.0
 related_plan: ROADMAP-P3.3-001
 depends_on:
   - ROADMAP-P2-001
   - ROADMAP-P3.3-001
 optional_dependencies:
   - ROADMAP-P3.4-001
-latest_revision_record: docs/revisions/REV-20260827-009-temporary-shadow-hand-pause.md
+latest_revision_record: docs/revisions/REV-20260829-001-temporary-grasp-policy-mvp.md
+execution_priority: deferred_by_ROADMAP-MVP-001
 active_hands:
   - leap_hand
   - wonik_allegro
@@ -25,6 +26,13 @@ gpu_evidence_targets:
 ---
 
 # Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
+
+> **Trạng thái thực thi tạm thời:** contract P3.5 vẫn `active` và còn nguyên giá
+> trị dài hạn, nhưng implementation mới được hạ ưu tiên bởi
+> [`ROADMAP-MVP-001`](GRASP_POLICY_MVP_TEMPORARY_PLAN.md). MVP chỉ dựng LEAP,
+> one-object table environment và state-based policy; nó không làm P3.5 pass.
+> Sau MVP, raw mesh/CoACD, scene load/generate/drop, two-hand vector environment,
+> backend parity và independent review tiếp tục từ tài liệu này.
 
 P3.5 biến object/scene artifact của P2–P3.3 thành một môi trường mô phỏng có thể
 reset/step theo contract học tăng cường. Đầu vào có thể là scene hoàn chỉnh,
