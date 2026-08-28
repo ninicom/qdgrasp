@@ -1,7 +1,7 @@
 schema: qdgrasp/roadmap-requirements/v1
 plan_id: ROADMAP-P3.4.3-001
-plan_version: 1.1.0
-date: 2026-08-27
+plan_version: 1.3.0
+date: 2026-08-28
 scope:
   verdict: P3.4.3-ACTIVE-PASS
   active_hands: [leap_hand, wonik_allegro]
@@ -39,6 +39,7 @@ normative_sources:
   - docs/roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md
   - docs/decisions/0008-temporary-shadow-hand-pause.md
   - docs/revisions/REV-20260827-010-mjwarp-upstream-defect.md
+  - docs/revisions/REV-20260828-016-phase3-4-3-review-remediation.md
 
 requirements:
   # Static-audit blocker inventory.
@@ -139,8 +140,8 @@ requirements:
     implementation_refs: [qdgrasp/roadmap/requirements.py, scripts/check_phase3_4_3.py, scripts/check_phase3_4.py]
     test_ids: [tests/contactrich_active/test_completeness_ledger.py]
     evidence_refs: [evidence/phase3_4_3/s0/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "static review RRV-01 reopened closure correctness: CUDA evidence can self-declare PASS without metric recomputation, reviewer verdict is not bound to packet_sha256/candidate/signature and ignores open S2/S3, release profile permits --skip-tests, and passed ledger entries do not validate test/evidence content. Re-close only under ROADMAP-P3.4.3-001@1.3.0 WRK-R3 mutation evidence."
   - <<: *pending_requirement
     id: B-10
     category: blocker
@@ -150,8 +151,8 @@ requirements:
     implementation_refs: [qdgrasp/config/active_scope.py, qdgrasp/roadmap/scope_audit.py, qdgrasp/dataset/schema.py]
     test_ids: [tests/contactrich_active/test_active_scope.py]
     evidence_refs: [evidence/phase3_4_3/s1/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "static review RRV-02 found a Python release entry point, scripts/generate_dgn_open_tiny.py, that still selects shadow_hand by default and can write release_blocked=false without resolving ADR-0008 scope. The current YAML/DataConfig-only audit does not cover this path. Re-close only under WRK-R4 with a full-repository audit and explicit historical/non-release semantics where applicable."
   - <<: *pending_requirement
     id: B-11
     category: blocker
@@ -238,8 +239,8 @@ requirements:
     implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
     test_ids: [tests/contactrich_active/test_dataset_contract.py]
     evidence_refs: [evidence/phase3_4_3/s11/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "static review RRV-03/RRV-04 invalidated the current controlled-ablation closure claim: normalized unit-primitive GWS margin is compared to a raw mixed N/Nm wrench norm, and LEAP mass-sweep dynamic disturbance changes with overridden mass while the static threshold stays derived from recipe mass. Re-close only after WRK-R1 dimensionally correct resistance and WRK-R2 same-snapshot one-factor ablation."
   - <<: *pending_requirement
     id: B-19
     category: blocker
@@ -273,8 +274,8 @@ requirements:
     implementation_refs: [qdgrasp/roadmap/requirements.py, scripts/check_phase3_4_3.py, scripts/check_phase3_4.py]
     test_ids: [tests/contactrich_active/test_completeness_ledger.py]
     evidence_refs: [evidence/phase3_4_3/s0/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "static review RRV-01 reopened the machine closure gate because forged/self-declared external evidence, an unbound reviewer verdict, open S2/S3 findings or release --skip-tests can evade the intended contract. WRK-R3 must make each mutation return nonzero before this gate can pass."
   - <<: *pending_requirement
     id: G01
     category: direct_gate
@@ -328,8 +329,8 @@ requirements:
     implementation_refs: [qdgrasp/config/active_scope.py, qdgrasp/roadmap/scope_audit.py, qdgrasp/dataset/schema.py]
     test_ids: [tests/contactrich_active/test_active_scope.py]
     evidence_refs: [evidence/phase3_4_3/s1/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "static review RRV-02 found scripts/generate_dgn_open_tiny.py selecting shadow_hand in a default release workload outside the active-scope audit. WRK-R4 must route every release path through require_release_scope and make historical/experimental Shadow output explicitly non-release."
   - <<: *pending_requirement
     id: G06
     category: direct_gate
@@ -375,7 +376,7 @@ requirements:
     mapped_to: [C08]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
+    blocker_reason: "RRV-05/RRV-06: independent review cannot start yet. The tracked packet names stale commit 36887b4 instead of candidate 83bb755, contains a prior self-hash, and contradicts the current section 16.3 claim; the verifier does not bind reviewer verdict to packet_sha256/candidate/signature. Complete WRK-R3, WRK-R5 and WRK-R6, then obtain an independent signed verdict with zero open S0-S3."
   - <<: *pending_requirement
     id: G11
     category: direct_gate
@@ -383,7 +384,7 @@ requirements:
     mapped_to: [C08]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
+    blocker_reason: "P4 handoff remains blocked by failed G00/G05/G07/G08/C05/C07 and by the unavailable independent review packet/verdict. G11 can pass only after every required G00-G10/C01-C08 gate passes and the handoff is explicitly released."
 
   # Closed-world completeness gates.
   - <<: *pending_requirement
@@ -439,8 +440,8 @@ requirements:
     implementation_refs: [scripts/generate_contactrich_active_tiny.py, scripts/phase3_4_3_ablation.py]
     test_ids: [tests/contactrich_active/test_static_vs_dynamic_ablation.py, tests/contactrich_active/test_dataset_contract.py]
     evidence_refs: [evidence/phase3_4_3/s11/static-vs-dynamic.json, datasets/contactrich-active-tiny/dataset_manifest.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "static review RRV-03/RRV-04 withdraws the section 16.3 evidence: the resistance threshold is not dimensionally comparable to the GWS margin and the mass sweep does not hold disturbance equal across static/dynamic arms. The previous eight-case claim is not closure evidence. Re-close only after WRK-R1/WRK-R2 produce same-snapshot, one-factor evidence on 2/2 active hands."
   - <<: *pending_requirement
     id: C06
     category: completeness_gate
@@ -467,7 +468,7 @@ requirements:
     mapped_to: [P3.4-17]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
+    blocker_reason: "closure completeness is blocked by the reviewer reopenings in ROADMAP-P3.4.3-001@1.3.0, the measured CUDA failures, a stale/self-referential packet and the absence of a cryptographically bound independent verdict. Complete WRK-R1-R6 and the GPU correctness path before re-review."
 
   # Original work packages 00-17.
   - <<: *pending_requirement
@@ -625,8 +626,8 @@ requirements:
     implementation_refs: [scripts/generate_contactrich_active_tiny.py, qdgrasp/dataset/contactrich_active.py, scripts/check_contactrich_active.py, scripts/phase3_4_3_ablation.py, scripts/render_phase3_4_3_stages.py]
     test_ids: [tests/contactrich_active/test_dataset_contract.py]
     evidence_refs: [evidence/phase3_4_3/s11/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "controlled static-vs-dynamic ablation was reopened by RRV-03/RRV-04: current evidence compares a normalized GWS metric to raw mixed-unit disturbance and contains a LEAP mass-sweep disturbance mismatch. Regenerate only after WRK-R1/WRK-R2; do not reuse evidence/phase3_4_3/s11/static-vs-dynamic.json as release evidence."
   - <<: *pending_requirement
     id: P3.4-15
     category: original_work_package
@@ -653,7 +654,7 @@ requirements:
     mapped_to: [G10, G11, C08]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
+    blocker_reason: "independent verdict and P4 handoff are not available: the review packet is stale/self-referential, the verifier trust chain is incomplete, reviewer remediation WRK-R1-R6 remains open and CUDA correctness gates still fail."
 
   # Original normative clauses and successor scope.
   - <<: *pending_requirement
@@ -865,8 +866,8 @@ requirements:
     implementation_refs: [qdgrasp/dataset/pipeline/certifiers/contact_force.py, scripts/phase3_4_3_ablation.py]
     test_ids: [tests/contactrich_active/test_static_vs_dynamic_ablation.py]
     evidence_refs: [evidence/phase3_4_3/s11/static-vs-dynamic.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "the commit 83bb755 section 16.3 pass claim is withdrawn by static review. quality_margin is computed in a normalized unit-contact GWS while declared_disturbance is a raw norm mixing N and Nm; additionally the LEAP mass sweep applies different dynamic and static disturbances. Re-close only with WRK-R1 resistance_factor evidence and WRK-R2 controlled pairing on both active hands."
   - <<: *pending_requirement
     id: R-DOD-04
     category: original_clause
@@ -912,7 +913,7 @@ requirements:
     mapped_to: [G10, C08]
     owner: claude-implementation-agent
     status: blocked
-    blocker_reason: "requires an independent reviewer: the author of a change cannot review it. scripts/phase3_4_3_review_packet.py assembles the packet and issues no verdict."
+    blocker_reason: "an independent reviewer cannot issue PASS on the current packet because it is stale, self-referential and internally contradictory, and its verdict is not bound to packet/candidate/identity. After WRK-R1-R6 and GPU gate closure, require a signed exact-packet verdict with zero open S0-S3."
   - <<: *pending_requirement
     id: R-ADR-01
     category: scope_clause
@@ -922,8 +923,8 @@ requirements:
     implementation_refs: [qdgrasp/config/active_scope.py, qdgrasp/roadmap/scope_audit.py, qdgrasp/dataset/schema.py]
     test_ids: [tests/contactrich_active/test_active_scope.py]
     evidence_refs: [evidence/phase3_4_3/s1/result.json]
-    status: passed
-    blocker_reason: ""
+    status: failed
+    blocker_reason: "ADR-0008 enforcement is incomplete: scripts/generate_dgn_open_tiny.py still selects shadow_hand by default and can emit a nominal release artifact, while scope_audit scans only shipped YAML and DataConfigV2. WRK-R4 must cover all Python entry points and require explicit non-release historical/experimental scope."
   - <<: *pending_requirement
     id: R-UPSTREAM-01
     category: compatibility_clause

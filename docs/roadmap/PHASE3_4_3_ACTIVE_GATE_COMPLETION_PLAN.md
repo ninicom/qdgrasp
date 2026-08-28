@@ -2,10 +2,10 @@
 document_id: ROADMAP-P3.4.3-001
 document_type: plan
 title: Kế hoạch Phase 3.4.3 — hoàn tất correctness gate cho contact-rich active hands
-version: 1.2.0
+version: 1.3.0
 status: blocked
 date: 2026-08-28
-revises: ROADMAP-P3.4.3-001@1.1.0
+revises: ROADMAP-P3.4.3-001@1.2.0
 parent_plan: ROADMAP-P3.4-001
 related_decision: ADR-0008
 related_plans:
@@ -18,7 +18,7 @@ paused_hands:
   - shadow_hand
 evidence_root: evidence/phase3_4_3
 requirements_manifest: docs/roadmap/phase3_4_3_requirements.yaml
-latest_revision_record: docs/revisions/REV-20260828-015-phase3-4-3-terminal-state.md
+latest_revision_record: docs/revisions/REV-20260828-016-phase3-4-3-review-remediation.md
 ---
 
 # Phase 3.4.3 — Active contact-rich gate completion
@@ -816,61 +816,194 @@ pass.
 
 ### 12.1 Trạng thái chốt (2026-08-28)
 
-Điều khoản trên đã kích hoạt. Mọi mục đo được bằng máy đều đã đo — không còn
-requirement nào ở `pending`, và không còn mục nào chờ phần cứng. Ledger:
-65 passed, 14 failed, 5 blocked, 1 deferred, 0 violation, verdict `FAIL`.
+Trước lượt static review ngày 2026-08-28, ledger ghi 67 passed, 12 failed,
+5 blocked, 1 deferred. Review logic sau đó phát hiện ba claim `passed` không
+còn bảo toàn: closure checker có thể tin evidence tự khai, active-scope
+audit bỏ sót Python release entry point còn chọn Shadow, và §16.3 so sánh
+GWS margin đã chuẩn hóa với norm wrench trộn N/Nm. Vì vậy revision
+1.3.0 mở lại chín requirement liên quan; ledger sau reopening là
+58 passed, 21 failed, 5 blocked, 1 deferred, 0 pending. Verdict vẫn `FAIL` và
+plan vẫn `blocked`.
 
-Ba mục DoD không đạt, vì ba lý do khác hẳn nhau:
+| Mục DoD | Trạng thái sau review | Lý do |
+| --- | --- | --- |
+| 11 — CUDA parity/sanitizer | **failed, đã đo** | contact parity, non-finite world và initcheck chưa đạt |
+| 14 — paired static-fail/dynamic-pass | **failed, reviewer mở lại** | metric không cùng chuẩn và mass sweep không controlled |
+| 19 — ADR-0008 runtime default | **failed, reviewer mở lại** | generator Python còn có thể release Shadow |
+| 20 — independent reviewer PASS | **blocked** | packet stale/tự tham chiếu và verifier chưa gắn verdict với packet |
 
-| Mục | Trạng thái | Bản chất |
-|-----|-----------|----------|
-| 11 — CUDA parity/sanitizer | **failed, đã đo** | defect ngoài repo |
-| 14 — paired static-fail/dynamic-pass | **passed** | đạt 2/2 tay sau sửa đổi §16.3 |
-| 20 — independent reviewer PASS | **blocked** | ràng buộc quy trình, cố ý |
+Kết quả CUDA cũ giữ nguyên: speed đạt 5.47×/14.04× nhưng single-contact
+parity lệch 8.39 mm so với tolerance 2 mm, 84/1024 LEAP world non-finite và
+initcheck còn uninitialised read. Speed không mua lại correctness. Các bằng
+chứng từ run v7–v11 vẫn là negative evidence hợp lệ, nhưng không thể
+đóng G07/G08/C07.
 
-Mục 11 không đóng được từ bên trong repo này, và không gian cấu hình đã bị
-**loại trừ hết bằng phép đo** qua ba lần chạy T4, không phải bằng lập luận:
-`ls_parallel` đã bị gỡ khỏi upstream từ 3.9.1 nên không còn tồn tại;
-`ls_iterations=1` giảm lỗi từ 66 813 xuống 12 788 nhưng không về 0, tức đọc sai
-xảy ra ngay **vòng linesearch đầu tiên** — không có số vòng nào đủ thấp;
-`solver_cg` tệ hơn một bậc, 850 170. `mujoco-warp` 3.10.0.3, 3.11.0 và
-3.12.0 đều đọc bộ nhớ chưa khởi tạo trong `_linesearch_iterative_kernel` trên
-reproducer LEAP; `warp-lang` 1.16.0 là bản mới nhất tồn tại, nên nhánh "pin bản
-mới hơn" của §3.7 đã đóng. Còn lại đúng hai đường, cả hai là công việc mới cần
-plan riêng: một fallback GPU backend tự qua capability/parity, hoặc bản vá
-upstream. Đường fallback nay cũng đã được **đo thử** chứ không còn là giả định:
-`mujoco-mjx` cài được, nhưng `jax.jit(mjx.step)` trên scene contact-rich của
-LEAP không biên dịch xong trong 1800 s trên T4, nên probe chưa chạm tới được câu
-hỏi capability. Điều đó không kết tội MJX, nhưng nói rõ rằng fallback không phải
-thứ cắm-vào-là-chạy, và chi phí biên dịch trên chính model của ta là một rủi ro
-mở mà plan fallback sẽ phải dự trù. Xem `evidence/phase3_4_3/s10/kaggle-run-v11/`. §16.3 §G07.5 cho phép giữ GPU gate ở trạng thái không pass — đây là
-tình huống đó, không phải thiếu sót thực thi.
+Claim §16.3 tại commit `83bb755` bị thu hồi chờ remediation. Giá trị
+`quality_margin` hiện được tính trong GWS có unit contact primitive và torque
+scale theo kích thước vật; `declared_disturbance` lại trả norm trực tiếp của
+vector gồm force và torque. Hai số không thể so sánh để chứng minh khả
+năng chống nhiễu. Hơn nữa, LEAP mass sweep override mass cho dynamic arm
+nhưng static threshold vẫn suy từ mass gốc. Evidence `8 cases` không được
+dùng làm closure evidence.
 
-Mục 14 không đóng được bằng cách chạy thêm, và nhánh thứ tư cho biết vì sao.
-Scene "môi trường cấp lực đối kháng" đã được **dựng thật** — một bức tường cạnh
-target, quét tám hình học khai báo trên cả hai tay, báo cáo toàn bộ điểm. Không
-điểm nào cho cặp static-fail/dynamic-pass; mọi điểm fail **cả hai** nhánh.
+Review packet hiện không sẵn sàng cho independent verdict: packet ghi commit
+`36887b4` trong khi candidate đã ở `83bb755`, hash manifest đã stale, và
+`collect_evidence` hash chính packet cũ trước khi ghi đè. G10/C08/R-DOD-08
+chỉ được mở review sau khi hoàn tất toàn bộ §13.
 
-Lý do là cấu trúc chứ không phải đặc tính của corpus. Hai predicate dùng chung
-một sàn: `certify_force_closure` đòi hai contact, còn predicate động đòi
-`min_active_fingers=2` contact được duy trì qua perturbation window — nên grasp
-nào quá thưa cho phép thử tĩnh thì cũng quá thưa cho phép thử động, theo đúng
-cùng một phép đếm. Predicate động còn đòi `floor_support_after_lift=False`, tức
-loại trừ đúng những grasp được môi trường đỡ — thứ duy nhất khiến một phép thử
-force-closure đóng băng thất bại.
+## 13. Reviewer remediation addendum
 
-§16.3 giả định hai predicate có thể bất đồng theo chiều đó. Với đặc tả hiện tại,
-chúng **không thể**. Đóng mục này cần sửa một trong hai predicate — phép thử
-tĩnh thất bại vì lý do khác số contact (ví dụ wrench-space margin), hoặc phép
-thử động chấp nhận thành công có môi trường đỡ. Đó là sửa contract, không phải
-việc plan này được phép tự làm. Ba phương án đã được costed kèm khuyến nghị
-trong `docs/roadmap/PHASE3_4_3_CONTRACT_AMENDMENT_16_3.md`; mục này chờ **một
-quyết định**, không chờ thêm việc.
+Addendum này không tạo successor scope mới và không thay đổi ADR-0008.
+Nó mở lại các ID hiện có theo fail-closed semantics. Không requirement
+nào bên dưới được trả về `passed` chỉ vì patch hoặc test tồn tại;
+phải có acceptance evidence mới trên exact candidate.
 
-Mục 20 là ràng buộc cố ý. Người viết phần lớn patch không được tự review; packet
-đã sẵn sàng tại `scripts/phase3_4_3_review_packet.py`.
+### 13.1 Reopening matrix
 
-Phần CPU của plan đứng độc lập và đã đóng: 65 requirement passed, coverage
-36/36 cell, artifact 44 mẫu load sạch qua public loader, 967 test. `P4` static và
-offline không bị chặn bởi bất kỳ mục nào ở trên; chỉ nhánh GPU-derived
-contact-rich input là bị chặn, và `release_blocked=true` phản ánh đúng điều đó.
+| Finding | Requirement mở lại | Trạng thái | Evidence cũ |
+| --- | --- | --- | --- |
+| RRV-01 — closure evidence/review verifier có false-pass path | B-09, G00 | failed | invalidated cho closure claim |
+| RRV-02 — Shadow còn trong default Python release workload | B-10, G05, R-ADR-01 | failed | S1 scope audit không đủ coverage |
+| RRV-03 — §16.3 metric không cùng đơn vị/chuẩn | B-18, C05, P3.4-14, R-DOD-03 | failed | static-vs-dynamic v1 invalidated |
+| RRV-04 — mass sweep không dùng cùng disturbance | B-18, C05, P3.4-14, R-DOD-03 | failed | claim `8 cases` invalidated |
+| RRV-05 — packet stale và tự tham chiếu | G10, C08, R-DOD-08 | blocked | packet hiện tại không reviewable |
+| RRV-06 — plan/packet/guide mâu thuẫn | G10, C08, R-DOD-08 | blocked | derived prose phải regenerate |
+
+### 13.2 WRK-R1 — Dimensionally correct static resistance
+
+Thay `quality_margin < norm(perturbation_wrench)` bằng resistance problem có
+đơn vị và force bound rõ ràng. Implementation tham chiếu:
+
+```text
+maximize alpha
+subject to
+    G f + w_gravity + alpha * w_disturbance = 0
+    f_i in friction_cone_i
+    0 <= normal_force_i <= force_limit_i
+```
+
+- `alpha` không có đơn vị; static resistance pass khi `alpha >= 1`.
+- Mô-men trong `G` và `w_disturbance` phải cùng scale bằng
+  `1 / characteristic_length` nếu cần conditioning.
+- `force_limit_i` lấy từ profile/material/contact safety budget; không có
+  force cap thì resistance factor không được xem là physical certificate.
+- Legacy API giữ `quality_margin_threshold=0.0`, nhưng field đó không còn
+  được dùng làm §16.3 release evidence.
+
+**Acceptance:** analytic fixtures có known feasible/infeasible `alpha`, scale
+invariance khi đổi length unit, monotonicity theo force limit và disturbance,
+gravity + perturbation equilibrium residual trong tolerance đã pin.
+
+### 13.3 WRK-R2 — Controlled paired ablation
+
+Tạo `CandidateSnapshot` immutable gồm scene/target/robot state, command,
+contact proposal, mass/geometry/friction, safety budget, horizon, seed và applied
+wrench. Static và dynamic arm fork từ cùng snapshot; chỉ
+`physics_mode=frozen|reactive` được khác.
+
+- Contact lấy sau dynamic rollout chỉ là diagnostic, không phải primary
+  paired evidence.
+- Tách một hàm `resolve_perturbation_wrench(...)` dùng chung cho validator
+  và ablation; không sao chép công thức.
+- Mỗi mass-sweep record lưu mass, applied wrench/hash, snapshot hash,
+  static `alpha`, dynamic outcome và safety verdict.
+- Parameter hash bao phủ mass grid, wall geometry, disturbance policy, recipe,
+  safety/objective hash và implementation commit.
+
+**Acceptance:** same-snapshot hash cho hai arm, exact one-factor diff audit pass,
+không post-treatment contact leakage, regenerate byte-identical, và paired
+static-fail/dynamic-pass xuất hiện trên 2/2 active hand bằng resistance
+criterion WRK-R1; nếu không có thì R-DOD-03 giữ `failed`.
+
+### 13.4 WRK-R3 — Closure evidence trust chain
+
+Closure CLI tách ba input: CUDA evidence bundle, immutable review packet và
+signed reviewer verdict.
+
+- CUDA verifier chỉ nhận exact schema, bắt buộc parity/sanitizer/non-finite/
+  speed/VRAM/raw-log hash, và tự tính verdict từ metric.
+- Packet verifier tính lại canonical hash, khóa candidate commit, code/lock/
+  config/notebook/raw evidence hashes và không tin self-declared verdict.
+- Reviewer verdict phải ký packet hash, candidate commit, reviewer identity và
+  open-finding counts. `reviewer != author` không được xác minh chỉ bằng
+  hai chuỗi tự khai.
+- Release profile từ chối `--skip-tests`; missing suites là failure.
+- Requirement ledger kiểm test path và evidence schema/verdict/hash, không chỉ
+  sự tồn tại của file.
+- Independent PASS yêu cầu zero open S0–S3. Finding đã disposition phải
+  chuyển sang `closed`, không để `open`.
+
+**Acceptance:** mutation corpus chứng minh forged PASS JSON, wrong packet hash,
+wrong commit, unsigned reviewer, open S2/S3, missing raw log, nonexistent test và
+release `--skip-tests` đều trả nonzero.
+
+### 13.5 WRK-R4 — ADR-0008 enforcement toàn repository
+
+- Release mới dùng `DEFAULT_ROBOT_PROFILES` và `require_release_scope()`.
+- Artifact ba-hand lịch sử phải có ID trong
+  `HISTORICAL_THREE_HAND_ARTIFACTS`, explicit `--historical-reproduction` và
+  `non_release=true`; config allowlist không tự làm Python generator an toàn.
+- Audit quét YAML/YML và Python entry point bằng AST; YAML parse error là
+  finding thay vì bỏ qua.
+- Mọi manifest gọi `require_release_scope()` trước khi có thể ghi
+  `release_blocked=false`.
+
+**Acceptance:** không default CLI/generator/training/backend/RL path nào chọn
+Shadow; experimental/historical path bắt buộc explicit purpose và không thể
+promote output thành release.
+
+### 13.6 WRK-R5 — Review packet không vòng lặp
+
+Packet là artifact sinh từ clean candidate commit, không là input của chính
+nó. `collect_evidence` loại output target; packet được dựng trong thư mục
+tạm hoặc CI artifact store, hash canonical payload không chứa
+`packet_sha256`, sau đó reviewer ký digest. Packet được phép commit trong
+attestation commit sau, nhưng `candidate_commit` luôn là code commit đã review.
+
+**Acceptance:** rebuild hai lần từ cùng candidate cho cùng canonical digest
+ngoài timestamp được tách khỏi signed payload; không self-reference; packet,
+verdict và closure runner cùng xác nhận một candidate/hash.
+
+### 13.7 WRK-R6 — Single source of truth cho trạng thái
+
+Requirements manifest là nguồn trạng thái duy nhất. Counts, blocker table,
+reviewer checklist và packet completeness block được sinh từ manifest.
+Plan version và manifest `plan_version` phải khớp. Revision cũ không bị viết
+lại; revision mới ghi `supersedes` và nêu claim nào bị thu hồi.
+
+**Acceptance:** không còn câu mâu thuẫn giữa plan, ledger, review guide,
+dataset card và packet; generated counts khớp audit result; docs gate cấm status
+snapshot tự gõ nếu không mang manifest hash.
+
+### 13.8 Thứ tự thực thi và re-close
+
+```text
+WRK-R3 closure fail-closed -----> WRK-R5 immutable packet -----> WRK-R6 docs
+WRK-R1 resistance -----> WRK-R2 controlled ablation ----------/
+WRK-R4 Shadow scope ------------------------------------------/
+
+GPU upstream fix hoặc fallback backend -----> G07/G08/C07
+toàn bộ nhánh trên pass ----------------> independent review ----> G10/G11
+```
+
+Thứ tự bắt buộc:
+
+1. WRK-R3 và WRK-R4 trước để không sinh thêm evidence có thể false-pass.
+2. WRK-R1 trước WRK-R2; không regenerate ablation bằng metric cũ.
+3. Hoàn tất code freeze rồi mới dựng WRK-R5 packet.
+4. WRK-R6 chỉ regenerate derived prose sau khi ledger và evidence đã khóa.
+5. Independent reviewer là bước cuối; tác giả không tự phát hành verdict.
+
+Re-close matrix:
+
+| Gate | Điều kiện trả về `passed` |
+| --- | --- |
+| B-09, G00 | WRK-R3 mutation evidence pass trên release profile |
+| B-10, G05, R-ADR-01 | WRK-R4 full-repository audit zero finding |
+| B-18, C05, P3.4-14, R-DOD-03 | WRK-R1 + WRK-R2 có valid evidence trên 2/2 active hand |
+| G07, G08, C07 | GPU parity/sanitizer/non-finite/VRAM/performance đều pass |
+| G10, C08, R-DOD-08 | WRK-R5/R6 xong và signed independent verdict zero open S0–S3 |
+| G11, P3.4-17 | Mọi G00–G10/C01–C08 required gate pass; P4 handoff explicit |
+
+Trong thời gian remediation, `release_blocked=true`; không packet, dataset card,
+P4 handoff hay summary nào được claim `P3.4.3-ACTIVE-PASS`.
