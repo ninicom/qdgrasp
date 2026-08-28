@@ -5,13 +5,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import logging
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import torch
 
+from qdgrasp.config import (
+    DEFAULT_ROBOT_PROFILES,
+    historical_reproduction_scope,
+    require_release_scope,
+)
 from qdgrasp.dataset.manifest import DatasetManifestSpec, ShardMetadata, save_dataset_manifest
 from qdgrasp.dataset.pipeline.contracts import ALLOWED_RECIPES, PipelineOutcome, get_recipe
 from qdgrasp.dataset.pipeline.generated_reachable import build_grasp_bar, generated_reachable_rng
@@ -30,8 +35,8 @@ from qdgrasp.objects.generate import (
 )
 from qdgrasp.objects.manifest import create_object_asset, save_object_asset
 from qdgrasp.objects.schema import ObjectManifestSpec
-from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
 from qdgrasp.robot.provenance import validate_profile_for_release
+from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
 from qdgrasp.runtime import environment_info
 
 logger = logging.getLogger("generate_dgn_open_tiny")
@@ -167,14 +172,24 @@ def generate_tiny_dataset(
     base_seed: int = 42,
     samples_per_pair: int = 4,
     recipe_id: str = "wrench_guided_v1",
+    historical_reproduction: str | None = None,
 ) -> Path:
-    """Generate all objects, grasp samples, and manifest for DGN-Open-Tiny."""
+    """Generate all objects, grasp samples, and manifest for DGN-Open-Tiny.
+
+    The default corpus is the active one. Reproducing a pre-ADR-0008 three-hand
+    artifact needs its declared id passed explicitly, and everything that run
+    produces is ``non_release``: reproducing history does not give the pause an
+    exception, and does not create new three-hand coverage.
+    """
     recipe = get_recipe(recipe_id)
-    robot_configs = [
-        ("leap_hand", "leap_hand.yaml"),
-        ("wonik_allegro", "wonik_allegro.yaml"),
-        ("shadow_hand", "shadow_hand.yaml"),
-    ]
+    if historical_reproduction is None:
+        profiles = DEFAULT_ROBOT_PROFILES
+        scope = None
+        require_release_scope(profiles)
+    else:
+        profiles = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
+        scope = historical_reproduction_scope(historical_reproduction, profiles)
+    robot_configs = [(name.removesuffix(".yaml"), name) for name in profiles]
     robot_specs = {
         name: RobotSpec.from_config(cfg_name, sample_anchors=False)
         for name, cfg_name in robot_configs
@@ -402,6 +417,10 @@ def generate_tiny_dataset(
     )
     generator_worktree_dirty = source_dirty
     release_blocked = release_blocked or generator_worktree_dirty
+    # A historical reproduction can never be release evidence, whatever else
+    # the shard statistics say.
+    if scope is not None and scope.non_release:
+        release_blocked = True
     dataset_manifest = DatasetManifestSpec(
         dataset_id="dgn-open-tiny-v1",
         generator_version="0.1.0a1",
@@ -444,6 +463,16 @@ def main() -> None:
         choices=tuple(sorted(ALLOWED_RECIPES)),
         help="Allowlisted proposal/solver recipe.",
     )
+    parser.add_argument(
+        "--historical-reproduction",
+        default=None,
+        metavar="ARTIFACT_ID",
+        help=(
+            "Reproduce a declared pre-ADR-0008 three-hand artifact by id. Without "
+            "this the run covers the active corpus only. Anything produced with "
+            "it is non-release."
+        ),
+    )
     args = parser.parse_args()
 
     generate_tiny_dataset(
@@ -451,6 +480,7 @@ def main() -> None:
         base_seed=args.seed,
         samples_per_pair=args.samples_per_pair,
         recipe_id=args.recipe,
+        historical_reproduction=args.historical_reproduction,
     )
 
 

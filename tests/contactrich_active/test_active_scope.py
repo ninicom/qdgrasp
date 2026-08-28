@@ -128,3 +128,63 @@ def test_contactrich_generator_reads_the_corpus_from_the_registry() -> None:
     source = (REPO_ROOT / "scripts" / "generate_contactrich_tiny.py").read_text(encoding="utf-8")
     assert "resolve_workload_hands()" in source
     assert 'ACTIVE_HANDS = ("leap_hand", "wonik_allegro")' not in source
+
+
+def test_the_audit_sees_a_selection_a_yaml_scan_never_could(tmp_path):
+    """RRV-02: the selection that reopened B-10 lived in a Python list literal.
+
+    A config allowlist cannot reach it, so the audit has to parse Python. This
+    builds the shape of the original defect and asserts it is caught.
+    """
+    from qdgrasp.roadmap.scope_audit import audit_python_entry_points
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "qdgrasp").mkdir()
+    (tmp_path / "scripts" / "leaky_generator.py").write_text(
+        'robot_configs = [\n'
+        '    ("leap_hand", "leap_hand.yaml"),\n'
+        '    ("shadow_hand", "shadow_hand.yaml"),\n'
+        ']\n',
+        encoding="utf-8",
+    )
+    findings = audit_python_entry_points(tmp_path)
+    assert any(finding.hand == "shadow_hand" for finding in findings)
+
+
+def test_a_table_keyed_by_hand_is_not_a_selection(tmp_path):
+    """Supporting a paused profile is not choosing it.
+
+    Flagging every lookup table would bury the one case that matters, and a
+    gate nobody can read is worse than no gate.
+    """
+    from qdgrasp.roadmap.scope_audit import audit_python_entry_points
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "qdgrasp").mkdir()
+    (tmp_path / "scripts" / "table.py").write_text(
+        'ROBOT_CONFIGS = {\n'
+        '    "leap_hand": "leap_hand.yaml",\n'
+        '    "shadow_hand": "shadow_hand.yaml",\n'
+        '}\n',
+        encoding="utf-8",
+    )
+    assert audit_python_entry_points(tmp_path) == ()
+
+
+def test_an_unparseable_file_is_a_finding_not_a_skip(tmp_path):
+    """A file the audit cannot read is a file the audit cannot clear."""
+    from qdgrasp.roadmap.scope_audit import audit_python_entry_points
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "qdgrasp").mkdir()
+    (tmp_path / "scripts" / "broken.py").write_text("def (\n", encoding="utf-8")
+    findings = audit_python_entry_points(tmp_path)
+    assert any(finding.key == "<unparseable>" for finding in findings)
+
+
+def test_the_repository_has_no_undeclared_paused_selection():
+    """WRK-R4 acceptance: zero findings across the whole repository."""
+    from qdgrasp.roadmap.scope_audit import audit_active_scope
+
+    findings = audit_active_scope(REPO_ROOT)
+    assert findings == (), "\n".join(str(finding) for finding in findings)

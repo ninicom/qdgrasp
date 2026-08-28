@@ -49,9 +49,19 @@ from qdgrasp.runtime import environment_info
 
 logger = logging.getLogger("characterize_pipeline_failures")
 
+from qdgrasp.config import resolve_workload_hands
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-DEFAULT_HANDS = ("leap_hand", "wonik_allegro", "shadow_hand")
+# This is a diagnostic corpus, not a release workload: it characterises where
+# the pipeline fails, and a paused hand is part of what has to be characterised.
+# Declaring that out loud is what ADR-0008 asks for; the result is non-release.
+DEFAULT_SCOPE = resolve_workload_hands(
+    ("leap_hand", "wonik_allegro", "shadow_hand"),
+    experimental_shadow=True,
+    purpose="failure characterisation across every known profile, including the paused one",
+)
+DEFAULT_HANDS = DEFAULT_SCOPE.hands
 DEFAULT_RECIPES = ("surface_fixed_v1", "region_opposition_v1", "wrench_guided_v1")
 
 ROBOT_CONFIGS = {

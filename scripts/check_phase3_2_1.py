@@ -16,6 +16,7 @@ from typing import Any
 
 import numpy as np
 
+from qdgrasp.config import resolve_workload_hands
 from qdgrasp.dataset.pipeline.canonical_full_flow import (
     build_canonical_full_flow_matrix,
 )
@@ -28,9 +29,16 @@ from qdgrasp.dataset.pipeline.validators.dynamic_predicate import RolloutProtoco
 from qdgrasp.dataset.rng import get_generator
 from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
-HANDS = ("leap_hand", "wonik_allegro", "shadow_hand")
+# Phase 3.2.1 predates ADR-0008 and its checker verifies what that phase
+# published, which covered three hands. Reproducing that check is not new
+# three-hand coverage, and it declares itself as such.
+_SCOPE = resolve_workload_hands(
+    ("leap_hand", "wonik_allegro", "shadow_hand"),
+    experimental_shadow=True,
+    purpose="re-checking the pre-ADR-0008 Phase 3.2.1 artifact as published",
+)
+HANDS = _SCOPE.hands
 CONTRACT_TESTS = (
     "tests/test_no_positive_substitution.py",
     "tests/test_contact_state.py",
