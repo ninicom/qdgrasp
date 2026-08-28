@@ -1,0 +1,9 @@
+{
+  "answer": "inconclusive: jax.jit(mjx.step) on the LEAP contact-rich scene did not finish compiling within 1800s on a T4, so the probe never reached the capability question",
+  "install_ok": "mujoco-mjx installed successfully",
+  "question": "can MJX read per-contact force, the one capability the contract cannot do without",
+  "reached_capability_check": false,
+  "schema": "qdgrasp/evidence/mjx-capability-probe/v1",
+  "status": "timeout",
+  "timeout_s": 1800
+}

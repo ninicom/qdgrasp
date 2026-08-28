@@ -1,0 +1,133 @@
+{
+  "checks": {
+    "amp": {
+      "final_loss": 0.924542248249054,
+      "precision": "16-mixed",
+      "steps": 8
+    },
+    "cpu_cuda_fp32_parity": {
+      "tolerance": 0.0001,
+      "translation_max_abs_deviation": 2.9802322387695312e-08
+    },
+    "export": {
+      "artifact_sha256": "b22061a524627b71bfc4f73d6f749471b3bd2eacee9325cadfb41681465ec4f8",
+      "format": "torchscript",
+      "round_trip_max_abs_deviation": {
+        "joints": 0.0,
+        "rotation": 0.0,
+        "score": 0.0,
+        "translation": 0.0
+      }
+    },
+    "fp32": {
+      "bundle_hash": "8b0abc3917d5d6f48963cf7c659fd6dd0d764c088d8d15f51dc10d95b1c1bac7",
+      "effective_runtime": {
+        "accelerator": "cuda",
+        "amp": false,
+        "deterministic": true,
+        "device": "cuda:0",
+        "device_index": 0,
+        "precision": "32-true",
+        "seed": 0,
+        "workers": 0
+      },
+      "final_loss": 0.9242877960205078,
+      "metrics": {
+        "joint_error": 0.41669104993343353,
+        "loss": 0.9307821393013,
+        "rotation_error": 2.5891536474227905,
+        "translation_error": 0.1449953019618988
+      },
+      "steps": 8
+    },
+    "predict": {
+      "count": 4,
+      "device": "cuda:0",
+      "joints_within_limits": true,
+      "rotation_finite": true
+    },
+    "resume": {
+      "bit_exact": true,
+      "continuous": [
+        [
+          1,
+          0.9393895268440247
+        ],
+        [
+          2,
+          0.97804856300354
+        ],
+        [
+          3,
+          0.9233159422874451
+        ],
+        [
+          4,
+          0.8918845057487488
+        ],
+        [
+          5,
+          0.8363461494445801
+        ],
+        [
+          6,
+          0.8143664002418518
+        ],
+        [
+          7,
+          0.8932704925537109
+        ],
+        [
+          8,
+          0.9242877960205078
+        ]
+      ],
+      "resumed": [
+        [
+          1,
+          0.9393895268440247
+        ],
+        [
+          2,
+          0.97804856300354
+        ],
+        [
+          3,
+          0.9233159422874451
+        ],
+        [
+          4,
+          0.8918845057487488
+        ],
+        [
+          5,
+          0.8363461494445801
+        ],
+        [
+          6,
+          0.8143664002418518
+        ],
+        [
+          7,
+          0.8932704925537109
+        ],
+        [
+          8,
+          0.9242877960205078
+        ]
+      ]
+    }
+  },
+  "created_utc": "2026-08-28T06:05:51+00:00",
+  "environment": {
+    "cuda_available": true,
+    "cuda_build": "12.8",
+    "cuda_device_count": 2,
+    "cuda_device_name": "Tesla T4",
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128"
+  },
+  "payload_sha256": "73f9ed6455304326bf4bcea68982398706c4a887bfe5f753a1c30b5d7eeb5528",
+  "qdgrasp_version": "0.1.0a1",
+  "schema": "qdgrasp/evidence/phase1-cuda/v1"
+}
