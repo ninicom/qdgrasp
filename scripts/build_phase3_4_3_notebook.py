@@ -456,7 +456,7 @@ This installs MJX and asks. It is a capability probe, never performance evidence
 """
         ),
         _code(
-            '''MJX_RESULT = {{"attempted": True}}
+            '''MJX_RESULT = {"attempted": True}
 install = subprocess.run(
     [sys.executable, "-m", "pip", "install", "--quiet", "mujoco-mjx"],
     capture_output=True, text=True,
@@ -674,6 +674,15 @@ print("and it is not three-hand coverage.")
         if cell["cell_type"] != "code":
             continue
         source = "".join(cell["source"])
+        # A doubled brace that survives into the cell means the builder string
+        # was not an f-string after all. This parses -- {{"a": 1}} is a set
+        # containing a dict -- and only fails at runtime, on the GPU, an hour
+        # in. v10 died exactly this way.
+        if "{{" in source or "}}" in source:
+            raise SystemExit(
+                f"cell {index} contains a doubled brace, so a non-f-string was "
+                "written as if it were one. The notebook was not written."
+            )
         try:
             ast.parse(source)
         except SyntaxError as error:
