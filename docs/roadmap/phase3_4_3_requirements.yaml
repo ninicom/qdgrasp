@@ -347,16 +347,16 @@ requirements:
     normative_source: P3.4.3#G07
     mapped_to: [C02, C03]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "measured on a T4: GPU and CPU agree to 5.75e-10 with no contact and diverge 8.39mm once a contact is involved, four times past the pinned 2mm tolerance. Outcome-class parity and capsule export both pass, so the divergence is localised to the contact solver. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: G08
     category: direct_gate
     normative_source: P3.4.3#G08
     mapped_to: [C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the CUDA gate ran end to end on a Kaggle T4 and returned FAIL. Speed passes on both active hands (5.47x LEAP, 14.04x Allegro against a >=2x criterion) inside 0.037/0.062 GiB of a 14 GiB budget, and no-contact parity agrees to 5.75e-10. Single-contact parity fails at 8.39mm against a 2mm tolerance, 84 of 1024 LEAP worlds go non-finite, and initcheck reports uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed does not buy back correctness. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: G09
     category: direct_gate
@@ -455,8 +455,8 @@ requirements:
     normative_source: P3.4.3#C07
     mapped_to: [P3.4-15]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the CUDA gate ran end to end on a Kaggle T4 and returned FAIL. Speed passes on both active hands (5.47x LEAP, 14.04x Allegro against a >=2x criterion) inside 0.037/0.062 GiB of a 14 GiB budget, and no-contact parity agrees to 5.75e-10. Single-contact parity fails at 8.39mm against a 2mm tolerance, 84 of 1024 LEAP worlds go non-finite, and initcheck reports uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed does not buy back correctness. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: C08
     category: completeness_gate
@@ -517,16 +517,19 @@ requirements:
     normative_source: ROADMAP-P3.4-001#P3.4-04
     mapped_to: [C02, G08, C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    implementation_refs: [scripts/check_phase3_4_3_cuda.py, scripts/build_phase3_4_3_notebook.py]
+    test_ids: [tests/contactrich_active/test_cuda_gate_harness.py]
+    evidence_refs: [evidence/phase3_4_3/s10/kaggle-run-v7/cuda-gate.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: P3.4-05
     category: original_work_package
     normative_source: ROADMAP-P3.4-001#P3.4-05
     mapped_to: [G07, G08, C02]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "measured on a T4: GPU and CPU agree to 5.75e-10 with no contact and diverge 8.39mm once a contact is involved, four times past the pinned 2mm tolerance. Outcome-class parity and capsule export both pass, so the divergence is localised to the contact solver. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: P3.4-06
     category: original_work_package
@@ -627,8 +630,8 @@ requirements:
     normative_source: ROADMAP-P3.4-001#P3.4-15
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the CUDA gate ran end to end on a Kaggle T4 and returned FAIL. Speed passes on both active hands (5.47x LEAP, 14.04x Allegro against a >=2x criterion) inside 0.037/0.062 GiB of a 14 GiB budget, and no-contact parity agrees to 5.75e-10. Single-contact parity fails at 8.39mm against a 2mm tolerance, 84 of 1024 LEAP worlds go non-finite, and initcheck reports uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed does not buy back correctness. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: P3.4-16
     category: original_work_package
@@ -733,16 +736,16 @@ requirements:
     normative_source: ROADMAP-P3.4-001#9
     mapped_to: [G06, G07, G08, C02]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "measured on a T4: GPU and CPU agree to 5.75e-10 with no contact and diverge 8.39mm once a contact is involved, four times past the pinned 2mm tolerance. Outcome-class parity and capsule export both pass, so the divergence is localised to the contact solver. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: R-CUDA-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#10
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the CUDA gate ran end to end on a Kaggle T4 and returned FAIL. Speed passes on both active hands (5.47x LEAP, 14.04x Allegro against a >=2x criterion) inside 0.037/0.062 GiB of a 14 GiB budget, and no-contact parity agrees to 5.75e-10. Single-contact parity fails at 8.39mm against a 2mm tolerance, 84 of 1024 LEAP worlds go non-finite, and initcheck reports uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed does not buy back correctness. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: R-DATASET-01
     category: original_clause
@@ -793,24 +796,30 @@ requirements:
     normative_source: ROADMAP-P3.4-001#13-gpu
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the CUDA gate ran end to end on a Kaggle T4 and returned FAIL. Speed passes on both active hands (5.47x LEAP, 14.04x Allegro against a >=2x criterion) inside 0.037/0.062 GiB of a 14 GiB budget, and no-contact parity agrees to 5.75e-10. Single-contact parity fails at 8.39mm against a 2mm tolerance, 84 of 1024 LEAP worlds go non-finite, and initcheck reports uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed does not buy back correctness. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: R-RESOURCE-01
     category: original_clause
     normative_source: ROADMAP-P3.4-001#14-local
     mapped_to: [C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "resource preflight, dry-run, atomic checkpoint and wall-time guard are implemented and exercised on the T4 run, but the throughput and VRAM numbers they gate cannot be taken from a backend that fails the sanitizer. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    implementation_refs: [scripts/check_phase3_4_3_cuda.py]
+    test_ids: [tests/contactrich_active/test_cuda_gate_harness.py]
+    evidence_refs: [evidence/phase3_4_3/s10/kaggle-run-v7/cuda-gate.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-RESOURCE-02
     category: original_clause
     normative_source: ROADMAP-P3.4-001#14-gpu
     mapped_to: [C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "resource preflight, dry-run, atomic checkpoint and wall-time guard are implemented and exercised on the T4 run, but the throughput and VRAM numbers they gate cannot be taken from a backend that fails the sanitizer. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    implementation_refs: [scripts/check_phase3_4_3_cuda.py]
+    test_ids: [tests/contactrich_active/test_cuda_gate_harness.py]
+    evidence_refs: [evidence/phase3_4_3/s10/kaggle-run-v7/cuda-gate.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-CLOSURE-01
     category: original_clause
@@ -858,16 +867,16 @@ requirements:
     normative_source: ROADMAP-P3.4-001#16.4
     mapped_to: [G08, C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the CUDA gate ran end to end on a Kaggle T4 and returned FAIL. Speed passes on both active hands (5.47x LEAP, 14.04x Allegro against a >=2x criterion) inside 0.037/0.062 GiB of a 14 GiB budget, and no-contact parity agrees to 5.75e-10. Single-contact parity fails at 8.39mm against a 2mm tolerance, 84 of 1024 LEAP worlds go non-finite, and initcheck reports uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed does not buy back correctness. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: R-DOD-05
     category: original_clause
     normative_source: ROADMAP-P3.4-001#16.5
     mapped_to: [G06, G07, G08]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "measured on a T4: GPU and CPU agree to 5.75e-10 with no contact and diverge 8.39mm once a contact is involved, four times past the pinned 2mm tolerance. Outcome-class parity and capsule export both pass, so the divergence is localised to the contact solver. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: R-DOD-06
     category: original_clause
@@ -915,5 +924,5 @@ requirements:
     normative_source: REV-20260827-010
     mapped_to: [G07, G08, C07]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "measured on a Kaggle T4: mujoco-warp 3.10.0.3, 3.11.0 and 3.12.0 on warp-lang 1.16.0 all report tens of thousands of uninitialised reads in _linesearch_iterative_kernel on the REV-20260827-010 reproducer scene (65248/66181/68224 errors), racecheck clean. warp-lang 1.16.0 is the newest release, so no newer runtime exists. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "the compatibility spike ran twice on a Kaggle T4: mujoco-warp 3.10.0.3, 3.11.0 and 3.12.0 on warp-lang 1.16.0 each report tens of thousands of uninitialised reads on the REV-20260827-010 reproducer scene, racecheck clean. warp-lang 1.16.0 is the newest release, so the newer-pinned-version branch of §3.7 is closed. The same versions report zero errors on a three-geom scene, which is why the probe scene matters. See evidence/phase3_4_3/s10/"

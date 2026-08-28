@@ -2,9 +2,10 @@
 document_id: ROADMAP-P3.4.3-003
 document_type: plan
 title: Điều kiện bàn giao contact-rich input cho Phase 4
-version: 1.0.0
+version: 1.1.0
 status: active
 date: 2026-08-28
+latest_revision_record: docs/revisions/REV-20260828-014-mjwarp-compatibility-spike-result.md
 parent_plan: ROADMAP-P3.4.3-001
 related_decision: ADR-0008
 active_hands:
@@ -46,11 +47,21 @@ P4 **contact-rich training input** vẫn đóng cho tới khi đủ cả ba:
    commit sạch, tức completeness manifest không còn required item mở;
 2. CUDA gate chạy thật trên Kaggle T4 với verdict `PASS` trên đúng commit ứng
    viên — `kaggle-phase3-4-3/` là harness, `scripts/check_phase3_4_3_cuda.py`
-   là gate;
+   là gate. **Đã chạy, verdict `FAIL`** (`REV-20260828-014`): tốc độ đạt
+   `5.47x`/`14.04x` nhưng single-contact parity lệch `8.39mm` so với dung sai
+   `2mm`, 84/1024 world LEAP đi non-finite, và `initcheck` báo uninitialized
+   read trong `_linesearch_iterative_kernel`. Không version `mujoco-warp` nào
+   trong `3.10.0.3–3.12.0` sạch trên `warp-lang` 1.16.0, và 1.16.0 là bản mới
+   nhất tồn tại;
 3. reviewer độc lập ký `PASS` trên exact packet hash, zero S0/S1 mở.
 
 Thiếu bất kỳ mục nào thì artifact giữ `release_blocked=true` và loader từ chối
 nó theo mặc định. Đó là hành vi đúng, không phải lỗi cấu hình.
+
+Với kết quả hiện tại, GPU-derived contact-rich input **không** mở được bằng
+backend MJWarp hiện có. Hai đường còn lại theo `§3.7` là một fallback backend đã
+qua capability/parity gate, hoặc chờ upstream sửa defect. Cả hai đều là công
+việc mới, cần plan riêng — không phải điều chỉnh threshold của plan này.
 
 ## 4. Cái gì không bao giờ được suy ra từ artifact này
 

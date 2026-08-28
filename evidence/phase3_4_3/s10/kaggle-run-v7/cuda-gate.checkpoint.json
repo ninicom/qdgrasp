@@ -1,0 +1,97 @@
+{
+  "capability": {
+    "contact_force_readable": true,
+    "missing_contact_fields": [],
+    "overflow_telemetry": {
+      "buffer_overflow": false,
+      "class_counts": {},
+      "contact_count": 0,
+      "max_contact_count": 0,
+      "stream_truncated": false,
+      "unavailable_fields": []
+    },
+    "required_contact_fields": [
+      "dist",
+      "pos",
+      "frame",
+      "geom",
+      "efc_address"
+    ],
+    "verdict": "supported",
+    "warp_available": true
+  },
+  "parity": {
+    "full_trajectory": {
+      "capsules_exported": 4,
+      "disagreeing_worlds": [],
+      "every_survivor_has_a_capsule": true,
+      "outcome_classes_agree": true,
+      "passed": true,
+      "survivors": 4,
+      "worlds": 4
+    },
+    "no_contact": {
+      "max_qpos_delta": 5.754912518751709e-10,
+      "passed": true,
+      "tolerance": 0.0001
+    },
+    "passed": false,
+    "single_contact": {
+      "impulse_rtol": 0.2,
+      "max_object_delta_m": 0.008391992042143692,
+      "passed": false,
+      "tolerance_m": 0.002
+    }
+  },
+  "performance": {
+    "hands": {
+      "leap_hand": {
+        "cpu_steps_per_second_median": 2406.3,
+        "cpu_steps_per_second_runs": [
+          2427.8,
+          2395.8,
+          2406.3
+        ],
+        "device_peak_vram_gib": 0.037,
+        "gpu_steps_per_second_median": 13163.3,
+        "gpu_steps_per_second_runs": [
+          12729.9,
+          14109.6,
+          13163.3
+        ],
+        "overflow_worlds": 0,
+        "rejected_worlds": 84,
+        "speedup": 5.47,
+        "speedup_met": true,
+        "vram_measurement": "nvml_or_device_free_delta",
+        "vram_within_budget": true,
+        "worlds_met": true
+      },
+      "wonik_allegro": {
+        "cpu_steps_per_second_median": 1836.6,
+        "cpu_steps_per_second_runs": [
+          1815.4,
+          1892.5,
+          1836.6
+        ],
+        "device_peak_vram_gib": 0.062,
+        "gpu_steps_per_second_median": 25775.6,
+        "gpu_steps_per_second_runs": [
+          24900.2,
+          25775.6,
+          25786.0
+        ],
+        "overflow_worlds": 0,
+        "rejected_worlds": 0,
+        "speedup": 14.035,
+        "speedup_met": true,
+        "vram_measurement": "nvml_or_device_free_delta",
+        "vram_within_budget": true,
+        "worlds_met": true
+      }
+    },
+    "passed": false,
+    "runs": 3,
+    "worlds": 1024
+  }
+}

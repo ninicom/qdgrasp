@@ -1,0 +1,134 @@
+{
+  "artifact_hashes": {
+    "cuda-gate.checkpoint.json": "f47b1bcf5b086826d646510cd2ce912538a18f60730e6eaa0d50e94ee7a29048",
+    "cuda-gate.json": "320f84fc68fed2e12f2a0dd005d627abea4c776bd6b0cc3613f105b9146a6e6d",
+    "phase1_cuda.json": "9e4214f5734227bcad31ab4494bd5c8fccd673b315cb0910676876f323e36455",
+    "phase2_cuda.json": "20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086",
+    "sanitizer.json": "877fee819c08ac68f73eb6c280d8456cf8e1faca5f502e11fd736a6118051de3",
+    "warp_matrix.json": "aa3ff2152250c230bf70bfb1758b9f75e9c0b792b2e74ddbd70427aa72439782"
+  },
+  "commit": "7903f9bc3e47ecafdbac2be3171c5ac276ee7b7e",
+  "environment": {
+    "capability": "7.5",
+    "driver": "580.159.04\n580.159.04",
+    "gpu": "Tesla T4",
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "torch_cuda_build": "12.8",
+    "vram_gib": 14.562
+  },
+  "gate_verdict": "FAIL",
+  "menagerie": "da76818e269b82289eba39808e2fb91d679d6994",
+  "sanitizer": {
+    "initcheck": {
+      "head": [
+        "========= COMPUTE-SANITIZER",
+        "========= Uninitialized __global__ memory read of size 4 bytes",
+        "=========     at _linesearch_iterative_kernel__locals__kernel_cbb38e10_cuda_kernel_forward+0x7890",
+        "=========     by thread (25,0,0) in block (0,0,0)",
+        "=========     Address 0x12927f4734",
+        "=========     Saved host backtrace up to driver entry point at kernel launch time",
+        "=========         Host Frame: wp_cuda_launch_kernel [0xb51ca4] in warp.so",
+        "=========         Host Frame: launch in context.py:10878",
+        "=========         Host Frame: launch_tiled in context.py:10970",
+        "=========         Host Frame: _linesearch_iterative in solver.py:1328",
+        "=========         Host Frame: _linesearch in solver.py:1514",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: _solver_iteration in solver.py:3784",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: capture_while in context.py:12494",
+        "=========         Host Frame: _solve in solver.py:3992",
+        "=========         Host Frame: solve in solver.py:3952",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: forward in forward.py:1359",
+        "=========         Host Frame: wrapper in warp_util.py:97"
+      ],
+      "lines": 1043
+    },
+    "racecheck": {
+      "head": [
+        "========= COMPUTE-SANITIZER",
+        "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)"
+      ],
+      "lines": 2
+    },
+    "tool_available": true
+  },
+  "schema": "qdgrasp/evidence/phase3.4.3-kaggle/v1",
+  "warp_matrix": {
+    "pins": {
+      "mujoco-warp==3.10.0.3": {
+        "error_summary": [
+          "========= ERROR SUMMARY: 66562 errors",
+          "========= ERROR SUMMARY: 66554 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ],
+        "first_errors": [
+          "========= ERROR SUMMARY: 66562 errors",
+          "========= ERROR SUMMARY: 66554 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ],
+        "probe_stdout_tail": "s  (cached)\nModule mujoco_warp._src.derivative 31cd557 load on device 'cuda:0' took 1.89 ms  (cached)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.91 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 66562 errors\n========= ERROR SUMMARY: 66554 errors were not printed. Use --print-limit option to adjust the number of printed errors\n",
+        "probe_stepped": true,
+        "sanitizer_lines": 187,
+        "status": "uninitialized_reads",
+        "verbatim_tail": [
+          "=========         Host Frame: forward in forward.py:1359",
+          "=========         Host Frame: wrapper in warp_util.py:97",
+          "=========         Host Frame: step in forward.py:1366",
+          "=========         Host Frame: wrapper in warp_util.py:97",
+          "=========         Host Frame: <module> in <string>:12",
+          "=========",
+          "========= ERROR SUMMARY: 66562 errors",
+          "========= ERROR SUMMARY: 66554 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ]
+      },
+      "mujoco-warp==3.11.0": {
+        "error_summary": [
+          "========= ERROR SUMMARY: 62848 errors",
+          "========= ERROR SUMMARY: 62840 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ],
+        "first_errors": [
+          "========= ERROR SUMMARY: 62848 errors"
+        ],
+        "probe_stdout_tail": "piled)\nModule mujoco_warp._src.derivative 31cd557 load on device 'cuda:0' took 2504.70 ms  (compiled)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.92 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 62848 errors\n========= ERROR SUMMARY: 62840 errors were not printed. Use --print-limit option to adjust the number of printed errors\n",
+        "probe_stepped": true,
+        "sanitizer_lines": 187,
+        "status": "uninitialized_reads",
+        "verbatim_tail": [
+          "=========         Host Frame: forward in forward.py:1359",
+          "=========         Host Frame: wrapper in warp_util.py:97",
+          "=========         Host Frame: step in forward.py:1366",
+          "=========         Host Frame: wrapper in warp_util.py:97",
+          "=========         Host Frame: <module> in <string>:12",
+          "=========",
+          "========= ERROR SUMMARY: 62848 errors",
+          "========= ERROR SUMMARY: 62840 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ]
+      },
+      "mujoco-warp==3.12.0": {
+        "error_summary": [
+          "========= ERROR SUMMARY: 63325 errors",
+          "========= ERROR SUMMARY: 63317 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ],
+        "first_errors": [
+          "========= ERROR SUMMARY: 63325 errors",
+          "========= ERROR SUMMARY: 63317 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ],
+        "probe_stdout_tail": "d)\nModule mujoco_warp._src.derivative 1bec8db load on device 'cuda:0' took 2254.31 ms  (compiled)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 179.34 ms  (compiled)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 63325 errors\n========= ERROR SUMMARY: 63317 errors were not printed. Use --print-limit option to adjust the number of printed errors\n",
+        "probe_stepped": true,
+        "sanitizer_lines": 187,
+        "status": "uninitialized_reads",
+        "verbatim_tail": [
+          "=========         Host Frame: forward in forward.py:1364",
+          "=========         Host Frame: wrapper in warp_util.py:97",
+          "=========         Host Frame: step in forward.py:1371",
+          "=========         Host Frame: wrapper in warp_util.py:97",
+          "=========         Host Frame: <module> in <string>:12",
+          "=========",
+          "========= ERROR SUMMARY: 63325 errors",
+          "========= ERROR SUMMARY: 63317 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+        ]
+      }
+    },
+    "warp_lang_version": "1.16.0"
+  }
+}
