@@ -13,10 +13,9 @@ import argparse
 import re
 import sys
 import unicodedata
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
-
 
 RECORD_DIRECTORIES = ("reports", "sessions", "reviews", "revisions", "metrics")
 MANAGED_INDEX_DIRECTORIES = (
@@ -692,6 +691,54 @@ def discover_documents(root: Path) -> list[tuple[Path, str]]:
     return [(path, discovered[path]) for path in sorted(discovered)]
 
 
+#: A sentence restating ledger counts. WRK-R6: the requirements manifest is the
+#: only source of truth for status, so prose that repeats it has to say which
+#: manifest it repeated -- otherwise a stale count and a current one read alike.
+STATUS_SNAPSHOT_PATTERN = re.compile(
+    r"\b\d+\s+passed\b.{0,80}?\b\d+\s+(?:failed|blocked)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+
+MANIFEST_RELATIVE = Path("docs") / "roadmap" / "phase3_4_3_requirements.yaml"
+
+
+#: Documents that state what was true on a date and are never rewritten. A
+#: revision record citing yesterday's counts is correct history, not stale prose.
+STATUS_SNAPSHOT_EXEMPT_CATEGORIES = frozenset({"revisions", "reviews", "sessions"})
+
+
+def validate_status_snapshots(
+    root: Path, path: Path, text: str, category: str, issues: list[Issue]
+) -> None:
+    """Refuse a hand-typed ledger count that does not name its manifest."""
+    if category in STATUS_SNAPSHOT_EXEMPT_CATEGORIES:
+        return
+    manifest = root / MANIFEST_RELATIVE
+    if not manifest.is_file():
+        return
+    try:
+        from qdgrasp.roadmap.review_packet import manifest_digest
+    except ImportError:  # pragma: no cover - the checker must still run bare
+        return
+    digest = manifest_digest(manifest)
+    for number, line in enumerate(text.splitlines(), start=1):
+        if not STATUS_SNAPSHOT_PATTERN.search(line):
+            continue
+        if digest in line:
+            continue
+        issues.append(
+            Issue(
+                path,
+                number,
+                (
+                    "status snapshot without a manifest hash: the requirements "
+                    f"manifest is the only source of truth, so cite it as "
+                    f"`manifest {digest}` or delete the count"
+                ),
+            )
+        )
+
+
 def validate_root(root: Path) -> tuple[list[Issue], int]:
     issues: list[Issue] = []
     documents = discover_documents(root)
@@ -702,7 +749,22 @@ def validate_root(root: Path) -> tuple[list[Issue], int]:
             issues.append(Issue(path, 1, f"không đọc được UTF-8 Markdown: {exc}"))
             continue
         issues.extend(validate_document(document))
-    return issues, len(documents)
+        validate_status_snapshots(root, path, document.text, category, issues)
+
+    # docs/roadmap/ is where the derived status prose lives, and it was outside
+    # this gate entirely -- which is how the plan, the guide and the ledger came
+    # to disagree (RRV-06). These are swept for status snapshots only; imposing
+    # the full document schema on them is a separate change.
+    swept = 0
+    for path in sorted((root / "docs" / "roadmap").glob("*.md")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            issues.append(Issue(path, 1, f"không đọc được UTF-8 Markdown: {exc}"))
+            continue
+        validate_status_snapshots(root, path, text, "roadmap", issues)
+        swept += 1
+    return issues, len(documents) + swept
 
 
 def relative_display(path: Path, root: Path) -> str:

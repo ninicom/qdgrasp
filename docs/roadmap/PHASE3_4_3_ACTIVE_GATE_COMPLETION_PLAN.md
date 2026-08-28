@@ -816,14 +816,14 @@ pass.
 
 ### 12.1 Trạng thái chốt (2026-08-28)
 
-Trước lượt static review ngày 2026-08-28, ledger ghi 67 passed, 12 failed,
-5 blocked, 1 deferred. Review logic sau đó phát hiện ba claim `passed` không
+Trước lượt static review ngày 2026-08-28, ledger ghi ba claim `passed` mà
+review logic sau đó phát hiện không
 còn bảo toàn: closure checker có thể tin evidence tự khai, active-scope
 audit bỏ sót Python release entry point còn chọn Shadow, và §16.3 so sánh
 GWS margin đã chuẩn hóa với norm wrench trộn N/Nm. Vì vậy revision
 1.3.0 mở lại chín requirement liên quan; ledger sau reopening là
-58 passed, 21 failed, 5 blocked, 1 deferred, 0 pending. Verdict vẫn `FAIL` và
-plan vẫn `blocked`.
+58 passed, 21 failed, 5 blocked, 1 deferred, 0 pending — `manifest 9e86c8b7c93b`.
+Verdict vẫn `FAIL` và plan vẫn `blocked`.
 
 | Mục DoD | Trạng thái sau review | Lý do |
 | --- | --- | --- |

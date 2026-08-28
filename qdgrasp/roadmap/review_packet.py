@@ -37,3 +37,14 @@ def canonical_packet_digest(path: str | Path) -> str:
     if not isinstance(payload, dict):
         raise TypeError(f"{path} does not contain a packet object")
     return canonical_digest(payload)
+
+
+def manifest_digest(path: str | Path) -> str:
+    """Short digest of the requirements manifest, for stamping derived prose.
+
+    WRK-R6. The manifest is the only source of truth for status. Prose that
+    restates counts has to say which manifest it restated, or a stale sentence
+    and a current one look identical to a reader.
+    """
+    blob = Path(path).read_bytes()
+    return hashlib.sha256(blob).hexdigest()[:12]

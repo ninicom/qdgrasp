@@ -27,11 +27,15 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+#: The packet's own filename, excluded from the evidence it collects.
+PACKET_FILENAME = "review-packet.json"
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from qdgrasp.config.active_scope import ACTIVE_HANDS, PAUSED_HANDS
 from qdgrasp.roadmap import audit_closure, load_manifest
+from qdgrasp.roadmap.review_packet import canonical_digest
 
 PACKET_SCHEMA = "qdgrasp/evidence/phase3.4.3-review-packet/v1"
 
@@ -106,17 +110,31 @@ def _hash_ref(ref: str) -> dict[str, Any]:
     return {"kind": "missing", "sha256": None}
 
 
-def collect_evidence(root: Path) -> dict[str, Any]:
-    """Every recorded sub-phase result, by hash."""
+def collect_evidence(root: Path, *, exclude: Path | None = None) -> dict[str, Any]:
+    """Every recorded sub-phase result, by hash, except this packet itself.
+
+    WRK-R5. The output directory has to be excluded or the packet hashes the
+    previous packet before overwriting it, which is RRV-05: an attestation whose
+    content depends on the attestation it replaces cannot be rebuilt, and a
+    reviewer's signature over it binds to nothing stable.
+    """
     out: dict[str, Any] = {}
     if not root.is_dir():
         return out
+    excluded = exclude.resolve() if exclude is not None else None
     for path in sorted(root.rglob("*.json")):
+        if excluded is not None and excluded in path.resolve().parents:
+            continue
+        # A packet is never evidence about itself, wherever it was written.
+        if path.name == PACKET_FILENAME:
+            continue
         out[str(path.relative_to(REPO_ROOT))] = _sha256_file(path)
     return out
 
 
-def build_packet(*, dataset_root: Path, cuda_evidence: Path | None) -> dict[str, Any]:
+def build_packet(
+    *, dataset_root: Path, cuda_evidence: Path | None, out_dir: Path | None = None
+) -> dict[str, Any]:
     manifest = load_manifest(REPO_ROOT / "docs" / "roadmap" / "phase3_4_3_requirements.yaml")
     closure = audit_closure(manifest, repo_root=REPO_ROOT)
 
@@ -181,7 +199,9 @@ def build_packet(*, dataset_root: Path, cuda_evidence: Path | None) -> dict[str,
         "required_artifacts": {ref: _hash_ref(ref) for ref in REQUIRED_ARTIFACTS},
         "missing_required_artifacts": missing,
         "reviewed_implementation": {ref: _hash_ref(ref) for ref in REVIEWED_IMPLEMENTATION},
-        "sub_phase_evidence": collect_evidence(REPO_ROOT / "evidence" / "phase3_4_3"),
+        "sub_phase_evidence": collect_evidence(
+            REPO_ROOT / "evidence" / "phase3_4_3", exclude=out_dir
+        ),
         "dataset": dataset_block,
         "cuda_gate": cuda_block,
         "review_checklist": list(REVIEW_CHECKLIST),
@@ -250,15 +270,22 @@ def main() -> int:
     parser.add_argument("--cuda-evidence", type=Path, default=None)
     args = parser.parse_args()
 
-    packet = build_packet(dataset_root=args.dataset_root, cuda_evidence=args.cuda_evidence)
+    packet = build_packet(
+        dataset_root=args.dataset_root,
+        cuda_evidence=args.cuda_evidence,
+        out_dir=args.out,
+    )
     payload = json.dumps(packet, indent=2, sort_keys=True) + "\n"
-    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    # WRK-R5: the signed digest is over the canonical payload, which carries
+    # neither the digest itself nor the assembly timestamp. Rebuilding the same
+    # candidate twice therefore yields the same value for a reviewer to sign.
+    digest = canonical_digest(packet)
     packet_with_hash = json.dumps(
         {**packet, "packet_sha256": digest}, indent=2, sort_keys=True
     ) + "\n"
 
     args.out.mkdir(parents=True, exist_ok=True)
-    target = args.out / "review-packet.json"
+    target = args.out / PACKET_FILENAME
     target.write_text(packet_with_hash, encoding="utf-8")
 
     print(payload)
