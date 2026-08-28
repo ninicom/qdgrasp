@@ -2,7 +2,7 @@
 document_id: ROADMAP-P3.4.3-REVIEW-GUIDE
 document_type: reviewer_guide
 title: Hướng dẫn cho reviewer độc lập Phase 3.4.3
-version: 1.0.0
+version: 2.0.0
 status: active
 date: 2026-08-28
 parent_plan: ROADMAP-P3.4.3-001
@@ -50,39 +50,48 @@ Packet liệt kê bảy mục. Với mỗi mục, thứ cần kiểm và chỗ t
 
 ## 3. Bốn chỗ đáng nghi nhất — hãy tấn công vào đây trước
 
-Đây là những chỗ tôi cho là dễ sai nhất trong toàn bộ công việc. Nếu bạn chỉ có
-thời gian cho một phần, hãy dùng cho phần này.
+Một lượt static review đã chạy trước bạn và tìm ra sáu finding (`REV-20260828-016`),
+trong đó hai cái là lỗi suy luận của tác giả chứ không phải lỗi gõ. Bốn chỗ dưới
+đây là nơi tôi cho là còn dễ sai nhất **sau** khi remediation xong.
 
-**a. Verdict CUDA là FAIL, và tốc độ thì pass.** Kiểm rằng không có đường nào
-cho phép tốc độ mua lại đúng đắn. Xem `scripts/check_phase3_4_3_cuda.py`, đặc
-biệt `read_sanitizer_report` và chỗ sanitizer trở thành tiêu chí gate — trước
-v7 nó chạy ở cell riêng và **gate có thể trả PASS trong khi initcheck báo 68k
-lỗi**. Xác nhận lỗ đó đã đóng thật.
+**a. Verdict CUDA giờ được tính lại, không phải đọc.** `recompute_cuda_verdict`
+trong `scripts/check_phase3_4_3.py` dựng verdict từ metric; trường `verdict` khai
+báo chỉ dùng để **đối chiếu**. Hãy kiểm rằng không còn đường nào để một bundle tự
+khẳng định pass — đây từng là RRV-01, và trước v7 sanitizer chạy ở cell riêng nên
+gate có thể trả PASS trong khi initcheck báo 68k lỗi.
 
-**b. Quy tắc bằng chứng dương.** Hai lần một probe chết in ra `ERROR SUMMARY: 0
-errors` — giống hệt một run sạch. Kiểm rằng `probe_did_not_run` và
-`inconclusive_no_error_summary` không thể bị đọc nhầm thành `clean` ở bất kỳ
-đâu. Đây là chỗ suýt tạo ra hai kết luận sai ngược hẳn sự thật.
+**b. Quy tắc bằng chứng dương.** Hai lần một probe chết in ra
+`ERROR SUMMARY: 0 errors` — giống hệt một run sạch. Kiểm rằng
+`probe_did_not_run` và `inconclusive_no_error_summary` không thể bị đọc thành
+`clean` ở bất kỳ đâu.
 
-**c. Ngưỡng margin của §16.3 có bị chỉnh cho ra kết quả không.** Đây là chỗ dễ
-gian nhất trong toàn bộ hồ sơ. τ phải là chuẩn của `perturbation_wrench` mà
-recipe khai báo, không phải một số chọn tay. Kiểm `declared_disturbance` trong
-`scripts/phase3_4_3_ablation.py` và đối chiếu với
-`qdgrasp/scenes/release_recipes.py`. Nếu τ đến từ đâu khác, verdict phải là fail.
+**c. `alpha` có bị chỉnh cho ra kết quả không.** Đây vẫn là chỗ dễ gian nhất.
+`alpha` phải **không thứ nguyên**: nghiệm của bài toán resistance trong
+`qdgrasp/dataset/pipeline/certifiers/static_resistance.py`, dưới trần lực lấy từ
+safety budget, với nhiễu loạn lấy từ `resolve_perturbation_wrench` dùng chung với
+validator. Kiểm ba tính chất: bất biến khi đổi đơn vị chiều dài, đơn điệu theo
+force limit, tỉ lệ nghịch với nhiễu loạn. Nếu thiếu trần lực mà vẫn trả số thì
+verdict phải là fail — LP không chặn sẽ siết tuỳ thích và chứng nhận bất cứ thứ gì.
 
-**d. Mặc định `quality_margin_threshold=0.0`.** Toàn bộ 65 requirement đã passed
-dựa vào hành vi cũ của certifier. Kiểm rằng mặc định thật sự giữ nguyên hành vi
-đó, chứ không phải chỉ trên giấy.
+**d. Hai nhánh có thật sự cùng một snapshot không.** `CandidateSnapshot.fork`
+phải cho `one_factor_diff == ('physics_mode',)` ở **mọi** điểm sweep, kể cả khi
+mass thay đổi. RRV-04 chính là chỗ này: sweep đổi mass động mà giữ ngưỡng tĩnh ở
+mass gốc, nên từ điểm thứ hai hai nhánh mô tả hai thí nghiệm khác nhau.
 
 ## 4. Những gì hồ sơ **không** claim
 
-Đừng mất thời gian xác minh những thứ này — chúng đã được khai là không đạt:
+Đừng mất thời gian xác minh — đã khai là không đạt:
 
 - GPU parity, sanitizer, non-finite worlds: **failed, đã đo** trên T4
-- Cặp §16.3: **1/2 tay**; LEAP không có vì recipe không khai báo nhiễu loạn
+- Cặp §16.3: **0 cặp trên 2/2 tay** dưới tiêu chí resistance; `C05` và
+  `R-DOD-03` giữ `failed`. Claim "8 cặp" của bản trước **đã bị thu hồi** vì so
+  sánh hai đại lượng không cùng thứ nguyên (RRV-03).
 - MPPI (`P3.4-10`): deferred, không claim coverage
 - Three-hand: paused theo ADR-0008
-- MJX fallback: chưa kết luận được, probe timeout ở 1800 s
+- MJX fallback: chưa kết luận, probe timeout ở 1800 s
+
+Ledger hiện tại: 65 passed, 14 failed, 5 blocked, 1 deferred, 0 pending —
+`manifest b56deb1efa39`.
 
 ## 5. Ghi verdict
 
