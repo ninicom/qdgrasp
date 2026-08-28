@@ -374,10 +374,52 @@ assert dry.returncode == 0, dry.stderr
 '''
         ),
         _markdown(
-            """## 5. The Phase 3.4.3 CUDA gate
+            """## 5. Sanitizer on the gate's own workload
+
+Zero invalid reads is a gate criterion, not a nice-to-have. Bounded worlds and
+horizon because the sanitizer is slow; this is a diagnostic and never
+performance evidence.
+"""
+        ),
+        _code(
+            '''import json
+import shutil
+import subprocess
+import sys
+
+sanitizer = shutil.which("compute-sanitizer")
+SANITIZER_RESULT = {"tool_available": bool(sanitizer)}
+if not sanitizer:
+    print("compute-sanitizer unavailable; the question stays open rather than guessed at.")
+else:
+    for tool in ("racecheck", "initcheck"):
+        run = subprocess.run(
+            [sanitizer, "--tool", tool, "--error-exitcode", "0", "--print-limit", "40",
+             sys.executable, "scripts/phase3_4_1_sanitizer.py", "--worlds", "4", "--horizon", "8"],
+            cwd="/tmp/qdgrasp_repo", capture_output=True, text=True, timeout=5400,
+        )
+        text = run.stdout + run.stderr
+        records = [ln.strip() for ln in text.splitlines() if ln.lstrip().startswith("=========")]
+        SANITIZER_RESULT[tool] = {"lines": len(records), "head": [ln[:190] for ln in records[:20]]}
+        json.dump(
+            SANITIZER_RESULT,
+            open("/kaggle/working/phase3_4_3_evidence/sanitizer.json", "w"),
+            indent=2, sort_keys=True,
+        )
+        print("=" * 70)
+        print(tool, f"-- {len(records)} report lines")
+        for ln in records[:20]:
+            print(ln[:190])
+'''
+        ),
+        _markdown(
+            """## 6. The Phase 3.4.3 CUDA gate
 
 Capability, three-tier parity and performance, in that order, with a checkpoint
-so a wall-clock kill does not throw away the stages that already finished. The
+so a wall-clock kill does not throw away the stages that already finished.
+It reads the sanitizer report written above: parity and performance are
+necessary but not sufficient, and a backend whose kernels read uninitialised
+memory produces numbers nobody should rank (G08.7). The
 deadline guard flushes the ledger before the Kaggle session ends.
 
 If the Warp matrix found no clean version, run this anyway and record the
@@ -395,6 +437,7 @@ gate = subprocess.run(
      "--device", "cuda:0", "--worlds", "1024", "--runs", "3",
      "--evidence", "/kaggle/working/phase3_4_3_evidence/cuda-gate.json",
      "--checkpoint", "/kaggle/working/phase3_4_3_evidence/cuda-gate.checkpoint.json",
+     "--sanitizer-report", "/kaggle/working/phase3_4_3_evidence/sanitizer.json",
      "--deadline-seconds", "24000"],
     cwd="/tmp/qdgrasp_repo", capture_output=True, text=True,
 )
@@ -420,39 +463,6 @@ else:
     _evidence.parent.mkdir(parents=True, exist_ok=True)
     _evidence.write_text(json.dumps(GATE, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
 print("VERDICT:", GATE["verdict"])
-'''
-        ),
-        _markdown(
-            """## 6. Sanitizer on the gate's own workload
-
-Zero invalid reads is a gate criterion, not a nice-to-have. Bounded worlds and
-horizon because the sanitizer is slow; this is a diagnostic and never
-performance evidence.
-"""
-        ),
-        _code(
-            '''import shutil
-import subprocess
-import sys
-
-sanitizer = shutil.which("compute-sanitizer")
-SANITIZER_RESULT = {"tool_available": bool(sanitizer)}
-if not sanitizer:
-    print("compute-sanitizer unavailable; the question stays open rather than guessed at.")
-else:
-    for tool in ("racecheck", "initcheck"):
-        run = subprocess.run(
-            [sanitizer, "--tool", tool, "--error-exitcode", "0", "--print-limit", "40",
-             sys.executable, "scripts/phase3_4_1_sanitizer.py", "--worlds", "4", "--horizon", "8"],
-            cwd="/tmp/qdgrasp_repo", capture_output=True, text=True, timeout=5400,
-        )
-        text = run.stdout + run.stderr
-        records = [ln.strip() for ln in text.splitlines() if ln.lstrip().startswith("=========")]
-        SANITIZER_RESULT[tool] = {"lines": len(records), "head": [ln[:190] for ln in records[:20]]}
-        print("=" * 70)
-        print(tool, f"-- {len(records)} report lines")
-        for ln in records[:20]:
-            print(ln[:190])
 '''
         ),
         _markdown(

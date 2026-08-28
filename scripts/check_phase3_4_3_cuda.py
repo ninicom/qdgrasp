@@ -477,8 +477,66 @@ def load_checkpoint(path: Path | None) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def read_sanitizer_report(path: Path | None) -> dict[str, Any]:
+    """The sanitizer result, as a gate criterion rather than a side note.
+
+    G08.7 requires zero invalid reads. Leaving that in a separate cell means the
+    gate can return PASS while the sanitizer is reporting tens of thousands of
+    uninitialised reads next to it, which is precisely the unearned pass this
+    plan exists to prevent. A run with no sanitizer report cannot pass: absence
+    of a check is not a clean check.
+    """
+    if path is None:
+        return {
+            "status": "absent",
+            "clean": False,
+            "detail": (
+                "no sanitizer report supplied; a run that did not check for invalid "
+                "reads has not shown there are none"
+            ),
+        }
+    if not path.is_file():
+        return {"status": "missing_file", "clean": False, "detail": str(path)}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {"status": "unreadable", "clean": False, "detail": str(exc)}
+
+    tools: dict[str, Any] = {}
+    clean = True
+    for tool in ("initcheck", "racecheck"):
+        entry = payload.get(tool)
+        if not isinstance(entry, dict):
+            tools[tool] = {"status": "absent", "clean": False}
+            clean = False
+            continue
+        lines = entry.get("head") or []
+        summaries = [ln for ln in lines if "SUMMARY" in str(ln)]
+        errors = [
+            ln
+            for ln in lines
+            if "error" in str(ln).lower() and "0 errors" not in str(ln).lower()
+        ]
+        tool_clean = bool(summaries) and not errors
+        tools[tool] = {
+            "status": "clean" if tool_clean else "errors_reported",
+            "clean": tool_clean,
+            "summaries": summaries[:2],
+            "first_errors": [str(ln)[:200] for ln in errors[:3]],
+        }
+        clean = clean and tool_clean
+
+    return {"status": "recorded", "clean": clean, "tools": tools}
+
+
 def build_evidence(
-    *, device: str, worlds: int, runs: int, checkpoint: Path | None, deadline_s: float | None
+    *,
+    device: str,
+    worlds: int,
+    runs: int,
+    checkpoint: Path | None,
+    deadline_s: float | None,
+    sanitizer_report: Path | None = None,
 ) -> dict[str, Any]:
     from qdgrasp import __version__ as qdgrasp_version
     from qdgrasp.config.active_scope import ACTIVE_HANDS, PAUSED_HANDS
@@ -535,11 +593,17 @@ def build_evidence(
         "performance", lambda: run_performance(device, worlds=worlds, runs=runs)
     )
 
-    evidence["verdict"] = (
-        "PASS"
-        if evidence["parity"].get("passed") and evidence["performance"].get("passed")
-        else "FAIL"
-    )
+    evidence["sanitizer"] = read_sanitizer_report(sanitizer_report)
+    if evidence["parity"].get("passed") and evidence["performance"].get("passed"):
+        # Parity and performance are necessary, not sufficient: a backend whose
+        # kernels read uninitialised memory produces numbers nobody should rank.
+        evidence["verdict"] = "PASS" if evidence["sanitizer"]["clean"] else "BLOCKED"
+        if not evidence["sanitizer"]["clean"]:
+            evidence["blocked_reason"] = (
+                f"sanitizer: {evidence['sanitizer'].get('detail') or evidence['sanitizer']['status']}"
+            )
+    else:
+        evidence["verdict"] = "FAIL"
     evidence["wall_seconds"] = round(time.perf_counter() - started, 2)
     return evidence
 
@@ -551,6 +615,12 @@ def main() -> int:
     parser.add_argument("--runs", type=int, default=BENCHMARK_RUNS)
     parser.add_argument("--evidence", type=Path, default=None)
     parser.add_argument("--checkpoint", type=Path, default=None)
+    parser.add_argument(
+        "--sanitizer-report",
+        type=Path,
+        default=None,
+        help="compute-sanitizer results; a run without one cannot pass (G08.7)",
+    )
     parser.add_argument(
         "--deadline-seconds",
         type=float,
@@ -597,6 +667,7 @@ def main() -> int:
             runs=args.runs,
             checkpoint=args.checkpoint,
             deadline_s=args.deadline_seconds,
+            sanitizer_report=args.sanitizer_report,
         )
     except GateFailure as exc:
         print(json.dumps({"verdict": "FAIL", "error": str(exc)}, indent=2))

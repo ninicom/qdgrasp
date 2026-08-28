@@ -436,3 +436,129 @@ def test_the_gate_records_the_commit_it_measured() -> None:
 
     source = GATE.read_text(encoding="utf-8")
     assert '"commit": _repo_commit(),' in source
+
+
+# -- the sanitizer is a gate criterion, not a side note -------------------
+
+
+def _gate_module():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("cuda_gate", GATE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_a_run_with_no_sanitizer_report_cannot_be_clean() -> None:
+    # Absence of a check is not a clean check (G08.7).
+    module = _gate_module()
+    result = module.read_sanitizer_report(None)
+    assert result["clean"] is False
+    assert "has not shown there are none" in result["detail"]
+
+
+def test_uninitialised_reads_are_not_clean(tmp_path: Path) -> None:
+    module = _gate_module()
+    path = tmp_path / "sanitizer.json"
+    path.write_text(
+        json.dumps(
+            {
+                "initcheck": {
+                    "head": [
+                        "========= COMPUTE-SANITIZER",
+                        "========= Uninitialized __global__ memory read of size 4 bytes",
+                        "========= ERROR SUMMARY: 68224 errors",
+                    ]
+                },
+                "racecheck": {
+                    "head": [
+                        "========= COMPUTE-SANITIZER",
+                        "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)",
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = module.read_sanitizer_report(path)
+    assert result["clean"] is False
+    assert result["tools"]["initcheck"]["clean"] is False
+    # racecheck being clean is exactly what separates an uninitialised read from
+    # a race, so it is reported separately rather than folded in.
+    assert result["tools"]["racecheck"]["clean"] is True
+
+
+def test_a_clean_sanitizer_report_is_clean(tmp_path: Path) -> None:
+    module = _gate_module()
+    path = tmp_path / "sanitizer.json"
+    path.write_text(
+        json.dumps(
+            {
+                "initcheck": {
+                    "head": [
+                        "========= COMPUTE-SANITIZER",
+                        "========= ERROR SUMMARY: 0 errors",
+                    ]
+                },
+                "racecheck": {
+                    "head": [
+                        "========= COMPUTE-SANITIZER",
+                        "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)",
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert module.read_sanitizer_report(path)["clean"] is True
+
+
+def test_a_missing_tool_is_not_silently_clean(tmp_path: Path) -> None:
+    module = _gate_module()
+    path = tmp_path / "sanitizer.json"
+    path.write_text(
+        json.dumps({"initcheck": {"head": ["========= ERROR SUMMARY: 0 errors"]}}),
+        encoding="utf-8",
+    )
+    result = module.read_sanitizer_report(path)
+    assert result["clean"] is False
+    assert result["tools"]["racecheck"]["status"] == "absent"
+
+
+def test_the_verdict_folds_the_sanitizer_in() -> None:
+    source = GATE.read_text(encoding="utf-8")
+    # Parity and performance are necessary, not sufficient.
+    assert 'evidence["verdict"] = "PASS" if evidence["sanitizer"]["clean"] else "BLOCKED"' in source
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_the_sanitizer_runs_before_the_gate_reads_it() -> None:
+    """Ordering is the difference between a criterion and a decoration.
+
+    The gate reads the sanitizer report as a pass condition, so the cell that
+    writes it has to run first; with the cells the other way round the gate can
+    only ever see a missing file.
+    """
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    sanitizer_at = gate_at = None
+    for index, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] != "code":
+            continue
+        source = "".join(cell["source"])
+        if "compute-sanitizer" in source and "WARP_MATRIX" not in source:
+            sanitizer_at = index if sanitizer_at is None else sanitizer_at
+        if "check_phase3_4_3_cuda.py" in source and "--dry-run" not in source:
+            gate_at = index if gate_at is None else gate_at
+
+    assert sanitizer_at is not None and gate_at is not None
+    assert sanitizer_at < gate_at, (sanitizer_at, gate_at)
+
+    source = "".join("".join(c["source"]) for c in notebook["cells"])
+    assert "--sanitizer-report" in source
+    assert "phase3_4_3_evidence/sanitizer.json" in source
