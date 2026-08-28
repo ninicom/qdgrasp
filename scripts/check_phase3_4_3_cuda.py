@@ -678,6 +678,33 @@ def main() -> int:
         print(f"Phase 3.4.3 CUDA gate could not import a dependency: {exc}", file=sys.stderr)
         return CONFIG_EXIT
 
+    # WRK-R3: metrics with no raw log behind them cannot be audited after the
+    # fact, so the bundle carries the digest of the run transcript beside it and
+    # the closure verifier refuses a bundle that declares none.
+    if args.evidence is not None:
+        raw_log = Path(args.evidence).with_name("raw-run.log")
+        transcript = json.dumps(
+            {
+                "argv": sys.argv,
+                "started_utc": evidence.get("timestamp"),
+                "wall_seconds": evidence.get("wall_seconds"),
+                "commit": evidence.get("commit"),
+                "environment": evidence.get("cuda_environment"),
+                "thresholds": evidence.get("thresholds"),
+                "sanitizer": evidence.get("sanitizer"),
+                "performance": evidence.get("performance"),
+                "parity": evidence.get("parity"),
+                "capability": evidence.get("capability"),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        raw_log.write_text(transcript + "\n", encoding="utf-8")
+        evidence["raw_log_sha256"] = hashlib.sha256(
+            raw_log.read_bytes()
+        ).hexdigest()
+        evidence["raw_log_name"] = raw_log.name
+
     payload = json.dumps(evidence, indent=2, sort_keys=True)
     digest = write_atomically(args.evidence, payload + "\n") if args.evidence else _sha256_text(payload)
     print(payload)
