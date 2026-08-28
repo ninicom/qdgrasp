@@ -828,7 +828,12 @@ Ba mục DoD không đạt, vì ba lý do khác hẳn nhau:
 | 14 — paired static-fail/dynamic-pass | **failed, đã đo** | tiền đề của §16.3 sai trên corpus này |
 | 20 — independent reviewer PASS | **blocked** | ràng buộc quy trình, cố ý |
 
-Mục 11 không đóng được từ bên trong repo này. `mujoco-warp` 3.10.0.3, 3.11.0 và
+Mục 11 không đóng được từ bên trong repo này, và không gian cấu hình đã bị
+**loại trừ hết bằng phép đo** qua ba lần chạy T4, không phải bằng lập luận:
+`ls_parallel` đã bị gỡ khỏi upstream từ 3.9.1 nên không còn tồn tại;
+`ls_iterations=1` giảm lỗi từ 66 813 xuống 12 788 nhưng không về 0, tức đọc sai
+xảy ra ngay **vòng linesearch đầu tiên** — không có số vòng nào đủ thấp;
+`solver_cg` tệ hơn một bậc, 850 170. `mujoco-warp` 3.10.0.3, 3.11.0 và
 3.12.0 đều đọc bộ nhớ chưa khởi tạo trong `_linesearch_iterative_kernel` trên
 reproducer LEAP; `warp-lang` 1.16.0 là bản mới nhất tồn tại, nên nhánh "pin bản
 mới hơn" của §3.7 đã đóng. Còn lại đúng hai đường, cả hai là công việc mới cần
