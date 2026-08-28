@@ -1,0 +1,151 @@
+{
+  "active_hands": [
+    "leap_hand",
+    "wonik_allegro"
+  ],
+  "capability": {
+    "contact_force_readable": true,
+    "missing_contact_fields": [],
+    "overflow_telemetry": {
+      "buffer_overflow": false,
+      "class_counts": {},
+      "contact_count": 0,
+      "max_contact_count": 0,
+      "stream_truncated": false,
+      "unavailable_fields": []
+    },
+    "required_contact_fields": [
+      "dist",
+      "pos",
+      "frame",
+      "geom",
+      "efc_address"
+    ],
+    "verdict": "supported",
+    "warp_available": true
+  },
+  "commit": "9ab8e1204aa061c1063d7512198c59eb92c671b2",
+  "cuda_environment": {
+    "capability": "7.5",
+    "device": "cuda:0",
+    "gpu_name": "Tesla T4",
+    "python": "3.12.13",
+    "torch": "2.10.0+cu128",
+    "torch_cuda_build": "12.8",
+    "total_memory_gib": 14.562
+  },
+  "historical_p3_4_state": "paused_by_ADR-0008",
+  "parity": {
+    "full_trajectory": {
+      "capsules_exported": 4,
+      "disagreeing_worlds": [],
+      "every_survivor_has_a_capsule": true,
+      "outcome_classes_agree": true,
+      "passed": true,
+      "survivors": 4,
+      "worlds": 4
+    },
+    "no_contact": {
+      "max_qpos_delta": 5.754912518751709e-10,
+      "passed": true,
+      "tolerance": 0.0001
+    },
+    "passed": false,
+    "single_contact": {
+      "impulse_rtol": 0.2,
+      "max_object_delta_m": 0.008391992042143692,
+      "passed": false,
+      "tolerance_m": 0.002
+    }
+  },
+  "paused_hands": [
+    "shadow_hand"
+  ],
+  "performance": {
+    "hands": {
+      "leap_hand": {
+        "cpu_steps_per_second_median": 2769.7,
+        "cpu_steps_per_second_runs": [
+          2769.7,
+          2586.1,
+          2812.7
+        ],
+        "device_peak_vram_gib": 0.07,
+        "gpu_steps_per_second_median": 14253.6,
+        "gpu_steps_per_second_runs": [
+          13212.9,
+          14253.6,
+          15092.4
+        ],
+        "overflow_worlds": 0,
+        "rejected_worlds": 67,
+        "speedup": 5.146,
+        "speedup_met": true,
+        "vram_measurement": "nvml_or_device_free_delta",
+        "vram_within_budget": true,
+        "worlds_met": true
+      },
+      "wonik_allegro": {
+        "cpu_steps_per_second_median": 2110.3,
+        "cpu_steps_per_second_runs": [
+          2128.6,
+          2110.3,
+          2107.2
+        ],
+        "device_peak_vram_gib": 0.031,
+        "gpu_steps_per_second_median": 27037.4,
+        "gpu_steps_per_second_runs": [
+          27037.4,
+          27006.4,
+          27528.9
+        ],
+        "overflow_worlds": 0,
+        "rejected_worlds": 0,
+        "speedup": 12.812,
+        "speedup_met": true,
+        "vram_measurement": "nvml_or_device_free_delta",
+        "vram_within_budget": true,
+        "worlds_met": true
+      }
+    },
+    "passed": false,
+    "runs": 3,
+    "worlds": 1024
+  },
+  "phase": "3.4.3",
+  "qdgrasp_version": "0.1.0a1",
+  "resumed_stages": [],
+  "sanitizer": {
+    "clean": false,
+    "status": "recorded",
+    "tools": {
+      "initcheck": {
+        "clean": false,
+        "first_errors": [],
+        "status": "errors_reported",
+        "summaries": []
+      },
+      "racecheck": {
+        "clean": true,
+        "first_errors": [],
+        "status": "clean",
+        "summaries": [
+          "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)"
+        ]
+      }
+    }
+  },
+  "schema": "qdgrasp/evidence/phase3.4.3-cuda/v1",
+  "three_hand_coverage": false,
+  "thresholds": {
+    "benchmark_horizon": 60,
+    "benchmark_runs": 3,
+    "benchmark_worlds": 1024,
+    "min_gpu_speedup": 2.0,
+    "min_simultaneous_worlds": 64,
+    "vram_budget_gib": 14.0
+  },
+  "timestamp": "2026-08-28T03:40:37.483318+00:00",
+  "verdict": "FAIL",
+  "wall_seconds": 100.06
+}

@@ -1,0 +1,77 @@
+{
+  "pins": {
+    "mujoco-warp==3.10.0.3": {
+      "error_summary": [
+        "========= ERROR SUMMARY: 65566 errors",
+        "========= ERROR SUMMARY: 65558 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ],
+      "first_errors": [
+        "========= ERROR SUMMARY: 65566 errors",
+        "========= ERROR SUMMARY: 65558 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ],
+      "probe_stdout_tail": "s  (cached)\nModule mujoco_warp._src.derivative 31cd557 load on device 'cuda:0' took 1.62 ms  (cached)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.71 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 65566 errors\n========= ERROR SUMMARY: 65558 errors were not printed. Use --print-limit option to adjust the number of printed errors\n",
+      "probe_stepped": true,
+      "sanitizer_lines": 187,
+      "status": "uninitialized_reads",
+      "verbatim_tail": [
+        "=========         Host Frame: forward in forward.py:1359",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: step in forward.py:1366",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: <module> in <string>:12",
+        "=========",
+        "========= ERROR SUMMARY: 65566 errors",
+        "========= ERROR SUMMARY: 65558 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ]
+    },
+    "mujoco-warp==3.11.0": {
+      "error_summary": [
+        "========= ERROR SUMMARY: 66781 errors",
+        "========= ERROR SUMMARY: 66773 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ],
+      "first_errors": [
+        "========= ERROR SUMMARY: 66781 errors",
+        "========= ERROR SUMMARY: 66773 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ],
+      "probe_stdout_tail": "piled)\nModule mujoco_warp._src.derivative 31cd557 load on device 'cuda:0' took 2152.51 ms  (compiled)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 0.79 ms  (cached)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 66781 errors\n========= ERROR SUMMARY: 66773 errors were not printed. Use --print-limit option to adjust the number of printed errors\n",
+      "probe_stepped": true,
+      "sanitizer_lines": 187,
+      "status": "uninitialized_reads",
+      "verbatim_tail": [
+        "=========         Host Frame: forward in forward.py:1359",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: step in forward.py:1366",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: <module> in <string>:12",
+        "=========",
+        "========= ERROR SUMMARY: 66781 errors",
+        "========= ERROR SUMMARY: 66773 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ]
+    },
+    "mujoco-warp==3.12.0": {
+      "error_summary": [
+        "========= ERROR SUMMARY: 65824 errors",
+        "========= ERROR SUMMARY: 65816 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ],
+      "first_errors": [
+        "========= ERROR SUMMARY: 65824 errors",
+        "========= ERROR SUMMARY: 65816 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ],
+      "probe_stdout_tail": "d)\nModule mujoco_warp._src.derivative 1bec8db load on device 'cuda:0' took 1918.75 ms  (compiled)\nModule _next_time_builder__locals___next_time_a67f49d6 a67f49d load on device 'cuda:0' took 171.43 ms  (compiled)\nstepped 8 times over 4 worlds\n========= ERROR SUMMARY: 65824 errors\n========= ERROR SUMMARY: 65816 errors were not printed. Use --print-limit option to adjust the number of printed errors\n",
+      "probe_stepped": true,
+      "sanitizer_lines": 187,
+      "status": "uninitialized_reads",
+      "verbatim_tail": [
+        "=========         Host Frame: forward in forward.py:1364",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: step in forward.py:1371",
+        "=========         Host Frame: wrapper in warp_util.py:97",
+        "=========         Host Frame: <module> in <string>:12",
+        "=========",
+        "========= ERROR SUMMARY: 65824 errors",
+        "========= ERROR SUMMARY: 65816 errors were not printed. Use --print-limit option to adjust the number of printed errors"
+      ]
+    }
+  },
+  "warp_lang_version": "1.16.0"
+}
