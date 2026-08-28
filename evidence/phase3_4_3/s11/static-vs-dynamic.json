@@ -115,7 +115,7 @@
       "wall_top_m": 0.036
     }
   ],
-  "generated_at": "2026-08-28T02:49:01.262794+00:00",
+  "generated_at": "2026-08-28T13:03:57.853527+00:00",
   "hands": [
     "leap_hand",
     "wonik_allegro"
@@ -171,18 +171,18 @@
       "dynamic_reason": "none",
       "hand": "wonik_allegro",
       "mass_kg": 0.02,
-      "static_fail_dynamic_pass": false,
+      "static_fail_dynamic_pass": true,
       "static_pass_dynamic_fail": false,
-      "static_passed": true
+      "static_passed": false
     },
     {
       "dynamic_passed": true,
       "dynamic_reason": "none",
       "hand": "wonik_allegro",
       "mass_kg": 0.05,
-      "static_fail_dynamic_pass": false,
+      "static_fail_dynamic_pass": true,
       "static_pass_dynamic_fail": false,
-      "static_passed": true
+      "static_passed": false
     },
     {
       "dynamic_passed": false,
@@ -190,8 +190,8 @@
       "hand": "wonik_allegro",
       "mass_kg": 0.1,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
     },
     {
       "dynamic_passed": false,
@@ -199,8 +199,8 @@
       "hand": "wonik_allegro",
       "mass_kg": 0.2,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
     },
     {
       "dynamic_passed": false,
@@ -208,8 +208,8 @@
       "hand": "wonik_allegro",
       "mass_kg": 0.4,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
     }
   ],
   "mass_sweep_kg": [
@@ -223,22 +223,26 @@
     {
       "arm": "static_frozen_measured_contacts",
       "contacts": 2,
+      "disturbance_threshold": 0.0,
       "dynamic_passed": true,
       "enclosure_sample": 83,
       "hand": "leap_hand",
       "passed": true,
+      "quality_margin": 0.00818880821592706,
       "reason": "",
       "static_fail_dynamic_pass": false
     },
     {
       "arm": "static_frozen_measured_contacts",
       "contacts": 2,
+      "disturbance_threshold": 0.21283796653792764,
       "dynamic_passed": true,
       "enclosure_sample": 125,
       "hand": "wonik_allegro",
-      "passed": true,
+      "passed": false,
+      "quality_margin": 0.14799354310564428,
       "reason": "",
-      "static_fail_dynamic_pass": false
+      "static_fail_dynamic_pass": true
     }
   ],
   "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result. Across the declared mass sweep the frozen predicate is the *more* permissive of the two -- it admits grasps the physics then refuses -- so the static-fail/dynamic-pass pairing that ROADMAP-P3.4-001 section 16.3 asks for does not exist on these scenes, and the fourth arm shows why it cannot. Asked a third way -- force closure over the contacts the grasp actually made at the end of enclosure, rather than the ones the recipe planned -- it still passes: an antipodal two-point pinch satisfies the certifier at the pinned friction. Asked a fourth way, by building the textbook case on purpose -- a wall beside the target so the environment can supply opposition the fingers cannot -- every point of the declared sweep fails both arms, never one. The reason is structural rather than incidental to this corpus: both predicates carry the same floor. Force closure needs two contacts, and the dynamic predicate needs min_active_fingers=2 of them sustained through the perturbation window, so a grasp too sparse for the static test is too sparse for the dynamic one by the same count. The dynamic predicate additionally requires floor_support_after_lift to be false, which excludes precisely the environment-supported grasps that would make a frozen force-closure test fail. Section 16.3 assumes the two predicates can disagree in that direction; as specified they cannot. Obtaining the pairing needs a change to one of the two predicates -- a static test that fails for a reason other than contact count, such as a wrench-space margin, or a dynamic one that admits environment-supported success -- and not a scene, a seed, or a threshold.",
@@ -254,8 +258,8 @@
       "dynamic_passed": true,
       "hand": "wonik_allegro",
       "scene": "table/sparse",
-      "static_fail_dynamic_pass": false,
-      "static_passed": true
+      "static_fail_dynamic_pass": true,
+      "static_passed": false
     }
   ],
   "parameter_hash": "252909f4ac1e2e318c7fbe222d2da396fc9a02a72331731109abf931d22ad753",
@@ -269,23 +273,58 @@
     {
       "arm": "static_frozen",
       "contacts": 4,
+      "disturbance_threshold": 0.0,
       "hand": "leap_hand",
       "margin": 0.0,
       "mass_kg": 0.02,
       "passed": true,
+      "quality_margin": 0.05301875986672884,
       "reason": ""
     },
     {
       "arm": "static_frozen",
       "contacts": 4,
+      "disturbance_threshold": 0.21283796653792764,
       "hand": "wonik_allegro",
       "margin": 0.0,
       "mass_kg": 0.02,
-      "passed": true,
+      "passed": false,
+      "quality_margin": 0.12940555470263718,
       "reason": ""
     }
   ],
-  "static_fail_dynamic_pass_cases": [],
+  "static_fail_dynamic_pass_cases": [
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.02,
+      "static_fail_dynamic_pass": true,
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "wonik_allegro",
+      "mass_kg": 0.05,
+      "static_fail_dynamic_pass": true,
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
+    },
+    {
+      "arm": "static_frozen_measured_contacts",
+      "contacts": 2,
+      "disturbance_threshold": 0.21283796653792764,
+      "dynamic_passed": true,
+      "enclosure_sample": 125,
+      "hand": "wonik_allegro",
+      "passed": false,
+      "quality_margin": 0.14799354310564428,
+      "reason": "",
+      "static_fail_dynamic_pass": true
+    }
+  ],
   "static_pass_dynamic_fail_cases": [
     {
       "dynamic_passed": false,
@@ -295,38 +334,11 @@
       "static_fail_dynamic_pass": false,
       "static_pass_dynamic_fail": true,
       "static_passed": true
-    },
-    {
-      "dynamic_passed": false,
-      "dynamic_reason": "validated_rollout:floor_support",
-      "hand": "wonik_allegro",
-      "mass_kg": 0.1,
-      "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
-    },
-    {
-      "dynamic_passed": false,
-      "dynamic_reason": "validated_rollout:floor_support",
-      "hand": "wonik_allegro",
-      "mass_kg": 0.2,
-      "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
-    },
-    {
-      "dynamic_passed": false,
-      "dynamic_reason": "validated_rollout:floor_support",
-      "hand": "wonik_allegro",
-      "mass_kg": 0.4,
-      "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
     }
   ],
-  "static_yield": 1.0,
+  "static_yield": 0.5,
   "unsafe_dynamic_outcomes": 0,
-  "verdict": "no_measured_difference",
+  "verdict": "dynamic_admits_more",
   "work_package": "P3.4-14",
-  "yield_delta": 0.0
+  "yield_delta": 0.5
 }

@@ -2,8 +2,8 @@
 document_id: ROADMAP-P3.4.3-AMEND-16.3
 document_type: amendment_proposal
 title: Đề xuất sửa §16.3 — tiêu chí paired static-fail/dynamic-pass không thoả được với đặc tả predicate hiện tại
-version: 1.0.0
-status: proposed
+version: 1.1.0
+status: accepted
 date: 2026-08-28
 parent_plan: ROADMAP-P3.4.3-001
 blocks: [R-DOD-03, C05]
@@ -75,3 +75,40 @@ chất khiến ledger có giá trị.
 
 Vì vậy `R-DOD-03` và `C05` giữ `failed` cho tới khi chủ contract chọn một phương
 án. Đây là một quyết định, không phải một hạng mục tồn đọng.
+
+
+## 6. Quyết định và kết quả đo (2026-08-28)
+
+Chủ contract chọn **phương án A**. Đã cài đặt và đo.
+
+`certify_force_closure` nhận thêm `quality_margin_threshold`, mặc định `0.0` —
+tức hành vi lịch sử **y nguyên**, nên 65 requirement đã passed và toàn bộ bằng
+chứng thu trước sửa đổi vẫn còn hiệu lực (969 test xanh sau thay đổi).
+
+Ngưỡng **không được chọn** mà **suy ra**: τ = chuẩn của `perturbation_wrench` mà
+protocol động thực sự áp lên chính bàn tay đó. Phân tích đóng băng vì thế bị hỏi
+đúng câu hỏi có nghĩa — grasp này có chịu nổi nhiễu loạn nó sắp gặp không —
+thay vì câu hỏi đếm ngón.
+
+| tay | τ | GWS margin | tĩnh | động | cặp |
+|---|---|---|---|---|---|
+| `wonik_allegro` | 0.2128 | 0.1294 | **fail** | pass | ✅ |
+| `leap_hand` | 0.0000 | 0.0530 | pass | pass | ❌ |
+
+Ablation đổi verdict từ `no_measured_difference` sang **`dynamic_admits_more`**,
+với **3 cặp** static-fail/dynamic-pass trên nhánh mass sweep và nhánh contact đo
+được. Tiêu chí §16.3 giờ **có nghĩa** và **thoả được** — nhưng mới 1/2 tay.
+
+## 7. Lỗ hổng mới lộ ra, cần một quyết định riêng
+
+`leap_hand` không ra cặp vì recipe của nó **không khai báo
+`perturbation_wrench` nào**, nên τ = 0 và ngưỡng vô hiệu.
+
+Điều này nghiêm trọng hơn một requirement chưa đóng: nếu protocol động không áp
+nhiễu loạn nào lên LEAP, thì tiêu chí `disturbance_survival_pass` của LEAP là
+**rỗng** — nó luôn đúng vì không có gì để sống sót qua. Đây là lỗ hổng của recipe
+LEAP, không phải của tiêu chí §16.3.
+
+Sửa nó là đổi `perturbation_wrench` của LEAP, và điều đó **đổi kết quả động của
+mọi mẫu LEAP**, tức phải tái sinh dataset và mọi bằng chứng dựa trên nó. Vượt
+phạm vi phương án A, vốn chỉ động tới predicate tĩnh. Cần quyết định riêng.

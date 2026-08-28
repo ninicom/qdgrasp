@@ -1,6 +1,10 @@
+import dataclasses
+
 import numpy as np
-from qdgrasp.dataset.pipeline.contracts import StaticCertificate
+
 from qdgrasp.dataset.pipeline.certifiers.grasp_wrench import compute_grasp_wrench_space_quality
+from qdgrasp.dataset.pipeline.contracts import StaticCertificate
+
 
 def certify_force_closure(
     target_points: np.ndarray,
@@ -10,6 +14,7 @@ def certify_force_closure(
     mu: float = 0.5,
     torsional_friction: float = 0.005,
     gravity: np.ndarray | None = None,
+    quality_margin_threshold: float = 0.0,
 ) -> StaticCertificate:
     """
     Certify both six-dimensional force closure and gravity equilibrium.
@@ -17,6 +22,18 @@ def certify_force_closure(
     Balancing gravity alone is not force closure: a single supporting contact
     can do that.  We therefore require a positive Ferrari-Canny-style GWS margin
     before solving the gravity load distribution.
+
+    ``quality_margin_threshold`` raises that bar from "positive" to "at least
+    this". A positive margin only says the grasp resists *some* disturbance;
+    it does not say it resists the disturbance the grasp will actually meet. An
+    antipodal two-point pinch clears a positive test comfortably and still has
+    almost no resistance to torque about the pinch axis. Passing the norm of the
+    protocol's declared perturbation wrench makes the frozen test refuse what it
+    genuinely cannot certify, which is what ROADMAP-P3.4-001 section 16.3 needs
+    in order to mean anything -- see ROADMAP-P3.4.3-AMEND-16.3.
+
+    The default of 0.0 is the historical behaviour exactly, so evidence gathered
+    before the amendment stays valid.
     """
     target_points = np.asarray(target_points, dtype=np.float64)
     inward_normals = np.asarray(inward_normals, dtype=np.float64)
@@ -69,6 +86,10 @@ def certify_force_closure(
     )
     if not gws.passed:
         return gws
+    if quality_margin_threshold > 0.0 and gws.quality_margin < quality_margin_threshold:
+        # The margin itself travels on the certificate, so a caller can see how
+        # far short it fell rather than only that it did.
+        return dataclasses.replace(gws, passed=False)
 
     from scipy.optimize import linprog
 

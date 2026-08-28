@@ -79,7 +79,7 @@ def _planned_contacts(hand: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return points[usable], normals[usable], centroid
 
 
-def static_arm(hand: str, *, mass: float = TARGET_MASS_KG) -> dict[str, Any]:
+def static_arm(hand: str, *, mass: float = TARGET_MASS_KG, threshold: float = 0.0) -> dict[str, Any]:
     """Certify the planned contacts with the object held still.
 
     This is the frozen-object question: given these fingertips on this object at
@@ -93,10 +93,13 @@ def static_arm(hand: str, *, mass: float = TARGET_MASS_KG) -> dict[str, Any]:
         mass=mass,
         mu=FRICTION_MU,
         torsional_friction=TORSIONAL_FRICTION,
+        quality_margin_threshold=threshold,
     )
     return {
         "hand": hand,
         "arm": "static_frozen",
+        "quality_margin": float(certificate.quality_margin),
+        "disturbance_threshold": float(threshold),
         "mass_kg": float(mass),
         "contacts": int(points.shape[0]),
         "passed": bool(certificate.passed),
@@ -128,7 +131,7 @@ def dynamic_arm(hand: str, generate_one, *, mass: float | None = None) -> dict[s
     }
 
 
-def measured_contact_arm(hand: str, generate_one) -> dict[str, Any]:
+def measured_contact_arm(hand: str, generate_one, threshold: float = 0.0) -> dict[str, Any]:
     """Force closure over the contacts the grasp *actually* made.
 
     The planned-contact arm asks whether the recipe's intended fingertips would
@@ -186,10 +189,13 @@ def measured_contact_arm(hand: str, generate_one) -> dict[str, Any]:
         mass=TARGET_MASS_KG,
         mu=FRICTION_MU,
         torsional_friction=TORSIONAL_FRICTION,
+        quality_margin_threshold=threshold,
     )
     return {
         "hand": hand,
         "arm": "static_frozen_measured_contacts",
+        "quality_margin": float(certificate.quality_margin),
+        "disturbance_threshold": float(threshold),
         "enclosure_sample": last,
         "contacts": len(events),
         "passed": bool(certificate.passed),
@@ -208,6 +214,23 @@ WALL_X_M: float = 0.030
 #: Both predicates carry the same floor: force closure needs two contacts and the
 #: dynamic predicate needs ``min_active_fingers`` of them sustained.
 MIN_CONTACTS_FOR_CLOSURE: int = 2
+
+
+def declared_disturbance(hand: str, generator) -> float:
+    """The margin the frozen test must clear, taken from the protocol itself.
+
+    ROADMAP-P3.4.3-AMEND-16.3 option A: a static test that fails on mechanics
+    rather than on a contact count. The threshold is not chosen -- it is the norm
+    of the perturbation wrench the dynamic protocol actually applies to this
+    hand, so the frozen analysis is asked to certify the grasp against the
+    disturbance it will really meet. A hand whose recipe declares no
+    perturbation gets 0.0, which leaves the historical behaviour untouched.
+    """
+    recipe = generator["build_release_grasp_recipe"](generator["profile_of_hand"](hand))
+    wrench = recipe.rollout_kwargs.get("perturbation_wrench")
+    if wrench is None:
+        return 0.0
+    return float(np.linalg.norm(np.asarray(wrench, dtype=np.float64)))
 
 
 def environment_assisted_arm(hand: str, generate_one, wall_factory) -> list[dict[str, Any]]:
@@ -282,7 +305,8 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
     dynamic: list[dict[str, Any]] = []
     paired: list[dict[str, Any]] = []
     for hand in hands:
-        left = static_arm(hand)
+        threshold = declared_disturbance(hand, generator)
+        left = static_arm(hand, threshold=threshold)
         right = dynamic_arm(hand, generate_one)
         static.append(left)
         dynamic.append(right)
@@ -303,7 +327,7 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
     sweep: list[dict[str, Any]] = []
     for hand in hands:
         for mass in MASS_SWEEP_KG:
-            left = static_arm(hand, mass=mass)
+            left = static_arm(hand, mass=mass, threshold=declared_disturbance(hand, generator))
             right = dynamic_arm(hand, generate_one, mass=mass)
             sweep.append(
                 {
@@ -317,7 +341,7 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
                 }
             )
 
-    measured = [measured_contact_arm(hand, generate_one) for hand in hands]
+    measured = [measured_contact_arm(hand, generate_one, declared_disturbance(hand, generator)) for hand in hands]
     assisted = [
         entry
         for hand in hands
