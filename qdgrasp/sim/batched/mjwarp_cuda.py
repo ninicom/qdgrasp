@@ -47,13 +47,19 @@ from qdgrasp.sim.batched.contracts import (
 #: Contact fields the safety budget needs. A device build that cannot supply all
 #: of them cannot enforce the budget, so the gate refuses it rather than
 #: reporting the subset it happens to have (G07, G08.1).
+#:
+#: This is exactly the plan's list -- force (resolved through ``efc_address``),
+#: frame, distance and identity -- and nothing else. ``includemargin`` was in
+#: here for a while and should not have been: the plan does not ask for it and
+#: no code reads it, so requiring it would have blocked the gate for a reason
+#: the contract never stated. A capability requirement that exceeds the contract
+#: is as wrong as one that falls short of it.
 REQUIRED_CONTACT_FIELDS: tuple[str, ...] = (
     "dist",
     "pos",
     "frame",
     "geom",
     "efc_address",
-    "includemargin",
 )
 
 
