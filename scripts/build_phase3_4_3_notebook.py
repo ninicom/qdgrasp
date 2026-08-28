@@ -132,10 +132,15 @@ os.environ.update(
     OPENBLAS_NUM_THREADS="1",
 )
 
+# The full pinned set, not a subset: importing qdgrasp pulls in the engine
+# runner, which needs lightning. Trimming the list to what the gate "obviously"
+# uses is how the first run died in the prior-gates cell.
 subprocess.run([
     sys.executable, "-m", "pip", "install", "--quiet", "--upgrade",
-    "mujoco==3.12.0", "numpy==2.4.6", "scipy==1.17.1", "trimesh==4.12.2",
-    "pydantic==2.13.4", "PyYAML==6.0.3", "pytest==9.1.1", "nvidia-ml-py",
+    "lightning==2.6.5", "mujoco==3.12.0", "numpy==2.4.6", "scipy==1.17.1",
+    "trimesh==4.12.2", "safetensors==0.8.0", "pydantic==2.13.4", "PyYAML==6.0.3",
+    "einops==0.8.2", "rich==14.3.4", "typer==0.27.1", "torchmetrics==1.9.0",
+    "Pillow==12.1.1", "pytest==9.1.1", "nvidia-ml-py",
 ], check=True)
 subprocess.run([
     sys.executable, "-m", "pip", "install", "--quiet", "--no-deps", "--force-reinstall",
