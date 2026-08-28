@@ -2,10 +2,10 @@
 document_id: ROADMAP-P3.4.3-001
 document_type: plan
 title: Kế hoạch Phase 3.4.3 — hoàn tất correctness gate cho contact-rich active hands
-version: 1.1.0
-status: active
-date: 2026-08-27
-revises: ROADMAP-P3.4.3-001@1.0.0
+version: 1.2.0
+status: blocked
+date: 2026-08-28
+revises: ROADMAP-P3.4.3-001@1.1.0
 parent_plan: ROADMAP-P3.4-001
 related_decision: ADR-0008
 related_plans:
@@ -18,7 +18,7 @@ paused_hands:
   - shadow_hand
 evidence_root: evidence/phase3_4_3
 requirements_manifest: docs/roadmap/phase3_4_3_requirements.yaml
-latest_revision_record: docs/revisions/REV-20260827-012-phase3-4-3-completeness-expansion.md
+latest_revision_record: docs/revisions/REV-20260828-015-phase3-4-3-terminal-state.md
 ---
 
 # Phase 3.4.3 — Active contact-rich gate completion
@@ -813,3 +813,39 @@ Plan chỉ `complete` khi đồng thời:
 Nếu thiếu bất kỳ mục nào, trạng thái là `active` hoặc `blocked`, không dùng
 `complete`. Hoàn tất plan này không tự đổi P3.4 historical three-hand thành
 pass.
+
+### 12.1 Trạng thái chốt (2026-08-28)
+
+Điều khoản trên đã kích hoạt. Mọi mục đo được bằng máy đều đã đo — không còn
+requirement nào ở `pending`, và không còn mục nào chờ phần cứng. Ledger:
+65 passed, 14 failed, 5 blocked, 1 deferred, 0 violation, verdict `FAIL`.
+
+Ba mục DoD không đạt, vì ba lý do khác hẳn nhau:
+
+| Mục | Trạng thái | Bản chất |
+|-----|-----------|----------|
+| 11 — CUDA parity/sanitizer | **failed, đã đo** | defect ngoài repo |
+| 14 — paired static-fail/dynamic-pass | **failed, đã đo** | tiền đề của §16.3 sai trên corpus này |
+| 20 — independent reviewer PASS | **blocked** | ràng buộc quy trình, cố ý |
+
+Mục 11 không đóng được từ bên trong repo này. `mujoco-warp` 3.10.0.3, 3.11.0 và
+3.12.0 đều đọc bộ nhớ chưa khởi tạo trong `_linesearch_iterative_kernel` trên
+reproducer LEAP; `warp-lang` 1.16.0 là bản mới nhất tồn tại, nên nhánh "pin bản
+mới hơn" của §3.7 đã đóng. Còn lại đúng hai đường, cả hai là công việc mới cần
+plan riêng: một fallback GPU backend tự qua capability/parity, hoặc bản vá
+upstream. §16.3 §G07.5 cho phép giữ GPU gate ở trạng thái không pass — đây là
+tình huống đó, không phải thiếu sót thực thi.
+
+Mục 14 không đóng được bằng cách chạy thêm. Câu hỏi đã được đặt ba cách độc lập
+và cả ba trả lời giống nhau: frozen predicate là cái **rộng hơn**, ngược với giả
+định của §16.3. Muốn có cặp đó cần một predicate tĩnh thực sự bảo thủ, hoặc một
+lớp scene nơi môi trường cấp lực đối kháng mà ngón tay không cấp được. Không cái
+nào đạt được bằng cách chỉnh threshold, và không cái nào nằm trong artifact này.
+
+Mục 20 là ràng buộc cố ý. Người viết phần lớn patch không được tự review; packet
+đã sẵn sàng tại `scripts/phase3_4_3_review_packet.py`.
+
+Phần CPU của plan đứng độc lập và đã đóng: 65 requirement passed, coverage
+36/36 cell, artifact 44 mẫu load sạch qua public loader, 967 test. `P4` static và
+offline không bị chặn bởi bất kỳ mục nào ở trên; chỉ nhánh GPU-derived
+contact-rich input là bị chặn, và `release_blocked=true` phản ánh đúng điều đó.
