@@ -1,7 +1,7 @@
 {
-  "assembled_at": "2026-08-28T01:23:15.824669+00:00",
+  "assembled_at": "2026-08-28T01:56:22.724783+00:00",
   "branch": "feature/phase3-1-closure",
-  "commit": "bd7868183d4173cfb7d07699470879564ee0df6d",
+  "commit": "c43e2da7aadd2581413ef4d9dd1428c456654fa8",
   "completeness": {
     "manifest_sha256": "dc8c184b54c0e0aa992f7c261f23bb96b3f58e499aeacd40829e07db890da9fa",
     "open_required": [
@@ -197,12 +197,13 @@
   "known_limitations": [
     "Simulation-only contact. Nothing here is a hardware safety claim.",
     "Two active hands under ADR-0008; not three-hand coverage.",
-    "MuJoCo Warp 1.16.0 has an upstream uninitialised-read defect (REV-20260827-010). The compatibility matrix runs in the Kaggle notebook; until a clean version is found the GPU gate stays blocked.",
+    "The upstream uninitialised-read defect is unresolved and now measured, not assumed: on a Kaggle T4, mujoco-warp 3.10.0.3, 3.11.0 and 3.12.0 on warp-lang 1.16.0 each report tens of thousands of uninitialised reads in _linesearch_iterative_kernel on the REV-20260827-010 reproducer scene, while racecheck stays clean. warp-lang 1.16.0 is the newest release, so there is no newer runtime to move to. The GPU gate is blocked for that reason. See evidence/phase3_4_3/s10/.",
+    "The same three versions report zero errors on a three-geom toy scene. A compatibility answer is only as good as the scene it was asked on, and both readings are kept so that is visible.",
     "MPPI (P3.4-10) is deferred_not_claimed and carries no coverage.",
     "The static-vs-dynamic ablation reports no_measured_difference on the release recipe's scenes. No threshold was moved to avoid it."
   ],
   "missing_required_artifacts": [],
-  "packet_sha256": "0e5f8604343a695557f48170e6d8eaa7fc8cc0de91ddbf933abd942e884c220c",
+  "packet_sha256": "fb1c20e5bf2ffb9f8007046f3aede249ffa1d48ecbd24fa9302e56ec69824846",
   "phase": "3.4.3",
   "required_artifacts": {
     "docs/decisions/0008-temporary-shadow-hand-pause.md": {
@@ -277,7 +278,7 @@
     "qdgrasp/sim/batched": {
       "files": 4,
       "kind": "directory",
-      "sha256": "bf0d3c03ce15c2bbdf945f7cdd848ae6afe304f56ea61195e869de58767305df"
+      "sha256": "1d669918c9ae4ad8db069e3e79060fdd1d11bc658fac03ebe19d83b4e90b5f40"
     },
     "scripts/check_contactrich_active.py": {
       "kind": "file",
@@ -289,7 +290,7 @@
     },
     "scripts/check_phase3_4_3_cuda.py": {
       "kind": "file",
-      "sha256": "3555f61d405778be5dadc8b1d8ab64bd34859b0fb58abd1c9d570b3d0a4da33a"
+      "sha256": "98db33b96b1aff234b3849c238083be809c9152fc0d74c8e1f158182a1feee71"
     },
     "scripts/generate_contactrich_active_tiny.py": {
       "kind": "file",
@@ -324,12 +325,19 @@
     "evidence/phase3_4_3/s10/kaggle-run-v5/phase1_cuda.json": "efb9feb3e84c0aa651642a37ee25358dec8b20e4a5e4551e8b4eab41995e2f88",
     "evidence/phase3_4_3/s10/kaggle-run-v5/phase2_cuda.json": "20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086",
     "evidence/phase3_4_3/s10/kaggle-run-v5/warp_matrix.json": "7ae43642b25ff6446886acfe83fb88c8475a84b176e54184b75fdf5712bea1a4",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/cuda-gate.checkpoint.json": "f3fbd75b2a97817f0601c214566a7ff5656b4c82e9ff5ffab3cc5a2ffa80efe8",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/cuda-gate.json": "a8105d1fb7df180caf3c0f5745892a08c9deb1bb39db642a11e78debdb946428",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/packet.json": "d0f44cc6987eea1e2ec783ba343a3d5289d60c9f2fa7606dac7273043f7427e0",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/phase1_cuda.json": "f793ba099edbf3ea6fddaa30d568316a9b9009b8679ccaf26cd2c6b3597dbd69",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/phase2_cuda.json": "20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/sanitizer.json": "877fee819c08ac68f73eb6c280d8456cf8e1faca5f502e11fd736a6118051de3",
+    "evidence/phase3_4_3/s10/kaggle-run-v6/warp_matrix.json": "b36cba70aea084f438d12ef4983fc8e14d82fba47076895ed5c44ae45c5a15de",
     "evidence/phase3_4_3/s10/result.json": "e6d96bd1de409325db85ab7cdcf3fc73763d86a241906b6746c4b55440cd2d02",
     "evidence/phase3_4_3/s11/result.json": "aa5298b28c0ced1a10b4a2715974543b56207d719b51794bb9c9c2e352b1fdd2",
     "evidence/phase3_4_3/s11/stage-renders.json": "218a0235ff5e2f3ef363958eeb77d0a7fe4a63db52024166d6983e5b922b083b",
     "evidence/phase3_4_3/s11/static-vs-dynamic.json": "f832dc7cdf7b07d0cf428e70a7228cf0ccb8904747cc86d96e53dd5b59a62257",
     "evidence/phase3_4_3/s12/result.json": "2aebab800bace3908b995078603a5b92779867bb82178bdc42e5bc45794552e2",
-    "evidence/phase3_4_3/s12/review-packet.json": "c6da2f07e3a9a4de79fd2b957e74f53632170bd76d0c9cc50debeed918b407f8",
+    "evidence/phase3_4_3/s12/review-packet.json": "acb681fb54708cb24cce8ef3d3680f025baaf23d27e0c413d42e65bebbe2c822",
     "evidence/phase3_4_3/s2/result.json": "69ad77c557cce3b9765d234aed898016173fede2e9a57295148f27955bf82afe",
     "evidence/phase3_4_3/s3/result.json": "41dfc07527063c19517e492e90aa84a20c5fd9d22be58bf39630829a02585210",
     "evidence/phase3_4_3/s4/result.json": "c2b8a4ea5839bcabf9e998a0c7e9a855788edd5da039524a9a3348049161878a",

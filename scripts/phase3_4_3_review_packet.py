@@ -189,9 +189,19 @@ def build_packet(*, dataset_root: Path, cuda_evidence: Path | None) -> dict[str,
             "Simulation-only contact. Nothing here is a hardware safety claim.",
             "Two active hands under ADR-0008; not three-hand coverage.",
             (
-                "MuJoCo Warp 1.16.0 has an upstream uninitialised-read defect "
-                "(REV-20260827-010). The compatibility matrix runs in the Kaggle "
-                "notebook; until a clean version is found the GPU gate stays blocked."
+                "The upstream uninitialised-read defect is unresolved and now "
+                "measured, not assumed: on a Kaggle T4, mujoco-warp 3.10.0.3, "
+                "3.11.0 and 3.12.0 on warp-lang 1.16.0 each report tens of "
+                "thousands of uninitialised reads in _linesearch_iterative_kernel "
+                "on the REV-20260827-010 reproducer scene, while racecheck stays "
+                "clean. warp-lang 1.16.0 is the newest release, so there is no "
+                "newer runtime to move to. The GPU gate is blocked for that "
+                "reason. See evidence/phase3_4_3/s10/."
+            ),
+            (
+                "The same three versions report zero errors on a three-geom toy "
+                "scene. A compatibility answer is only as good as the scene it "
+                "was asked on, and both readings are kept so that is visible."
             ),
             "MPPI (P3.4-10) is deferred_not_claimed and carries no coverage.",
             (
