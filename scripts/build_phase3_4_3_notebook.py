@@ -485,10 +485,23 @@ else:
         "print('MJX_PROBE_JSON ' + json.dumps(out))\\n"
     )
     open("/tmp/mjx_probe.py", "w").write(probe)
-    run = subprocess.run(
-        [sys.executable, "/tmp/mjx_probe.py"], capture_output=True, text=True, timeout=1800,
-    )
-    blob = run.stdout + run.stderr
+    # A diagnostic must never be able to abort the gate that follows it. The
+    # first two attempts at this probe took the whole notebook down with them,
+    # so the gate never ran at all -- which cost more than the probe was worth.
+    try:
+        run = subprocess.run(
+            [sys.executable, "/tmp/mjx_probe.py"],
+            capture_output=True, text=True, timeout=2700,
+        )
+        blob = run.stdout + run.stderr
+    except subprocess.TimeoutExpired as exc:
+        MJX_RESULT["status"] = "timeout"
+        MJX_RESULT["timeout_s"] = 2700
+        MJX_RESULT["detail"] = (
+            "jax.jit(mjx.step) did not finish compiling the contact-rich scene "
+            "within the budget; the capability question was never reached"
+        )
+        blob = str(getattr(exc, "stdout", "") or "")
     line = [ln for ln in blob.splitlines() if ln.startswith("MJX_PROBE_JSON ")]
     if line:
         MJX_RESULT["probe"] = json.loads(line[0][len("MJX_PROBE_JSON "):])
