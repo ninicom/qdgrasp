@@ -49,6 +49,16 @@ REPO_URL = "https://github.com/ninicom/qdgrasp.git"
 #: Newest first, matched to the pinned MuJoCo 3.12.0 at the top.
 WARP_MATRIX = ("mujoco-warp==3.12.0", "mujoco-warp==3.11.0", "mujoco-warp==3.10.0.3")
 
+#: The defect names ``_linesearch_iterative_kernel``. Every entry here either
+#: avoids that kernel or changes how far it runs, so a clean result identifies
+#: the defect rather than merely dodging it. (name, before put_model, after).
+SOLVER_VARIANTS: tuple[tuple[str, str, str], ...] = (
+    ("baseline", "", ""),
+    ("ls_parallel", "", "wm.opt.ls_parallel = True\n"),
+    ("solver_cg", "m.opt.solver = mujoco.mjtSolver.mjSOL_CG\n", ""),
+    ("ls_iterations_1", "m.opt.ls_iterations = 1\n", ""),
+)
+
 
 def _code(source: str) -> dict[str, object]:
     return {
@@ -352,6 +362,78 @@ json.dump(
 CLEAN = [pin for pin, r in WARP_MATRIX_RESULT.items() if r["status"] == "clean"]
 print()
 print("clean versions:", CLEAN or "none — the GPU gate stays BLOCKED")
+'''
+        ),
+        _markdown(
+            """## 3b. Is it the linesearch, or the backend?
+
+The version matrix answers "is any release clean". It cannot tell us *why* they
+are not. The defect names `_linesearch_iterative_kernel`, which only some solver
+configurations reach, so this cell holds the version fixed at the newest pin and
+varies the solver instead.
+
+A clean result here would be worth having: it would identify the defect precisely
+and give the gate a documented configuration to run under, which is a fallback
+the plan's section 3.7 allows. It would not be a way of hiding the sanitizer --
+the same positive-proof rule applies, and a variant that fails to step is
+reported as such rather than counted clean.
+"""
+        ),
+        _code(
+            f'''SOLVER_VARIANTS = {SOLVER_VARIANTS!r}
+SOLVER_RESULT = {{}}
+
+subprocess.run(
+    [sys.executable, "-m", "pip", "install", "--quiet", "warp-lang", WARP_MATRIX[0]],
+    capture_output=True, text=True,
+)
+
+for name, pre, post in SOLVER_VARIANTS:
+    body = PROBE.replace(
+        "wm = mujoco_warp.put_model(m)",
+        pre + "wm = mujoco_warp.put_model(m)",
+    ).replace(
+        "for _ in range(8):",
+        post + "for _ in range(8):",
+    )
+    open("/tmp/solver_probe.py", "w").write(body)
+    print("=" * 70)
+    print("solver variant:", name)
+    if not sanitizer:
+        SOLVER_RESULT[name] = {{"status": "sanitizer_unavailable"}}
+        continue
+    run = subprocess.run(
+        [sanitizer, "--tool", "initcheck", sys.executable, "/tmp/solver_probe.py"],
+        capture_output=True, text=True, timeout=1800,
+    )
+    blob = run.stdout + run.stderr
+    stepped = "stepped 8 times over 4 worlds" in blob
+    summary = [ln for ln in blob.splitlines() if "ERROR SUMMARY:" in ln]
+    if not stepped:
+        status = "probe_did_not_run"
+    elif not summary:
+        status = "inconclusive_no_error_summary"
+    elif summary[-1].strip().endswith("0 errors"):
+        status = "clean"
+    else:
+        status = "errors"
+    SOLVER_RESULT[name] = {{
+        "status": status,
+        "probe_stepped": stepped,
+        "error_summary": summary[-1].strip() if summary else "",
+        "verbatim_tail": blob[-800:],
+    }}
+    print(" ", status, "|", summary[-1].strip() if summary else "(no summary line)")
+
+SOLVER_REPORT = {{"pin": WARP_MATRIX[0], "variants": SOLVER_RESULT}}
+json.dump(
+    SOLVER_REPORT,
+    open("/kaggle/working/phase3_4_3_evidence/solver_variants.json", "w"),
+    indent=2, sort_keys=True,
+)
+CLEAN_SOLVER = [n for n, r in SOLVER_RESULT.items() if r["status"] == "clean"]
+print()
+print("clean solver variants:", CLEAN_SOLVER or "none")
 '''
         ),
         _markdown(
