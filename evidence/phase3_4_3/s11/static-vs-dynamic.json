@@ -2,6 +2,7 @@
   "controlled_factor": "whether the scene is simulated. Both arms use the same hand, scene, target pose, planned fingertip contacts and safety budget.",
   "dynamic_arm": [
     {
+      "applied_wrench_hash": "c8f80346c32770b0",
       "arm": "dynamic_reactive",
       "cpu_confirmed": true,
       "failure_reason": "none",
@@ -9,10 +10,16 @@
       "lift_m": 0.04950918744971183,
       "mass_kg": 0.02,
       "min_budget_margin": 0.7714523567909362,
+      "object_mass_kg": 0.02,
       "passed": true,
+      "physics_mode": "reactive",
+      "scene": "table/sparse",
+      "seed": 0,
+      "snapshot_hash": "cff85494d2af75309bdbc1f10b982d7eaa0f2d5448c01e243f3b41481dac3f25",
       "steps": 120
     },
     {
+      "applied_wrench_hash": "d30265450ebb55ed",
       "arm": "dynamic_reactive",
       "cpu_confirmed": true,
       "failure_reason": "none",
@@ -20,7 +27,12 @@
       "lift_m": 0.04068782015649702,
       "mass_kg": 0.02,
       "min_budget_margin": 0.6483082942767747,
+      "object_mass_kg": 0.02,
       "passed": true,
+      "physics_mode": "reactive",
+      "scene": "table/sparse",
+      "seed": 0,
+      "snapshot_hash": "1c3f5ef944d178376770cc6212700b448acc27653847e9cef262598106336310",
       "steps": 160
     }
   ],
@@ -115,101 +127,221 @@
       "wall_top_m": 0.036
     }
   ],
-  "generated_at": "2026-08-28T13:14:21.958397+00:00",
+  "generated_at": "2026-08-28T15:06:21.286840+00:00",
   "hands": [
     "leap_hand",
     "wonik_allegro"
   ],
   "mass_sweep": [
     {
+      "applied_wrench": [
+        0.0981,
+        0.0981,
+        0.0,
+        0.001962,
+        0.001962,
+        0.001962
+      ],
+      "applied_wrench_hash": "c8f80346c32770b0",
       "dynamic_passed": true,
       "dynamic_reason": "none",
+      "dynamic_safety_verdict": "none",
       "hand": "leap_hand",
       "mass_kg": 0.02,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "leap_hand",
-      "mass_kg": 0.05,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "leap_hand",
-      "mass_kg": 0.1,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "leap_hand",
-      "mass_kg": 0.2,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "dynamic_passed": false,
-      "dynamic_reason": "validated_rollout:floor_support",
-      "hand": "leap_hand",
-      "mass_kg": 0.4,
+      "snapshot_hash": "cff85494d2af75309bdbc1f10b982d7eaa0f2d5448c01e243f3b41481dac3f25",
+      "static_alpha": 140.542224,
       "static_fail_dynamic_pass": false,
       "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "static_passed": true
     },
     {
+      "applied_wrench": [
+        0.24525000000000002,
+        0.24525000000000002,
+        0.0,
+        0.0049050000000000005,
+        0.0049050000000000005,
+        0.0049050000000000005
+      ],
+      "applied_wrench_hash": "5c6b901d9704e013",
       "dynamic_passed": true,
       "dynamic_reason": "none",
+      "dynamic_safety_verdict": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.05,
+      "snapshot_hash": "6fa54c8005a0aa95831fbd0229e5f667046c00d6b235142a9ab02f509a0495b3",
+      "static_alpha": 56.215851,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "applied_wrench": [
+        0.49050000000000005,
+        0.49050000000000005,
+        0.0,
+        0.009810000000000001,
+        0.009810000000000001,
+        0.009810000000000001
+      ],
+      "applied_wrench_hash": "2d6705c617e62a7f",
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "dynamic_safety_verdict": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.1,
+      "snapshot_hash": "7eb1a818269e25c68a63b9bb583fdd2abdeab9e50423c2980a5bc146a4075f56",
+      "static_alpha": 28.10706,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "applied_wrench": [
+        0.9810000000000001,
+        0.9810000000000001,
+        0.0,
+        0.019620000000000002,
+        0.019620000000000002,
+        0.019620000000000002
+      ],
+      "applied_wrench_hash": "8d9f5748b2bd4bcf",
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "dynamic_safety_verdict": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.2,
+      "snapshot_hash": "2b64347b46f5d4bb9a73dfd3b1c7a83aa7b939831ce4cbbc06da448e965e463f",
+      "static_alpha": 14.052665,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": false,
+      "static_passed": true
+    },
+    {
+      "applied_wrench": [
+        1.9620000000000002,
+        1.9620000000000002,
+        0.0,
+        0.039240000000000004,
+        0.039240000000000004,
+        0.039240000000000004
+      ],
+      "applied_wrench_hash": "8ffb1ab80b18f408",
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
+      "hand": "leap_hand",
+      "mass_kg": 0.4,
+      "snapshot_hash": "2e8d54933ff340f818f8a2805ec2ebc9dfca3829bd5549d57365ae96af2a11e2",
+      "static_alpha": 7.025467,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
+    },
+    {
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "dynamic_safety_verdict": "none",
       "hand": "wonik_allegro",
       "mass_kg": 0.02,
-      "static_fail_dynamic_pass": true,
+      "snapshot_hash": "1c3f5ef944d178376770cc6212700b448acc27653847e9cef262598106336310",
+      "static_alpha": 52.403004,
+      "static_fail_dynamic_pass": false,
       "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "static_passed": true
     },
     {
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
       "dynamic_passed": true,
       "dynamic_reason": "none",
+      "dynamic_safety_verdict": "none",
       "hand": "wonik_allegro",
       "mass_kg": 0.05,
-      "static_fail_dynamic_pass": true,
+      "snapshot_hash": "04bcb74526d597f51c734708ba53e25b8aeed4932286feeba4cd5522a79d39c4",
+      "static_alpha": 52.309607,
+      "static_fail_dynamic_pass": false,
       "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "static_passed": true
     },
     {
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
       "dynamic_passed": false,
       "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
       "hand": "wonik_allegro",
       "mass_kg": 0.1,
+      "snapshot_hash": "e2469b8293217e4c336bb87f48858ff78138f898a911e3afec7fa27139f351b4",
+      "static_alpha": 52.153944,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     },
     {
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
       "dynamic_passed": false,
       "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
       "hand": "wonik_allegro",
       "mass_kg": 0.2,
+      "snapshot_hash": "260a53f17e55b5b266641070b9067ff4998acbaa0ab16a916c8a3c0a874b39ac",
+      "static_alpha": 51.842619,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     },
     {
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
       "dynamic_passed": false,
       "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
       "hand": "wonik_allegro",
       "mass_kg": 0.4,
+      "snapshot_hash": "df47b92f28e8b4e97bd8abb33c8642b719b493a8d8950b7e49c59337c97e8368",
+      "static_alpha": 51.219968,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     }
   ],
   "mass_sweep_kg": [
@@ -223,43 +355,57 @@
     {
       "arm": "static_frozen_measured_contacts",
       "contacts": 2,
-      "disturbance_threshold": 0.13877596453276772,
+      "disturbance_threshold": 0.0,
       "dynamic_passed": true,
       "enclosure_sample": 83,
       "hand": "leap_hand",
-      "passed": false,
+      "passed": true,
       "quality_margin": 0.00818880821592706,
       "reason": "",
-      "static_fail_dynamic_pass": true
+      "static_fail_dynamic_pass": false
     },
     {
       "arm": "static_frozen_measured_contacts",
       "contacts": 2,
-      "disturbance_threshold": 0.21283796653792764,
+      "disturbance_threshold": 0.0,
       "dynamic_passed": true,
       "enclosure_sample": 125,
       "hand": "wonik_allegro",
-      "passed": false,
+      "passed": true,
       "quality_margin": 0.14799354310564428,
       "reason": "",
-      "static_fail_dynamic_pass": true
+      "static_fail_dynamic_pass": false
     }
   ],
   "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result. Across the declared mass sweep the frozen predicate is the *more* permissive of the two -- it admits grasps the physics then refuses -- so the static-fail/dynamic-pass pairing that ROADMAP-P3.4-001 section 16.3 asks for does not exist on these scenes, and the fourth arm shows why it cannot. Asked a third way -- force closure over the contacts the grasp actually made at the end of enclosure, rather than the ones the recipe planned -- it still passes: an antipodal two-point pinch satisfies the certifier at the pinned friction. Asked a fourth way, by building the textbook case on purpose -- a wall beside the target so the environment can supply opposition the fingers cannot -- every point of the declared sweep fails both arms, never one. The reason is structural rather than incidental to this corpus: both predicates carry the same floor. Force closure needs two contacts, and the dynamic predicate needs min_active_fingers=2 of them sustained through the perturbation window, so a grasp too sparse for the static test is too sparse for the dynamic one by the same count. The dynamic predicate additionally requires floor_support_after_lift to be false, which excludes precisely the environment-supported grasps that would make a frozen force-closure test fail. Section 16.3 assumes the two predicates can disagree in that direction; as specified they cannot. Obtaining the pairing needs a change to one of the two predicates -- a static test that fails for a reason other than contact count, such as a wrench-space margin, or a dynamic one that admits environment-supported success -- and not a scene, a seed, or a threshold.",
   "paired_evidence": [
     {
+      "applied_wrench_hash": "c8f80346c32770b0",
       "dynamic_passed": true,
+      "dynamic_safety_verdict": "none",
       "hand": "leap_hand",
+      "one_factor_diff": [
+        "physics_mode"
+      ],
       "scene": "table/sparse",
-      "static_fail_dynamic_pass": true,
-      "static_passed": false
+      "snapshot_hash": "cff85494d2af75309bdbc1f10b982d7eaa0f2d5448c01e243f3b41481dac3f25",
+      "static_alpha": 140.542224,
+      "static_fail_dynamic_pass": false,
+      "static_passed": true
     },
     {
+      "applied_wrench_hash": "d30265450ebb55ed",
       "dynamic_passed": true,
+      "dynamic_safety_verdict": "none",
       "hand": "wonik_allegro",
+      "one_factor_diff": [
+        "physics_mode"
+      ],
       "scene": "table/sparse",
-      "static_fail_dynamic_pass": true,
-      "static_passed": false
+      "snapshot_hash": "1c3f5ef944d178376770cc6212700b448acc27653847e9cef262598106336310",
+      "static_alpha": 52.403004,
+      "static_fail_dynamic_pass": false,
+      "static_passed": true
     }
   ],
   "parameter_hash": "252909f4ac1e2e318c7fbe222d2da396fc9a02a72331731109abf931d22ad753",
@@ -271,112 +417,128 @@
   "schema": "qdgrasp/evidence/phase3.4.3-ablation/v1",
   "static_arm": [
     {
-      "arm": "static_frozen",
-      "contacts": 4,
-      "disturbance_threshold": 0.13877596453276772,
+      "alpha": 140.542224,
+      "applied_wrench_hash": "c8f80346c32770b0",
+      "arm": "static_resistance",
+      "equilibrium_residual": 5.242465002479569e-13,
+      "force_limit_N": 25.0,
       "hand": "leap_hand",
-      "margin": 0.0,
-      "mass_kg": 0.02,
-      "passed": false,
-      "quality_margin": 0.05301875986672884,
-      "reason": ""
+      "object_mass_kg": 0.02,
+      "passed": true,
+      "physics_mode": "frozen",
+      "reason": "",
+      "scene": "table/sparse",
+      "seed": 0,
+      "snapshot_hash": "cff85494d2af75309bdbc1f10b982d7eaa0f2d5448c01e243f3b41481dac3f25",
+      "status": "solved"
     },
     {
-      "arm": "static_frozen",
-      "contacts": 4,
-      "disturbance_threshold": 0.21283796653792764,
+      "alpha": 52.403004,
+      "applied_wrench_hash": "d30265450ebb55ed",
+      "arm": "static_resistance",
+      "equilibrium_residual": 2.6745115833453185e-14,
+      "force_limit_N": 25.0,
       "hand": "wonik_allegro",
-      "margin": 0.0,
-      "mass_kg": 0.02,
-      "passed": false,
-      "quality_margin": 0.12940555470263718,
-      "reason": ""
+      "object_mass_kg": 0.02,
+      "passed": true,
+      "physics_mode": "frozen",
+      "reason": "",
+      "scene": "table/sparse",
+      "seed": 0,
+      "snapshot_hash": "1c3f5ef944d178376770cc6212700b448acc27653847e9cef262598106336310",
+      "status": "solved"
     }
   ],
-  "static_fail_dynamic_pass_cases": [
+  "static_fail_dynamic_pass_cases": [],
+  "static_pass_dynamic_fail_cases": [
     {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
+      "applied_wrench": [
+        1.9620000000000002,
+        1.9620000000000002,
+        0.0,
+        0.039240000000000004,
+        0.039240000000000004,
+        0.039240000000000004
+      ],
+      "applied_wrench_hash": "8ffb1ab80b18f408",
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
       "hand": "leap_hand",
-      "mass_kg": 0.02,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "mass_kg": 0.4,
+      "snapshot_hash": "2e8d54933ff340f818f8a2805ec2ebc9dfca3829bd5549d57365ae96af2a11e2",
+      "static_alpha": 7.025467,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     },
     {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "leap_hand",
-      "mass_kg": 0.05,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "leap_hand",
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
       "mass_kg": 0.1,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "snapshot_hash": "e2469b8293217e4c336bb87f48858ff78138f898a911e3afec7fa27139f351b4",
+      "static_alpha": 52.153944,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     },
     {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "leap_hand",
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
+      "hand": "wonik_allegro",
       "mass_kg": 0.2,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
+      "snapshot_hash": "260a53f17e55b5b266641070b9067ff4998acbaa0ab16a916c8a3c0a874b39ac",
+      "static_alpha": 51.842619,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     },
     {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
+      "applied_wrench": [
+        0.15,
+        0.15,
+        0.0,
+        0.01,
+        0.01,
+        0.01
+      ],
+      "applied_wrench_hash": "d30265450ebb55ed",
+      "dynamic_passed": false,
+      "dynamic_reason": "validated_rollout:floor_support",
+      "dynamic_safety_verdict": "validated_rollout:floor_support",
       "hand": "wonik_allegro",
-      "mass_kg": 0.02,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "dynamic_passed": true,
-      "dynamic_reason": "none",
-      "hand": "wonik_allegro",
-      "mass_kg": 0.05,
-      "static_fail_dynamic_pass": true,
-      "static_pass_dynamic_fail": false,
-      "static_passed": false
-    },
-    {
-      "arm": "static_frozen_measured_contacts",
-      "contacts": 2,
-      "disturbance_threshold": 0.13877596453276772,
-      "dynamic_passed": true,
-      "enclosure_sample": 83,
-      "hand": "leap_hand",
-      "passed": false,
-      "quality_margin": 0.00818880821592706,
-      "reason": "",
-      "static_fail_dynamic_pass": true
-    },
-    {
-      "arm": "static_frozen_measured_contacts",
-      "contacts": 2,
-      "disturbance_threshold": 0.21283796653792764,
-      "dynamic_passed": true,
-      "enclosure_sample": 125,
-      "hand": "wonik_allegro",
-      "passed": false,
-      "quality_margin": 0.14799354310564428,
-      "reason": "",
-      "static_fail_dynamic_pass": true
+      "mass_kg": 0.4,
+      "snapshot_hash": "df47b92f28e8b4e97bd8abb33c8642b719b493a8d8950b7e49c59337c97e8368",
+      "static_alpha": 51.219968,
+      "static_fail_dynamic_pass": false,
+      "static_pass_dynamic_fail": true,
+      "static_passed": true
     }
   ],
-  "static_pass_dynamic_fail_cases": [],
-  "static_yield": 0.0,
+  "static_yield": 1.0,
   "unsafe_dynamic_outcomes": 0,
-  "verdict": "dynamic_admits_more",
+  "verdict": "no_measured_difference",
   "work_package": "P3.4-14",
-  "yield_delta": 1.0
+  "yield_delta": 0.0
 }

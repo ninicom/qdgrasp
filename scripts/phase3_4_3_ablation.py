@@ -37,6 +37,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from qdgrasp.config.active_scope import profile_of_hand, resolve_workload_hands
+from qdgrasp.dataset.pipeline.candidate_snapshot import one_factor_diff
 from qdgrasp.dataset.pipeline.certifiers.contact_force import (
     certify_force_closure,
 )
@@ -216,38 +217,84 @@ WALL_X_M: float = 0.030
 MIN_CONTACTS_FOR_CLOSURE: int = 2
 
 
-def declared_disturbance(hand: str, generator) -> float:
-    """The margin the frozen test must clear, taken from the protocol itself.
+def build_snapshot(hand: str, generator, *, mass: float, seed: int = 0):
+    """One frozen description of the candidate, which both arms then fork.
 
-    ROADMAP-P3.4.3-AMEND-16.3 option A: a static test that fails on mechanics
-    rather than on a contact count. The threshold is not chosen -- it is the norm
-    of the perturbation wrench the dynamic protocol actually applies to this
-    hand, so the frozen analysis is asked to certify the grasp against the
-    disturbance it will really meet.
-
-    A recipe that names no wrench does not go undisturbed. The validator derives
-    one from the object's weight and size, so this mirrors that derivation
-    exactly -- reading only ``rollout_kwargs`` would silently score such a hand
-    at zero and report that the frozen test passed, when the protocol had in
-    fact disturbed it all along.
+    WRK-R2. The disturbance comes from the shared resolver, at *this* mass, so
+    the static and dynamic arms cannot end up describing different experiments.
+    RRV-04 was exactly that: the sweep moved the dynamic mass and left the static
+    threshold behind at the original one.
     """
-    recipe = generator["build_release_grasp_recipe"](generator["profile_of_hand"](hand))
-    wrench = recipe.rollout_kwargs.get("perturbation_wrench")
-    if wrench is not None:
-        return float(np.linalg.norm(np.asarray(wrench, dtype=np.float64)))
-
-    # Mirrors validators/mujoco_rollout.py: force 0.5 * weight, torque
-    # 0.25 * weight * characteristic length.
-    mass = float(recipe.rollout_kwargs.get("object_mass", TARGET_MASS_KG))
-    weight = mass * 9.81
-    geoms = recipe.target_geoms
-    characteristic_length = max(
-        (2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64))) for geom in geoms),
-        default=0.05,
+    from qdgrasp.dataset.pipeline.candidate_snapshot import CandidateSnapshot
+    from qdgrasp.dataset.pipeline.validators.disturbance import (
+        characteristic_length,
+        resolve_perturbation_wrench,
+        wrench_hash,
     )
-    force = 0.5 * weight
-    torque = 0.25 * weight * characteristic_length
-    return float(np.linalg.norm(np.array([force, force, 0.0, torque, torque, torque])))
+
+    recipe = generator["build_release_grasp_recipe"](generator["profile_of_hand"](hand))
+    geoms = recipe.target_geoms
+    wrench = resolve_perturbation_wrench(
+        recipe.rollout_kwargs.get("perturbation_wrench"),
+        object_mass=mass,
+        collision_geoms=geoms,
+    )
+    points, normals, centroid = _planned_contacts(hand)
+    budget = generator["BUDGETS"][hand]
+    return CandidateSnapshot(
+        hand=hand,
+        scene="table/sparse",
+        seed=int(seed),
+        object_mass_kg=float(mass),
+        friction_mu=FRICTION_MU,
+        torsional_friction=TORSIONAL_FRICTION,
+        characteristic_length_m=float(characteristic_length(geoms)),
+        horizon_steps=int(recipe.rollout_kwargs.get("squeeze_steps", 0)),
+        applied_wrench=tuple(float(v) for v in wrench),
+        applied_wrench_hash=wrench_hash(wrench),
+        contact_points=tuple(tuple(float(v) for v in row) for row in points),
+        contact_normals=tuple(tuple(float(v) for v in row) for row in normals),
+        centroid=tuple(float(v) for v in centroid),
+        force_limit_N=float(budget.peak_normal_force_N),
+        safety_budget_id=f"{hand}/table",
+        recipe_id="release_grasp",
+    )
+
+
+def resistance_arm(snapshot) -> dict[str, Any]:
+    """The frozen arm: what multiple of the disturbance does this grasp hold?
+
+    WRK-R1 replaces the old margin comparison, which put a normalized
+    unit-primitive quantity against a raw N/Nm wrench norm and ordered them as if
+    that meant something.
+    """
+    import numpy as np
+
+    from qdgrasp.dataset.pipeline.certifiers.static_resistance import (
+        certify_static_resistance,
+    )
+
+    certificate = certify_static_resistance(
+        np.array(snapshot.contact_points, dtype=np.float64),
+        np.array(snapshot.contact_normals, dtype=np.float64),
+        np.array(snapshot.centroid, dtype=np.float64),
+        mass=snapshot.object_mass_kg,
+        mu=snapshot.friction_mu,
+        disturbance_wrench=np.array(snapshot.applied_wrench, dtype=np.float64),
+        force_limits=snapshot.force_limit_N,
+        characteristic_length=snapshot.characteristic_length_m,
+    )
+    fork = snapshot.fork("frozen")
+    return {
+        **fork,
+        "arm": "static_resistance",
+        "alpha": round(float(certificate.alpha), 6),
+        "passed": bool(certificate.passed),
+        "status": certificate.status,
+        "reason": certificate.reason,
+        "equilibrium_residual": certificate.equilibrium_residual,
+        "force_limit_N": snapshot.force_limit_N,
+    }
 
 
 def environment_assisted_arm(hand: str, generate_one, wall_factory) -> list[dict[str, Any]]:
@@ -322,19 +369,29 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
     dynamic: list[dict[str, Any]] = []
     paired: list[dict[str, Any]] = []
     for hand in hands:
-        threshold = declared_disturbance(hand, generator)
-        left = static_arm(hand, threshold=threshold)
-        right = dynamic_arm(hand, generate_one)
+        snapshot = build_snapshot(hand, generator, mass=TARGET_MASS_KG)
+        left = resistance_arm(snapshot)
+        right = dynamic_arm(hand, generate_one, mass=TARGET_MASS_KG)
+        right.update(snapshot.fork("reactive"))
+        # The controlled comparison is between the two forks of one snapshot.
+        # Each arm's own measurements differ by construction -- that is what the
+        # arms are for -- so the audit is over what they were *given*.
+        forks_diff = one_factor_diff(snapshot.fork("frozen"), snapshot.fork("reactive"))
         static.append(left)
         dynamic.append(right)
         paired.append(
             {
                 "hand": hand,
-                "scene": "table/sparse",
+                "scene": snapshot.scene,
+                "snapshot_hash": snapshot.digest(),
+                "applied_wrench_hash": snapshot.applied_wrench_hash,
+                "one_factor_diff": list(forks_diff),
+                "static_alpha": left["alpha"],
                 "static_passed": left["passed"],
                 "dynamic_passed": right["passed"],
-                # The pairing the plan asks for: the same scene and state where
-                # the frozen pipeline does not admit and the reactive one does.
+                "dynamic_safety_verdict": right.get("failure_reason") or "none",
+                # The pairing the plan asks for: the same snapshot, where the
+                # frozen arm does not admit and the reactive one does.
                 "static_fail_dynamic_pass": bool(not left["passed"] and right["passed"]),
             }
         )
@@ -344,21 +401,31 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
     sweep: list[dict[str, Any]] = []
     for hand in hands:
         for mass in MASS_SWEEP_KG:
-            left = static_arm(hand, mass=mass, threshold=declared_disturbance(hand, generator))
+            # RRV-04: the wrench is resolved at *this* mass, for both arms, so
+            # moving the sweep axis moves both sides of the comparison together.
+            snapshot = build_snapshot(hand, generator, mass=mass)
+            left = resistance_arm(snapshot)
             right = dynamic_arm(hand, generate_one, mass=mass)
             sweep.append(
                 {
                     "hand": hand,
                     "mass_kg": mass,
+                    "snapshot_hash": snapshot.digest(),
+                    "applied_wrench": list(snapshot.applied_wrench),
+                    "applied_wrench_hash": snapshot.applied_wrench_hash,
+                    "static_alpha": left["alpha"],
                     "static_passed": left["passed"],
                     "dynamic_passed": right["passed"],
                     "dynamic_reason": right["failure_reason"],
+                    "dynamic_safety_verdict": right.get("failure_reason") or "none",
                     "static_fail_dynamic_pass": bool(not left["passed"] and right["passed"]),
                     "static_pass_dynamic_fail": bool(left["passed"] and not right["passed"]),
                 }
             )
 
-    measured = [measured_contact_arm(hand, generate_one, declared_disturbance(hand, generator)) for hand in hands]
+    # Post-rollout contacts exist on one side of the comparison only, so this is
+    # a diagnostic and never the primary paired evidence (WRK-R2).
+    measured = [measured_contact_arm(hand, generate_one) for hand in hands]
     assisted = [
         entry
         for hand in hands

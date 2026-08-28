@@ -86,49 +86,53 @@ def test_a_threshold_below_the_margin_leaves_the_grasp_alone():
 def test_every_active_hand_faces_a_real_disturbance(hand: str):
     """A recipe that names no wrench is still disturbed, and must score as such.
 
-    Reading only ``rollout_kwargs`` scores such a hand at zero and reports that
-    the frozen test passed, when the protocol had been disturbing it all along.
-    That mistake was made once; this keeps it made only once.
+    Superseded WRK-R1: the threshold this used to check was dimensionally
+    incommensurable with the margin it was compared against (RRV-03), so the
+    check now runs against the snapshot the two arms actually share.
     """
     ablation = _load_ablation()
     generator = runpy.run_path(
         str(REPO_ROOT / "scripts" / "generate_contactrich_active_tiny.py"),
         run_name="ablation_generator",
     )
-    threshold = ablation.declared_disturbance(hand, generator)
-    assert threshold > 0.0, f"{hand} would be certified against no disturbance at all"
+    snapshot = ablation.build_snapshot(hand, generator, mass=0.02)
+    assert np.linalg.norm(np.array(snapshot.applied_wrench)) > 0.0, (
+        f"{hand} would be certified against no disturbance at all"
+    )
+    assert snapshot.applied_wrench_hash
 
 
-def test_the_derived_wrench_matches_the_validator_formula():
-    """The threshold is derived from the protocol, never chosen by hand."""
+def test_the_two_arms_share_one_snapshot_at_every_sweep_point():
+    """RRV-04: moving the sweep axis must move both sides of the comparison.
+
+    The defect was a sweep that varied the dynamic mass while holding the static
+    threshold at the original one, so the arms described different experiments
+    at every point but the first.
+    """
     ablation = _load_ablation()
     generator = runpy.run_path(
         str(REPO_ROOT / "scripts" / "generate_contactrich_active_tiny.py"),
         run_name="ablation_generator",
     )
-    recipe = generator["build_release_grasp_recipe"](
-        generator["profile_of_hand"]("leap_hand")
-    )
-    assert "perturbation_wrench" not in recipe.rollout_kwargs
+    first = ablation.build_snapshot("leap_hand", generator, mass=0.02)
+    heavier = ablation.build_snapshot("leap_hand", generator, mass=0.40)
 
-    mass = float(recipe.rollout_kwargs.get("object_mass", ablation.TARGET_MASS_KG))
-    weight = mass * 9.81
-    length = max(
-        2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64)))
-        for geom in recipe.target_geoms
+    assert first.object_mass_kg != heavier.object_mass_kg
+    assert first.digest() != heavier.digest(), "the snapshot must track the mass"
+    assert first.applied_wrench_hash != heavier.applied_wrench_hash, (
+        "a derived disturbance must follow the mass it is derived from"
     )
-    expected = float(
-        np.linalg.norm(
-            np.array(
-                [
-                    0.5 * weight,
-                    0.5 * weight,
-                    0.0,
-                    0.25 * weight * length,
-                    0.25 * weight * length,
-                    0.25 * weight * length,
-                ]
-            )
-        )
+
+
+def test_the_resistance_arm_reads_its_disturbance_from_the_snapshot():
+    ablation = _load_ablation()
+    generator = runpy.run_path(
+        str(REPO_ROOT / "scripts" / "generate_contactrich_active_tiny.py"),
+        run_name="ablation_generator",
     )
-    assert ablation.declared_disturbance("leap_hand", generator) == pytest.approx(expected)
+    snapshot = ablation.build_snapshot("leap_hand", generator, mass=0.02)
+    arm = ablation.resistance_arm(snapshot)
+    assert arm["physics_mode"] == "frozen"
+    assert arm["snapshot_hash"] == snapshot.digest()
+    assert arm["force_limit_N"] > 0.0
+    assert arm["status"] == "solved"

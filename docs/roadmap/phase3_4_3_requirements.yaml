@@ -437,11 +437,8 @@ requirements:
     normative_source: P3.4.3#C05
     mapped_to: [P3.4-14, P3.4-16]
     owner: claude-implementation-agent
-    implementation_refs: [scripts/generate_contactrich_active_tiny.py, scripts/phase3_4_3_ablation.py]
-    test_ids: [tests/contactrich_active/test_static_vs_dynamic_ablation.py, tests/contactrich_active/test_dataset_contract.py]
-    evidence_refs: [evidence/phase3_4_3/s11/static-vs-dynamic.json, datasets/contactrich-active-tiny/dataset_manifest.json]
     status: failed
-    blocker_reason: "static review RRV-03/RRV-04 withdraws the section 16.3 evidence: the resistance threshold is not dimensionally comparable to the GWS margin and the mass sweep does not hold disturbance equal across static/dynamic arms. The previous eight-case claim is not closure evidence. Re-close only after WRK-R1/WRK-R2 produce same-snapshot, one-factor evidence on 2/2 active hands."
+    blocker_reason: "dataset coverage passes at the declared 2 hand x 3 environment x 2 clutter x 3 mode grid with 36/36 cells and every required positive and negative fixture. The controlled ablation is now same-snapshot and exact-one-factor per WRK-R2, and the frozen arm uses the dimensionally correct resistance criterion of WRK-R1. What fails is the paired static-fail/dynamic-pass criterion the plan lists under C05: zero such cases on 2/2 active hands. R-DOD-03 carries the measurement."
   - <<: *pending_requirement
     id: C06
     category: completeness_gate
@@ -863,11 +860,8 @@ requirements:
     normative_source: ROADMAP-P3.4-001#16.3
     mapped_to: [C05]
     owner: claude-implementation-agent
-    implementation_refs: [qdgrasp/dataset/pipeline/certifiers/contact_force.py, scripts/phase3_4_3_ablation.py]
-    test_ids: [tests/contactrich_active/test_static_vs_dynamic_ablation.py]
-    evidence_refs: [evidence/phase3_4_3/s11/static-vs-dynamic.json]
     status: failed
-    blocker_reason: "the commit 83bb755 section 16.3 pass claim is withdrawn by static review. quality_margin is computed in a normalized unit-contact GWS while declared_disturbance is a raw norm mixing N and Nm; additionally the LEAP mass sweep applies different dynamic and static disturbances. Re-close only with WRK-R1 resistance_factor evidence and WRK-R2 controlled pairing on both active hands."
+    blocker_reason: "measured under the WRK-R1 resistance criterion and not met. The withdrawn criterion compared a normalized unit-primitive GWS margin with a raw wrench norm mixing N and Nm (RRV-03), and the sweep that produced the eight-case claim varied the dynamic mass while holding the static threshold at the original one (RRV-04); neither number meant what the pairing needed it to mean. The replacement is dimensionless: alpha is the largest multiple of the disturbance the frozen grasp balances against gravity within the safety budget's 25 N per-contact cap, and it passes at alpha >= 1. Both arms now fork one CandidateSnapshot and differ in physics_mode alone, audited per record. Measured: leap_hand alpha 140.54, wonik_allegro alpha 52.40, both far above 1, so the frozen arm admits at every sweep point while the reactive arm refuses the heavier ones. Zero static-fail/dynamic-pass cases on 2/2 hands. Section 13.3 of the plan makes this outcome explicit: without the pairing under the resistance criterion, R-DOD-03 stays failed. See evidence/phase3_4_3/s11/static-vs-dynamic.json"
   - <<: *pending_requirement
     id: R-DOD-04
     category: original_clause

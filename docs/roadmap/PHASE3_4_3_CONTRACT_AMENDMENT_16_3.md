@@ -2,7 +2,7 @@
 document_id: ROADMAP-P3.4.3-AMEND-16.3
 document_type: amendment_proposal
 title: Đề xuất sửa §16.3 — tiêu chí paired static-fail/dynamic-pass không thoả được với đặc tả predicate hiện tại
-version: 1.1.0
+version: 1.2.0
 status: accepted
 date: 2026-08-28
 parent_plan: ROADMAP-P3.4.3-001
@@ -118,3 +118,49 @@ recipe, và **không** cần quyết định nào về contract.
 Hàm đã sửa để phản chiếu đúng công thức của validator, và
 `test_every_active_hand_faces_a_real_disturbance` giữ cho sai lầm này chỉ xảy ra
 một lần.
+
+
+## 8. Thu hồi claim của §6 và kết quả đo lại (2026-08-28)
+
+Static review `REV-20260828-016` bác §6 của tài liệu này, và bác đúng.
+
+**RRV-03.** Ngưỡng ở §6 so `quality_margin` — dựng từ primitive wrench đơn vị,
+mô-men đã chia `1/object_scale` — với chuẩn của một wrench thô **trộn N và Nm**.
+Hai đại lượng không cùng thứ nguyên, nên thứ tự giữa chúng không mang nghĩa vật
+lý, và cặp suy ra từ đó cũng vậy.
+
+**RRV-04.** Mass sweep đổi mass của nhánh động nhưng giữ ngưỡng tĩnh tính từ
+mass gốc, nên từ điểm thứ hai trở đi hai nhánh mô tả hai thí nghiệm khác nhau.
+
+Claim **tám cặp** ở §6 bị **thu hồi**. Nó không phải kết quả yếu hơn — nó không
+phải kết quả.
+
+### 8.1 Tiêu chí thay thế (WRK-R1)
+
+Bài toán resistance có thứ nguyên rõ ràng:
+
+```text
+maximize alpha
+subject to  G f + w_gravity + alpha * w_disturbance = 0
+            f_i in friction_cone_i
+            0 <= normal_force_i <= force_limit_i
+```
+
+`alpha` **không thứ nguyên**: nó là bội số lớn nhất của nhiễu loạn đã khai báo mà
+grasp đóng băng còn cân bằng được, dưới trần lực 25 N mỗi contact lấy từ safety
+budget. Đạt khi `alpha >= 1`. Không có trần lực thì LP siết bao nhiêu tuỳ thích
+và chứng nhận bất cứ thứ gì, nên trường hợp đó bị **từ chối** thay vì trả số.
+
+### 8.2 Kết quả đo
+
+| tay | alpha | tĩnh | động | cặp |
+|---|---|---|---|---|
+| `leap_hand` | 140.54 | pass | pass | ❌ |
+| `wonik_allegro` | 52.40 | pass | pass | ❌ |
+
+**0 cặp trên 2/2 tay.** Nhánh đóng băng chấp nhận ở mọi điểm sweep, còn nhánh
+phản ứng từ chối các mức khối lượng nặng — tức predicate tĩnh vẫn là cái rộng
+hơn, đo bằng tiêu chí đúng thứ nguyên.
+
+§13.3 của plan đã nói rõ tình huống này: không có cặp dưới tiêu chí resistance
+thì `R-DOD-03` giữ `failed`. Nó giữ `failed`.

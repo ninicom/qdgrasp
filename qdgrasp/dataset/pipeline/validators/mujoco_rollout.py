@@ -9,6 +9,7 @@ from scipy.spatial.transform import Rotation
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset.pipeline.contracts import DynamicValidation
 from qdgrasp.dataset.pipeline.observers.contact_load import extract_contact_loads
+from qdgrasp.dataset.pipeline.validators.disturbance import resolve_perturbation_wrench
 from qdgrasp.dataset.pipeline.validators.dynamic_predicate import (
     DynamicPredicateEvidence,
     RolloutProtocol,
@@ -841,28 +842,14 @@ def validate_grasp_rollout(
         stage_observer("lift", model, data)
 
     # Stage 3: Perturbation Wrench
-    if perturbation_wrench is None:
-        gravity_magnitude = float(np.linalg.norm(model.opt.gravity))
-        object_weight = float(object_mass) * gravity_magnitude
-        characteristic_length = max(
-            (2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64))) for geom in collision_geoms),
-            default=0.05,
-        )
-        force_amplitude = 0.5 * object_weight
-        torque_amplitude = 0.25 * object_weight * characteristic_length
-        applied_wrench = np.array(
-            [
-                force_amplitude,
-                force_amplitude,
-                0.0,
-                torque_amplitude,
-                torque_amplitude,
-                torque_amplitude,
-            ],
-            dtype=np.float64,
-        )
-    else:
-        applied_wrench = np.asarray(perturbation_wrench, dtype=np.float64)
+    # One resolver, shared with the ablation. Two copies of this policy drifted
+    # once already, and the drift was invisible from either side.
+    applied_wrench = resolve_perturbation_wrench(
+        perturbation_wrench,
+        object_mass=float(object_mass),
+        collision_geoms=collision_geoms,
+        gravity_magnitude=float(np.linalg.norm(model.opt.gravity)),
+    )
 
     total_impulse = np.zeros(6, dtype=np.float64)
     perturbation_contact_samples: list[dict[str, object]] = []
