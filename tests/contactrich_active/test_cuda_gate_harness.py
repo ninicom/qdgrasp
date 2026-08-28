@@ -336,3 +336,82 @@ def test_an_unresolved_blocking_finding_is_refused(tmp_path: Path) -> None:
     verdict = module.verify_review_packet(path)
     assert verdict["passed"] is False
     assert any("S0/S1" in p for p in verdict["problems"])
+
+
+# -- the notebook has to be runnable before it is run ---------------------
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_every_code_cell_parses() -> None:
+    """A cell that does not parse is a T4 run spent on a syntax error.
+
+    Two runs were lost that way: an escape written as ``\\n`` in the builder
+    became a real newline in the generated cell, which the builder itself has no
+    reason to notice.
+    """
+    import ast
+
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    for index, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] != "code":
+            continue
+        source = "".join(cell["source"])
+        try:
+            ast.parse(source)
+        except SyntaxError as exc:  # pragma: no cover - the assertion is the point
+            raise AssertionError(f"cell {index} does not parse: {exc}") from exc
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_the_warp_matrix_probes_the_scene_that_showed_the_defect() -> None:
+    # REV-20260827-010 isolated the defect on the LEAP hand model with its
+    # meshes. A three-geom scene may never reach the kernel in question, so a
+    # clean result there would say nothing about the defect being re-tested.
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+    probe = source.split("PROBE = (", 1)[1].split(")", 1)[0]
+    assert "leap_hand.yaml" in probe
+    assert "build_rollout_scene_model" in probe
+    assert "micro_scene.xml" not in probe
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_clean_needs_positive_proof_not_an_absent_error_line() -> None:
+    # A probe that dies before its first instrumented call prints no errors
+    # either, and that produced a false "clean" for all three pins.
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+    assert "probe_did_not_run" in source
+    assert "inconclusive_no_error_summary" in source
+    assert "ERROR SUMMARY" in source
+    assert "verbatim_tail" in source
+
+
+@pytest.mark.skipif(
+    not (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").is_file(),
+    reason="the notebook has not been built in this checkout",
+)
+def test_evidence_goes_where_kaggle_can_hand_it_back() -> None:
+    # /tmp is not persisted, so a run that wrote its packet there produced
+    # evidence nobody could download.
+    notebook = json.loads(
+        (NOTEBOOK_DIR / "qdgrasp-phase-3-4-3-cuda-gate.ipynb").read_text(encoding="utf-8")
+    )
+    source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+    assert "/kaggle/working/phase3_4_3_evidence" in source
+    assert "/tmp/phase3_4_3_evidence" not in source

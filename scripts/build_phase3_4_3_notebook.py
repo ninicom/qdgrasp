@@ -258,9 +258,22 @@ WARP_MATRIX = {list(WARP_MATRIX)!r}
 sanitizer = shutil.which("compute-sanitizer")
 print("compute-sanitizer:", sanitizer or "NOT FOUND")
 
+# The reproducer from REV-20260827-010 V-003, not a toy scene. The defect was
+# isolated on the LEAP hand model with its meshes; a three-geom scene may never
+# reach the kernel in question, so a clean result there would say nothing about
+# the defect this matrix exists to re-test.
 PROBE = (
     "import mujoco, mujoco_warp\\n"
-    "m = mujoco.MjModel.from_xml_path('tests/dynamic_grasp/micro_scene.xml')\\n"
+    "from qdgrasp.dataset.pipeline.generated_reachable import "
+    "build_generated_reachable_object as f\\n"
+    "from qdgrasp.dataset.pipeline.validators.mujoco_rollout import "
+    "build_rollout_scene_model as b\\n"
+    "from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset\\n"
+    "s = RobotSpec.from_config('leap_hand.yaml', sample_anchors=False)\\n"
+    "x = f('leap_hand')\\n"
+    "m = b(resolve_robot_asset(s.config.source_asset), x.collision_geoms,"
+    " object_pos=x.object_pos, object_mass=x.mass)\\n"
+    "print('model ngeom', m.ngeom, 'nq', m.nq, 'nu', m.nu)\\n"
     "d = mujoco.MjData(m); mujoco.mj_forward(m, d)\\n"
     "wm = mujoco_warp.put_model(m); wd = mujoco_warp.put_data(m, d, nworld=4)\\n"
     "for _ in range(8):\\n"
@@ -405,7 +418,7 @@ else:
         "stderr_tail": gate.stderr[-2000:],
     }
     _evidence.parent.mkdir(parents=True, exist_ok=True)
-    _evidence.write_text(json.dumps(GATE, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _evidence.write_text(json.dumps(GATE, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
 print("VERDICT:", GATE["verdict"])
 '''
         ),
