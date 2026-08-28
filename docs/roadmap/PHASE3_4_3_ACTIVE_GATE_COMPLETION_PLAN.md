@@ -838,7 +838,12 @@ xảy ra ngay **vòng linesearch đầu tiên** — không có số vòng nào �
 reproducer LEAP; `warp-lang` 1.16.0 là bản mới nhất tồn tại, nên nhánh "pin bản
 mới hơn" của §3.7 đã đóng. Còn lại đúng hai đường, cả hai là công việc mới cần
 plan riêng: một fallback GPU backend tự qua capability/parity, hoặc bản vá
-upstream. §16.3 §G07.5 cho phép giữ GPU gate ở trạng thái không pass — đây là
+upstream. Đường fallback nay cũng đã được **đo thử** chứ không còn là giả định:
+`mujoco-mjx` cài được, nhưng `jax.jit(mjx.step)` trên scene contact-rich của
+LEAP không biên dịch xong trong 1800 s trên T4, nên probe chưa chạm tới được câu
+hỏi capability. Điều đó không kết tội MJX, nhưng nói rõ rằng fallback không phải
+thứ cắm-vào-là-chạy, và chi phí biên dịch trên chính model của ta là một rủi ro
+mở mà plan fallback sẽ phải dự trù. Xem `evidence/phase3_4_3/s10/kaggle-run-v11/`. §16.3 §G07.5 cho phép giữ GPU gate ở trạng thái không pass — đây là
 tình huống đó, không phải thiếu sót thực thi.
 
 Mục 14 không đóng được bằng cách chạy thêm, và nhánh thứ tư cho biết vì sao.
