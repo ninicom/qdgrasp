@@ -36,10 +36,18 @@ METADATA_PATH = NOTEBOOK_DIR / "kernel-metadata.json"
 MENAGERIE_REVISION = "da76818e269b82289eba39808e2fb91d679d6994"
 REPO_URL = "https://github.com/ninicom/qdgrasp.git"
 
-#: Warp versions to try, newest first. 1.16.0 is the version whose upstream
-#: uninitialised read was isolated in REV-20260827-010; it stays in the matrix so
-#: the comparison is against a measured baseline rather than a memory of one.
-WARP_MATRIX = ("mujoco-warp==1.18.0", "mujoco-warp==1.17.0", "mujoco-warp==1.16.0")
+#: The compatibility matrix, over **mujoco-warp** versions.
+#:
+#: The first attempt pinned ``mujoco-warp==1.16.0/1.17.0/1.18.0`` and all three
+#: failed to install, because 1.16.0 is a ``warp-lang`` version and mujoco-warp
+#: tracks MuJoCo's own numbering. That distinction matters for more than a pin:
+#: REV-20260827-010 names the defective kernel as ``_linesearch_iterative_kernel``
+#: in ``solver.py``, which is mujoco-warp's solver, so the version worth varying
+#: is mujoco-warp's -- and warp-lang 1.16.0 is the newest there is, so there is
+#: no newer runtime to move to.
+#:
+#: Newest first, matched to the pinned MuJoCo 3.12.0 at the top.
+WARP_MATRIX = ("mujoco-warp==3.12.0", "mujoco-warp==3.11.0", "mujoco-warp==3.10.0.3")
 
 
 def _code(source: str) -> dict[str, object]:
@@ -119,7 +127,10 @@ MENAGERIE_REVISION = "{MENAGERIE_REVISION}"
 REPO_URL = "{REPO_URL}"
 REPO_DIR = Path("/tmp/qdgrasp_repo")
 ASSETS_DIR = Path("/tmp/robot-assets/mujoco-menagerie")
-EVIDENCE_DIR = Path("/tmp/phase3_4_3_evidence")
+# /kaggle/working is the only directory Kaggle persists as a kernel
+# output. Writing to /tmp produced a run whose evidence could not be
+# downloaded, which is a packet nobody can review.
+EVIDENCE_DIR = Path("/kaggle/working/phase3_4_3_evidence")
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 
 assert sys.version_info >= (3, 11), f"Python >=3.11 required, got {{sys.version}}"
@@ -208,8 +219,8 @@ regression in the foundation is never reported as a Phase 3.4.3 result.
 import sys
 
 for script, out in (
-    ("scripts/phase1_cuda_smoke.py", "/tmp/phase3_4_3_evidence/phase1_cuda.json"),
-    ("scripts/phase2_cuda_fk_parity.py", "/tmp/phase3_4_3_evidence/phase2_cuda.json"),
+    ("scripts/phase1_cuda_smoke.py", "/kaggle/working/phase3_4_3_evidence/phase1_cuda.json"),
+    ("scripts/phase2_cuda_fk_parity.py", "/kaggle/working/phase3_4_3_evidence/phase2_cuda.json"),
 ):
     print("=" * 70)
     print("running", script)
@@ -266,8 +277,11 @@ for pin in WARP_MATRIX:
         capture_output=True, text=True,
     )
     if install.returncode != 0:
-        WARP_MATRIX_RESULT[pin] = {{"status": "install_failed", "detail": install.stderr[-400:]}}
-        print("install failed")
+        WARP_MATRIX_RESULT[pin] = {{
+            "status": "install_failed",
+            "detail": (install.stderr or install.stdout)[-600:],
+        }}
+        print("install failed:", (install.stderr or install.stdout).strip().splitlines()[-1][:200])
         continue
     if not sanitizer:
         WARP_MATRIX_RESULT[pin] = {{"status": "sanitizer_unavailable"}}
@@ -287,7 +301,12 @@ for pin in WARP_MATRIX:
     }}
     print(WARP_MATRIX_RESULT[pin]["status"], f"({{len(records)}} sanitizer lines)")
 
-json.dump(WARP_MATRIX_RESULT, open("/tmp/phase3_4_3_evidence/warp_matrix.json", "w"), indent=2, sort_keys=True)
+try:
+    import warp as _warp
+    WARP_MATRIX_RESULT["_warp_lang_version"] = getattr(_warp, "__version__", "unknown")
+except Exception as _exc:
+    WARP_MATRIX_RESULT["_warp_lang_version"] = f"unavailable: {{type(_exc).__name__}}"
+json.dump(WARP_MATRIX_RESULT, open("/kaggle/working/phase3_4_3_evidence/warp_matrix.json", "w"), indent=2, sort_keys=True)
 CLEAN = [pin for pin, r in WARP_MATRIX_RESULT.items() if r.get("status") == "clean"]
 print()
 print("clean versions:", CLEAN or "none — the GPU gate stays BLOCKED")
@@ -332,8 +351,8 @@ import sys
 gate = subprocess.run(
     [sys.executable, "scripts/check_phase3_4_3_cuda.py",
      "--device", "cuda:0", "--worlds", "1024", "--runs", "3",
-     "--evidence", "/tmp/phase3_4_3_evidence/cuda-gate.json",
-     "--checkpoint", "/tmp/phase3_4_3_evidence/cuda-gate.checkpoint.json",
+     "--evidence", "/kaggle/working/phase3_4_3_evidence/cuda-gate.json",
+     "--checkpoint", "/kaggle/working/phase3_4_3_evidence/cuda-gate.checkpoint.json",
      "--deadline-seconds", "24000"],
     cwd="/tmp/qdgrasp_repo", capture_output=True, text=True,
 )
@@ -341,7 +360,23 @@ print(gate.stdout[-8000:])
 print(gate.stderr[-3000:], file=sys.stderr)
 print("gate exit:", gate.returncode)
 
-GATE = json.load(open("/tmp/phase3_4_3_evidence/cuda-gate.json", encoding="utf-8"))
+# A gate that refused to run still has to leave a readable result. If it exited
+# before writing evidence -- a configuration error, a missing dependency -- the
+# reason is what matters, and turning that into a KeyError here would hide it.
+from pathlib import Path as _Path
+
+_evidence = _Path("/kaggle/working/phase3_4_3_evidence/cuda-gate.json")
+if _evidence.is_file():
+    GATE = json.loads(_evidence.read_text(encoding="utf-8"))
+else:
+    GATE = {
+        "verdict": "NO_EVIDENCE",
+        "gate_exit": gate.returncode,
+        "stdout_tail": gate.stdout[-2000:],
+        "stderr_tail": gate.stderr[-2000:],
+    }
+    _evidence.parent.mkdir(parents=True, exist_ok=True)
+    _evidence.write_text(json.dumps(GATE, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 print("VERDICT:", GATE["verdict"])
 '''
         ),
@@ -401,16 +436,16 @@ PACKET = {
     "gate_verdict": GATE["verdict"],
     "artifact_hashes": {},
 }
-for path in sorted(Path("/tmp/phase3_4_3_evidence").glob("*.json")):
+for path in sorted(Path("/kaggle/working/phase3_4_3_evidence").glob("*.json")):
     PACKET["artifact_hashes"][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
 
-out = Path("/tmp/phase3_4_3_evidence/packet.json")
+out = Path("/kaggle/working/phase3_4_3_evidence/packet.json")
 out.write_text(json.dumps(PACKET, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
 print(json.dumps(PACKET, indent=2, sort_keys=True))
 print()
 print("packet sha256:", hashlib.sha256(out.read_bytes()).hexdigest())
 print()
-print("Download /tmp/phase3_4_3_evidence/ and commit it under evidence/phase3_4_3/s10/.")
+print("Download /kaggle/working/phase3_4_3_evidence/ and commit it under evidence/phase3_4_3/s10/.")
 print("A PASS here is GPU evidence for two active hands. It is not phase closure,")
 print("and it is not three-hand coverage.")
 '''
