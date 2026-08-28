@@ -1,9 +1,9 @@
 {
-  "assembled_at": "2026-08-28T04:08:53.222745+00:00",
+  "assembled_at": "2026-08-28T13:11:22.295906+00:00",
   "branch": "feature/phase3-1-closure",
-  "commit": "987a9ce9040525a2f7552284208f36d4f79d9d42",
+  "commit": "36887b4e507b66f3150cd7e3a17bacabe090ca14",
   "completeness": {
-    "manifest_sha256": "1858a5dbc50e2bd7d093ce42dffcc83dfb56e4e0f4576f7bc3ec4bb22b8983b0",
+    "manifest_sha256": "c5a4c95d01e503fc437d3f94cee626a05fe2461b752dbbdf68dad69eab0bccc1",
     "open_required": [
       "C05",
       "C07",
@@ -137,7 +137,7 @@
     "The static-vs-dynamic ablation reports no_measured_difference across four arms, and the fourth shows the paired evidence section 16.3 asks for cannot exist as specified rather than being absent from this corpus. Both predicates carry the same floor -- certify_force_closure needs two contacts and the dynamic predicate needs min_active_fingers=2 sustained -- so they cannot disagree in the direction 16.3 assumes, and the dynamic predicate further requires floor_support_after_lift to be false, which excludes the environment-supported grasps that would make a frozen force-closure test fail. A reviewer should treat this as a contract defect needing amendment, not as an implementation shortfall. No threshold was moved to avoid it."
   ],
   "missing_required_artifacts": [],
-  "packet_sha256": "119cf0bbe7ffac5a2636748c84ff1719f4916b6adebf6693f0ef26dc253f7df4",
+  "packet_sha256": "3ffc5a853973d793e99a3fa83dc6ca5bc16804732d68b4e34a3c912c9038b094",
   "phase": "3.4.3",
   "required_artifacts": {
     "docs/decisions/0008-temporary-shadow-hand-pause.md": {
@@ -150,7 +150,7 @@
     },
     "docs/roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md": {
       "kind": "file",
-      "sha256": "1c215afe29e81b394ea5651d38cc10ebd71c8203af5996635371ec704d74b302"
+      "sha256": "18840f374d164aa5054509c253898e8999510c3a6f285c937cd0f0b9506bd1a0"
     },
     "docs/roadmap/PHASE3_4_3_EXECUTION_BREAKDOWN.md": {
       "kind": "file",
@@ -158,7 +158,7 @@
     },
     "docs/roadmap/phase3_4_3_requirements.yaml": {
       "kind": "file",
-      "sha256": "1858a5dbc50e2bd7d093ce42dffcc83dfb56e4e0f4576f7bc3ec4bb22b8983b0"
+      "sha256": "c5a4c95d01e503fc437d3f94cee626a05fe2461b752dbbdf68dad69eab0bccc1"
     },
     "environments/environment.lock.yaml": {
       "kind": "file",
@@ -232,7 +232,7 @@
     },
     "scripts/phase3_4_3_ablation.py": {
       "kind": "file",
-      "sha256": "7ae0183e87dc58b8ae794bd4b43a2ed96044f884e1c7871cc275864854835d4c"
+      "sha256": "907feebfc5f2b6437a6093222c657c1ab0a65175c7cb55977f90b30392c9256e"
     }
   },
   "reviewer_instructions": "This packet carries no verdict. The author of a change cannot review it. A reviewer records their verdict in a separate file with reviewer, reviewer_verdict, open_findings and packet_sha256, and scripts/check_phase3_4_3.py reads that file.",
@@ -252,6 +252,11 @@
   "sub_phase_evidence": {
     "evidence/phase3_4_3/s0/result.json": "42e026f6faaa02435b126546b0a2901de7dc5c77e113b7d2fb6deaf18dfda07a",
     "evidence/phase3_4_3/s1/result.json": "f6ce018e2af246ac35e4d420221281d0067327e52872d9bdf8a7e6f8e6b95705",
+    "evidence/phase3_4_3/s10/kaggle-run-v11/mjx_capability.json": "5cee6732185e672763f3afb2fa988c3c81b965e1cd27ff7aeb84484182fe959b",
+    "evidence/phase3_4_3/s10/kaggle-run-v11/phase1_cuda.json": "441f9559fea84f4f2e3c33000039b688990e7ae1a55890b7d6010a8bea2dcb04",
+    "evidence/phase3_4_3/s10/kaggle-run-v11/phase2_cuda.json": "20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086",
+    "evidence/phase3_4_3/s10/kaggle-run-v11/solver_variants.json": "f9de3419fccb52329dd4d076dac8ce703cbf8c25fc7a02ab192c1d6b11a1e288",
+    "evidence/phase3_4_3/s10/kaggle-run-v11/warp_matrix.json": "72712f7e0bd560e974fd883e8333972ecd688ea43c6d2a86c43db5e9c12f398f",
     "evidence/phase3_4_3/s10/kaggle-run-v5/cuda-gate.checkpoint.json": "dd8ea577981cf0f58181631763b212714dd1b5200c02a130c3ce4f198212ebf1",
     "evidence/phase3_4_3/s10/kaggle-run-v5/cuda-gate.json": "3907d429a3d85519e8bef683dc8cd90d40ab0b1abf08150006219a58eacab203",
     "evidence/phase3_4_3/s10/kaggle-run-v5/kernel.log.json": "f6e917cfe6c3b8fa67393cfc0f5c190356df36805cbb14a5a343da93e8207899",
@@ -284,9 +289,9 @@
     "evidence/phase3_4_3/s10/result.json": "92bcbdca8db4af3ac6001ebf21dc8ec0a8fa649890dec16db41d399f47a96fde",
     "evidence/phase3_4_3/s11/result.json": "aa5298b28c0ced1a10b4a2715974543b56207d719b51794bb9c9c2e352b1fdd2",
     "evidence/phase3_4_3/s11/stage-renders.json": "218a0235ff5e2f3ef363958eeb77d0a7fe4a63db52024166d6983e5b922b083b",
-    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "3156046209027afa049045a4da05c46d3387bc89fb880eb7beb4f318f9873e4d",
+    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "c327424b8816ff7b42acf1e9abed97055f9f99222739e737805cfc89a3ca87f2",
     "evidence/phase3_4_3/s12/result.json": "2aebab800bace3908b995078603a5b92779867bb82178bdc42e5bc45794552e2",
-    "evidence/phase3_4_3/s12/review-packet.json": "3b0e6d80d7ee67f86272e2b28dc1c1f386691c2a6e6338846d7866538a1e026c",
+    "evidence/phase3_4_3/s12/review-packet.json": "e10af2aaa8f29f391d8095c3fcf0dc12c3f0cbc8009435058fe3338bd4b94f7a",
     "evidence/phase3_4_3/s2/result.json": "69ad77c557cce3b9765d234aed898016173fede2e9a57295148f27955bf82afe",
     "evidence/phase3_4_3/s3/result.json": "41dfc07527063c19517e492e90aa84a20c5fd9d22be58bf39630829a02585210",
     "evidence/phase3_4_3/s4/result.json": "c2b8a4ea5839bcabf9e998a0c7e9a855788edd5da039524a9a3348049161878a",
