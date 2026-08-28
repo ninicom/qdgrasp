@@ -836,11 +836,24 @@ plan riêng: một fallback GPU backend tự qua capability/parity, hoặc bản
 upstream. §16.3 §G07.5 cho phép giữ GPU gate ở trạng thái không pass — đây là
 tình huống đó, không phải thiếu sót thực thi.
 
-Mục 14 không đóng được bằng cách chạy thêm. Câu hỏi đã được đặt ba cách độc lập
-và cả ba trả lời giống nhau: frozen predicate là cái **rộng hơn**, ngược với giả
-định của §16.3. Muốn có cặp đó cần một predicate tĩnh thực sự bảo thủ, hoặc một
-lớp scene nơi môi trường cấp lực đối kháng mà ngón tay không cấp được. Không cái
-nào đạt được bằng cách chỉnh threshold, và không cái nào nằm trong artifact này.
+Mục 14 không đóng được bằng cách chạy thêm, và nhánh thứ tư cho biết vì sao.
+Scene "môi trường cấp lực đối kháng" đã được **dựng thật** — một bức tường cạnh
+target, quét tám hình học khai báo trên cả hai tay, báo cáo toàn bộ điểm. Không
+điểm nào cho cặp static-fail/dynamic-pass; mọi điểm fail **cả hai** nhánh.
+
+Lý do là cấu trúc chứ không phải đặc tính của corpus. Hai predicate dùng chung
+một sàn: `certify_force_closure` đòi hai contact, còn predicate động đòi
+`min_active_fingers=2` contact được duy trì qua perturbation window — nên grasp
+nào quá thưa cho phép thử tĩnh thì cũng quá thưa cho phép thử động, theo đúng
+cùng một phép đếm. Predicate động còn đòi `floor_support_after_lift=False`, tức
+loại trừ đúng những grasp được môi trường đỡ — thứ duy nhất khiến một phép thử
+force-closure đóng băng thất bại.
+
+§16.3 giả định hai predicate có thể bất đồng theo chiều đó. Với đặc tả hiện tại,
+chúng **không thể**. Đóng mục này cần sửa một trong hai predicate — phép thử
+tĩnh thất bại vì lý do khác số contact (ví dụ wrench-space margin), hoặc phép
+thử động chấp nhận thành công có môi trường đỡ. Đó là sửa contract, không phải
+việc plan này được phép tự làm.
 
 Mục 20 là ràng buộc cố ý. Người viết phần lớn patch không được tự review; packet
 đã sẵn sàng tại `scripts/phase3_4_3_review_packet.py`.

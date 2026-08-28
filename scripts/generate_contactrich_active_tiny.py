@@ -359,8 +359,9 @@ def generate_one(
         kwargs["palm_pos"] = (palm[0], palm[1], palm[2] - drop)
     if "perturbation_wrench" in extra:
         extra["perturbation_wrench"] = np.asarray(extra["perturbation_wrench"], dtype=np.float64)
+    extra_objects = tuple(extra.pop("extra_scene_objects", ()))
     kwargs.update(extra)
-    kwargs["non_target_objects"] = scene_objects(environment, clutter)
+    kwargs["non_target_objects"] = scene_objects(environment, clutter) + extra_objects
 
     policy = build_self_contact_policy(spec, robot_profile=hand)
     budget = dataclasses.replace(BUDGETS[hand], environment_class=environment)

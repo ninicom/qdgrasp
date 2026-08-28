@@ -199,6 +199,75 @@ def measured_contact_arm(hand: str, generate_one) -> dict[str, Any]:
     }
 
 
+#: Declared geometry for the environment-assisted arm. A wall is placed beside
+#: the target so the environment can supply opposition the fingers cannot. The
+#: full sweep is reported; no point is selected after the fact.
+WALL_HALF_HEIGHTS_M: tuple[float, ...] = (0.006, 0.010, 0.014, 0.018)
+WALL_X_M: float = 0.030
+
+#: Both predicates carry the same floor: force closure needs two contacts and the
+#: dynamic predicate needs ``min_active_fingers`` of them sustained.
+MIN_CONTACTS_FOR_CLOSURE: int = 2
+
+
+def environment_assisted_arm(hand: str, generate_one, wall_factory) -> list[dict[str, Any]]:
+    """Try to build the pairing section 16.3 asks for, rather than assume it absent.
+
+    A grasp that leans on a wall is the textbook case where a frozen force-closure
+    test should say no and the physics should say yes. If it exists anywhere, it
+    exists here.
+    """
+    from qdgrasp.dataset.dynamic_contracts import ContactPairKind, TrajectoryStage
+
+    results: list[dict[str, Any]] = []
+    for half_height in WALL_HALF_HEIGHTS_M:
+        wall = wall_factory(
+            "bin_wall_support",
+            (WALL_X_M, 0.0, half_height),
+            (0.006, 0.06, half_height),
+        )
+        trajectory, outcome = generate_one(
+            hand,
+            environment="table",
+            clutter="sparse",
+            mode="static_seeded",
+            overrides={"extra_scene_objects": (wall,)},
+        )
+        enclosure = [
+            index
+            for index, stage in enumerate(trajectory.stage)
+            if stage is TrajectoryStage.ENCLOSE
+        ]
+        events = (
+            [
+                event
+                for event in trajectory.contact_graph
+                if event.time_index == enclosure[-1]
+                and event.pair_kind is ContactPairKind.TARGET_ROBOT
+            ]
+            if enclosure
+            else []
+        )
+        results.append(
+            {
+                "hand": hand,
+                "arm": "environment_assisted",
+                "wall_top_m": round(2.0 * half_height, 4),
+                "robot_contacts": len(events),
+                "static_passed": len(events) >= MIN_CONTACTS_FOR_CLOSURE,
+                "dynamic_passed": bool(outcome.passed),
+                "dynamic_reason": outcome.failure_reason or "",
+                "peak_normal_force_N": round(
+                    float(outcome.peak_safety_metrics["peak_normal_force_N"]), 2
+                ),
+                "static_fail_dynamic_pass": bool(
+                    len(events) < MIN_CONTACTS_FOR_CLOSURE and outcome.passed
+                ),
+            }
+        )
+    return results
+
+
 def run(hands: tuple[str, ...]) -> dict[str, Any]:
     import runpy
 
@@ -207,6 +276,7 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
         run_name="ablation_generator",
     )
     generate_one = generator["generate_one"]
+    wall_factory = generator["_wall"]
 
     static: list[dict[str, Any]] = []
     dynamic: list[dict[str, Any]] = []
@@ -248,6 +318,11 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
             )
 
     measured = [measured_contact_arm(hand, generate_one) for hand in hands]
+    assisted = [
+        entry
+        for hand in hands
+        for entry in environment_assisted_arm(hand, generate_one, wall_factory)
+    ]
 
     static_yield = sum(1 for entry in static if entry["passed"]) / max(1, len(static))
     dynamic_yield = sum(1 for entry in dynamic if entry["passed"]) / max(1, len(dynamic))
@@ -292,11 +367,12 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
         "static_arm": static,
         "dynamic_arm": dynamic,
         "paired_evidence": paired,
+        "environment_assisted_arm": assisted,
         "measured_contact_arm": measured,
         "mass_sweep": sweep,
         "static_fail_dynamic_pass_cases": [
             entry
-            for entry in (*sweep, *measured)
+            for entry in (*sweep, *measured, *assisted)
             if entry.get("static_fail_dynamic_pass")
         ],
         "static_pass_dynamic_fail_cases": [
@@ -314,15 +390,29 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
             "the *more* permissive of the two -- it admits grasps the physics "
             "then refuses -- so the static-fail/dynamic-pass pairing that "
             "ROADMAP-P3.4-001 section 16.3 asks for does not exist on these "
-            "scenes. Asked a third way -- force closure over the contacts the "
-            "grasp actually made at the end of enclosure, rather than the ones "
-            "the recipe planned -- it still passes: an antipodal two-point "
-            "pinch satisfies the certifier at the pinned friction. Showing the "
-            "pairing needs either a genuinely conservative static predicate or "
-            "a scene where the environment supplies opposition the fingers "
-            "cannot, such as a single finger pressing a target against a bin "
-            "wall. Neither is in this artifact, and neither is obtainable by "
-            "moving a threshold."
+            "scenes, and the fourth arm shows why it cannot. "
+            "Asked a third way -- force closure over the contacts the grasp "
+            "actually made at the end of enclosure, rather than the ones the "
+            "recipe planned -- it still passes: an antipodal two-point pinch "
+            "satisfies the certifier at the pinned friction. Asked a fourth "
+            "way, by building the textbook case on purpose -- a wall beside "
+            "the target so the environment can supply opposition the fingers "
+            "cannot -- every point of the declared sweep fails both arms, "
+            "never one. The reason is structural rather than incidental to "
+            "this corpus: both predicates carry the same floor. Force closure "
+            "needs two contacts, and the dynamic predicate needs "
+            "min_active_fingers=2 of them sustained through the perturbation "
+            "window, so a grasp too sparse for the static test is too sparse "
+            "for the dynamic one by the same count. The dynamic predicate "
+            "additionally requires floor_support_after_lift to be false, which "
+            "excludes precisely the environment-supported grasps that would "
+            "make a frozen force-closure test fail. Section 16.3 assumes the "
+            "two predicates can disagree in that direction; as specified they "
+            "cannot. Obtaining the pairing needs a change to one of the two "
+            "predicates -- a static test that fails for a reason other than "
+            "contact count, such as a wrench-space margin, or a dynamic one "
+            "that admits environment-supported success -- and not a scene, a "
+            "seed, or a threshold."
         ),
     }
 
