@@ -29,6 +29,7 @@ from qdgrasp.dynamic.safety import SceneRoles
 from qdgrasp.sim.batched.contracts import (
     ROLLOUT_SUMMARY_SCHEMA_V2,
     BackendCapabilityError,
+    BackendState,
     BackendStateError,
     ContactTelemetry,
     RolloutSummary,
@@ -354,3 +355,153 @@ def test_the_gpu_requires_every_contact_field_the_budget_needs() -> None:
     # ``pos`` alone is not enough: the budget needs the frame and the identity
     # too, or the forces cannot be resolved or attributed (G08.1).
     assert set(REQUIRED_CONTACT_FIELDS) >= {"dist", "pos", "frame", "geom"}
+
+
+# -- the CUDA summary path, exercised without a device --------------------
+
+
+class _StubContact:
+    """A mujoco_warp contact struct with only the fields a build might expose."""
+
+    def __init__(self, fields: dict[str, object]) -> None:
+        for name, value in fields.items():
+            setattr(self, name, value)
+
+
+class _StubWarpData:
+    def __init__(self, contact_fields: dict[str, object] | None, efc_force=None) -> None:
+        if contact_fields is not None:
+            self.contact = _StubContact(contact_fields)
+        if efc_force is not None:
+            self.efc_force = efc_force
+
+
+def _gpu_backend_stub(*, warp_data, capacity: int = 2, model=None) -> MjWarpCudaBackend:
+    """A CUDA backend with its device state faked.
+
+    The device path cannot run here, but the summary path is ordinary Python and
+    is where a missing attribute would only surface on a T4 -- one wasted run per
+    mistake. This exercises it on the ground.
+    """
+    backend = object.__new__(MjWarpCudaBackend)
+    backend._warp_data = warp_data
+    backend._cpu_model = model
+    backend._capacity = capacity
+    backend._requests = ()
+    backend._invalid = set()
+    backend._invalid_reason = {}
+    backend._initial_states = ()
+    backend._peak_contacts = np.zeros(capacity, dtype=int)
+    backend._overflowed = set()
+    backend._rolled_out = False
+    backend._last_commands = None
+    backend._peak_contact_force = None
+    backend._model_sha256 = "0" * 64
+    backend._signature = None
+    return backend
+
+
+def test_a_build_missing_contact_fields_is_named_not_guessed(model) -> None:
+    backend = _gpu_backend_stub(warp_data=_StubWarpData({"pos": [0.0]}), model=model)
+    missing = backend.missing_contact_fields()
+    # ``pos`` alone answers "was there a contact", not "how hard, where, between
+    # what" -- so the rest are reported as missing rather than assumed zero.
+    assert "pos" not in missing
+    assert {"dist", "frame", "geom", "efc_address"} <= set(missing)
+    assert backend.read_contact_forces() is None
+
+
+def test_a_build_with_no_contact_struct_reports_every_field_missing(model) -> None:
+    backend = _gpu_backend_stub(warp_data=_StubWarpData(None), model=model)
+    from qdgrasp.sim.batched.mjwarp_cuda import REQUIRED_CONTACT_FIELDS
+
+    assert set(backend.missing_contact_fields()) == set(REQUIRED_CONTACT_FIELDS)
+
+
+def test_contact_forces_are_read_at_the_constraint_address(model) -> None:
+    # MuJoCo resolves contact force through the solver, so a contact's force
+    # lives at its efc_address in efc_force. A negative address means the
+    # contact was never admitted and carries no force -- a real zero.
+    warp_data = _StubWarpData(
+        {
+            "dist": np.zeros(3),
+            "pos": np.zeros((3, 3)),
+            "frame": np.zeros((3, 9)),
+            "geom": np.zeros((3, 2)),
+            "efc_address": np.array([0, 2, -1]),
+        },
+        efc_force=np.array([5.0, 99.0, -7.0]),
+    )
+    backend = _gpu_backend_stub(warp_data=warp_data, model=model, capacity=3)
+    forces = backend.read_contact_forces()
+    assert forces is not None
+    assert forces.tolist() == [5.0, 7.0, 0.0]
+
+
+def test_an_unreadable_contact_stream_hard_rejects_the_world(model) -> None:
+    backend = _gpu_backend_stub(warp_data=_StubWarpData({"pos": [0.0]}), model=model)
+    state = BackendState(
+        qpos=np.zeros((2, 3)),
+        qvel=np.zeros((2, 3)),
+        object_pose=np.zeros((2, 1, 7)),
+        object_velocity=np.zeros((2, 1, 6)),
+        contact_counts=np.zeros(2, dtype=int),
+    )
+    summary = backend._summarise(0, state, horizon=10)
+    # v1 hard-rejected on NaN and nothing else, so a world whose contacts were
+    # never observed survived to be ranked (blocker B-03).
+    assert summary.hard_reject is True
+    assert summary.failure_reason == "truncated_contact_stream"
+    assert summary.steps_executed == 0
+    assert summary.backend_id == "mjwarp_cuda"
+
+
+def test_a_readable_stream_produces_a_surviving_summary(model) -> None:
+    warp_data = _StubWarpData(
+        {
+            "dist": np.zeros(1),
+            "pos": np.zeros((1, 3)),
+            "frame": np.zeros((1, 9)),
+            "geom": np.zeros((1, 2)),
+            "efc_address": np.array([0]),
+        },
+        efc_force=np.array([3.0]),
+    )
+    backend = _gpu_backend_stub(warp_data=warp_data, model=model)
+    state = BackendState(
+        qpos=np.zeros((2, 3)),
+        qvel=np.zeros((2, 3)),
+        object_pose=np.zeros((2, 1, 7)),
+        object_velocity=np.zeros((2, 1, 6)),
+        contact_counts=np.ones(2, dtype=int),
+    )
+    summary = backend._summarise(0, state, horizon=10)
+    assert summary.hard_reject is False
+    assert summary.failure_reason == "none"
+    assert summary.steps_executed == 10
+    assert summary.contact.unavailable_fields == ()
+
+
+def test_an_overflowed_contact_buffer_hard_rejects_the_world(model) -> None:
+    warp_data = _StubWarpData(
+        {
+            "dist": np.zeros(1),
+            "pos": np.zeros((1, 3)),
+            "frame": np.zeros((1, 9)),
+            "geom": np.zeros((1, 2)),
+            "efc_address": np.array([0]),
+        },
+        efc_force=np.array([3.0]),
+    )
+    backend = _gpu_backend_stub(warp_data=warp_data, model=model)
+    backend._overflowed.add(0)
+    state = BackendState(
+        qpos=np.zeros((2, 3)),
+        qvel=np.zeros((2, 3)),
+        object_pose=np.zeros((2, 1, 7)),
+        object_velocity=np.zeros((2, 1, 6)),
+        contact_counts=np.ones(2, dtype=int),
+    )
+    summary = backend._summarise(0, state, horizon=10)
+    assert summary.hard_reject is True
+    assert summary.failure_reason == "contact_buffer_overflow"
