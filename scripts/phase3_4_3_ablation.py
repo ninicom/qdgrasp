@@ -128,6 +128,77 @@ def dynamic_arm(hand: str, generate_one, *, mass: float | None = None) -> dict[s
     }
 
 
+def measured_contact_arm(hand: str, generate_one) -> dict[str, Any]:
+    """Force closure over the contacts the grasp *actually* made.
+
+    The planned-contact arm asks whether the recipe's intended fingertips would
+    close the object. This asks the sharper question: take the contacts the hand
+    really landed at the end of enclosure, and test those. Both arms are then
+    unambiguously about the same grasp, which is what makes the comparison a
+    controlled one rather than two measurements of different things.
+    """
+    from qdgrasp.dataset.dynamic_contracts import ContactPairKind, TrajectoryStage
+
+    trajectory, outcome = generate_one(
+        hand, environment="table", clutter="sparse", mode="static_seeded"
+    )
+    enclosure = [
+        index
+        for index, stage in enumerate(trajectory.stage)
+        if stage is TrajectoryStage.ENCLOSE
+    ]
+    if not enclosure:
+        return {
+            "hand": hand,
+            "arm": "static_frozen_measured_contacts",
+            "contacts": 0,
+            "passed": False,
+            "reason": "the trajectory never reached enclosure",
+            "dynamic_passed": bool(outcome.passed),
+        }
+
+    last = enclosure[-1]
+    events = [
+        event
+        for event in trajectory.contact_graph
+        if event.time_index == last and event.pair_kind is ContactPairKind.TARGET_ROBOT
+    ]
+    if len(events) < 2:
+        return {
+            "hand": hand,
+            "arm": "static_frozen_measured_contacts",
+            "contacts": len(events),
+            "passed": False,
+            "reason": "fewer than two measured contacts to certify",
+            "dynamic_passed": bool(outcome.passed),
+        }
+
+    points = np.array([event.point for event in events], dtype=np.float64)
+    centroid = np.asarray(trajectory.object_pose[last, 0, :3], dtype=np.float64)
+    offsets = centroid - points
+    norms = np.linalg.norm(offsets, axis=1, keepdims=True)
+    normals = offsets / np.where(norms > 1e-9, norms, 1.0)
+
+    certificate = certify_force_closure(
+        points,
+        normals,
+        centroid,
+        mass=TARGET_MASS_KG,
+        mu=FRICTION_MU,
+        torsional_friction=TORSIONAL_FRICTION,
+    )
+    return {
+        "hand": hand,
+        "arm": "static_frozen_measured_contacts",
+        "enclosure_sample": last,
+        "contacts": len(events),
+        "passed": bool(certificate.passed),
+        "reason": getattr(certificate, "reason", ""),
+        "dynamic_passed": bool(outcome.passed),
+        "static_fail_dynamic_pass": bool(not certificate.passed and outcome.passed),
+    }
+
+
 def run(hands: tuple[str, ...]) -> dict[str, Any]:
     import runpy
 
@@ -176,6 +247,8 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
                 }
             )
 
+    measured = [measured_contact_arm(hand, generate_one) for hand in hands]
+
     static_yield = sum(1 for entry in static if entry["passed"]) / max(1, len(static))
     dynamic_yield = sum(1 for entry in dynamic if entry["passed"]) / max(1, len(dynamic))
     delta = dynamic_yield - static_yield
@@ -219,9 +292,12 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
         "static_arm": static,
         "dynamic_arm": dynamic,
         "paired_evidence": paired,
+        "measured_contact_arm": measured,
         "mass_sweep": sweep,
         "static_fail_dynamic_pass_cases": [
-            entry for entry in sweep if entry["static_fail_dynamic_pass"]
+            entry
+            for entry in (*sweep, *measured)
+            if entry.get("static_fail_dynamic_pass")
         ],
         "static_pass_dynamic_fail_cases": [
             entry for entry in sweep if entry["static_pass_dynamic_fail"]
@@ -238,9 +314,15 @@ def run(hands: tuple[str, ...]) -> dict[str, Any]:
             "the *more* permissive of the two -- it admits grasps the physics "
             "then refuses -- so the static-fail/dynamic-pass pairing that "
             "ROADMAP-P3.4-001 section 16.3 asks for does not exist on these "
-            "scenes. Showing it needs a scene class where the target has to be "
-            "repositioned before it can be grasped, which this artifact does "
-            "not contain."
+            "scenes. Asked a third way -- force closure over the contacts the "
+            "grasp actually made at the end of enclosure, rather than the ones "
+            "the recipe planned -- it still passes: an antipodal two-point "
+            "pinch satisfies the certifier at the pinned friction. Showing the "
+            "pairing needs either a genuinely conservative static predicate or "
+            "a scene where the environment supplies opposition the fingers "
+            "cannot, such as a single finger pressing a target against a bin "
+            "wall. Neither is in this artifact, and neither is obtainable by "
+            "moving a threshold."
         ),
     }
 

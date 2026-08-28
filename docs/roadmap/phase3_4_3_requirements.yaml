@@ -436,8 +436,8 @@ requirements:
     normative_source: P3.4.3#C05
     mapped_to: [P3.4-14, P3.4-16]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "requires a real NVIDIA device: run kaggle-phase3-4-3/ on a Kaggle T4 and record the evidence under evidence/phase3_4_3/s10/. Implementation, harness and notebook exist; no CPU number may stand in for the measurement."
+    status: failed
+    blocker_reason: "corrected: this gate is dataset coverage and the controlled ablation, both of which run on CPU, so the earlier 'requires a real NVIDIA device' reason was attached to the wrong gate. Coverage passes at the declared 2 hand x 3 environment x 2 clutter x 3 mode grid with 36/36 cells populated and every required positive and negative fixture present. The ablation is immutable and pinned. What fails is the paired static-fail/dynamic-pass criterion the plan lists under C05: asked three independent ways -- planned contacts, a ten-point mass sweep, and force closure over the contacts the grasp actually made at the end of enclosure -- there are zero such pairs and four of the opposite kind. See R-DOD-03 and evidence/phase3_4_3/s11/static-vs-dynamic.json"
   - <<: *pending_requirement
     id: C06
     category: completeness_gate
@@ -569,8 +569,8 @@ requirements:
     normative_source: ROADMAP-P3.4-001#P3.4-09
     mapped_to: [G07, C04]
     owner: claude-implementation-agent
-    status: blocked
-    blocker_reason: "the CUDA gate ran on a real Kaggle T4 and returned BLOCKED: no mujoco-warp version in 3.10.0.3-3.12.0 is free of the upstream uninitialised read on the reproducer scene, so parity and performance cannot be measured on a backend whose contact stream is not trustworthy. Phase 1 and Phase 2 CUDA gates passed. See evidence/phase3_4_3/s10/kaggle-run-v5/"
+    status: failed
+    blocker_reason: "superseded by a complete run: the earlier BLOCKED verdict meant the gate stopped before measuring. On the seventh T4 run every stage executed, so this is now a measurement rather than an absence of one. Parity holds to 5.75e-10 with nothing in contact and breaks to 8.39mm against a 2mm tolerance once a contact is involved, 84 of 1024 LEAP worlds go non-finite, and initcheck names uninitialised reads in _linesearch_iterative_kernel while racecheck stays clean. Speed passes at 5.47x and 14.04x but section 10 asks for parity and a clean sanitizer as well. See evidence/phase3_4_3/s10/kaggle-run-v7/"
   - <<: *pending_requirement
     id: P3.4-10
     category: original_work_package
@@ -860,7 +860,7 @@ requirements:
     mapped_to: [C05]
     owner: claude-implementation-agent
     status: failed
-    blocker_reason: "measured, not met: across a ten-point mass sweep on the release recipe scenes there are zero static-fail/dynamic-pass cases and four static-pass/dynamic-fail ones, so the frozen predicate is the more permissive of the two. Showing the pairing needs a scene class where the target must be repositioned before it can be grasped, which this artifact does not contain. See evidence/phase3_4_3/s11/static-vs-dynamic.json"
+    blocker_reason: "measured, not met, and asked three independent ways. Planned recipe contacts: zero static-fail/dynamic-pass, four of the opposite kind. A ten-point mass sweep: the same. Force closure over the contacts the grasp actually made at the end of enclosure -- the sharpest form of the question, since both arms then describe the same grasp rather than two different ones -- still passes, because an antipodal two-point pinch satisfies the certifier at the pinned friction. So the frozen predicate is consistently the more permissive of the two: it admits grasps the physics then refuses. Obtaining the pairing needs either a genuinely conservative static predicate or a scene where the environment supplies opposition the fingers cannot, such as a single finger pressing a target against a bin wall; neither is in this artifact and neither is reachable by moving a threshold. See evidence/phase3_4_3/s11/static-vs-dynamic.json"
   - <<: *pending_requirement
     id: R-DOD-04
     category: original_clause

@@ -25,7 +25,7 @@
     }
   ],
   "dynamic_yield": 1.0,
-  "generated_at": "2026-08-27T23:56:28.153067+00:00",
+  "generated_at": "2026-08-28T02:27:44.875445+00:00",
   "hands": [
     "leap_hand",
     "wonik_allegro"
@@ -129,7 +129,29 @@
     0.2,
     0.4
   ],
-  "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result. Across the declared mass sweep the frozen predicate is the *more* permissive of the two -- it admits grasps the physics then refuses -- so the static-fail/dynamic-pass pairing that ROADMAP-P3.4-001 section 16.3 asks for does not exist on these scenes. Showing it needs a scene class where the target has to be repositioned before it can be grasped, which this artifact does not contain.",
+  "measured_contact_arm": [
+    {
+      "arm": "static_frozen_measured_contacts",
+      "contacts": 2,
+      "dynamic_passed": true,
+      "enclosure_sample": 83,
+      "hand": "leap_hand",
+      "passed": true,
+      "reason": "",
+      "static_fail_dynamic_pass": false
+    },
+    {
+      "arm": "static_frozen_measured_contacts",
+      "contacts": 2,
+      "dynamic_passed": true,
+      "enclosure_sample": 125,
+      "hand": "wonik_allegro",
+      "passed": true,
+      "reason": "",
+      "static_fail_dynamic_pass": false
+    }
+  ],
+  "note": "no_measured_difference is a legitimate verdict. No threshold is moved to avoid it; if the reactive arm does not admit more, that is the result. Across the declared mass sweep the frozen predicate is the *more* permissive of the two -- it admits grasps the physics then refuses -- so the static-fail/dynamic-pass pairing that ROADMAP-P3.4-001 section 16.3 asks for does not exist on these scenes. Asked a third way -- force closure over the contacts the grasp actually made at the end of enclosure, rather than the ones the recipe planned -- it still passes: an antipodal two-point pinch satisfies the certifier at the pinned friction. Showing the pairing needs either a genuinely conservative static predicate or a scene where the environment supplies opposition the fingers cannot, such as a single finger pressing a target against a bin wall. Neither is in this artifact, and neither is obtainable by moving a threshold.",
   "paired_evidence": [
     {
       "dynamic_passed": true,
