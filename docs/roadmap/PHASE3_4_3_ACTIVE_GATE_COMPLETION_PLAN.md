@@ -858,7 +858,9 @@ force-closure đóng băng thất bại.
 chúng **không thể**. Đóng mục này cần sửa một trong hai predicate — phép thử
 tĩnh thất bại vì lý do khác số contact (ví dụ wrench-space margin), hoặc phép
 thử động chấp nhận thành công có môi trường đỡ. Đó là sửa contract, không phải
-việc plan này được phép tự làm.
+việc plan này được phép tự làm. Ba phương án đã được costed kèm khuyến nghị
+trong `docs/roadmap/PHASE3_4_3_CONTRACT_AMENDMENT_16_3.md`; mục này chờ **một
+quyết định**, không chờ thêm việc.
 
 Mục 20 là ràng buộc cố ý. Người viết phần lớn patch không được tự review; packet
 đã sẵn sàng tại `scripts/phase3_4_3_review_packet.py`.

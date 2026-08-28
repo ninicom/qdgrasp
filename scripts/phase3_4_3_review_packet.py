@@ -195,8 +195,16 @@ def build_packet(*, dataset_root: Path, cuda_evidence: Path | None) -> dict[str,
                 "thousands of uninitialised reads in _linesearch_iterative_kernel "
                 "on the REV-20260827-010 reproducer scene, while racecheck stays "
                 "clean. warp-lang 1.16.0 is the newest release, so there is no "
-                "newer runtime to move to. The GPU gate is blocked for that "
-                "reason. See evidence/phase3_4_3/s10/."
+                "newer runtime to move to, and the solver-configuration space "
+                "is exhausted too: ls_parallel was removed upstream in 3.9.1, "
+                "ls_iterations=1 still leaks 12788 reads so the defect fires on "
+                "the first linesearch iteration, and solver_cg is an order of "
+                "magnitude worse. The gate itself ran end to end and returned "
+                "FAIL on measurement, not absence: parity holds to 5.75e-10 with "
+                "nothing in contact and breaks to 8.39mm against a 2mm tolerance "
+                "once a contact is involved, and 84 of 1024 LEAP worlds go "
+                "non-finite. Speed passes at 5.47x and 14.04x, which does not buy "
+                "back correctness. See evidence/phase3_4_3/s10/."
             ),
             (
                 "The same three versions report zero errors on a three-geom toy "
@@ -205,8 +213,18 @@ def build_packet(*, dataset_root: Path, cuda_evidence: Path | None) -> dict[str,
             ),
             "MPPI (P3.4-10) is deferred_not_claimed and carries no coverage.",
             (
-                "The static-vs-dynamic ablation reports no_measured_difference on "
-                "the release recipe's scenes. No threshold was moved to avoid it."
+                "The static-vs-dynamic ablation reports no_measured_difference "
+                "across four arms, and the fourth shows the paired evidence "
+                "section 16.3 asks for cannot exist as specified rather than "
+                "being absent from this corpus. Both predicates carry the same "
+                "floor -- certify_force_closure needs two contacts and the "
+                "dynamic predicate needs min_active_fingers=2 sustained -- so "
+                "they cannot disagree in the direction 16.3 assumes, and the "
+                "dynamic predicate further requires floor_support_after_lift to "
+                "be false, which excludes the environment-supported grasps that "
+                "would make a frozen force-closure test fail. A reviewer should "
+                "treat this as a contract defect needing amendment, not as an "
+                "implementation shortfall. No threshold was moved to avoid it."
             ),
         ],
         "reviewer_instructions": (

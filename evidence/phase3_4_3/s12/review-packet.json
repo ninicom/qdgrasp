@@ -1,9 +1,9 @@
 {
-  "assembled_at": "2026-08-28T02:22:13.543550+00:00",
+  "assembled_at": "2026-08-28T04:08:26.991966+00:00",
   "branch": "feature/phase3-1-closure",
-  "commit": "9061f379ed7c533591564c709d93b0812e28c927",
+  "commit": "8941ba29fee676bb5a39b2b439ba2940666ff2c6",
   "completeness": {
-    "manifest_sha256": "894fdd2394fe7b4da956c5f2acf1f1960916af80b1d5a21054a5d42bdcd27590",
+    "manifest_sha256": "1858a5dbc50e2bd7d093ce42dffcc83dfb56e4e0f4576f7bc3ec4bb22b8983b0",
     "open_required": [
       "C05",
       "C07",
@@ -26,9 +26,9 @@
       "R-UPSTREAM-01"
     ],
     "status_counts": {
-      "blocked": 7,
+      "blocked": 5,
       "deferred_not_claimed": 1,
-      "failed": 12,
+      "failed": 14,
       "passed": 65,
       "paused": 0,
       "pending": 0
@@ -105,9 +105,9 @@
   },
   "cuda_gate": {
     "gpu": "Tesla T4",
-    "path": "evidence/phase3_4_3/s10/kaggle-run-v7/cuda-gate.json",
+    "path": "evidence/phase3_4_3/s10/kaggle-run-v8/cuda-gate.json",
     "present": true,
-    "sha256": "320f84fc68fed2e12f2a0dd005d627abea4c776bd6b0cc3613f105b9146a6e6d",
+    "sha256": "ddbaecec2ecda31f61c1bc357032c4055faecdbabc9eaeca26cef0be2143c707",
     "verdict": "FAIL"
   },
   "dataset": {
@@ -197,13 +197,13 @@
   "known_limitations": [
     "Simulation-only contact. Nothing here is a hardware safety claim.",
     "Two active hands under ADR-0008; not three-hand coverage.",
-    "The upstream uninitialised-read defect is unresolved and now measured, not assumed: on a Kaggle T4, mujoco-warp 3.10.0.3, 3.11.0 and 3.12.0 on warp-lang 1.16.0 each report tens of thousands of uninitialised reads in _linesearch_iterative_kernel on the REV-20260827-010 reproducer scene, while racecheck stays clean. warp-lang 1.16.0 is the newest release, so there is no newer runtime to move to. The GPU gate is blocked for that reason. See evidence/phase3_4_3/s10/.",
+    "The upstream uninitialised-read defect is unresolved and now measured, not assumed: on a Kaggle T4, mujoco-warp 3.10.0.3, 3.11.0 and 3.12.0 on warp-lang 1.16.0 each report tens of thousands of uninitialised reads in _linesearch_iterative_kernel on the REV-20260827-010 reproducer scene, while racecheck stays clean. warp-lang 1.16.0 is the newest release, so there is no newer runtime to move to, and the solver-configuration space is exhausted too: ls_parallel was removed upstream in 3.9.1, ls_iterations=1 still leaks 12788 reads so the defect fires on the first linesearch iteration, and solver_cg is an order of magnitude worse. The gate itself ran end to end and returned FAIL on measurement, not absence: parity holds to 5.75e-10 with nothing in contact and breaks to 8.39mm against a 2mm tolerance once a contact is involved, and 84 of 1024 LEAP worlds go non-finite. Speed passes at 5.47x and 14.04x, which does not buy back correctness. See evidence/phase3_4_3/s10/.",
     "The same three versions report zero errors on a three-geom toy scene. A compatibility answer is only as good as the scene it was asked on, and both readings are kept so that is visible.",
     "MPPI (P3.4-10) is deferred_not_claimed and carries no coverage.",
-    "The static-vs-dynamic ablation reports no_measured_difference on the release recipe's scenes. No threshold was moved to avoid it."
+    "The static-vs-dynamic ablation reports no_measured_difference across four arms, and the fourth shows the paired evidence section 16.3 asks for cannot exist as specified rather than being absent from this corpus. Both predicates carry the same floor -- certify_force_closure needs two contacts and the dynamic predicate needs min_active_fingers=2 sustained -- so they cannot disagree in the direction 16.3 assumes, and the dynamic predicate further requires floor_support_after_lift to be false, which excludes the environment-supported grasps that would make a frozen force-closure test fail. A reviewer should treat this as a contract defect needing amendment, not as an implementation shortfall. No threshold was moved to avoid it."
   ],
   "missing_required_artifacts": [],
-  "packet_sha256": "2e7c63c5aa6953fff8ad2f79c9cbb2717b45dc9c0090772f774b54376ef6521f",
+  "packet_sha256": "a44ebfbd5e362eeb08730265aa5bd340a5ec7e8340946f78ed8ee40c6b77c8c4",
   "phase": "3.4.3",
   "required_artifacts": {
     "docs/decisions/0008-temporary-shadow-hand-pause.md": {
@@ -216,7 +216,7 @@
     },
     "docs/roadmap/PHASE3_4_3_ACTIVE_GATE_COMPLETION_PLAN.md": {
       "kind": "file",
-      "sha256": "75e4b7c5d20d9c59ea3a1bbe89dc752c1df6ee092dfc60ac1bba409d8f1c70bd"
+      "sha256": "1c215afe29e81b394ea5651d38cc10ebd71c8203af5996635371ec704d74b302"
     },
     "docs/roadmap/PHASE3_4_3_EXECUTION_BREAKDOWN.md": {
       "kind": "file",
@@ -224,7 +224,7 @@
     },
     "docs/roadmap/phase3_4_3_requirements.yaml": {
       "kind": "file",
-      "sha256": "894fdd2394fe7b4da956c5f2acf1f1960916af80b1d5a21054a5d42bdcd27590"
+      "sha256": "1858a5dbc50e2bd7d093ce42dffcc83dfb56e4e0f4576f7bc3ec4bb22b8983b0"
     },
     "environments/environment.lock.yaml": {
       "kind": "file",
@@ -294,11 +294,11 @@
     },
     "scripts/generate_contactrich_active_tiny.py": {
       "kind": "file",
-      "sha256": "8c5c3650f41c0d8ddbd5b02a65f169fb832cf799625474ceb5e104d12798ea8e"
+      "sha256": "6230db4895cf860678f55e8c0a5b0bd63e841ab6b62911c30037c19dbc1832a2"
     },
     "scripts/phase3_4_3_ablation.py": {
       "kind": "file",
-      "sha256": "be674130c88966c63a23452ad7721fab4786439b4ed4859e7dfee4e95ac62caa"
+      "sha256": "7ae0183e87dc58b8ae794bd4b43a2ed96044f884e1c7871cc275864854835d4c"
     }
   },
   "reviewer_instructions": "This packet carries no verdict. The author of a change cannot review it. A reviewer records their verdict in a separate file with reviewer, reviewer_verdict, open_findings and packet_sha256, and scripts/check_phase3_4_3.py reads that file.",
@@ -339,12 +339,20 @@
     "evidence/phase3_4_3/s10/kaggle-run-v7/phase2_cuda.json": "20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086",
     "evidence/phase3_4_3/s10/kaggle-run-v7/sanitizer.json": "877fee819c08ac68f73eb6c280d8456cf8e1faca5f502e11fd736a6118051de3",
     "evidence/phase3_4_3/s10/kaggle-run-v7/warp_matrix.json": "aa3ff2152250c230bf70bfb1758b9f75e9c0b792b2e74ddbd70427aa72439782",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/cuda-gate.checkpoint.json": "2c8dd61bcadfb92f628ca4674c3d59f29573572a5560e5b0bdff91cdf357ff78",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/cuda-gate.json": "ddbaecec2ecda31f61c1bc357032c4055faecdbabc9eaeca26cef0be2143c707",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/packet.json": "f81349f387eca1c98db98c3dabefecac38da096ff5bf775aa75c3de6bafa2a17",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/phase1_cuda.json": "3557ee730e4de0a59e6daef771fdb258925f255ee36783701c511601a74836a1",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/phase2_cuda.json": "20ef2216f863a514fd3485baea5b1f8bd74635fff4c5227e601be1e1dfe36086",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/sanitizer.json": "1b459a14bed1549b09f5c90c0470720ad3013771593fa9636038d57cf355257f",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/solver_variants.json": "81c1359bc62bfbbd9259284cba1a2d8ace3471a6887b0e2792d95e4ec96a1bbf",
+    "evidence/phase3_4_3/s10/kaggle-run-v8/warp_matrix.json": "05f9702a55464eab5bda68cdb6d67042d27120883bcc47241742c52b835a26ef",
     "evidence/phase3_4_3/s10/result.json": "92bcbdca8db4af3ac6001ebf21dc8ec0a8fa649890dec16db41d399f47a96fde",
     "evidence/phase3_4_3/s11/result.json": "aa5298b28c0ced1a10b4a2715974543b56207d719b51794bb9c9c2e352b1fdd2",
     "evidence/phase3_4_3/s11/stage-renders.json": "218a0235ff5e2f3ef363958eeb77d0a7fe4a63db52024166d6983e5b922b083b",
-    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "f832dc7cdf7b07d0cf428e70a7228cf0ccb8904747cc86d96e53dd5b59a62257",
+    "evidence/phase3_4_3/s11/static-vs-dynamic.json": "3156046209027afa049045a4da05c46d3387bc89fb880eb7beb4f318f9873e4d",
     "evidence/phase3_4_3/s12/result.json": "2aebab800bace3908b995078603a5b92779867bb82178bdc42e5bc45794552e2",
-    "evidence/phase3_4_3/s12/review-packet.json": "0d3a2fe63fbc27e06711c2d6f5849dff139f46521bbddf6b6f60625e0b232594",
+    "evidence/phase3_4_3/s12/review-packet.json": "8f33456a10a090e6d683f279d5142e493fca2375eda97c5490704d8643b8111d",
     "evidence/phase3_4_3/s2/result.json": "69ad77c557cce3b9765d234aed898016173fede2e9a57295148f27955bf82afe",
     "evidence/phase3_4_3/s3/result.json": "41dfc07527063c19517e492e90aa84a20c5fd9d22be58bf39630829a02585210",
     "evidence/phase3_4_3/s4/result.json": "c2b8a4ea5839bcabf9e998a0c7e9a855788edd5da039524a9a3348049161878a",
