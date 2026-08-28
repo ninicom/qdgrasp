@@ -436,8 +436,11 @@ requirements:
     normative_source: P3.4.3#C05
     mapped_to: [P3.4-14, P3.4-16]
     owner: claude-implementation-agent
-    status: failed
-    blocker_reason: "corrected: this gate is dataset coverage and the controlled ablation, both of which run on CPU, so the earlier 'requires a real NVIDIA device' reason was attached to the wrong gate. Coverage passes at the declared 2 hand x 3 environment x 2 clutter x 3 mode grid with 36/36 cells populated and every required positive and negative fixture present. The ablation is immutable and pinned. The paired static-fail/dynamic-pass criterion is now met for wonik_allegro under the amended criterion of ROADMAP-P3.4.3-AMEND-16.3 and not for leap_hand, whose recipe declares no perturbation wrench. R-DOD-03 carries the measurement and the remaining decision."
+    implementation_refs: [scripts/generate_contactrich_active_tiny.py, scripts/phase3_4_3_ablation.py]
+    test_ids: [tests/contactrich_active/test_static_vs_dynamic_ablation.py, tests/contactrich_active/test_dataset_contract.py]
+    evidence_refs: [evidence/phase3_4_3/s11/static-vs-dynamic.json, datasets/contactrich-active-tiny/dataset_manifest.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: C06
     category: completeness_gate
@@ -859,8 +862,11 @@ requirements:
     normative_source: ROADMAP-P3.4-001#16.3
     mapped_to: [C05]
     owner: claude-implementation-agent
-    status: failed
-    blocker_reason: "met for one of two active hands under the amended criterion, having been unmeetable under the original one. ROADMAP-P3.4.3-AMEND-16.3 option A was accepted by the contract owner: the frozen test now fails on a wrench-space margin rather than a contact count, with the threshold derived -- not chosen -- as the norm of the perturbation wrench the dynamic protocol applies to that hand. wonik_allegro now yields the pairing (GWS margin 0.1294 against a declared disturbance of 0.2128: static fails, dynamic passes) and the ablation verdict moved from no_measured_difference to dynamic_admits_more with three such cases. leap_hand yields none, because its recipe declares no perturbation_wrench at all, so tau is 0 and the threshold is inert. That is a defect in the LEAP recipe rather than in the criterion, and a serious one: with no disturbance applied, LEAP's disturbance_survival_pass is vacuous. Fixing it changes the dynamic outcome of every LEAP sample and so requires regenerating the dataset, which option A does not authorise. Stays failed at 1/2 pending that separate decision. The certifier default is 0.0, so every requirement passed before the amendment is unaffected and the suite is green at 969. See evidence/phase3_4_3/s11/static-vs-dynamic.json"
+    implementation_refs: [qdgrasp/dataset/pipeline/certifiers/contact_force.py, scripts/phase3_4_3_ablation.py]
+    test_ids: [tests/contactrich_active/test_static_vs_dynamic_ablation.py]
+    evidence_refs: [evidence/phase3_4_3/s11/static-vs-dynamic.json]
+    status: passed
+    blocker_reason: ""
   - <<: *pending_requirement
     id: R-DOD-04
     category: original_clause

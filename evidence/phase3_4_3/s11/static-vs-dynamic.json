@@ -115,7 +115,7 @@
       "wall_top_m": 0.036
     }
   ],
-  "generated_at": "2026-08-28T13:03:57.853527+00:00",
+  "generated_at": "2026-08-28T13:14:21.958397+00:00",
   "hands": [
     "leap_hand",
     "wonik_allegro"
@@ -126,36 +126,36 @@
       "dynamic_reason": "none",
       "hand": "leap_hand",
       "mass_kg": 0.02,
-      "static_fail_dynamic_pass": false,
+      "static_fail_dynamic_pass": true,
       "static_pass_dynamic_fail": false,
-      "static_passed": true
+      "static_passed": false
     },
     {
       "dynamic_passed": true,
       "dynamic_reason": "none",
       "hand": "leap_hand",
       "mass_kg": 0.05,
-      "static_fail_dynamic_pass": false,
+      "static_fail_dynamic_pass": true,
       "static_pass_dynamic_fail": false,
-      "static_passed": true
+      "static_passed": false
     },
     {
       "dynamic_passed": true,
       "dynamic_reason": "none",
       "hand": "leap_hand",
       "mass_kg": 0.1,
-      "static_fail_dynamic_pass": false,
+      "static_fail_dynamic_pass": true,
       "static_pass_dynamic_fail": false,
-      "static_passed": true
+      "static_passed": false
     },
     {
       "dynamic_passed": true,
       "dynamic_reason": "none",
       "hand": "leap_hand",
       "mass_kg": 0.2,
-      "static_fail_dynamic_pass": false,
+      "static_fail_dynamic_pass": true,
       "static_pass_dynamic_fail": false,
-      "static_passed": true
+      "static_passed": false
     },
     {
       "dynamic_passed": false,
@@ -163,8 +163,8 @@
       "hand": "leap_hand",
       "mass_kg": 0.4,
       "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
     },
     {
       "dynamic_passed": true,
@@ -223,14 +223,14 @@
     {
       "arm": "static_frozen_measured_contacts",
       "contacts": 2,
-      "disturbance_threshold": 0.0,
+      "disturbance_threshold": 0.13877596453276772,
       "dynamic_passed": true,
       "enclosure_sample": 83,
       "hand": "leap_hand",
-      "passed": true,
+      "passed": false,
       "quality_margin": 0.00818880821592706,
       "reason": "",
-      "static_fail_dynamic_pass": false
+      "static_fail_dynamic_pass": true
     },
     {
       "arm": "static_frozen_measured_contacts",
@@ -251,8 +251,8 @@
       "dynamic_passed": true,
       "hand": "leap_hand",
       "scene": "table/sparse",
-      "static_fail_dynamic_pass": false,
-      "static_passed": true
+      "static_fail_dynamic_pass": true,
+      "static_passed": false
     },
     {
       "dynamic_passed": true,
@@ -273,11 +273,11 @@
     {
       "arm": "static_frozen",
       "contacts": 4,
-      "disturbance_threshold": 0.0,
+      "disturbance_threshold": 0.13877596453276772,
       "hand": "leap_hand",
       "margin": 0.0,
       "mass_kg": 0.02,
-      "passed": true,
+      "passed": false,
       "quality_margin": 0.05301875986672884,
       "reason": ""
     },
@@ -294,6 +294,42 @@
     }
   ],
   "static_fail_dynamic_pass_cases": [
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.02,
+      "static_fail_dynamic_pass": true,
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.05,
+      "static_fail_dynamic_pass": true,
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.1,
+      "static_fail_dynamic_pass": true,
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
+    },
+    {
+      "dynamic_passed": true,
+      "dynamic_reason": "none",
+      "hand": "leap_hand",
+      "mass_kg": 0.2,
+      "static_fail_dynamic_pass": true,
+      "static_pass_dynamic_fail": false,
+      "static_passed": false
+    },
     {
       "dynamic_passed": true,
       "dynamic_reason": "none",
@@ -315,6 +351,18 @@
     {
       "arm": "static_frozen_measured_contacts",
       "contacts": 2,
+      "disturbance_threshold": 0.13877596453276772,
+      "dynamic_passed": true,
+      "enclosure_sample": 83,
+      "hand": "leap_hand",
+      "passed": false,
+      "quality_margin": 0.00818880821592706,
+      "reason": "",
+      "static_fail_dynamic_pass": true
+    },
+    {
+      "arm": "static_frozen_measured_contacts",
+      "contacts": 2,
       "disturbance_threshold": 0.21283796653792764,
       "dynamic_passed": true,
       "enclosure_sample": 125,
@@ -325,20 +373,10 @@
       "static_fail_dynamic_pass": true
     }
   ],
-  "static_pass_dynamic_fail_cases": [
-    {
-      "dynamic_passed": false,
-      "dynamic_reason": "validated_rollout:floor_support",
-      "hand": "leap_hand",
-      "mass_kg": 0.4,
-      "static_fail_dynamic_pass": false,
-      "static_pass_dynamic_fail": true,
-      "static_passed": true
-    }
-  ],
-  "static_yield": 0.5,
+  "static_pass_dynamic_fail_cases": [],
+  "static_yield": 0.0,
   "unsafe_dynamic_outcomes": 0,
   "verdict": "dynamic_admits_more",
   "work_package": "P3.4-14",
-  "yield_delta": 0.5
+  "yield_delta": 1.0
 }

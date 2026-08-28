@@ -85,30 +85,36 @@ Chủ contract chọn **phương án A**. Đã cài đặt và đo.
 tức hành vi lịch sử **y nguyên**, nên 65 requirement đã passed và toàn bộ bằng
 chứng thu trước sửa đổi vẫn còn hiệu lực (969 test xanh sau thay đổi).
 
-Ngưỡng **không được chọn** mà **suy ra**: τ = chuẩn của `perturbation_wrench` mà
+Ngưỡng **không được chọn** mà **suy ra**: τ = chuẩn của perturbation wrench mà
 protocol động thực sự áp lên chính bàn tay đó. Phân tích đóng băng vì thế bị hỏi
 đúng câu hỏi có nghĩa — grasp này có chịu nổi nhiễu loạn nó sắp gặp không —
 thay vì câu hỏi đếm ngón.
 
 | tay | τ | GWS margin | tĩnh | động | cặp |
 |---|---|---|---|---|---|
+| `leap_hand` | 0.1388 | 0.0530 | **fail** | pass | ✅ |
 | `wonik_allegro` | 0.2128 | 0.1294 | **fail** | pass | ✅ |
-| `leap_hand` | 0.0000 | 0.0530 | pass | pass | ❌ |
 
 Ablation đổi verdict từ `no_measured_difference` sang **`dynamic_admits_more`**,
-với **3 cặp** static-fail/dynamic-pass trên nhánh mass sweep và nhánh contact đo
-được. Tiêu chí §16.3 giờ **có nghĩa** và **thoả được** — nhưng mới 1/2 tay.
+với **8 cặp** static-fail/dynamic-pass trên **2/2 active hand**. Tiêu chí §16.3
+vừa có nghĩa vừa **đạt**. `R-DOD-03` và `C05` chuyển sang `passed`.
 
-## 7. Lỗ hổng mới lộ ra, cần một quyết định riêng
+## 7. Một khẳng định sai đã được sửa
 
-`leap_hand` không ra cặp vì recipe của nó **không khai báo
-`perturbation_wrench` nào**, nên τ = 0 và ngưỡng vô hiệu.
+Bản 1.1.0 của tài liệu này viết rằng `leap_hand` không sinh ra cặp vì recipe của
+nó không khai báo `perturbation_wrench`, và rằng do đó tiêu chí
+`disturbance_survival_pass` của LEAP là "rỗng". **Cả hai đều sai.**
 
-Điều này nghiêm trọng hơn một requirement chưa đóng: nếu protocol động không áp
-nhiễu loạn nào lên LEAP, thì tiêu chí `disturbance_survival_pass` của LEAP là
-**rỗng** — nó luôn đúng vì không có gì để sống sót qua. Đây là lỗ hổng của recipe
-LEAP, không phải của tiêu chí §16.3.
+`validators/mujoco_rollout.py` **tự suy ra** một perturbation wrench khi recipe
+không khai báo — lực bằng `0.5 × trọng lượng vật`, mô-men bằng
+`0.25 × trọng lượng × kích thước đặc trưng`. LEAP luôn bị nhiễu loạn; tiêu chí
+của nó chưa bao giờ rỗng.
 
-Sửa nó là đổi `perturbation_wrench` của LEAP, và điều đó **đổi kết quả động của
-mọi mẫu LEAP**, tức phải tái sinh dataset và mọi bằng chứng dựa trên nó. Vượt
-phạm vi phương án A, vốn chỉ động tới predicate tĩnh. Cần quyết định riêng.
+Lỗi nằm ở hàm `declared_disturbance` của ablation: nó chỉ đọc `rollout_kwargs`
+nên chấm LEAP thành τ = 0 và báo rằng phép thử tĩnh đã pass, trong khi protocol
+vẫn đang nhiễu loạn nó suốt. Đây là bug của phép đo, không phải lỗ hổng của
+recipe, và **không** cần quyết định nào về contract.
+
+Hàm đã sửa để phản chiếu đúng công thức của validator, và
+`test_every_active_hand_faces_a_real_disturbance` giữ cho sai lầm này chỉ xảy ra
+một lần.

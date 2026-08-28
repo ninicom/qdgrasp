@@ -825,7 +825,7 @@ Ba mục DoD không đạt, vì ba lý do khác hẳn nhau:
 | Mục | Trạng thái | Bản chất |
 |-----|-----------|----------|
 | 11 — CUDA parity/sanitizer | **failed, đã đo** | defect ngoài repo |
-| 14 — paired static-fail/dynamic-pass | **failed, đã đo** | tiền đề của §16.3 sai trên corpus này |
+| 14 — paired static-fail/dynamic-pass | **passed** | đạt 2/2 tay sau sửa đổi §16.3 |
 | 20 — independent reviewer PASS | **blocked** | ràng buộc quy trình, cố ý |
 
 Mục 11 không đóng được từ bên trong repo này, và không gian cấu hình đã bị

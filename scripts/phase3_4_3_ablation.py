@@ -223,14 +223,31 @@ def declared_disturbance(hand: str, generator) -> float:
     rather than on a contact count. The threshold is not chosen -- it is the norm
     of the perturbation wrench the dynamic protocol actually applies to this
     hand, so the frozen analysis is asked to certify the grasp against the
-    disturbance it will really meet. A hand whose recipe declares no
-    perturbation gets 0.0, which leaves the historical behaviour untouched.
+    disturbance it will really meet.
+
+    A recipe that names no wrench does not go undisturbed. The validator derives
+    one from the object's weight and size, so this mirrors that derivation
+    exactly -- reading only ``rollout_kwargs`` would silently score such a hand
+    at zero and report that the frozen test passed, when the protocol had in
+    fact disturbed it all along.
     """
     recipe = generator["build_release_grasp_recipe"](generator["profile_of_hand"](hand))
     wrench = recipe.rollout_kwargs.get("perturbation_wrench")
-    if wrench is None:
-        return 0.0
-    return float(np.linalg.norm(np.asarray(wrench, dtype=np.float64)))
+    if wrench is not None:
+        return float(np.linalg.norm(np.asarray(wrench, dtype=np.float64)))
+
+    # Mirrors validators/mujoco_rollout.py: force 0.5 * weight, torque
+    # 0.25 * weight * characteristic length.
+    mass = float(recipe.rollout_kwargs.get("object_mass", TARGET_MASS_KG))
+    weight = mass * 9.81
+    geoms = recipe.target_geoms
+    characteristic_length = max(
+        (2.0 * float(np.max(np.asarray(geom.size, dtype=np.float64))) for geom in geoms),
+        default=0.05,
+    )
+    force = 0.5 * weight
+    torque = 0.25 * weight * characteristic_length
+    return float(np.linalg.norm(np.array([force, force, 0.0, torque, torque, torque])))
 
 
 def environment_assisted_arm(hand: str, generate_one, wall_factory) -> list[dict[str, Any]]:
