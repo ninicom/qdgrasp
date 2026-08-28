@@ -1,0 +1,46 @@
+{
+  "capability": {
+    "contact_force_readable": true,
+    "missing_contact_fields": [],
+    "overflow_telemetry": {
+      "buffer_overflow": false,
+      "class_counts": {},
+      "contact_count": 0,
+      "max_contact_count": 0,
+      "stream_truncated": false,
+      "unavailable_fields": []
+    },
+    "required_contact_fields": [
+      "dist",
+      "pos",
+      "frame",
+      "geom",
+      "efc_address"
+    ],
+    "verdict": "supported",
+    "warp_available": true
+  },
+  "parity": {
+    "full_trajectory": {
+      "capsules_exported": 4,
+      "disagreeing_worlds": [],
+      "every_survivor_has_a_capsule": true,
+      "outcome_classes_agree": true,
+      "passed": true,
+      "survivors": 4,
+      "worlds": 4
+    },
+    "no_contact": {
+      "max_qpos_delta": 5.754912518751709e-10,
+      "passed": true,
+      "tolerance": 0.0001
+    },
+    "passed": false,
+    "single_contact": {
+      "impulse_rtol": 0.2,
+      "max_object_delta_m": 0.008391992042143692,
+      "passed": false,
+      "tolerance_m": 0.002
+    }
+  }
+}

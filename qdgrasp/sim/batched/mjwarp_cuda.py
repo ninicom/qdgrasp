@@ -520,12 +520,24 @@ class MjWarpCudaBackend:
         elif not invalid and telemetry.unavailable_fields:
             invalid, reason = True, "truncated_contact_stream"
 
-        peak = {
-            "max_object_speed_mps": float(np.max(np.abs(state.object_velocity[index])))
-        }
+        # A world that went non-finite is a measurement, not a crash. The
+        # summary contract refuses to hold a NaN -- correctly -- so the producer
+        # has to reject the world instead of handing one over. On CPU no world
+        # ever goes non-finite, so only a real device surfaces this.
+        peak: dict[str, float] = {}
+        speed = float(np.max(np.abs(state.object_velocity[index])))
+        if np.isfinite(speed):
+            peak["max_object_speed_mps"] = speed
+        elif not invalid:
+            invalid, reason = True, "non_finite_state"
+
         forces = self._peak_contact_force
-        if forces is not None and forces.size:
-            peak["peak_normal_force_N"] = float(forces[index]) if forces.size > index else 0.0
+        if forces is not None and forces.size > index:
+            force = float(forces[index])
+            if np.isfinite(force):
+                peak["peak_normal_force_N"] = force
+            elif not invalid:
+                invalid, reason = True, "non_finite_state"
         return RolloutSummary(
             world_index=index,
             steps_executed=0 if invalid else horizon,

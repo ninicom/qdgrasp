@@ -558,3 +558,57 @@ def test_a_build_with_no_constraint_force_at_all_is_still_refused(model) -> None
     backend = _gpu_backend_stub(warp_data=_StubWarpData(fields), model=model)
     assert backend.missing_contact_fields() == ("constraint_force",)
     assert backend.read_contact_forces() is None
+
+
+def test_a_non_finite_world_is_rejected_not_handed_to_the_contract(model) -> None:
+    """A NaN world is a measurement, not a crash.
+
+    The summary contract refuses to hold a non-finite metric, which is right --
+    but the producer was computing one anyway, so a single NaN world aborted the
+    whole rollout with WorldRejected instead of being recorded. On CPU no world
+    ever goes non-finite, so only a real device surfaced this.
+    """
+    warp_data = _StubWarpData(
+        {
+            "dist": np.zeros(1),
+            "pos": np.zeros((1, 3)),
+            "frame": np.zeros((1, 9)),
+            "geom": np.zeros((1, 2)),
+            "efc_address": np.array([0]),
+        },
+        efc_force=np.array([3.0]),
+    )
+    backend = _gpu_backend_stub(warp_data=warp_data, model=model)
+    velocity = np.zeros((2, 1, 6))
+    velocity[0, 0, 0] = np.nan
+    state = BackendState(
+        qpos=np.zeros((2, 3)),
+        qvel=np.zeros((2, 3)),
+        object_pose=np.zeros((2, 1, 7)),
+        object_velocity=velocity,
+        contact_counts=np.ones(2, dtype=int),
+    )
+
+    summary = backend._summarise(0, state, horizon=10)
+    assert summary.hard_reject is True
+    assert summary.failure_reason == "non_finite_state"
+    # The unknown quantity is omitted rather than reported as a number.
+    assert "max_object_speed_mps" not in summary.peak_safety_metrics
+
+    healthy = backend._summarise(1, state, horizon=10)
+    assert healthy.hard_reject is False
+    assert healthy.peak_safety_metrics["max_object_speed_mps"] == 0.0
+
+
+def test_the_cpu_oracle_rejects_a_non_finite_world_the_same_way(model, backend) -> None:
+    backend.reset([request(0)])
+    backend.rollout(np.full((1, 5, 1), 0.1))
+    state = backend.observe()
+    velocity = np.array(state.object_velocity)
+    velocity[0, 0, 0] = np.nan
+    poisoned = dataclasses.replace(state, object_velocity=velocity)
+
+    summary = backend._summarise(0, poisoned, horizon=5)
+    assert summary.hard_reject is True
+    assert summary.failure_reason == "non_finite_state"
+    assert "max_object_speed_mps" not in summary.peak_safety_metrics

@@ -455,19 +455,27 @@ class MuJoCoCpuBackend:
         reason = self._invalid_reason.get(index, "world_rejected") if invalid else "none"
         observer = self._observers.get(index)
 
-        objective: dict[str, float] = {
-            "object_displacement_m": float(
-                np.linalg.norm(state.object_pose[index, 0, :3] - self._start_pose[index])
-            )
+        displacement = (
+            float(np.linalg.norm(state.object_pose[index, 0, :3] - self._start_pose[index]))
             if self._start_pose.size and state.object_pose.shape[1]
-            else 0.0,
-            "steps": float(0 if invalid else horizon),
-        }
-        peak: dict[str, float] = {
-            "max_object_speed_mps": float(np.max(np.abs(state.object_velocity[index])))
+            else 0.0
+        )
+        speed = (
+            float(np.max(np.abs(state.object_velocity[index])))
             if state.object_velocity.shape[1]
-            else 0.0,
-        }
+            else 0.0
+        )
+        # The summary contract refuses to hold a non-finite metric, so a world
+        # that produced one is rejected here rather than handed over to raise.
+        if not (np.isfinite(displacement) and np.isfinite(speed)) and not invalid:
+            invalid, reason = True, "non_finite_state"
+
+        objective: dict[str, float] = {"steps": float(0 if invalid else horizon)}
+        if np.isfinite(displacement):
+            objective["object_displacement_m"] = displacement
+        peak: dict[str, float] = {}
+        if np.isfinite(speed):
+            peak["max_object_speed_mps"] = speed
         cumulative: dict[str, float] = {}
         class_counts: dict[str, int] = {}
         unavailable: tuple[str, ...] = ()

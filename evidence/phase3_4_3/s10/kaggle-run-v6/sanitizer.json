@@ -1,0 +1,35 @@
+{
+  "initcheck": {
+    "head": [
+      "========= COMPUTE-SANITIZER",
+      "========= Uninitialized __global__ memory read of size 4 bytes",
+      "=========     at _linesearch_iterative_kernel__locals__kernel_cbb38e10_cuda_kernel_forward+0x7890",
+      "=========     by thread (25,0,0) in block (0,0,0)",
+      "=========     Address 0x12927f4734",
+      "=========     Saved host backtrace up to driver entry point at kernel launch time",
+      "=========         Host Frame: wp_cuda_launch_kernel [0xb51ca4] in warp.so",
+      "=========         Host Frame: launch in context.py:10878",
+      "=========         Host Frame: launch_tiled in context.py:10970",
+      "=========         Host Frame: _linesearch_iterative in solver.py:1328",
+      "=========         Host Frame: _linesearch in solver.py:1514",
+      "=========         Host Frame: wrapper in warp_util.py:97",
+      "=========         Host Frame: _solver_iteration in solver.py:3784",
+      "=========         Host Frame: wrapper in warp_util.py:97",
+      "=========         Host Frame: capture_while in context.py:12494",
+      "=========         Host Frame: _solve in solver.py:3992",
+      "=========         Host Frame: solve in solver.py:3952",
+      "=========         Host Frame: wrapper in warp_util.py:97",
+      "=========         Host Frame: forward in forward.py:1359",
+      "=========         Host Frame: wrapper in warp_util.py:97"
+    ],
+    "lines": 1043
+  },
+  "racecheck": {
+    "head": [
+      "========= COMPUTE-SANITIZER",
+      "========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)"
+    ],
+    "lines": 2
+  },
+  "tool_available": true
+}
