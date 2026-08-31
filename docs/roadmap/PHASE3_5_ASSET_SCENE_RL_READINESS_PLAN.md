@@ -2,10 +2,10 @@
 document_id: ROADMAP-P3.5-001
 document_type: plan
 title: Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
-version: 1.4.0
+version: 1.5.0
 status: active
 date: 2026-08-31
-revises: ROADMAP-P3.5-001@1.3.0
+revises: ROADMAP-P3.5-001@1.4.0
 related_plan: ROADMAP-P3.3-001
 depends_on:
   - ROADMAP-P2-001
@@ -553,6 +553,20 @@ Spike phải kiểm riêng LEAP và Allegro:
 
 Candidate A chỉ thắng nếu **2/2 active hand** pass. Shadow mang trạng thái
 `paused_by_ADR-0008`, không được ghi như một pass; vẫn cấm fallback CPU im lặng.
+
+**Bằng chứng có trước về candidate A (không phải spike của P3.5).**
+`REV-20260828-014` đã chạy compatibility spike MJWarp trên Kaggle T4 thật cho
+workload contact-rich của P3.4.3 và kết luận đo được: **không version
+`mujoco-warp` nào trong `3.10.0.3–3.12.0` sạch trên `warp-lang` 1.16.0**, và
+1.16.0 là bản mới nhất tồn tại. Defect nằm ở mức kernel của solver
+(`initcheck` báo uninitialized read trong `_linesearch_iterative_kernel`, kèm
+world đi non-finite), tức là thuộc về backend chứ không thuộc về workload.
+
+Ghi lại ở đây để phiên sau không phải tìm lại, **không** phải để thay cho spike
+của P3.5. Hai lý do: workload khác (contact-rich search so với RL stepping), và
+§13.6 yêu cầu một backend được **chọn**, mà loại bỏ candidate A không chọn được
+gì. Nếu spike P3.5 tái lập kết quả này thì candidate B (§7.3) là đường còn lại,
+và P3.5-15 chỉ đóng khi có một candidate pass 2/2 active hand đo được.
 
 ### 7.3 ManiSkill spike — candidate B
 
