@@ -96,7 +96,7 @@ if not ASSETS_DIR.is_dir():
     ASSETS_DIR.parent.mkdir(parents=True, exist_ok=True)
     run("git", "clone", "--filter=blob:none", "https://github.com/google-deepmind/mujoco_menagerie.git", ASSETS_DIR)
 run("git", "-C", ASSETS_DIR, "checkout", "--detach", MENAGERIE_REVISION)
-os.environ["QDGRASP_ROBOT_ASSETS"] = str(ASSETS_DIR.parent)
+os.environ["QDGRASP_ROBOT_ASSETS_ROOT"] = str(ASSETS_DIR.parent)
 sys.path.insert(0, str(REPO_DIR))
 os.chdir(REPO_DIR)
 
