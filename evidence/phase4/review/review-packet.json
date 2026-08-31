@@ -6,9 +6,9 @@
       "sha256": "710b34857c35054160cbd7426ffc87dd4b1d0046fd95928f85c25b52ef7323e9"
     },
     {
-      "bytes": 6569,
+      "bytes": 7177,
       "path": "docs/roadmap/PHASE4_REVIEWER_GUIDE.md",
-      "sha256": "c548c9f7e3e7bda13bee0397a25babd69b729fb184d13df919afd6407a9a8b56"
+      "sha256": "dfc56f4693509de0efe3a13e259a21ca43e8091a2246025b3456465293983838"
     },
     {
       "bytes": 19112,
@@ -96,9 +96,9 @@
       "sha256": "f683fe7a833eed4da4e16918ee201dc6a6ae1ae9d2c1b9af0141ec6c90489f83"
     },
     {
-      "bytes": 8450,
+      "bytes": 10707,
       "path": "tests/model_flow/test_phase4_gate.py",
-      "sha256": "2b2a642523a199811ff1e32694911d3a5e89b0a8f375dc81ba8473935c511085"
+      "sha256": "cdebd90c8a233ac84680b0644e6140283560edca4bad373fc40d69b8f63b5f2d"
     },
     {
       "bytes": 8330,
@@ -118,9 +118,9 @@
   ],
   "branch": "feature/mvp-grasp-policy",
   "claim": "The architecture trains. That is the whole claim. ROADMAP-P4-001 \u00a77 forbids citing any number here as a grasping result, and the reviewer is asked to check that no document does.",
-  "commit": "11c935c6ca205e19f8106fe62bb77e8676963a11",
+  "commit": "50440671b1dc71ee5e88db1206d61e829a1fffa7",
   "complete": true,
-  "created_at": "2026-08-31T11:54:37.092273+00:00",
+  "created_at": "2026-08-31T12:04:12.511004+00:00",
   "gate_command": "python scripts/check_phase4.py --profile micro",
   "gate_expected_exit": 1,
   "gate_expected_note": "The gate is expected to exit 1 while P4-11b and P4-12 are open. An exit of 0 without CUDA evidence and a signed review means the gate was widened, not that the phase finished.",
@@ -205,7 +205,7 @@
       "robot": "leap_hand.yaml"
     }
   ],
-  "packet_digest": "017f900c124f3404b053845841d2274c4d5be571292829e4dd78d311eeeafb7a",
+  "packet_digest": "fde6195d65dd52920c14404b810d9693b4eeba1944599c654d65a1c3a4ef7d17",
   "phase": "P4",
   "plan": "ROADMAP-P4-001",
   "review_scope": [
