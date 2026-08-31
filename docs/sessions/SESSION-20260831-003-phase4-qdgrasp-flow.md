@@ -60,7 +60,7 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 | E-04 | evidence | `evidence/phase4/overfit-{leap,allegro}-cpu.json` | commit `9583faf` |
 | E-05 | gate | `scripts/check_phase4.py --profile micro` | 12/14 delivered, exit 1 |
 | E-06 | harness | `scripts/phase4_cuda_gate.py`, `notebooks/phase4_cuda_gate.ipynb` | pin `9583faf` |
-| E-07 | review | `evidence/phase4/review/review-packet.json` | digest `24556a1849607349ebf2b0e25b5f082673be47a3b5f006f2e8d0b129e993d83b` tại `93b330f` |
+| E-07 | review | `evidence/phase4/review/review-packet.json` | `packet_digest` và `commit` nằm trong chính packet |
 
 ## Kiểm tra đã chạy
 
@@ -163,9 +163,12 @@ trạng thái mà `SESSION-20260831-001` và `-002` ghi.
    và lưu kết quả vào `evidence/phase4/cuda-<gpu>-<ngày>.json` — đó là chỗ
    `check_phase4.py` tìm nó. Đầu vào duy nhất hợp lệ cho P4-11b.
 4. Chỉ định reviewer độc lập cho P4-12, theo
-   `docs/roadmap/PHASE4_REVIEWER_GUIDE.md`. Packet đã sinh ở worktree sạch:
-   digest `24556a1849607349ebf2b0e25b5f082673be47a3b5f006f2e8d0b129e993d83b`
-   tại commit `93b330f`, 22 artifact, `complete: true`, `verdict: null`.
+   `docs/roadmap/PHASE4_REVIEWER_GUIDE.md`. Packet đã sinh ở worktree sạch với
+   22 artifact, `complete: true`, `verdict: null`. Digest và commit của nó nằm
+   trong chính `evidence/phase4/review/review-packet.json`, và chỉ ở đó: chép
+   digest sang tài liệu khác thì mỗi lần sinh lại packet sẽ để lại một bản sao
+   sai ở nơi khác. Sinh lại bằng `python scripts/phase4_review_packet.py` và ký
+   trên digest của bản có `worktree_clean: true`.
 
 ### Việc tiếp theo trong repo
 
