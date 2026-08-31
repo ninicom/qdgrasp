@@ -48,7 +48,18 @@ Packet ghi `commit`, `worktree_clean`, hash của 23 artifact bắt buộc, ph�
 kiểm theo §7, và `known_absent` — bằng chứng plan yêu cầu nhưng máy tạo packet
 không sinh được. Verdict luôn `null`.
 
-Chỉ ký trên `packet_digest` của một packet có `worktree_clean: true`.
+Chỉ ký trên `packet_digest` của một packet có `worktree_clean: true`. Việc kiểm
+cơ học — "packet này có đúng đang mô tả cây tôi vừa checkout không" — là **một**
+lệnh, không phải hash tay 23 file:
+
+```bash
+python scripts/phase4_review_packet.py --verify evidence/phase4/review/review-packet.json
+```
+
+Nó băm lại từng artifact, dựng lại `packet_digest` từ chính nội dung packet, và
+từ chối nếu cây bẩn hoặc nếu packet đã mang sẵn verdict. Một dòng `NOTE` về
+commit là bình thường: packet ghi commit mà nó băm, rồi mới được commit vào sau.
+Bất kỳ dòng `MISMATCH` nào thì **không ký**.
 
 ## 3. Lệnh tái lập
 

@@ -201,3 +201,56 @@ def test_the_refusal_record_this_machine_produced_does_not_count(gate) -> None:
     measured, rejected = gate._cuda_records(REPO_ROOT)
     assert measured == []
     assert any("cuda-refused-devmachine" in item for item in rejected)
+
+
+# -- P4-12: the reviewer's mechanical check --------------------------------
+
+
+@pytest.fixture(scope="module")
+def packet_script():
+    return _load("phase4_review_packet")
+
+
+def test_verify_accepts_the_committed_packet_on_a_clean_tree(packet_script) -> None:
+    """The one command a reviewer runs before signing."""
+
+    path = REPO_ROOT / "evidence/phase4/review/review-packet.json"
+    ok, findings = packet_script.verify_packet(path)
+    mismatches = [item for item in findings if not item.startswith("packet records commit")]
+    assert not mismatches, mismatches
+    assert ok
+
+
+def test_verify_refuses_a_packet_whose_artifact_moved(packet_script, tmp_path: Path) -> None:
+    source = REPO_ROOT / "evidence/phase4/review/review-packet.json"
+    packet = json.loads(source.read_text(encoding="utf-8"))
+    packet["artifacts"][0]["sha256"] = "0" * 64
+    forged = tmp_path / "review-packet.json"
+    forged.write_text(json.dumps(packet), encoding="utf-8")
+    ok, findings = packet_script.verify_packet(forged)
+    assert not ok
+    assert any("does not match the packet" in item for item in findings)
+
+
+def test_verify_refuses_a_packet_that_already_carries_a_verdict(packet_script, tmp_path: Path) -> None:
+    """A packet is the material a verdict is written against, not its container."""
+
+    source = REPO_ROOT / "evidence/phase4/review/review-packet.json"
+    packet = json.loads(source.read_text(encoding="utf-8"))
+    packet["verdict"] = "pass"
+    forged = tmp_path / "review-packet.json"
+    forged.write_text(json.dumps(packet), encoding="utf-8")
+    ok, findings = packet_script.verify_packet(forged)
+    assert not ok
+    assert any("already carries a verdict" in item for item in findings)
+
+
+def test_verify_refuses_a_packet_whose_digest_was_edited(packet_script, tmp_path: Path) -> None:
+    source = REPO_ROOT / "evidence/phase4/review/review-packet.json"
+    packet = json.loads(source.read_text(encoding="utf-8"))
+    packet["claim"] = "the model achieves state of the art"
+    forged = tmp_path / "review-packet.json"
+    forged.write_text(json.dumps(packet), encoding="utf-8")
+    ok, findings = packet_script.verify_packet(forged)
+    assert not ok
+    assert any("does not match its own contents" in item for item in findings)

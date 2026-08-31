@@ -222,10 +222,77 @@ def build_packet() -> dict[str, Any]:
     return packet
 
 
+def verify_packet(path: Path) -> tuple[bool, list[str]]:
+    """Re-hash the tree against a packet a reviewer was handed.
+
+    The reviewer's mechanical job -- "is this packet really describing the tree
+    I checked out" -- should be one command, not twenty-three by hand.  A
+    mismatch here means the packet and the working tree are not the same thing,
+    and nothing signed against it would mean what it appears to mean.
+    """
+
+    packet = json.loads(path.read_text(encoding="utf-8"))
+    problems: list[str] = []
+    notes: list[str] = []
+
+    # A packet records the commit whose content it hashed, and is then committed
+    # itself, so its recorded commit is normally one behind HEAD.  That is not a
+    # problem -- the artifact hashes below are the substantive check -- but a
+    # reviewer should be told rather than left to wonder.
+    recorded = packet.get("commit")
+    current = _git("rev-parse", "HEAD")
+    if recorded != current:
+        notes.append(f"packet records commit {recorded}; the tree is at {current}. The hashes below are what matters.")
+    if _git("status", "--porcelain") != "":
+        problems.append("the working tree is dirty; a packet may only be signed against a clean one")
+
+    for artifact in packet.get("artifacts", []):
+        target = REPO_ROOT / artifact["path"]
+        if not target.is_file():
+            problems.append(f"{artifact['path']}: listed in the packet but missing from the tree")
+            continue
+        actual = _sha256(target)
+        if actual != artifact["sha256"]:
+            problems.append(f"{artifact['path']}: sha256 {actual} does not match the packet's {artifact['sha256']}")
+
+    expected = _canonical_digest(
+        {key: value for key, value in packet.items() if key not in {"created_at", "packet_digest"}}
+    )
+    recorded_digest = packet.get("packet_digest")
+    if expected != recorded_digest:
+        problems.append(f"packet_digest {recorded_digest} does not match its own contents ({expected})")
+
+    if packet.get("verdict") is not None:
+        problems.append("this packet already carries a verdict; a packet is the material a verdict is written against")
+
+    return not problems, notes + problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "evidence/phase4/review")
+    parser.add_argument(
+        "--verify",
+        type=Path,
+        default=None,
+        metavar="PACKET",
+        help="re-hash the tree against an existing packet instead of building one",
+    )
     args = parser.parse_args(argv)
+
+    if args.verify is not None:
+        ok, findings = verify_packet(args.verify)
+        print(f"verifying {args.verify}")
+        for finding in findings:
+            label = "NOTE     " if finding.startswith("packet records commit") else "MISMATCH "
+            print(f"  {label} {finding}")
+        if ok:
+            print("\nEvery artifact hash, the commit and the packet digest match this tree.")
+            print("The packet carries no verdict, which is what you are here to supply.")
+            return 0
+        mismatches = [item for item in findings if not item.startswith("packet records commit")]
+        print(f"\n{len(mismatches)} mismatch(es). Do not sign this packet: it does not describe this tree.")
+        return 1
 
     packet = build_packet()
     args.out.mkdir(parents=True, exist_ok=True)
