@@ -185,21 +185,33 @@ def _micro_checks() -> list[PackageResult]:
     return results
 
 
-def _outstanding() -> list[PackageResult]:
+def _outstanding(root: Path) -> list[PackageResult]:
     """Packages that cannot be closed from this machine, stated as such."""
 
+    harness = root / "scripts/phase3_5_gpu_rl_readiness.py"
+    notebook = root / "notebooks/phase3_5_rl_readiness.ipynb"
     return [
         PackageResult(
-            "P3.5-13/14/15",
-            "GPU backend compatibility spike and decision record",
+            "P3.5-13/14",
+            "GPU backend spike harness",
+            STATUS_DELIVERED if harness.is_file() else STATUS_OPEN,
+            (
+                f"{harness} present; it refuses a CUDA label without CUDA and will not emit a number it did not measure"
+                if harness.is_file()
+                else "harness missing"
+            ),
+        ),
+        PackageResult(
+            "P3.5-15",
+            "backend decision record",
             STATUS_BLOCKED,
             "needs a real CUDA run on Kaggle/Colab; §7 forbids choosing a backend without measured 2-hand parity",
         ),
         PackageResult(
             "P3.5-16",
-            "Kaggle/Colab harness with checkpoint and resume",
-            STATUS_OPEN,
-            "not built",
+            "Kaggle/Colab harness with resume",
+            STATUS_DELIVERED if notebook.is_file() else STATUS_OPEN,
+            f"{notebook} present" if notebook.is_file() else "notebook missing",
         ),
         PackageResult(
             "P3.5-17",
@@ -216,11 +228,11 @@ def _outstanding() -> list[PackageResult]:
     ]
 
 
-def run_checks(profile: str) -> list[PackageResult]:
+def run_checks(profile: str, root: Path = Path(".")) -> list[PackageResult]:
     results = _import_checks()
     if profile == "micro":
         results.extend(_micro_checks())
-    results.extend(_outstanding())
+    results.extend(_outstanding(root))
     return results
 
 
@@ -229,9 +241,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--backend", default="mujoco-cpu", choices=["mujoco-cpu"])
     parser.add_argument("--profile", default="micro", choices=["micro", "contract"])
     parser.add_argument("--json", type=Path, default=None)
+    parser.add_argument("--root", type=Path, default=Path("."))
     args = parser.parse_args(argv)
 
-    results = run_checks(args.profile)
+    results = run_checks(args.profile, args.root)
     for result in results:
         marker = {STATUS_DELIVERED: "PASS", STATUS_OPEN: "OPEN", STATUS_BLOCKED: "BLOCKED"}[result.status]
         print(f"{marker:8s} [{result.package}] {result.title}: {result.detail}")

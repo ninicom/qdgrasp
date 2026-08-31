@@ -2,18 +2,21 @@
 document_id: ROADMAP-P3.5-001
 document_type: plan
 title: Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
-version: 1.2.0
+version: 1.3.0
 status: active
-date: 2026-08-29
-revises: ROADMAP-P3.5-001@1.1.0
+date: 2026-08-31
+revises: ROADMAP-P3.5-001@1.2.0
 related_plan: ROADMAP-P3.3-001
 depends_on:
   - ROADMAP-P2-001
   - ROADMAP-P3.3-001
 optional_dependencies:
   - ROADMAP-P3.4-001
-latest_revision_record: docs/revisions/REV-20260829-001-temporary-grasp-policy-mvp.md
-execution_priority: deferred_by_ROADMAP-MVP-001
+latest_revision_record: docs/revisions/REV-20260831-002-phase3-5-execution.md
+revision_reason: Thi công P3.5-01…16 sau khi MVP đóng; ghi trạng thái đo được của từng work package.
+necessity: N2
+impact: 16/19 mục của cổng delivered; P3.5-15/17/18 còn mở và phase giữ in_progress.
+execution_priority: active_after_ROADMAP-MVP-001
 active_hands:
   - leap_hand
   - wonik_allegro
@@ -27,12 +30,23 @@ gpu_evidence_targets:
 
 # Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
 
-> **Trạng thái thực thi tạm thời:** contract P3.5 vẫn `active` và còn nguyên giá
-> trị dài hạn, nhưng implementation mới được hạ ưu tiên bởi
-> [`ROADMAP-MVP-001`](GRASP_POLICY_MVP_TEMPORARY_PLAN.md). MVP chỉ dựng LEAP,
-> one-object table environment và state-based policy; nó không làm P3.5 pass.
-> Sau MVP, raw mesh/CoACD, scene load/generate/drop, two-hand vector environment,
-> backend parity và independent review tiếp tục từ tài liệu này.
+> **Trạng thái thực thi (2026-08-31):** `ROADMAP-MVP-001` đã đóng và P3.5 quay
+> lại hàng đợi. `SESSION-20260831-002` thi công P3.5-01…16:
+> `scripts/check_phase3_5.py --profile micro` báo **16/19 mục delivered** và trả
+> `1`. Đường sống asset → scene → drop → settle → reset/step chạy cho cả hai
+> active hand.
+>
+> Ba mục còn mở, và không mục nào đóng được từ máy phát triển:
+> **P3.5-15** cần một CUDA run thật (§7 cấm chọn backend khi chưa có parity hai
+> tay đo được; `ADR-0006` cấm CPU fallback làm bằng chứng CUDA);
+> **P3.5-17** cần một positive scripted fixture — fixture hiện tại chạy hết
+> horizon mà không gắp được, và đó là kết luận cấu trúc: descend-and-close không
+> bao được một hộp, cần grasp prior có pose giải IK và aperture đã fit;
+> **P3.5-18** cần reviewer độc lập.
+>
+> Harness cho hai mục đầu đã sẵn sàng:
+> `scripts/phase3_5_gpu_rl_readiness.py` và
+> `notebooks/phase3_5_rl_readiness.ipynb`.
 
 P3.5 biến object/scene artifact của P2–P3.3 thành một môi trường mô phỏng có thể
 reset/step theo contract học tăng cường. Đầu vào có thể là scene hoàn chỉnh,

@@ -18,6 +18,17 @@ inside the box for six consecutive control steps and trips the penetration
 barrier.  Ending a phase when the physics says its precondition is met is the
 same rule Phase 3.4's primitives use, and it is what makes one fixture valid for
 two hands.
+
+What this fixture does **not** do is complete an acquire.  Both active hands run
+the full episode without tripping a barrier, and neither ends up holding the
+target.  A seating phase -- continuing to descend past first contact so the
+fingers end up alongside the object rather than on top of it -- was measured and
+made things worse on both hands, so it is not in the spec.  The reason is
+structural rather than a matter of tuning: descend-and-close does not enclose a
+box, and a positive fixture needs a grasp prior with a solved pose and a fitted
+aperture, which is what the temporary MVP had to build for one hand.  That is
+the work ``P3.5-17`` is waiting on, and it is recorded here rather than hidden
+behind a fixture tuned until it looked convincing.
 """
 
 from __future__ import annotations

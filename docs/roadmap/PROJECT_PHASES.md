@@ -2,15 +2,15 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.29.0
+version: 1.30.0
 status: active
 date: 2026-08-31
-revises: ROADMAP-001@1.28.0
+revises: ROADMAP-001@1.29.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260831-001-grasp-policy-mvp-closure.md
-revision_reason: MVP-T đóng với ba tier pass; ghi kèm kết quả âm là phần học không cải thiện được controller prior.
+latest_revision_record: docs/revisions/REV-20260831-002-phase3-5-execution.md
+revision_reason: MVP-T đóng, và P3.5 được thi công tới 16/19 mục của cổng với ba mục còn mở.
 necessity: N2
-impact: Chỉ trạng thái MVP-T đổi; mọi gate và blocker của P0–P7 giữ nguyên.
+impact: Trạng thái MVP-T và P3.5 đổi; mọi gate và blocker của P0–P7 giữ nguyên.
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -236,9 +236,18 @@ tư thêm vào kiến trúc policy.
   `release_blocked=true` cho tới khi cả hai xong, và điều kiện bàn giao P4 nằm
   trong [`ROADMAP-P3.4.3-003`](PHASE3_4_3_HANDOFF.md).
 - Phase 3.5 ([`ROADMAP-P3.5-001`](PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md))
-  hiện **tạm hạ ưu tiên thực thi bởi `ROADMAP-MVP-001`**; contract bên dưới vẫn
-  là backlog dài hạn và không được coi là đã pass.
-  thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
+  đã quay lại hàng đợi sau khi MVP đóng và hiện **`in_progress`**:
+  `SESSION-20260831-002` thi công P3.5-01…16 và
+  `scripts/check_phase3_5.py --profile micro` báo 16/19 mục delivered, exit `1`.
+  Asset ingest, public CoACD API, `ObjectAssetManifestV2`, scene resolver,
+  virtual drop, settle certifier, RL contract, ba environment, fixture và
+  randomization đều có test; đường sống asset → scene → drop → settle →
+  reset/step chạy cho cả LEAP lẫn Allegro. Ba mục còn mở: **P3.5-15** backend
+  decision cần CUDA run thật, **P3.5-17** `QDGrasp-RL-Env-Tiny` cần positive
+  scripted fixture (fixture hiện tại chạy hết horizon không gắp được, và cần
+  grasp prior có pose giải IK chứ không phải tinh chỉnh), **P3.5-18** review độc
+  lập. Contract bên dưới vẫn là backlog dài hạn và không được coi là đã pass.
+  Phase này thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
   mesh được chuẩn hóa theo mét, tách visual/collision, rồi public Python CoACD
   API trong library tạo convex parts local-first trước immutable manifest. API
   được viết mới với full typed CoACD parameters; source
