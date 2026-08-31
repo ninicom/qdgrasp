@@ -1,0 +1,94 @@
+# Locked scope of the temporary Grasp Policy MVP (ROADMAP-MVP-001 §2).
+#
+# Every range here is frozen for the lifetime of the eval seeds.  Changing a
+# number changes `scope_hash`, which invalidates the locked evaluation manifest
+# and therefore requires a new MVP version and a revision record -- it is not a
+# tuning knob.
+schema: qdgrasp/mvp-scope/v0
+mvp_id: QDGrasp-DexAcquire-MVP-v0
+environment_id: QDGrasp-DexAcquire-MVP-v0
+artifact_id: QDGrasp-Leap-Grasp-MVP
+release_class: experimental_non_release
+robot_profile: leap_hand.yaml
+
+# One cuboid family.  `half_width` runs along the pinch axis and is the only
+# extent the controller prior is fitted over; `half_depth` varies independently
+# so a held-out variant is not merely an interpolation of a fitted curve.
+objects:
+  - {variant_id: cuboid_w090_d12, half_width: 0.0090, half_depth: 0.012, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w120_d15, half_width: 0.0120, half_depth: 0.015, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w150_d18, half_width: 0.0150, half_depth: 0.018, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w180_d12, half_width: 0.0180, half_depth: 0.012, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w210_d15, half_width: 0.0210, half_depth: 0.015, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w240_d18, half_width: 0.0240, half_depth: 0.018, half_height: 0.020, membership: train}
+  # Two interpolated between fitted knots, one below the fitted range and one
+  # above it, so Tier C exercises the clamp as well as the interpolation.
+  - {variant_id: cuboid_w075_d13, half_width: 0.0075, half_depth: 0.013, half_height: 0.020, membership: heldout}
+  - {variant_id: cuboid_w135_d16, half_width: 0.0135, half_depth: 0.016, half_height: 0.020, membership: heldout}
+  - {variant_id: cuboid_w195_d14, half_width: 0.0195, half_depth: 0.014, half_height: 0.020, membership: heldout}
+  - {variant_id: cuboid_w255_d17, half_width: 0.0255, half_depth: 0.017, half_height: 0.020, membership: heldout}
+
+randomization:
+  position_x: [-0.020, 0.020]
+  position_y: [-0.020, 0.020]
+  yaw: [-0.350, 0.350]
+  density: [300.0, 2400.0]
+  friction_slide: [0.10, 1.30]
+  drop_height: [0.002, 0.008]
+
+# 50 Hz control over a 500 Hz integrator.  `physics_substeps * control_hz` is
+# checked against the compiled model rather than assumed.
+episode:
+  control_hz: 50.0
+  physics_substeps: 10
+  settle_steps: 20
+  approach_steps: 25
+  enclose_steps: 30
+  lift_steps: 20
+  retain_steps: 30
+
+success:
+  lift_height_m: 0.050
+  retain_duration_s: 0.50
+  min_finger_groups: 2
+  max_penetration_m: 0.002
+  max_contact_force_n: 20.0
+  # Normal impulse delivered to the target within one control period; an
+  # impact limit, not a lifetime accumulation.
+  max_contact_impulse_ns: 0.500
+  support_clearance_m: 0.001
+  max_pose_jump_m: 0.050
+
+controller:
+  pregrasp_height_m: 0.080
+  lift_travel_m: 0.070
+  approach_closure: -0.80
+  grip_force_target_n: 4.0
+  grip_gain: 0.25
+  closure_min: 0.20
+  closure_rate_limit: 0.05
+
+action:
+  delta_xyz_m: 0.008
+  delta_rot_rad: 0.100
+  synergy_rad: 0.200
+  workspace_radius_m: 0.020
+
+reward:
+  approach_progress: 1.0
+  target_contact: 0.5
+  enclosure: 0.5
+  lift_progress: 4.0
+  retain_bonus: 2.0
+  penetration_penalty: 5.0
+  excess_force_penalty: 1.0
+  action_rate_penalty: 0.02
+  drop_penalty: 2.0
+  timeout_penalty: 1.0
+
+eval_tiers:
+  - {tier: A, episodes: 100, membership: train, randomized: false, min_success_rate: 0.95}
+  - {tier: B, episodes: 300, membership: train, randomized: true, min_success_rate: 0.85, min_wilson_lower_bound: 0.80}
+  - {tier: C, episodes: 200, membership: heldout, randomized: true, min_success_rate: 0.70}
+
+seed_root: QDGrasp-DexAcquire-MVP-v0/seeds/2026-08-31
