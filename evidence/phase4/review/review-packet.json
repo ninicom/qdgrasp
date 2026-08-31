@@ -6,19 +6,19 @@
       "sha256": "710b34857c35054160cbd7426ffc87dd4b1d0046fd95928f85c25b52ef7323e9"
     },
     {
-      "bytes": 5969,
+      "bytes": 6569,
       "path": "docs/roadmap/PHASE4_REVIEWER_GUIDE.md",
-      "sha256": "cf187fcdd70020bf5139cf54ce4b64939056546ff14fd052ce0d0aac617c500b"
+      "sha256": "c548c9f7e3e7bda13bee0397a25babd69b729fb184d13df919afd6407a9a8b56"
     },
     {
-      "bytes": 16615,
+      "bytes": 17841,
       "path": "docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md",
-      "sha256": "bc037deb72e5c38e5ba9a79682aae1fa04e048fad5f9e303ef1d5ccfcda6ab18"
+      "sha256": "b9a8df929a6cbf5ce4b1cc832464af7b6b4cfa358e8af9123d05a59fb548c724"
     },
     {
-      "bytes": 8296,
+      "bytes": 8507,
       "path": "docs/revisions/REV-20260831-003-phase4-architecture.md",
-      "sha256": "d091b67befef8fefd0533cc9748af2e75e51d19aedf338a1a4454b15f8fabca6"
+      "sha256": "83c2dde7191773d0be35f10e3951e9bd3f99963c2ce022e793938f1f66b36a24"
     },
     {
       "bytes": 7962,
@@ -66,9 +66,9 @@
       "sha256": "2f3b9b7a6585808694c3a90513fd77d2ee4f0f6a91e462ff99f80d77360764e9"
     },
     {
-      "bytes": 13052,
+      "bytes": 14826,
       "path": "scripts/check_phase4.py",
-      "sha256": "8d7c4fb4d73a5e3b29b85082f9bd309531a273542a6c7d92a0845578cd8986ee"
+      "sha256": "3f5e1ce6483320eff6bc8c8ecfc5d27b45bf19d4743ac9e1f7021806b55d9068"
     },
     {
       "bytes": 9464,
@@ -96,9 +96,9 @@
       "sha256": "f683fe7a833eed4da4e16918ee201dc6a6ae1ae9d2c1b9af0141ec6c90489f83"
     },
     {
-      "bytes": 5098,
+      "bytes": 8450,
       "path": "tests/model_flow/test_phase4_gate.py",
-      "sha256": "16becd404e20e819fcef075be39b671d3d23eaf136954f51871b534276ea74ac"
+      "sha256": "2b2a642523a199811ff1e32694911d3a5e89b0a8f375dc81ba8473935c511085"
     },
     {
       "bytes": 8330,
@@ -109,13 +109,18 @@
       "bytes": 8339,
       "path": "evidence/phase4/overfit-allegro-cpu.json",
       "sha256": "9b506fa6bcdf7a949b5afc159686100c6ef3ca92294a3e4f42e483c0b1d1829a"
+    },
+    {
+      "bytes": 1482,
+      "path": "evidence/phase4/cuda-refused-devmachine-20260831.json",
+      "sha256": "0b13d0e895c3f19d2b84e96507f7cd7393595691d6359c6011e00dbe284a4f01"
     }
   ],
   "branch": "feature/mvp-grasp-policy",
   "claim": "The architecture trains. That is the whole claim. ROADMAP-P4-001 \u00a77 forbids citing any number here as a grasping result, and the reviewer is asked to check that no document does.",
-  "commit": "943b96cff171ee5a5e6dc2702d75aa2c4cc4df1a",
+  "commit": "dcaff3c81570c558fd37413397418286882d8ef7",
   "complete": true,
-  "created_at": "2026-08-31T11:34:56.870997+00:00",
+  "created_at": "2026-08-31T11:48:55.169429+00:00",
   "gate_command": "python scripts/check_phase4.py --profile micro",
   "gate_expected_exit": 1,
   "gate_expected_note": "The gate is expected to exit 1 while P4-11b and P4-12 are open. An exit of 0 without CUDA evidence and a signed review means the gate was widened, not that the phase finished.",
@@ -124,7 +129,7 @@
       "artifact": "CUDA forward/backward, parity and memory evidence",
       "gate": "P4-11",
       "how_to_produce": "run notebooks/phase4_cuda_gate.ipynb on a Kaggle or Colab GPU runtime",
-      "reason": "no NVIDIA GPU on the machine that built this packet. ADR-0006 forbids a CPU run standing in for a CUDA one, and \u00a77.4/\u00a77.5 require a measured CUDA overfit and CPU/CUDA FP32 parity."
+      "reason": "no NVIDIA GPU on the machine that built this packet -- the probe in evidence/phase4/cuda-refused-devmachine-20260831.json records Intel integrated graphics, no /dev/nvidia nodes and a CPU-only torch build. ADR-0006 forbids a CPU run standing in for a CUDA one, and \u00a77.4/\u00a77.5 require a measured CUDA overfit and CPU/CUDA FP32 parity."
     }
   ],
   "missing_artifacts": [],
@@ -200,7 +205,7 @@
       "robot": "leap_hand.yaml"
     }
   ],
-  "packet_digest": "0c4047975333f0051484d0b2c3d7dc074f997f47f44b37c0bf8321c4e88f864d",
+  "packet_digest": "e0cce2c42e865a7ce4f050ebc778ba3b50f8c08a8784de27d8df7cb616f4b56b",
   "phase": "P4",
   "plan": "ROADMAP-P4-001",
   "review_scope": [
@@ -248,6 +253,11 @@
       "area": "CUDA gate",
       "question": "ABSENT -- the CUDA gate has not run; see known_absent. Does the harness refuse a CPU run rather than label it?",
       "where": "scripts/phase4_cuda_gate.py"
+    },
+    {
+      "area": "what the gate accepts as CUDA evidence",
+      "question": "can a refused or partial record satisfy P4-11b by existing? The committed refusal record is the test case: it must stay inert.",
+      "where": "scripts/check_phase4.py::_cuda_records, tests/model_flow/test_phase4_gate.py"
     },
     {
       "area": "scope of the claim",
