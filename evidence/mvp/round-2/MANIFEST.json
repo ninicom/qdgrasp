@@ -1,0 +1,81 @@
+{
+  "artifacts": [
+    {
+      "bytes": 5970,
+      "path": "closure.json",
+      "sha256": "1bf6314e2cee0e8df14baa19a97a89f1a5f3521b459c1f5d491954b9b81d4425"
+    },
+    {
+      "bytes": 31024,
+      "path": "demonstrations/dev/ledger.jsonl",
+      "sha256": "c556b4f0417a9edfaa04a9dc662d3a2f878621268ec1fe7e68d7ffe7b2ceafea"
+    },
+    {
+      "bytes": 447,
+      "path": "demonstrations/dev/summary.json",
+      "sha256": "4d222acbc550dccae3f1c12df2954a170584136137f9544f7b0126191b0ad4ba"
+    },
+    {
+      "bytes": 1305,
+      "path": "demonstrations/index.json",
+      "sha256": "0f73c1aa55fc0bf29b50bd97ad4e4a02bb17c565b8bce58ebd3d8e2e33020e1f"
+    },
+    {
+      "bytes": 104666,
+      "path": "demonstrations/train/ledger.jsonl",
+      "sha256": "0abde59fa88c03b8eba05d6be63799408f50ca5458fff8b91aa7f4df378bcbd3"
+    },
+    {
+      "bytes": 449,
+      "path": "demonstrations/train/summary.json",
+      "sha256": "d3c535723a0b837842d45e6ee0ea8b706431934970be94e0590e4d9271ac7901"
+    },
+    {
+      "bytes": 95357,
+      "path": "evaluation/controller_prior/tier-a.jsonl",
+      "sha256": "c3c574585d0cd9114ba1adee43b4cd1ad7caaa59e71648ec89a64d9d35fd98d5"
+    },
+    {
+      "bytes": 312374,
+      "path": "evaluation/controller_prior/tier-b.jsonl",
+      "sha256": "7a12d9a708d2977b872e94eceacf24028131a16c5c40ac8ffe8e80e32f125eea"
+    },
+    {
+      "bytes": 208363,
+      "path": "evaluation/controller_prior/tier-c.jsonl",
+      "sha256": "dfbb686b0ee0040a397e145d904d7ff177c71c93571d61bddddae4249cbcb66d"
+    },
+    {
+      "bytes": 2226,
+      "path": "evaluation/controller_prior.json",
+      "sha256": "9ed4f3f950a9217f2636e27817b3b810db0a78ca7004c149c388db55937cf652"
+    },
+    {
+      "bytes": 97728,
+      "path": "evaluation/ppo/tier-a.jsonl",
+      "sha256": "067c72d72fc9e21e34ff8a3dedd817a5650e72c02a1b1a2074e818196f181b21"
+    },
+    {
+      "bytes": 318705,
+      "path": "evaluation/ppo/tier-b.jsonl",
+      "sha256": "61d945e7d00dddf1213d62395bdaa8cc1d837ac26674e80578ddc85d0bdd9427"
+    },
+    {
+      "bytes": 212427,
+      "path": "evaluation/ppo/tier-c.jsonl",
+      "sha256": "bcbc4477a1d0b11c3cb7847d63bc9bcf84405f22f2d083ce33f2047e4aba310c"
+    },
+    {
+      "bytes": 2421,
+      "path": "evaluation/ppo.json",
+      "sha256": "f7f7ad1bef9377a4d54002c573e338ab4663f05c16d2ff6ecbd6f36331bff1e7"
+    },
+    {
+      "bytes": 24358,
+      "path": "policy/training-report.json",
+      "sha256": "24e3ec3b31cde67e36e62e7c3c1fe44ccf1ed4a444eea7b51ef7f158ba1c91a8"
+    }
+  ],
+  "schema": "qdgrasp/mvp-evidence-manifest/v0",
+  "source": "runs/mvp-round2"
+}

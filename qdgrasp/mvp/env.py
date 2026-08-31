@@ -124,6 +124,7 @@ class EpisodeResult:
     total_contact_impulse_ns: float
     max_step_impulse_ns: float
     support_assisted_terminal: bool
+    support_assisted_in_retain: bool
     invalid_state: bool
     safety_violation: bool
     reward_total: float
@@ -258,6 +259,13 @@ class DexAcquireMvpEnv:
         reference_mass, reference_inertia = self._reference[variant.variant_id]
         scale = self.setup.mass / reference_mass
         model.body_mass[indices.target_body] = self.setup.mass
+        # Inertia is linear in mass for fixed geometry, so one factor rescales
+        # both.  What is *not* automatic is everything MuJoCo derives from mass
+        # at compile time -- ``body_invweight0`` and friends, which scale the
+        # constraint solver's reference impedance.  Leaving them stale would
+        # give a heavy target the contact compliance of the reference mass,
+        # which is exactly the variation this environment randomises over, so
+        # the ``mj_setConst`` below is a correctness requirement, not hygiene.
         model.body_inertia[indices.target_body] = reference_inertia * scale
         # MuJoCo mixes a contact pair's friction by taking the elementwise
         # maximum, so randomising the target alone would be a no-op against the
@@ -267,6 +275,7 @@ class DexAcquireMvpEnv:
             model.geom_friction[geom_id, 0] = self.setup.friction_slide
 
         mujoco.mj_resetData(model, data)
+        mujoco.mj_setConst(model, data)
         command = self.prior.command(variant.half_width)
         self._command = command
         self._joint_lower = np.array([model.jnt_range[j, 0] for j in indices.hand_joint_ids], dtype=np.float64)
@@ -313,6 +322,7 @@ class DexAcquireMvpEnv:
         self._step_index = 0
         self._closure_bound = 1.0
         self._previous_action = np.zeros(self.scope.action.dimension, dtype=np.float64)
+        self._filtered_action = np.zeros(self.scope.action.dimension, dtype=np.float64)
         self._previous_target_pos = settled.copy()
         self._hold_steps = 0
         self._max_lift = 0.0
@@ -322,6 +332,7 @@ class DexAcquireMvpEnv:
         self._max_step_impulse = 0.0
         self._ever_contacted = False
         self._ever_lifted = False
+        self._support_assisted_in_retain = False
         self._invalid = False
         self._violation = False
         self._reward_total = 0.0
@@ -418,7 +429,12 @@ class DexAcquireMvpEnv:
         unit_action = np.clip(np.asarray(action, dtype=np.float64).reshape(-1), -1.0, 1.0)
         if unit_action.shape[0] != self.scope.action.dimension:
             raise ValueError(f"action must have {self.scope.action.dimension} entries, got {unit_action.shape[0]}")
-        residual = unit_action * self._action_scale
+        # Low-pass the residual before it becomes a command.  The policy still
+        # chooses freely every step; the interface simply refuses to slew the
+        # palm target at the control rate.
+        alpha = self.scope.action.residual_low_pass
+        self._filtered_action = (1.0 - alpha) * self._filtered_action + alpha * unit_action
+        residual = self._filtered_action * self._action_scale
 
         palm_pos, palm_rot, scheduled_closure, phase = self.prior_command(self._step_index)
         closure = self._regulate_closure(scheduled_closure)
@@ -474,15 +490,27 @@ class DexAcquireMvpEnv:
         if groups > 0:
             self._ever_contacted = True
         support_assisted = bool(self._contact["support"])
-        held = lift >= success.lift_height_m and not support_assisted and groups >= success.min_finger_groups
+        # ``ROADMAP-MVP-001`` §4 asks for the *height* to hold continuously for
+        # half a second, for at least two finger groups to be in contact at the
+        # end, and for the target not to be support-assisted during the retain
+        # window.  Those are three separate conditions.  Folding contact into
+        # the continuity counter -- as this did at first -- makes one step of
+        # contact chatter reset half a second of a perfectly good lift, and
+        # measured a third of a millimetre of palm jitter as a failed grasp.
+        held = lift >= success.lift_height_m
         if held:
             self._hold_steps += 1
             self._ever_lifted = True
         else:
             self._hold_steps = 0
+        if phase == 3 and support_assisted:
+            self._support_assisted_in_retain = True
+        # Reward retention only when the grasp is doing the work, so the
+        # shaping term cannot be earned by resting the target on the table.
+        rewarded_hold = held and not support_assisted and groups >= success.min_finger_groups
 
         reward, components = self._reward(
-            unit_action, lift, groups, step_penetration, step_force, held, previous_max_lift
+            unit_action, lift, groups, step_penetration, step_force, rewarded_hold, previous_max_lift
         )
         self._reward_total += reward
         for key, value in components.items():
@@ -597,6 +625,7 @@ class DexAcquireMvpEnv:
             and not off_table
             and self._hold_steps >= required_hold
             and groups >= success_spec.min_finger_groups
+            and not self._support_assisted_in_retain
             and not support_assisted
             and lift >= success_spec.lift_height_m
         )
@@ -631,6 +660,7 @@ class DexAcquireMvpEnv:
             total_contact_impulse_ns=self._impulse,
             max_step_impulse_ns=self._max_step_impulse,
             support_assisted_terminal=support_assisted,
+            support_assisted_in_retain=self._support_assisted_in_retain,
             invalid_state=self._invalid,
             safety_violation=self._violation,
             reward_total=self._reward_total,
@@ -698,6 +728,12 @@ class DexAcquireMvpEnv:
     @property
     def done(self) -> bool:
         return self._done
+
+    @property
+    def step_index(self) -> int:
+        """Control steps taken since ``reset``; the episode's own clock."""
+
+        return self._step_index
 
     def run_episode(
         self,

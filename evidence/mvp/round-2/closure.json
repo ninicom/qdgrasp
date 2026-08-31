@@ -1,0 +1,222 @@
+{
+  "checks": [
+    {
+      "detail": "scope_hash=a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9",
+      "name": "scope_loads",
+      "package": "MVP-00",
+      "passed": true
+    },
+    {
+      "detail": "experimental_non_release",
+      "name": "release_class_is_experimental",
+      "package": "MVP-00",
+      "passed": true
+    },
+    {
+      "detail": "eval_manifest_hash=cd94bb903cd3b88c342d4498e9e2f07c0f4afdbe2d8d6c2c5ee294e33346c37c",
+      "name": "eval_manifest_immutable",
+      "package": "MVP-00",
+      "passed": true
+    },
+    {
+      "detail": "[0.009, 0.012, 0.015, 0.018, 0.021, 0.024]",
+      "name": "prior_fits_train_widths",
+      "package": "MVP-01",
+      "passed": true
+    },
+    {
+      "detail": "held_out=[0.0075, 0.0135, 0.0195, 0.0255]",
+      "name": "prior_excludes_heldout_widths",
+      "package": "MVP-01",
+      "passed": true
+    },
+    {
+      "detail": "runs/mvp/demonstrations/index.json",
+      "name": "demonstration_index_present",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "index scope_hash=a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9",
+      "name": "demonstrations_match_locked_scope",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "393 episodes",
+      "name": "train_demonstrations_accepted",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "runs/mvp/demonstrations/train/ledger.jsonl",
+      "name": "train_generator_ledger_present",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "117 episodes",
+      "name": "dev_demonstrations_accepted",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "runs/mvp/demonstrations/dev/ledger.jsonl",
+      "name": "dev_generator_ledger_present",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "search_rescued=25, non_zero_residual_fraction=0.064",
+      "name": "expert_improves_on_the_prior",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "runs/mvp/policy/training-report.json",
+      "name": "training_report_present",
+      "package": "MVP-03",
+      "passed": true
+    },
+    {
+      "detail": "True",
+      "name": "bc_reload_parity",
+      "package": "MVP-03",
+      "passed": true
+    },
+    {
+      "detail": "0.067 >= 0.75",
+      "name": "bc_dev_success",
+      "package": "MVP-03",
+      "passed": false
+    },
+    {
+      "detail": "a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9",
+      "name": "fingerprint_matches_scope",
+      "package": "MVP-03",
+      "passed": true
+    },
+    {
+      "detail": "ppo_dev=0.107 bc_dev=0.067 promoted=True",
+      "name": "ppo_promotion_rule_respected",
+      "package": "MVP-04",
+      "passed": true
+    },
+    {
+      "detail": "safety_violation=3",
+      "name": "ppo_introduced_no_safety_violation",
+      "package": "MVP-04",
+      "passed": false
+    },
+    {
+      "detail": "bc.pt",
+      "name": "bc_rollback_retained",
+      "package": "MVP-04",
+      "passed": true
+    },
+    {
+      "detail": "runs/mvp/policy/ppo.pt",
+      "name": "candidate_checkpoint_exists",
+      "package": "MVP-04",
+      "passed": true
+    },
+    {
+      "detail": "evaluation/controller_prior.json",
+      "name": "controller_prior_measured",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "tier A 1.000 >= 0.9",
+      "name": "controller_prior_canonical_floor",
+      "package": "MVP-02",
+      "passed": true
+    },
+    {
+      "detail": "evaluation/ppo.json",
+      "name": "locked_evaluation_present",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "cd94bb903cd3b88c342d4498e9e2f07c0f4afdbe2d8d6c2c5ee294e33346c37c",
+      "name": "evaluation_matches_locked_manifest",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "checkpoint hash recorded in the evaluation report",
+      "name": "evaluated_checkpoint_is_the_candidate",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "16/100 = 0.160 (wilson 0.101) buckets={'contact_loss': 49, 'timeout': 35}",
+      "name": "tier_a_gate",
+      "package": "MVP-05",
+      "passed": false
+    },
+    {
+      "detail": "invalid=0 safety=0 reload=0",
+      "name": "tier_a_zero_invalid_and_safe",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "runs/mvp/evaluation/ppo/tier-a.jsonl",
+      "name": "tier_a_ledger",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "47/300 = 0.157 (wilson 0.120) buckets={'contact_loss': 34, 'drop': 24, 'excess_force': 7, 'timeout': 188}",
+      "name": "tier_b_gate",
+      "package": "MVP-05",
+      "passed": false
+    },
+    {
+      "detail": "invalid=0 safety=7 reload=0",
+      "name": "tier_b_zero_invalid_and_safe",
+      "package": "MVP-05",
+      "passed": false
+    },
+    {
+      "detail": "runs/mvp/evaluation/ppo/tier-b.jsonl",
+      "name": "tier_b_ledger",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "20/200 = 0.100 (wilson 0.066) buckets={'contact_loss': 16, 'drop': 27, 'excess_force': 5, 'timeout': 132}",
+      "name": "tier_c_gate",
+      "package": "MVP-05",
+      "passed": false
+    },
+    {
+      "detail": "invalid=0 safety=5 reload=0",
+      "name": "tier_c_zero_invalid_and_safe",
+      "package": "MVP-05",
+      "passed": false
+    },
+    {
+      "detail": "runs/mvp/evaluation/ppo/tier-c.jsonl",
+      "name": "tier_c_ledger",
+      "package": "MVP-05",
+      "passed": true
+    },
+    {
+      "detail": "notebooks/mvp_grasp_policy.ipynb",
+      "name": "cloud_runner_present",
+      "package": "MVP-06",
+      "passed": true
+    },
+    {
+      "detail": "docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md",
+      "name": "model_card_present",
+      "package": "MVP-07",
+      "passed": false
+    }
+  ],
+  "passed": false,
+  "schema": "qdgrasp/mvp-closure/v0"
+}

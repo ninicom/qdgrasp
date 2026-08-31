@@ -2,17 +2,17 @@
 document_id: PLAN-V2
 document_type: plan
 title: QDGrasp — thư viện dexterous grasp cộng đồng dưới AGPL-3.0
-version: 4.4.0
+version: 4.5.0
 status: active
 date: 2026-08-22
 approved_date: 2026-08-22
-revises: PLAN-V2@4.3.0
+revises: PLAN-V2@4.4.0
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260828-013-phase3-4-3-execution.md
-revision_reason: Thi công P3.4.3 phần CPU; ghi rõ hai điều kiện còn lại là CUDA gate trên Kaggle và review độc lập.
-necessity: N3
-impact: ContactRich v1 tiếp tục release-blocked; ContactRich-Active-Tiny tồn tại nhưng cũng release-blocked cho tới khi CUDA gate và reviewer độc lập xong. P4 static/offline không bị chặn.
+latest_revision_record: docs/revisions/REV-20260831-001-grasp-policy-mvp-closure.md
+revision_reason: Đóng Grasp Policy MVP tạm thời với artifact experimental_non_release và ghi kèm kết quả âm của phần học.
+necessity: N2
+impact: ContactRich v1 tiếp tục release-blocked; ContactRich-Active-Tiny cũng release-blocked cho tới khi CUDA gate và reviewer độc lập xong. P4 static/offline không bị chặn. MVP tạm thời đã đóng và không gỡ blocker nào.
 ---
 
 # QDGrasp — kế hoạch triển khai chính thức
@@ -46,6 +46,14 @@ Thi công theo `docs/roadmap/PHASE3_4_3_EXECUTION_BREAKDOWN.md`. Phần CPU đã
 xong với code, test và evidence; gate CUDA chạy trên Kaggle T4 và review độc
 lập vẫn là hai điều kiện còn lại, nên `QDGrasp-ContactRich-Active-Tiny` giữ
 `release_blocked=true` và loader public từ chối nó theo mặc định.
+
+Đường thực thi ưu tiên tạm thời `docs/roadmap/GRASP_POLICY_MVP_TEMPORARY_PLAN.md`
+đã đóng ngày 2026-08-31 (`REV-20260831-001`). Nó tạo ra
+`QDGrasp-Leap-Grasp-MVP`, một checkpoint `experimental_non_release` đạt cả ba
+tier trong phạm vi LEAP + một cuboid trên bàn + quan sát state. Nó **không** gỡ
+blocker nào ở trên, và số của nó không phải bằng chứng release hay bằng chứng
+GPU physics. Kết quả âm cần ghi kèm: trong phạm vi đó, controller prior một mình
+đã đạt cùng mức, nên MVP không chứng minh giá trị của phần học.
 
 ## 1. Mục tiêu và quyết định nền
 

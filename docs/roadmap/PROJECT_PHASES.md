@@ -2,12 +2,15 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.28.0
+version: 1.29.0
 status: active
-date: 2026-08-29
-revises: ROADMAP-001@1.27.0
+date: 2026-08-31
+revises: ROADMAP-001@1.28.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260829-001-temporary-grasp-policy-mvp.md
+latest_revision_record: docs/revisions/REV-20260831-001-grasp-policy-mvp-closure.md
+revision_reason: MVP-T đóng với ba tier pass; ghi kèm kết quả âm là phần học không cải thiện được controller prior.
+necessity: N2
+impact: Chỉ trạng thái MVP-T đổi; mọi gate và blocker của P0–P7 giữ nguyên.
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -29,11 +32,26 @@ Mục tiêu là tạo trước một policy **LEAP + one-object-on-table + state
 chạy end-to-end và đạt locked-eval success cao, bằng controller prior, behavior
 cloning và residual PPO. Artifact chỉ là `experimental_non_release`.
 
+**Đã đóng 2026-08-31** (`REV-20260831-001`). Trên seed đã khóa, sau checkpoint
+reload: Tier A `100/100`, Tier B `284/300 = 94.7%` (Wilson `91.5%`), Tier C
+`187/200 = 93.5%` (Wilson `89.2%`), với `invalid_state=0`,
+`safety_violation=0`, `checkpoint_reload_mismatch=0`. Bằng chứng tại
+`evidence/mvp/round-3/`, model card tại
+`docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md`.
+
+Kết quả âm đi kèm phải được đọc cùng: **phần học không cải thiện được controller
+prior**. Prior đo `100/100`, `284/300`, `188/200` trên đúng seed đó; Tier A và B
+trùng đến từng episode và Tier C kém prior một episode. Residual trung bình của
+policy là `0.0039` đơn vị action. Trong phạm vi hẹp này một pinch prior có bù
+lực nắm đã đủ, nên MVP **không** chứng minh giá trị của phần học và không được
+trích dẫn như vậy.
+
 Roadmap tám phase bên dưới vẫn là backlog correctness/release chuẩn. Việc đổi
 ưu tiên không đóng gate cũ, không hợp thức hóa artifact release-blocked và không
-tạo claim multi-hand/generalization. Sau khi MVP đạt gate hoặc có failure
-evidence qua ba vòng tune, dự án quay lại roadmap này với thứ tự được điều chỉnh
-từ dữ liệu thực tế.
+tạo claim multi-hand/generalization. Thứ tự quay lại roadmap được đọc từ failure
+evidence của MVP theo §10 của plan đó: mở rộng miền cho tới khi prior thực sự
+hỏng — bỏ privileged pose, ra ngoài họ cuboid, rồi thêm Allegro — trước khi đầu
+tư thêm vào kiến trúc policy.
 
 ## Nhịp thực hiện
 
@@ -51,7 +69,7 @@ từ dữ liệu thực tế.
 
 | Phase | Mục tiêu chính | Artifact cuối phase | Gate chuyển phase | Trạng thái |
 | --- | --- | --- | --- | --- |
-| MVP-T — Grasp policy vertical slice | Ra sớm policy LEAP gắp một cuboid family trong MuJoCo CPU | `QDGrasp-Leap-Grasp-MVP` checkpoint + locked-eval ledger | Tier A `>=95%`, Tier B `>=85%` với Wilson lower bound `>=80%`, Tier C `>=70%`; zero invalid/safety violation | **active — temporary priority** |
+| MVP-T — Grasp policy vertical slice | Ra sớm policy LEAP gắp một cuboid family trong MuJoCo CPU | `QDGrasp-Leap-Grasp-MVP` checkpoint + locked-eval ledger | Tier A `>=95%`, Tier B `>=85%` với Wilson lower bound `>=80%`, Tier C `>=70%`; zero invalid/safety violation | **complete — experimental_non_release; gate đạt nhờ controller prior, phần học không đo được cải thiện** |
 | P0 — Foundation | Khóa scope, AGPL boundary, library package, environment, references và public repositories | Plan/ADR, wheel/sdist, environment locks, manifests và Kaggle harness riêng | Clean wheel import/CLI; CPU pass; CUDA hardware smoke pass; không có secret/RH56E2 trong active artifacts | complete |
 | P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | complete |
 | P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | complete |

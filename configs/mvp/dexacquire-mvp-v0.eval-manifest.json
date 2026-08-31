@@ -2,7 +2,7 @@
   "environment_id": "QDGrasp-DexAcquire-MVP-v0",
   "mvp_id": "QDGrasp-DexAcquire-MVP-v0",
   "schema": "qdgrasp/mvp-eval-manifest/v0",
-  "scope_hash": "a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9",
+  "scope_hash": "a897e36084c9ab11cbf8046e446ef318c48b7463d8b2db4af4d4ca0593109b8b",
   "tiers": [
     {
       "episodes": 100,

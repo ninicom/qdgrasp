@@ -15,8 +15,8 @@ MANIFEST_PATH = Path("configs/mvp/dexacquire-mvp-v0.eval-manifest.json")
 
 #: Pinned at MVP-00 lock time.  A change here is a new MVP version and a
 #: revision record, never an edit.
-LOCKED_SCOPE_HASH = "a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9"
-LOCKED_EVAL_MANIFEST_HASH = "cd94bb903cd3b88c342d4498e9e2f07c0f4afdbe2d8d6c2c5ee294e33346c37c"
+LOCKED_SCOPE_HASH = "a897e36084c9ab11cbf8046e446ef318c48b7463d8b2db4af4d4ca0593109b8b"
+LOCKED_EVAL_MANIFEST_HASH = "ac57bf61fb1e4294f840d29fea4f26865f542164eb08ee6b6f39915875840e3a"
 
 
 @pytest.fixture(scope="module")

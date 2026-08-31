@@ -73,6 +73,7 @@ action:
   delta_rot_rad: 0.100
   synergy_rad: 0.200
   workspace_radius_m: 0.020
+  residual_low_pass: 0.20
 
 reward:
   approach_progress: 1.0

@@ -1,0 +1,71 @@
+{
+  "all_tiers_passed": true,
+  "candidate": "ppo",
+  "checkpoint": "runs/mvp/policy/ppo.pt",
+  "checkpoint_sha256": "498d03ae6f062ed2e0801d2954f7334a579d5f4e61f69bd14874071d586bfa0d",
+  "fingerprint": {
+    "environment_id": "QDGrasp-DexAcquire-MVP-v0",
+    "eval_manifest_hash": "ac57bf61fb1e4294f840d29fea4f26865f542164eb08ee6b6f39915875840e3a",
+    "observation_schema": "qdgrasp/mvp-observation/v0",
+    "observation_schema_hash": "07bf6f5cce1852533ffbe32760742315002eb8801a1ce4c6394807c9c005dbfd",
+    "prior_hash": "ab96a87a275ec574568458f14a28c929828fcfada01ca8d6cf06f8c6a647be43",
+    "scope_hash": "a897e36084c9ab11cbf8046e446ef318c48b7463d8b2db4af4d4ca0593109b8b"
+  },
+  "schema": "qdgrasp/mvp-eval-report/v0",
+  "tiers": [
+    {
+      "checkpoint_reload_mismatch": 0,
+      "episodes": 100,
+      "failure_buckets": {},
+      "invalid_state": 0,
+      "ledger_path": "runs/mvp/evaluation/ppo/tier-a.jsonl",
+      "min_success_rate": 0.95,
+      "min_wilson_lower_bound": null,
+      "passed": true,
+      "safety_violation": 0,
+      "success_rate": 1.0,
+      "successes": 100,
+      "tier": "A",
+      "wilson_lower": 0.9630065017930143,
+      "wilson_upper": 1.0
+    },
+    {
+      "checkpoint_reload_mismatch": 0,
+      "episodes": 300,
+      "failure_buckets": {
+        "contact_loss": 9,
+        "drop": 7
+      },
+      "invalid_state": 0,
+      "ledger_path": "runs/mvp/evaluation/ppo/tier-b.jsonl",
+      "min_success_rate": 0.85,
+      "min_wilson_lower_bound": 0.8,
+      "passed": true,
+      "safety_violation": 0,
+      "success_rate": 0.9466666666666667,
+      "successes": 284,
+      "tier": "B",
+      "wilson_lower": 0.9151308582251687,
+      "wilson_upper": 0.9669080874809034
+    },
+    {
+      "checkpoint_reload_mismatch": 0,
+      "episodes": 200,
+      "failure_buckets": {
+        "contact_loss": 9,
+        "drop": 4
+      },
+      "invalid_state": 0,
+      "ledger_path": "runs/mvp/evaluation/ppo/tier-c.jsonl",
+      "min_success_rate": 0.7,
+      "min_wilson_lower_bound": null,
+      "passed": true,
+      "safety_violation": 0,
+      "success_rate": 0.935,
+      "successes": 187,
+      "tier": "C",
+      "wilson_lower": 0.8919809207009312,
+      "wilson_upper": 0.961623645350847
+    }
+  ]
+}

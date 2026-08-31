@@ -2,9 +2,11 @@
 document_id: ROADMAP-MVP-001
 document_type: plan
 title: Kế hoạch tạm thời Grasp Policy MVP — LEAP vertical slice
-version: 1.0.0
-status: active
+version: 1.1.0
+status: complete
 date: 2026-08-29
+closed_date: 2026-08-31
+revises: ROADMAP-MVP-001@1.0.0
 related_plan: ROADMAP-001
 temporarily_precedes:
   - ROADMAP-P3.4.3-001
@@ -15,10 +17,40 @@ release_class: experimental_non_release
 active_hand: leap_hand
 environment_id: QDGrasp-DexAcquire-MVP-v0
 artifact_id: QDGrasp-Leap-Grasp-MVP
-latest_revision_record: docs/revisions/REV-20260829-001-temporary-grasp-policy-mvp.md
+latest_revision_record: docs/revisions/REV-20260831-001-grasp-policy-mvp-closure.md
+revision_reason: Thi công MVP-00–07, sửa success predicate cho đúng §4 và thêm low-pass vào interface residual; ba tier pass sau checkpoint reload.
+necessity: N2
+impact: Plan đóng với artifact experimental_non_release; phần học không cải thiện được controller prior và điều đó được ghi rõ.
 ---
 
 # Kế hoạch tạm thời Grasp Policy MVP — LEAP vertical slice
+
+## 0.0. Trạng thái đóng (2026-08-31)
+
+Plan này **đã đóng** theo §10. MVP-00–07 có artifact thật và §7 pass sau khi
+reload checkpoint, đo trên seed đã khóa:
+
+| Tier | Controller prior | `QDGrasp-Leap-Grasp-MVP` | Gate | Verdict |
+| --- | ---: | ---: | ---: | --- |
+| A | 100/100 | 100/100 = 100.0% | `>=95%` | pass |
+| B | 284/300 | 284/300 = 94.7% (Wilson 91.5%) | `>=85%`, Wilson `>=80%` | pass |
+| C | 188/200 | 187/200 = 93.5% (Wilson 89.2%) | `>=70%` | pass |
+
+`invalid_state=0`, `safety_violation=0`, `checkpoint_reload_mismatch=0` ở cả ba
+tier. Bằng chứng tại `evidence/mvp/round-3/`; model card tại
+`docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md`; revision record tại
+`docs/revisions/REV-20260831-001-grasp-policy-mvp-closure.md`.
+
+Kết quả kỹ thuật đi kèm là một kết quả âm và nó không được che: **phần học không
+cải thiện được controller prior**. Tier A và B trùng đến từng episode, Tier C kém
+prior một episode, và residual trung bình policy phát ra là `0.0039` đơn vị
+action — khoảng 32 micromet dịch palm target. Gate đạt được nhờ controller.
+
+Ba vòng tune của §8 đã dùng hết. Vòng 1 và vòng 2 fail và artifact của chúng
+được giữ tại `evidence/mvp/round-1/` và `evidence/mvp/round-2/`.
+
+Artifact vẫn là `experimental_non_release`, chưa qua independent review, và
+không gỡ bất kỳ blocker nào của P3.4.3, P3.5, P4 hay P5.
 
 ## 0. Quyết định thực thi
 

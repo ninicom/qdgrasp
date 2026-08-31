@@ -1,0 +1,78 @@
+{
+  "all_tiers_passed": false,
+  "candidate": "ppo",
+  "checkpoint": "runs/mvp/policy/ppo.pt",
+  "checkpoint_sha256": "cabe2e8bd0c581504e044e272e844e9fec99d46a212054f25df227adadb61a16",
+  "fingerprint": {
+    "environment_id": "QDGrasp-DexAcquire-MVP-v0",
+    "eval_manifest_hash": "cd94bb903cd3b88c342d4498e9e2f07c0f4afdbe2d8d6c2c5ee294e33346c37c",
+    "observation_schema": "qdgrasp/mvp-observation/v0",
+    "observation_schema_hash": "07bf6f5cce1852533ffbe32760742315002eb8801a1ce4c6394807c9c005dbfd",
+    "prior_hash": "ab96a87a275ec574568458f14a28c929828fcfada01ca8d6cf06f8c6a647be43",
+    "scope_hash": "a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9"
+  },
+  "schema": "qdgrasp/mvp-eval-report/v0",
+  "tiers": [
+    {
+      "checkpoint_reload_mismatch": 0,
+      "episodes": 100,
+      "failure_buckets": {
+        "drop": 11,
+        "timeout": 52
+      },
+      "invalid_state": 0,
+      "ledger_path": "runs/mvp/evaluation/ppo/tier-a.jsonl",
+      "min_success_rate": 0.95,
+      "min_wilson_lower_bound": null,
+      "passed": false,
+      "safety_violation": 0,
+      "success_rate": 0.37,
+      "successes": 37,
+      "tier": "A",
+      "wilson_lower": 0.28182360534324535,
+      "wilson_upper": 0.46779470419057084
+    },
+    {
+      "checkpoint_reload_mismatch": 0,
+      "episodes": 300,
+      "failure_buckets": {
+        "contact_loss": 32,
+        "drop": 18,
+        "excess_force": 26,
+        "timeout": 120
+      },
+      "invalid_state": 0,
+      "ledger_path": "runs/mvp/evaluation/ppo/tier-b.jsonl",
+      "min_success_rate": 0.85,
+      "min_wilson_lower_bound": 0.8,
+      "passed": false,
+      "safety_violation": 26,
+      "success_rate": 0.3466666666666667,
+      "successes": 104,
+      "tier": "B",
+      "wilson_lower": 0.2950585411049252,
+      "wilson_upper": 0.4021519700706022
+    },
+    {
+      "checkpoint_reload_mismatch": 0,
+      "episodes": 200,
+      "failure_buckets": {
+        "contact_loss": 20,
+        "drop": 36,
+        "excess_force": 27,
+        "timeout": 70
+      },
+      "invalid_state": 0,
+      "ledger_path": "runs/mvp/evaluation/ppo/tier-c.jsonl",
+      "min_success_rate": 0.7,
+      "min_wilson_lower_bound": null,
+      "passed": false,
+      "safety_violation": 27,
+      "success_rate": 0.235,
+      "successes": 47,
+      "tier": "C",
+      "wilson_lower": 0.18157433415232588,
+      "wilson_upper": 0.2984136888276253
+    }
+  ]
+}

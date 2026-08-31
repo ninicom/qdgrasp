@@ -1,0 +1,91 @@
+{
+  "artifacts": [
+    {
+      "bytes": 6166,
+      "path": "closure.json",
+      "sha256": "55dd358a99e4012c52be66341bf1e6230d16bbd0c48efe241965c5c4a88b443c"
+    },
+    {
+      "bytes": 40270,
+      "path": "demonstrations/dev/ledger.jsonl",
+      "sha256": "c19de9feff4f0d4f97c24fc4c2cdfcdf0d31482f6778d844488a574825bf3890"
+    },
+    {
+      "bytes": 500,
+      "path": "demonstrations/dev/summary.json",
+      "sha256": "d2ee1d0f6526f6ea17e696761a08ca694799a62143e2502e0167bcbc4665623b"
+    },
+    {
+      "bytes": 1444,
+      "path": "demonstrations/index.json",
+      "sha256": "cb4dbd3eb64d004200f5d138837f4a553190820174229b12861f6ba0ffa56d59"
+    },
+    {
+      "bytes": 135484,
+      "path": "demonstrations/train/ledger.jsonl",
+      "sha256": "dab87941c6b4034463c30420760eddaf8d8dec5edaad121ea5f07a5a8d0570df"
+    },
+    {
+      "bytes": 518,
+      "path": "demonstrations/train/summary.json",
+      "sha256": "0674cc65ef0adcbaea3136a2a70a1dcc23a8b899c58573165ce51dd655b3851d"
+    },
+    {
+      "bytes": 98857,
+      "path": "evaluation/controller_prior/tier-a.jsonl",
+      "sha256": "172f4979e0e521db7512face58cb007c088a2087b3fd9ee996ccc8fa7e61d053"
+    },
+    {
+      "bytes": 322784,
+      "path": "evaluation/controller_prior/tier-b.jsonl",
+      "sha256": "cb0bc33d7006bbb8ca1fe95adbb4715516d501cdbe499f43245645a380b59c85"
+    },
+    {
+      "bytes": 215298,
+      "path": "evaluation/controller_prior/tier-c.jsonl",
+      "sha256": "ae7803ac80ea0860b4345b48efc3ac2a0bd1ecf38f53c9087248d1ff5769cc70"
+    },
+    {
+      "bytes": 2178,
+      "path": "evaluation/controller_prior.json",
+      "sha256": "4b2ff9b7d4698c4b11ceeeaecd4c2c9a048cd8fa9961bc5ca57026b0896f5a38"
+    },
+    {
+      "bytes": 100635,
+      "path": "evaluation/ppo/tier-a.jsonl",
+      "sha256": "ca56734a10b69667a1ef1f2aeeed9093b9a6f24029cce30e09df86cb4d1b15b7"
+    },
+    {
+      "bytes": 328139,
+      "path": "evaluation/ppo/tier-b.jsonl",
+      "sha256": "dffe93d5c8c8879ebf25d5ad2b8cd8d0580f2838a5a9589c0308d16b56e6483d"
+    },
+    {
+      "bytes": 218908,
+      "path": "evaluation/ppo/tier-c.jsonl",
+      "sha256": "42b9d405c9623b3ebbb9f2b3c6673bc5048a1a32f6d348ca11552b52696e1d4b"
+    },
+    {
+      "bytes": 2238,
+      "path": "evaluation/ppo.json",
+      "sha256": "75513aec16f7a76e0428a148cc2bca89411378703cab6e3f3be0f4b230dbc5ff"
+    },
+    {
+      "bytes": 763805,
+      "path": "policy/bc.pt",
+      "sha256": "2e470a384239c6d5d6521095257fc9de378f899631b597dd4abd4d30a80dd86f"
+    },
+    {
+      "bytes": 763504,
+      "path": "policy/ppo.pt",
+      "sha256": "498d03ae6f062ed2e0801d2954f7334a579d5f4e61f69bd14874071d586bfa0d"
+    },
+    {
+      "bytes": 24335,
+      "path": "policy/training-report.json",
+      "sha256": "9eb95ab4731cef2b7952047c0f40ee24714739e063d7cfcf691df41819e21c54"
+    }
+  ],
+  "schema": "qdgrasp/mvp-evidence-manifest/v0",
+  "source": "runs/mvp"
+}

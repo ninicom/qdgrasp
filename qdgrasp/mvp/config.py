@@ -150,6 +150,19 @@ class ActionSpec(_Doc):
     #: Half-extent of the box the commanded palm target is clamped into,
     #: centred on the prior's own commanded target.
     workspace_radius_m: float = Field(gt=0.0)
+    #: First-order low-pass coefficient applied to the residual before it
+    #: reaches the palm target.  ``1.0`` passes the action through unchanged.
+    #:
+    #: This is not a tuning knob, it is a measured correction.  With the raw
+    #: per-step residual, injecting N(0, 0.15) noise on the applied action --
+    #: about a millimetre of palm target -- lost the target in 42 of 42
+    #: rollouts, because an independent draw every 20 ms is a 50 Hz disturbance
+    #: dragged through a mocap weld, not a control input.  A constant residual
+    #: three times larger was harmless.  What the interface cannot tolerate is
+    #: high-frequency variation, which is precisely what a learned policy and a
+    #: PPO exploration draw both produce, so the filter belongs in the
+    #: interface rather than in a penalty term asking the policy to be smooth.
+    residual_low_pass: float = Field(gt=0.0, le=1.0, default=1.0)
 
     @property
     def dimension(self) -> int:

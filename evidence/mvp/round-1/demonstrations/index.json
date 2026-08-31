@@ -1,0 +1,45 @@
+{
+  "candidates": 12,
+  "elapsed_s": 463.7,
+  "prior_hash": "ab96a87a275ec574568458f14a28c929828fcfada01ca8d6cf06f8c6a647be43",
+  "scope_hash": "a2576e44c9bc5a1ea85eb4d3a6204a8bd280a2eab639bdf66a17f24e5d6fd3f9",
+  "sigma": 0.35,
+  "splits": {
+    "dev": {
+      "acceptance_rate": 0.975,
+      "episodes_accepted": 117,
+      "episodes_attempted": 120,
+      "non_zero_residual_fraction": 0.9743589743589743,
+      "prior_alone_succeeded": 113,
+      "schema": "qdgrasp/mvp-demonstrations/v0",
+      "search_rescued": 4,
+      "transitions": 12285,
+      "variants": {
+        "cuboid_w090_d12": 29,
+        "cuboid_w120_d15": 14,
+        "cuboid_w150_d18": 15,
+        "cuboid_w180_d12": 20,
+        "cuboid_w210_d15": 22,
+        "cuboid_w240_d18": 17
+      }
+    },
+    "train": {
+      "acceptance_rate": 0.9825,
+      "episodes_accepted": 393,
+      "episodes_attempted": 400,
+      "non_zero_residual_fraction": 0.9669211195928753,
+      "prior_alone_succeeded": 368,
+      "schema": "qdgrasp/mvp-demonstrations/v0",
+      "search_rescued": 25,
+      "transitions": 41265,
+      "variants": {
+        "cuboid_w090_d12": 71,
+        "cuboid_w120_d15": 70,
+        "cuboid_w150_d18": 66,
+        "cuboid_w180_d12": 68,
+        "cuboid_w210_d15": 57,
+        "cuboid_w240_d18": 61
+      }
+    }
+  }
+}

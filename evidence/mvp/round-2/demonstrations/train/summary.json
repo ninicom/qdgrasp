@@ -1,0 +1,18 @@
+{
+  "acceptance_rate": 0.9825,
+  "episodes_accepted": 393,
+  "episodes_attempted": 400,
+  "non_zero_residual_fraction": 0.06361323155216285,
+  "prior_alone_succeeded": 368,
+  "schema": "qdgrasp/mvp-demonstrations/v0",
+  "search_rescued": 25,
+  "transitions": 41265,
+  "variants": {
+    "cuboid_w090_d12": 71,
+    "cuboid_w120_d15": 70,
+    "cuboid_w150_d18": 66,
+    "cuboid_w180_d12": 68,
+    "cuboid_w210_d15": 57,
+    "cuboid_w240_d18": 61
+  }
+}

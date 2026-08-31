@@ -14,6 +14,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
+import multiprocessing
 import os
 from collections import Counter
 from collections.abc import Callable, Sequence
@@ -127,11 +128,28 @@ def _aggregate(
 # Episodes are independent, so they parallelise trivially; what does not
 # parallelise is a MuJoCo model, so each worker builds its own environment once
 # and keeps it for the life of the process.
+#
+# The pool is spawned, never forked.  A caller that has just trained a torch
+# model holds OpenMP and allocator locks, and a forked child inherits them in a
+# locked state and then blocks forever on its first allocation -- observed here
+# as eight workers idling at 0.1% CPU while the parent waited for results that
+# were never coming.  Spawn costs a few seconds of re-import per worker and buys
+# a pool that actually runs.
+_SPAWN = multiprocessing.get_context("spawn")
 
 _WORKER: dict[str, Any] = {}
 
 
+def _limit_worker_threads() -> None:
+    """One torch thread per worker: the parallelism is across episodes."""
+
+    import torch
+
+    torch.set_num_threads(1)
+
+
 def _worker_init(scope_path: str | None, prior_path: str, checkpoint_path: str | None) -> None:
+    _limit_worker_threads()
     scope = load_mvp_scope(scope_path)
     prior = PinchPriorTable.load(prior_path)
     _WORKER["env"] = DexAcquireMvpEnv(scope, prior)
@@ -179,6 +197,7 @@ def run_episodes(
         return [_rehydrate(_worker_episode(job)) for job in jobs]
     with ProcessPoolExecutor(
         max_workers=count,
+        mp_context=_SPAWN,
         initializer=_worker_init,
         initargs=(scope_path, prior_path, checkpoint_path),
     ) as pool:
