@@ -1,0 +1,45 @@
+{
+  "commit": "150d09acf65e1f424ab85ba22e923babdfb86400",
+  "error": "cuda:0 was requested and CUDA is not available. A CPU run must not be labelled a GPU run (ADR-0006); rerun this on real NVIDIA hardware.",
+  "hardware_probe": {
+    "dev_nvidia_nodes": [],
+    "display_controllers": [
+      "00:02.0 VGA compatible controller: Intel Corporation Iris Plus Graphics G1 (Ice Lake) (rev 07)"
+    ],
+    "nvidia_smi": "command not found",
+    "platform": "Linux-7.0.0-30-generic-x86_64",
+    "torch_cuda_build": null,
+    "torch_device_count": 0,
+    "why": "Kept so that no later session has to re-derive whether this machine could have run the gate. The refusal above is the harness working; this is the reason it had to."
+  },
+  "note": "Architecture evidence only. ROADMAP-P4-001 \u00a77 forbids citing any of it as a grasping result.",
+  "platform": "Linux-x86_64-py3.11.16",
+  "schema": "qdgrasp/phase4-cuda-evidence/v0",
+  "scope": {
+    "active_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "coverage": "2/2_active",
+    "experimental_shadow": false,
+    "governing_decision": "ADR-0008",
+    "historical_p3_4_state": "paused_by_ADR-0008",
+    "non_release": false,
+    "paused_hands": [
+      "shadow_hand"
+    ],
+    "purpose": "",
+    "selected_hands": [
+      "leap_hand",
+      "wonik_allegro"
+    ],
+    "three_hand_coverage": false
+  },
+  "settings": {
+    "points": 1024,
+    "samples": 8,
+    "seed": 0,
+    "steps": 200
+  },
+  "verdict": "refused"
+}

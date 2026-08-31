@@ -227,14 +227,53 @@ def _evidence(root: Path) -> list[PackageResult]:
     return results
 
 
+def _cuda_records(root: Path) -> tuple[list[Path], list[str]]:
+    """Split the CUDA records into ones that measured something and ones that did not.
+
+    The presence of a file named ``cuda-*.json`` is not evidence.  The harness
+    writes a record on *every* run including the refusals, by design -- a refusal
+    is a result worth keeping -- so a gate that counted files would be satisfied
+    by the machine that cannot run it, which is precisely backwards.  A record
+    counts only when it says a real device measured every active hand.
+    """
+
+    directory = root / "evidence/phase4"
+    if not directory.is_dir():
+        return [], []
+    measured: list[Path] = []
+    rejected: list[str] = []
+    for path in sorted(directory.glob("cuda-*.json")):
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            rejected.append(f"{path.name}: unreadable ({error})")
+            continue
+        device = record.get("device") or {}
+        hands = record.get("hands") or []
+        reason = None
+        if record.get("verdict") != "measured":
+            reason = f"verdict={record.get('verdict')!r}"
+        elif not device.get("cuda"):
+            reason = "device.cuda is not true"
+        elif not hands:
+            reason = "no hand was measured"
+        elif not all(hand.get("passed") for hand in hands):
+            reason = "a measured hand did not pass"
+        elif len(hands) < len(ACTIVE_PROFILES):
+            reason = f"only {len(hands)} of {len(ACTIVE_PROFILES)} active hands measured"
+        if reason:
+            rejected.append(f"{path.name}: {reason}")
+        else:
+            measured.append(path)
+    return measured, rejected
+
+
 def _outstanding(root: Path) -> list[PackageResult]:
     """Packages that cannot be closed from this machine, stated as such."""
 
     harness = root / "scripts/phase4_cuda_gate.py"
     notebook = root / "notebooks/phase4_cuda_gate.ipynb"
-    cuda_evidence = (
-        sorted((root / "evidence/phase4").glob("cuda-*.json")) if (root / "evidence/phase4").is_dir() else []
-    )
+    measured, rejected = _cuda_records(root)
     return [
         PackageResult(
             "P4-11a",
@@ -249,11 +288,12 @@ def _outstanding(root: Path) -> list[PackageResult]:
         PackageResult(
             "P4-11b",
             "CUDA gate evidence",
-            STATUS_DELIVERED if cuda_evidence else STATUS_BLOCKED,
+            STATUS_DELIVERED if measured else STATUS_BLOCKED,
             (
-                f"{len(cuda_evidence)} record(s) under evidence/phase4/"
-                if cuda_evidence
+                f"{len(measured)} measured record(s): {[path.name for path in measured]}"
+                if measured
                 else "needs a real NVIDIA run; ADR-0006 forbids presenting a CPU run as CUDA evidence"
+                + (f"; {len(rejected)} record(s) present but not measured: {rejected}" if rejected else "")
             ),
         ),
         PackageResult(

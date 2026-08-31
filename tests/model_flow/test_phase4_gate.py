@@ -71,13 +71,16 @@ def test_a_missing_overfit_record_is_open_not_silently_passed(gate, tmp_path: Pa
     assert results[0].status == gate.STATUS_OPEN
 
 
-def test_cuda_evidence_is_blocked_until_a_record_exists(gate, tmp_path: Path) -> None:
+def test_cuda_evidence_is_blocked_until_a_record_measures_something(gate, tmp_path: Path) -> None:
     outstanding = {item.package: item for item in gate._outstanding(tmp_path)}
     assert outstanding["P4-11b"].status == gate.STATUS_BLOCKED
     assert "ADR-0006" in outstanding["P4-11b"].detail
+    # An empty file named like a record is not a record.
     (tmp_path / "evidence/phase4").mkdir(parents=True)
     (tmp_path / "evidence/phase4/cuda-a100-20260901.json").write_text("{}", encoding="utf-8")
-    assert gate._outstanding(tmp_path)[1].status == gate.STATUS_DELIVERED
+    still = {item.package: item for item in gate._outstanding(tmp_path)}["P4-11b"]
+    assert still.status == gate.STATUS_BLOCKED
+    assert "cuda-a100-20260901.json" in still.detail
 
 
 def test_the_review_verdict_stays_blocked_because_the_author_may_not_sign(gate) -> None:
@@ -118,3 +121,83 @@ def test_the_notebook_pins_a_commit_and_says_why() -> None:
     )
     assert "rev-parse" in setup, "the notebook must verify the checkout landed on the pinned commit"
     assert any("ADR-0006" in text for text in sources)
+
+
+def _cuda_record(**overrides) -> dict:
+    record = {
+        "verdict": "measured",
+        "device": {"cuda": True, "name": "NVIDIA T4"},
+        "hands": [
+            {"robot": "leap_hand.yaml", "passed": True},
+            {"robot": "wonik_allegro.yaml", "passed": True},
+        ],
+    }
+    record.update(overrides)
+    return record
+
+
+def _write_cuda(tmp_path: Path, name: str, record: dict) -> Path:
+    directory = tmp_path / "evidence/phase4"
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / name
+    path.write_text(json.dumps(record), encoding="utf-8")
+    return path
+
+
+def test_a_measured_two_hand_record_satisfies_the_cuda_gate(gate, tmp_path: Path) -> None:
+    _write_cuda(tmp_path, "cuda-t4-20260901.json", _cuda_record())
+    measured, rejected = gate._cuda_records(tmp_path)
+    assert [path.name for path in measured] == ["cuda-t4-20260901.json"]
+    assert rejected == []
+    row = {item.package: item for item in gate._outstanding(tmp_path)}["P4-11b"]
+    assert row.status == gate.STATUS_DELIVERED
+
+
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        ({"verdict": "refused"}, "verdict"),
+        ({"verdict": "failed"}, "verdict"),
+        ({"device": {"cuda": False}}, "device.cuda"),
+        ({"hands": []}, "no hand was measured"),
+        ({"hands": [{"robot": "leap_hand.yaml", "passed": False}]}, "did not pass"),
+        ({"hands": [{"robot": "leap_hand.yaml", "passed": True}]}, "of 2 active hands"),
+    ],
+)
+def test_a_record_that_did_not_measure_both_hands_is_not_evidence(gate, tmp_path: Path, overrides, expected) -> None:
+    """The file existing is not the evidence; what it says is.
+
+    The harness writes a record on every run, refusals included, so a gate that
+    counted files would be satisfied by the machine that cannot run it.
+    """
+
+    _write_cuda(tmp_path, "cuda-something.json", _cuda_record(**overrides))
+    measured, rejected = gate._cuda_records(tmp_path)
+    assert measured == []
+    assert len(rejected) == 1 and expected in rejected[0]
+    row = {item.package: item for item in gate._outstanding(tmp_path)}["P4-11b"]
+    assert row.status == gate.STATUS_BLOCKED
+    assert "cuda-something.json" in row.detail
+
+
+def test_an_unreadable_cuda_record_is_named_not_skipped(gate, tmp_path: Path) -> None:
+    directory = tmp_path / "evidence/phase4"
+    directory.mkdir(parents=True)
+    (directory / "cuda-truncated.json").write_text("{not json", encoding="utf-8")
+    measured, rejected = gate._cuda_records(tmp_path)
+    assert measured == []
+    assert "unreadable" in rejected[0]
+
+
+def test_the_refusal_record_this_machine_produced_does_not_count(gate) -> None:
+    """The record committed from the development machine must stay inert."""
+
+    record = json.loads(
+        (REPO_ROOT / "evidence/phase4/cuda-refused-devmachine-20260831.json").read_text(encoding="utf-8")
+    )
+    assert record["verdict"] == "refused"
+    assert "hands" not in record
+    assert record["hardware_probe"]["torch_device_count"] == 0
+    measured, rejected = gate._cuda_records(REPO_ROOT)
+    assert measured == []
+    assert any("cuda-refused-devmachine" in item for item in rejected)
