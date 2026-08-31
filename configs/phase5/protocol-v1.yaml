@@ -1,0 +1,54 @@
+# Phase 5 evaluation protocol, locked before the first training run.
+#
+# ROADMAP-P5-001 §1.2: a protocol chosen after seeing results is not a protocol.
+# Changing anything here changes protocol_hash, and results produced under the
+# old hash may not be presented as if they were produced under this one.
+#
+# The held-out family is `comp` -- the composite shapes. It is held out entirely:
+# no comp_* object appears in train, and comp_t_shape_01 sits in val so that
+# something actually measures the generalisation the split claims to test.
+schema: qdgrasp/protocol/v1
+name: phase5-dgn-open-tiny-v1
+dataset_id: dgn-open-tiny-v1
+
+splits:
+  train_objects:
+    - pc_allegro_02
+    - pc_leap_01
+    - prim_box_01
+    - prim_capsule_01
+    - prim_cylinder_01
+    - prim_sphere_01
+    - sq_01
+    - sq_02
+    - sq_03
+  val_objects:
+    - comp_t_shape_01
+    - pc_allegro_01
+    - pc_leap_02
+    - sq_04
+  heldout_family: comp
+  # Two active hands means this is n=1 in each direction. ROADMAP-P5-001 §1.3
+  # requires every report to say so rather than writing it up as generalisation
+  # across embodiments.
+  heldout_embodiment:
+    train_hand: leap_hand
+    test_hand: wonik_allegro
+
+seeds: [0, 1, 2]
+
+ablations:
+  - baseline
+  - no_graph
+  - direct_only
+  - no_fk_consistency
+
+metrics:
+  - success
+  - collision
+  - penetration
+  - diversity
+  - coverage
+  - latency
+
+selection: pose_then_physics

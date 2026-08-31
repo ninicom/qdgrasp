@@ -2,11 +2,14 @@
 document_id: ROADMAP-P5-001
 document_type: plan
 title: Kế hoạch thi công Phase 5 — Training & evaluation
-version: 1.0.0
+version: 1.1.0
 status: active
 date: 2026-08-31
-revises: none
+revises: ROADMAP-P5-001@1.0.0
 related_plan: PLAN-V2
+revision_reason: P5-01/02 đo được số positive thật của DGN-Open-Tiny; nó chặn P5-03 trở đi và phải nằm trong §0.1.
+necessity: N2
+impact: Thêm một blocker dữ liệu vào §0.1 và một cổng đọc được bằng máy; không nới điều kiện hoàn tất nào.
 depends_on:
   - ROADMAP-P3.1-001
   - ROADMAP-P3.5-001
@@ -48,10 +51,50 @@ là protocol.
 | CUDA evidence của model | `P4-11b` | Không được công bố số train nào trước khi forward/backward trên CUDA thật được đo. `ADR-0006`. |
 | Backend decision | `P3.5-15` | Quyết định throughput của đánh giá vật lý ở `P5-08`. Không chặn phần CPU, chặn quy mô. |
 | Contact-rich input | `P3.4.3` | `release_blocked`. P5 chỉ dùng dữ liệu static/offline. |
+| **Số grasp thành công trong dataset** | `DGN-Open-Tiny` | **Chặn `P5-03` trở đi.** Đo được ở §0.2. |
 
-P5 **được phép** thi công song song phần không phụ thuộc ba mục trên: adapter dữ
-liệu, protocol split, vòng train, resume, metric và ablation harness đều chạy và
-kiểm được trên CPU. Cái không được phép là **công bố** kết quả.
+P5 **được phép** thi công song song phần không phụ thuộc các mục trên: adapter
+dữ liệu, protocol split, metric và ablation harness đều chạy và kiểm được trên
+CPU. Cái không được phép là **công bố** kết quả.
+
+### 0.2 Dataset chưa đủ positive để train — đo được, không phải phỏng đoán
+
+`P5-01` và `P5-02` đã thi công, và việc đầu tiên chúng cho phép làm là đếm.
+Dưới protocol đã khóa (`phase5-dgn-open-tiny-v1`):
+
+| Split | Hand | Sample | Positive | Tỉ lệ |
+|---|---|---:|---:|---:|
+| train | `leap_hand` | 32 | **1** | 0.031 |
+| train | `wonik_allegro` | 42 | **2** | 0.048 |
+| val | `leap_hand` | 12 | 1 | 0.083 |
+| val | `wonik_allegro` | 22 | 1 | 0.045 |
+
+**Ba** grasp thành công trong toàn bộ train split của cả hai active hand.
+
+Điều đó không phải "dataset hơi nhỏ". Nó đổi bản chất việc train:
+
+- Generator được regress về label mà 96% là **proposal thất bại**. Học đúng
+  label nghĩa là học sinh ra grasp rơi. Loss giảm vẫn giảm; nó chỉ không đo cái
+  ta tưởng.
+- Quality head có ba positive. Nó sẽ học prior và đạt accuracy cao bằng cách
+  luôn trả `fail`.
+- Không cái nào trong hai điều trên hiện ra trong loss curve.
+
+Vì vậy `P5-03` trở đi **blocked on the data layer**, và blocker này được đo bằng
+máy chứ không ghi trong chú thích:
+
+```bash
+python scripts/check_phase5_inputs.py
+```
+
+Cổng trả `1` khi bất kỳ active hand nào có dưới 25 positive trong train.
+Con số 25 không phải ngưỡng thống kê — ở quy mô này không có ngưỡng nào trung
+thực — mà là vạch dưới đó chữ "train" bị dùng sai.
+
+Đường ra là ở data layer, không ở P5: regenerate `DGN-Open-Tiny` bằng recipe cho
+ra positive (proposal/solver hiện tại cho tỉ lệ ~3%), hoặc thay bằng corpus lớn
+hơn. Cho tới lúc đó, phần P5 làm được là adapter, protocol, metric và ablation
+harness — tức là làm sẵn chỗ để đổ dữ liệu vào khi có.
 
 ## 1. Quyết định thiết kế
 
@@ -232,6 +275,7 @@ Critical path `00 → 01 → 02 → 03 → {04,05,06} → 08 → 07 → 09 → 1
 ## 6. Gate đóng P5
 
 ```bash
+python scripts/check_phase5_inputs.py     # phải pass trước khi P5-03 có nghĩa
 python scripts/check_phase5.py --profile micro
 python -m pytest tests/model_training -q
 python scripts/run_phase5_ablations.py --dry-run
@@ -246,6 +290,8 @@ python scripts/phase5_cuda_gate.py --device cuda:0 --evidence phase5_cuda_eviden
 
 ## 7. Điều kiện hoàn tất
 
+0. `scripts/check_phase5_inputs.py` pass — mỗi active hand có đủ positive để
+   train. Chừng nào còn fail thì mọi điều kiện dưới đây đều vô nghĩa.
 1. Protocol khóa bằng hash trước run đầu tiên, và mọi artifact mang hash đó.
 2. Train/val/held-out object family/held-out embodiment đều chạy, không rò rỉ,
    với ít nhất ba seed mỗi cấu hình.
