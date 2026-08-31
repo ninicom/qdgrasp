@@ -2,15 +2,15 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.32.0
+version: 1.33.0
 status: active
 date: 2026-08-31
-revises: ROADMAP-001@1.31.0
+revises: ROADMAP-001@1.32.0
 related_plan: PLAN-V2
 latest_revision_record: docs/revisions/REV-20260831-003-phase4-architecture.md
-revision_reason: P4 được thi công 12/14 mục của cổng và có execution plan riêng; hai mục còn mở, trong đó cổng CUDA chưa chạy.
+revision_reason: P4 được thi công 12/14 mục của cổng và có execution plan riêng; P5 có execution plan trước khi chạy train lần nào.
 necessity: N2
-impact: Trạng thái P4 đổi từ pending sang in_progress; mọi gate và blocker của P0–P7 giữ nguyên, kể cả cổng CUDA của chính P4.
+impact: Trạng thái P4 đổi từ pending sang in_progress và P5 có plan; mọi gate và blocker của P0–P7 giữ nguyên, kể cả cổng CUDA của P4 và điều kiện P5-11 phải chờ P4-11b.
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -286,6 +286,9 @@ tư thêm vào kiến trúc policy.
 
 ### P5 — Training & evaluation
 
+- Execution plan: `docs/roadmap/PHASE5_EXECUTION_PLAN.md` (`ROADMAP-P5-001`),
+  work breakdown P5-00…P5-12. Khóa protocol bằng hash **trước** run đầu tiên;
+  `P5-11` không được bắt đầu trước khi `P4-11b` đóng.
 - Full training loop, sampling, quality head, hard negatives và simulator replay.
 - Multi-hand train, held-out object family và held-out embodiment protocols.
 - Ablation khóa trước khi chạy: graph/no-graph, direct/contact-first, FK

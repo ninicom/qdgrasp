@@ -193,9 +193,22 @@ nguyên trạng thái mà `SESSION-20260831-001` và `-002` ghi.
 
 Không còn package P4 nào làm được trên máy này. Hai mục còn lại đều cần thứ
 không tồn tại ở đây: một GPU NVIDIA thật và một người kiểm tra không phải tác
-giả. Việc tiếp theo trong repo là **P5 — Training & evaluation**, và nó cần
-`ROADMAP-P5-001` trước khi viết dòng code nào, đúng như P4 đã cần
-`ROADMAP-P4-001`.
+giả.
+
+`ROADMAP-P5-001` đã được viết trong phiên này
+(`docs/roadmap/PHASE5_EXECUTION_PLAN.md`): scope, protocol khóa bằng hash, work
+breakdown P5-00…P5-12, test matrix và cổng đóng. Ba điều nó khóa trước, đúng vì
+P4 đã dạy:
+
+1. Checkpoint **không** được chọn bằng total loss — `flow_velocity` có sàn không
+   rút được, nên total trộn một hằng số vô nghĩa vào tín hiệu chọn model.
+2. Protocol khóa bằng hash **trước** run đầu tiên. Khóa sau khi nhìn kết quả thì
+   không còn là protocol.
+3. `P5-11` không được bắt đầu trước khi `P4-11b` đóng: đặt một gate train CUDA
+   lên một kiến trúc chưa từng chạy CUDA là đo hai ẩn số cùng lúc.
+
+Held-out embodiment với hai tay là `n=1` mỗi chiều, và plan bắt mọi báo cáo phải
+ghi như vậy thay vì viết thành "generalizes across embodiments".
 
 ### Điều kiện phiên sau phải kiểm trước khi tin trạng thái
 

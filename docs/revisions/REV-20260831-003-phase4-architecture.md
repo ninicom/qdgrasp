@@ -2,7 +2,7 @@
 document_id: REV-20260831-003
 document_type: revision_record
 revision_schema: 2
-title: Ghi trạng thái thi công Phase 4 và bổ sung execution plan cho P4
+title: Ghi trạng thái thi công Phase 4 và bổ sung execution plan cho P4 và P5
 status: complete
 date: 2026-08-31
 record_id: REV-20260831-003
@@ -30,7 +30,7 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 - Artifact bị sửa: `docs/roadmap/PROJECT_PHASES.md`,
   `docs/roadmap/PHASE4_EXECUTION_PLAN.md`.
 - Revision trước sửa: `ROADMAP-001@1.31.0`, `ROADMAP-P4-001@1.0.0`.
-- Revision sau sửa: `ROADMAP-001@1.32.0`, `ROADMAP-P4-001@1.1.0`.
+- Revision sau sửa: `ROADMAP-001@1.33.0`, `ROADMAP-P4-001@1.1.0`.
 - Artifact mới: `docs/roadmap/PHASE4_EXECUTION_PLAN.md` (`ROADMAP-P4-001@1.0.0`),
   `qdgrasp/models/{tokenizer,encoder,hand_graph,flow,losses}.py`,
   `tests/model_flow/test_model_flow.py`, `scripts/overfit_qdgrasp_flow.py`,
@@ -79,6 +79,7 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 | Harness CUDA | không có | `scripts/phase4_cuda_gate.py` + notebook pin commit |
 | Packet review | không có | `scripts/phase4_review_packet.py` + `PHASE4_REVIEWER_GUIDE.md` |
 | §4 của plan | đoán trước `conditioning.py`, `fk_head.py`, `quality.py` | tên file thật; ba head chung một forward pass nên chung file |
+| Execution plan của P5 | không có | `docs/roadmap/PHASE5_EXECUTION_PLAN.md` (`ROADMAP-P5-001`), khóa protocol trước khi train |
 | Bằng chứng học được | không có | `evidence/phase4/overfit-{leap,allegro}-cpu.json` |
 
 ## 6. Xác minh
