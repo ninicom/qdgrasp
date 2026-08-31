@@ -16,9 +16,9 @@ revises:
   - session_id: ROADMAP-PROJECT-001
     artifact: docs/roadmap/PROJECT_PHASES.md
     revision: ROADMAP-001@1.29.0
-reason: "P3.5 được thi công tới 16/19 mục của cổng sau khi ROADMAP-MVP-001 đóng; trạng thái execution_priority cũ và mô tả 'chưa thi công' không còn đúng."
+reason: "P3.5 được thi công tới 17/19 mục của cổng sau khi ROADMAP-MVP-001 đóng; trạng thái execution_priority cũ và mô tả 'chưa thi công' không còn đúng."
 necessity: N2
-impact: "P3.5 chuyển từ deferred sang in_progress với cổng CPU chạy được; P3.5-15/17/18 còn mở và không gate nào của P3.3, P3.4, P3.4.3 hay ADR-0008 bị đổi."
+impact: "P3.5 chuyển từ deferred sang in_progress với cổng CPU chạy được và QDGrasp-RL-Env-Tiny đã sinh; P3.5-15/18 còn mở và không gate nào của P3.3, P3.4, P3.4.3 hay ADR-0008 bị đổi."
 ---
 
 # REV-20260831-002 — Thi công Phase 3.5
@@ -28,8 +28,8 @@ impact: "P3.5 chuyển từ deferred sang in_progress với cổng CPU chạy đ
 - Phiên thực hiện sửa: `SESSION-20260831-002`.
 - Bản ghi hoàn tất: `docs/sessions/SESSION-20260831-002-phase3-5-ingest-and-rl-contracts.md`.
 - Artifact bị sửa: `docs/roadmap/PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md`
-  (`ROADMAP-P3.5-001@1.2.0` → `@1.3.0`), `docs/roadmap/PROJECT_PHASES.md`
-  (`ROADMAP-001@1.29.0` → `@1.30.0`).
+  (`ROADMAP-P3.5-001@1.2.0` → `@1.4.0`), `docs/roadmap/PROJECT_PHASES.md`
+  (`ROADMAP-001@1.29.0` → `@1.31.0`).
 - Cổng mới: `scripts/check_phase3_5.py`.
 - Harness cho phần chưa đóng được: `scripts/phase3_5_gpu_rl_readiness.py`,
   `notebooks/phase3_5_rl_readiness.ipynb`.
@@ -38,9 +38,9 @@ impact: "P3.5 chuyển từ deferred sang in_progress với cổng CPU chạy đ
 
 `ROADMAP-P3.5-001@1.2.0` ghi `execution_priority: deferred_by_ROADMAP-MVP-001`
 và mô tả toàn bộ implementation là việc tương lai. MVP đã đóng
-(`REV-20260831-001`), P3.5 quay lại hàng đợi, và mười sáu trong mười chín mục
+(`REV-20260831-001`), P3.5 quay lại hàng đợi, và mười bảy trong mười chín mục
 của cổng nay có artifact chạy được kèm test. Giữ nguyên tài liệu cũ sẽ mô tả sai
-trạng thái theo cả hai hướng: che phần đã làm, và không nêu rõ ba mục còn lại
+trạng thái theo cả hai hướng: che phần đã làm, và không nêu rõ hai mục còn lại
 không thể đóng từ máy phát triển.
 
 ## 3. Mức độ cần thiết
@@ -59,9 +59,9 @@ không thể đóng từ máy phát triển.
 | --- | --- | --- | --- | --- |
 | Hành vi/runtime | không có ingest, resolver, settle certifier hay RL environment | mười module mới với test | cao | Chạy `scripts/check_phase3_5.py` |
 | API/schema/config | — | `qdgrasp/objects/{ingest,coacd,manifest_v2}`, `qdgrasp/scenes/{resolver,serialize,virtual_drop,settle}`, `qdgrasp/rl/*` | cao | Public API mới, chưa có consumer ngoài test |
-| Dữ liệu/checkpoint | — | chưa có artifact; `QDGrasp-RL-Env-Tiny` còn mở | không | P3.5-17 |
+| Dữ liệu/checkpoint | — | `datasets/qdgrasp-rl-env-tiny/` với chín case và hash | vừa | Artifact `experimental_non_release` |
 | Tương thích CPU/GPU/export | — | CPU oracle chạy cho hai active hand; GPU chưa chạy | vừa | P3.5-15 cần CUDA run thật |
-| Số liệu/kết luận đã công bố | không có số P3.5 nào | 16/19 mục delivered | vừa | Không có claim release |
+| Số liệu/kết luận đã công bố | không có số P3.5 nào | 17/19 mục delivered | vừa | Không có claim release |
 
 Tóm tắt tác động: P3.5 `in_progress`. Không dataset hay checkpoint nào được gỡ
 `release_blocked`; `QDGrasp-ContactRich-Active-Tiny` giữ nguyên; Shadow vẫn
@@ -82,18 +82,21 @@ Tóm tắt tác động: P3.5 `in_progress`. Không dataset hay checkpoint nào 
 | `CH-009` | Hai ngân sách xuyên thấu: trạng thái ổn định và trần tức thời | `qdgrasp/scenes/settle.py`, `qdgrasp/rl/envs/dex_acquire.py` | 7.7 mm lúc chạm đất → 0.07 mm khi nghỉ |
 | `CH-010` | Descent của fixture kết thúc khi chạm | `qdgrasp/rl/tasks/scripted.py` | cả hai tay chạy hết horizon không vi phạm |
 | `CH-011` | Cổng CPU và harness GPU/cloud | `scripts/check_phase3_5.py`, `scripts/phase3_5_gpu_rl_readiness.py`, `notebooks/phase3_5_rl_readiness.ipynb` | `tests/rl_env/test_gpu_harness.py` |
+| `CH-012` | Grasp prior fit theo bề rộng target; hai tay gắp và giữ được vật qua action có biên | `qdgrasp/rl/tasks/grasp_prior.py` | LEAP nâng 8.3 cm, Allegro 9.1 cm |
+| `CH-013` | `QDGrasp-RL-Env-Tiny` chín case với hash artifact | `datasets/qdgrasp-rl-env-tiny/`, `scripts/generate_rl_env_tiny.py` | positive 4/4, negative 2/2, random 2/2 |
 
 ## 6. Xác minh
 
 | Verification ID | Lệnh/phương pháp | Kết quả mong đợi | Kết quả thực tế | Trạng thái | Evidence |
 | --- | --- | --- | --- | --- | --- |
 | `V-001` | `python -m pytest tests/assets_ingest -q` | pass | 47 passed | `pass` | log phiên |
-| `V-002` | `python -m pytest tests/rl_env -q` | pass | 51 passed | `pass` | log phiên |
-| `V-003` | `python scripts/check_phase3_5.py --profile micro` | báo đúng trạng thái | 16/19 delivered, exit 1 | `pass` | log phiên |
+| `V-002` | `python -m pytest tests/rl_env -q` | pass | 60 passed | `pass` | log phiên |
+| `V-003` | `python scripts/check_phase3_5.py --profile micro` | báo đúng trạng thái | 17/19 delivered, exit 1 | `pass` | log phiên |
 | `V-004` | `python scripts/phase3_5_gpu_rl_readiness.py --backend mujoco-cpu --device cpu` | CPU oracle pass | pass cho hai hand | `pass` | log phiên |
 | `V-005` | `python scripts/phase3_5_gpu_rl_readiness.py --backend mjx-warp --device cuda:0` | từ chối | `verdict=refused` | `pass` | log phiên |
 | `V-006` | `python -m pytest tests scripts/tests -q` | không regression | 1168 passed, 1 skipped | `pass` | log phiên |
-| `V-007` | `python scripts/check_docs.py --root .` | tài liệu hợp lệ | 142 file pass | `pass` | log phiên |
+| `V-007` | `python scripts/check_docs.py --root .` | tài liệu hợp lệ | 143 file pass | `pass` | log phiên |
+| `V-008` | `python scripts/generate_rl_env_tiny.py` | mọi case đúng lớp của nó | 9 case, positive 4/4 | `pass` | `datasets/qdgrasp-rl-env-tiny/` |
 
 - Regression đã chạy lại: toàn bộ `tests/` và `scripts/tests/`.
 - Kiểm tra chưa chạy: GPU spike (`P3.5-15`) vì không có NVIDIA GPU; parity
@@ -117,6 +120,8 @@ Tóm tắt tác động: P3.5 `in_progress`. Không dataset hay checkpoint nào 
 - Tác giả: claude-agent, 2026-08-31, UTC+07.
 - Người kiểm tra: chưa có; P3.5-18 vẫn mở.
 - Kết luận: đã hoàn tất phần thi công của phiên. P3.5 chưa đóng và không được
-  ghi `complete`; ba mục còn lại được nêu tên cùng lý do trong `§9` của plan.
+  ghi `complete`; hai mục còn lại — `P3.5-15` và `P3.5-18` — được nêu tên cùng lý
+  do, và cả hai đều cần thứ không tồn tại trên máy phát triển: một GPU NVIDIA
+  thật và một người kiểm tra không phải tác giả.
 - Liên kết bản ghi hoàn tất phiên hiện tại:
   `docs/sessions/SESSION-20260831-002-phase3-5-ingest-and-rl-contracts.md`.

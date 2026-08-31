@@ -2,10 +2,10 @@
 document_id: ROADMAP-P3.5-001
 document_type: plan
 title: Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
-version: 1.3.0
+version: 1.4.0
 status: active
 date: 2026-08-31
-revises: ROADMAP-P3.5-001@1.2.0
+revises: ROADMAP-P3.5-001@1.3.0
 related_plan: ROADMAP-P3.3-001
 depends_on:
   - ROADMAP-P2-001
@@ -31,21 +31,24 @@ gpu_evidence_targets:
 # Kế hoạch Phase 3.5 — Asset/Scene Ingestion và RL Simulation Readiness
 
 > **Trạng thái thực thi (2026-08-31):** `ROADMAP-MVP-001` đã đóng và P3.5 quay
-> lại hàng đợi. `SESSION-20260831-002` thi công P3.5-01…16:
-> `scripts/check_phase3_5.py --profile micro` báo **16/19 mục delivered** và trả
+> lại hàng đợi. `SESSION-20260831-002` thi công P3.5-01…17:
+> `scripts/check_phase3_5.py --profile micro` báo **17/19 mục delivered** và trả
 > `1`. Đường sống asset → scene → drop → settle → reset/step chạy cho cả hai
-> active hand.
+> active hand, và `QDGrasp-RL-Env-Tiny` có đủ chín case với hash.
 >
-> Ba mục còn mở, và không mục nào đóng được từ máy phát triển:
+> Fixture positive dùng grasp prior fit theo bề rộng đo được của target
+> (`qdgrasp/rl/tasks/grasp_prior.py`): cả LEAP lẫn Allegro gắp và giữ được vật,
+> nâng 8.3–9.1 cm, qua đúng action có biên mà learner sẽ dùng. Fixture
+> descend-and-close mở vòng vẫn được giữ và vẫn không gắp được — hai fixture trả
+> lời hai câu hỏi khác nhau: environment có *ổn định* dưới controller ngu, và
+> environment có *giải được* hay không.
+>
+> Hai mục còn mở, và không mục nào đóng được từ máy phát triển:
 > **P3.5-15** cần một CUDA run thật (§7 cấm chọn backend khi chưa có parity hai
 > tay đo được; `ADR-0006` cấm CPU fallback làm bằng chứng CUDA);
-> **P3.5-17** cần một positive scripted fixture — fixture hiện tại chạy hết
-> horizon mà không gắp được, và đó là kết luận cấu trúc: descend-and-close không
-> bao được một hộp, cần grasp prior có pose giải IK và aperture đã fit;
 > **P3.5-18** cần reviewer độc lập.
 >
-> Harness cho hai mục đầu đã sẵn sàng:
-> `scripts/phase3_5_gpu_rl_readiness.py` và
+> Harness cho mục đầu đã sẵn sàng: `scripts/phase3_5_gpu_rl_readiness.py` và
 > `notebooks/phase3_5_rl_readiness.ipynb`.
 
 P3.5 biến object/scene artifact của P2–P3.3 thành một môi trường mô phỏng có thể

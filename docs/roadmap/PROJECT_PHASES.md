@@ -2,13 +2,13 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.30.0
+version: 1.31.0
 status: active
 date: 2026-08-31
-revises: ROADMAP-001@1.29.0
+revises: ROADMAP-001@1.30.0
 related_plan: PLAN-V2
 latest_revision_record: docs/revisions/REV-20260831-002-phase3-5-execution.md
-revision_reason: MVP-T đóng, và P3.5 được thi công tới 16/19 mục của cổng với ba mục còn mở.
+revision_reason: MVP-T đóng, và P3.5 được thi công tới 17/19 mục của cổng với hai mục còn mở.
 necessity: N2
 impact: Trạng thái MVP-T và P3.5 đổi; mọi gate và blocker của P0–P7 giữ nguyên.
 ---
@@ -237,16 +237,18 @@ tư thêm vào kiến trúc policy.
   trong [`ROADMAP-P3.4.3-003`](PHASE3_4_3_HANDOFF.md).
 - Phase 3.5 ([`ROADMAP-P3.5-001`](PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md))
   đã quay lại hàng đợi sau khi MVP đóng và hiện **`in_progress`**:
-  `SESSION-20260831-002` thi công P3.5-01…16 và
-  `scripts/check_phase3_5.py --profile micro` báo 16/19 mục delivered, exit `1`.
+  `SESSION-20260831-002` thi công P3.5-01…17 và
+  `scripts/check_phase3_5.py --profile micro` báo 17/19 mục delivered, exit `1`.
   Asset ingest, public CoACD API, `ObjectAssetManifestV2`, scene resolver,
   virtual drop, settle certifier, RL contract, ba environment, fixture và
   randomization đều có test; đường sống asset → scene → drop → settle →
-  reset/step chạy cho cả LEAP lẫn Allegro. Ba mục còn mở: **P3.5-15** backend
-  decision cần CUDA run thật, **P3.5-17** `QDGrasp-RL-Env-Tiny` cần positive
-  scripted fixture (fixture hiện tại chạy hết horizon không gắp được, và cần
-  grasp prior có pose giải IK chứ không phải tinh chỉnh), **P3.5-18** review độc
-  lập. Contract bên dưới vẫn là backlog dài hạn và không được coi là đã pass.
+  reset/step chạy cho cả LEAP lẫn Allegro. `QDGrasp-RL-Env-Tiny` đã sinh với
+  chín case — object-only, generated/loaded scene positive cho hai tay, negative
+  out-of-aperture và random probe — cùng hash artifact; fixture positive dùng
+  grasp prior fit theo bề rộng target và gắp được bằng đúng action có biên.
+  Hai mục còn mở: **P3.5-15** backend decision cần CUDA run thật và
+  **P3.5-18** review độc lập. Contract bên dưới vẫn là backlog dài hạn và không
+  được coi là đã pass.
   Phase này thêm pipeline nạp raw mesh/object/scene và tạo simulation-ready asset. Raw
   mesh được chuẩn hóa theo mét, tách visual/collision, rồi public Python CoACD
   API trong library tạo convex parts local-first trước immutable manifest. API

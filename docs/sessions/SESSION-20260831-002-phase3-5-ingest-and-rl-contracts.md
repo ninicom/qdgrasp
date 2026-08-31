@@ -10,7 +10,7 @@ revises: none
 related_plan: ROADMAP-P3.5-001
 ---
 
-# SESSION-20260831-002 — Phase 3.5 (P3.5-01 … P3.5-16)
+# SESSION-20260831-002 — Phase 3.5 (P3.5-01 … P3.5-17)
 
 ## Mục tiêu phiên
 
@@ -38,6 +38,8 @@ related_plan: ROADMAP-P3.5-001
 | W-11 | Cổng CPU của phase, báo cáo từng package là delivered/open/blocked | `scripts/check_phase3_5.py` | verified |
 | W-12 | Harness GPU spike từ chối gắn nhãn CUDA khi không có CUDA | `scripts/phase3_5_gpu_rl_readiness.py` | verified |
 | W-13 | Runner Kaggle/Colab pin commit, có resume | `notebooks/phase3_5_rl_readiness.ipynb` | verified |
+| W-14 | Grasp prior fit theo bề rộng target; cả hai active hand gắp và giữ được vật qua action có biên | `qdgrasp/rl/tasks/grasp_prior.py` | verified |
+| W-15 | `QDGrasp-RL-Env-Tiny` với chín case và hash artifact | `datasets/qdgrasp-rl-env-tiny/`, `scripts/generate_rl_env_tiny.py` | verified |
 
 ## Bằng chứng
 
@@ -47,27 +49,30 @@ related_plan: ROADMAP-P3.5-001
 | E-02 | code | `qdgrasp/scenes/{resolver,serialize,virtual_drop,settle}.py` | commit của phiên |
 | E-03 | code | `qdgrasp/rl/` | commit của phiên |
 | E-04 | test | `tests/assets_ingest/` (47 test) | chạy trong phiên |
-| E-05 | test | `tests/rl_env/` (51 test) | chạy trong phiên |
-| E-06 | gate | `scripts/check_phase3_5.py --profile micro` | 16/19 delivered, exit 1 |
+| E-05 | test | `tests/rl_env/` (60 test) | chạy trong phiên |
+| E-06 | gate | `scripts/check_phase3_5.py --profile micro` | 17/19 delivered, exit 1 |
 | E-07 | harness | `scripts/phase3_5_gpu_rl_readiness.py`, `notebooks/phase3_5_rl_readiness.ipynb` | commit của phiên |
+| E-08 | dataset | `datasets/qdgrasp-rl-env-tiny/` | manifest + `artifact_hashes.json` |
 
 ## Kiểm tra đã chạy
 
 | Test ID | Lệnh | Exit code | Kết quả |
 |---|---|---:|---|
 | T-01 | `python -m pytest tests/assets_ingest -q` | 0 | 47 passed |
-| T-02 | `python -m pytest tests/rl_env -q` | 0 | 51 passed |
+| T-02 | `python -m pytest tests/rl_env -q` | 0 | 60 passed |
 | T-03 | `python -m pytest tests scripts/tests -q` | 0 | 1168 passed, 1 skipped (trước khi thêm test GPU harness) |
-| T-04 | `python scripts/check_phase3_5.py --profile micro` | 1 | 16/19 delivered; ba package còn mở |
+| T-04 | `python scripts/check_phase3_5.py --profile micro` | 1 | 17/19 delivered; hai package còn mở |
 | T-05 | `python scripts/phase3_5_gpu_rl_readiness.py --backend mujoco-cpu --device cpu` | 0 | CPU oracle pass cho hai hand, 771 step/s |
 | T-06 | `python scripts/phase3_5_gpu_rl_readiness.py --backend mjx-warp --device cuda:0` | 1 | từ chối: `verdict=refused`, không có CUDA |
+| T-07 | `python scripts/generate_rl_env_tiny.py` | 0 | 9 case: positive 4/4, negative 2/2, random 2/2 |
 
 Đường sống asset → scene → drop → settle → reset/step chạy đủ cho **cả hai
-active hand**: scene generated settle sau 147 bước, scripted fixture kết thúc ở
-`horizon` không vi phạm an toàn, random policy giữ observation hữu hạn và không
-ghi được success nào.
+active hand**: scene generated settle sau 147 bước, scripted fixture mở vòng kết
+thúc ở `horizon` không vi phạm an toàn, random policy giữ observation hữu hạn và
+không ghi được success nào, còn fixture dùng grasp prior thì **gắp và giữ được
+vật trên cả hai tay**.
 
-## Năm hiệu chỉnh dựa trên đo đạc
+## Sáu hiệu chỉnh dựa trên đo đạc
 
 1. **Actuator khớp theo transmission target, không theo tên.** LEAP đặt tên
    `<joint>_act`, Allegro đặt `ffa0` cho khớp `ffj0`. Quy ước tên đúng cho một
@@ -84,6 +89,12 @@ ghi được success nào.
 5. **Descent của fixture kết thúc khi chạm, không theo số bước.** Số bước cố
    định hiệu chỉnh theo hình học một tay: open-loop, LEAP nâng được 28 cm còn
    Allegro nằm 5 mm trong hộp suốt sáu bước điều khiển và chạm ngưỡng an toàn.
+6. **Fixture positive cần grasp prior, không phải tinh chỉnh descend-and-close.**
+   Một pha "seat" (tiếp tục hạ sau khi chạm) đã được đo và làm xấu đi trên cả hai
+   tay. Prior fit theo bề rộng đo được của target — palm đặt trên frame của
+   target, aperture giải bằng DLS IK từ posture đã có positive vật lý — cho
+   success trên cả hai tay: LEAP nâng 8.3 cm, Allegro 9.1 cm, giữ 20 bước, hai
+   link tiếp xúc, không vi phạm an toàn.
 
 ## Việc chưa hoàn tất
 
@@ -91,12 +102,6 @@ ghi được success nào.
   phát triển; `ADR-0006` cấm CPU fallback làm bằng chứng CUDA và §7 cấm chọn
   backend khi chưa có parity hai tay đo được. Harness và notebook đã sẵn sàng để
   chạy trên Kaggle/Colab; kết quả của run đó là đầu vào của P3.5-15.
-- **P3.5-17 — `QDGrasp-RL-Env-Tiny`:** `open`. Artifact cần positive scripted
-  fixture, mà fixture hiện tại chạy hết horizon không gắp được. Đây là kết luận
-  cấu trúc, không phải thiếu tinh chỉnh: descend-and-close không bao được một
-  hộp, và một fixture positive cần grasp prior có pose giải IK và aperture đã
-  fit — đúng thứ MVP tạm thời phải xây cho một tay. Một pha "seat" (tiếp tục hạ
-  sau khi chạm) đã được đo và làm xấu đi trên cả hai tay, nên không được giữ lại.
 - **P3.5-18 — independent review:** `blocked`. Tác giả artifact không được tự ký
   verdict.
 - CoACD và ManifoldPlus không được cài và không được thêm làm dependency. Vì vậy
@@ -110,14 +115,12 @@ P3.4, P3.4.3, ADR-0008 hay `ROADMAP-MVP-001` bị sửa.
 
 ## Bàn giao
 
-- Trạng thái: P3.5 `in_progress`, 16/19 package delivered. P3 tổng vẫn `pending`.
+- Trạng thái: P3.5 `in_progress`, 17/19 package delivered. P3 tổng vẫn `pending`.
 - Bước hợp lệ tiếp theo, theo thứ tự phụ thuộc:
   1. chạy `notebooks/phase3_5_rl_readiness.ipynb` trên Kaggle/Colab GPU và lưu
      evidence dưới `evidence/phase3_5/`; đó là đầu vào duy nhất hợp lệ cho
      P3.5-15;
-  2. xây grasp prior hai tay để có positive fixture, rồi mới sinh
-     `QDGrasp-RL-Env-Tiny` (P3.5-17);
-  3. reviewer độc lập cho P3.5-18.
+  2. reviewer độc lập cho P3.5-18.
 - Điều kiện phiên sau phải kiểm trước: `python scripts/check_phase3_5.py
-  --profile micro` phải còn trả `1` với đúng ba package mở; nếu nó trả `0` mà
+  --profile micro` phải còn trả `1` với đúng hai package mở; nếu nó trả `0` mà
   chưa có GPU evidence và review thì cổng đã bị nới, không phải phase đã xong.

@@ -25,10 +25,14 @@ target.  A seating phase -- continuing to descend past first contact so the
 fingers end up alongside the object rather than on top of it -- was measured and
 made things worse on both hands, so it is not in the spec.  The reason is
 structural rather than a matter of tuning: descend-and-close does not enclose a
-box, and a positive fixture needs a grasp prior with a solved pose and a fitted
-aperture, which is what the temporary MVP had to build for one hand.  That is
-the work ``P3.5-17`` is waiting on, and it is recorded here rather than hidden
-behind a fixture tuned until it looked convincing.
+box.
+
+That is what :mod:`qdgrasp.rl.tasks.grasp_prior` is for.  It fits an opposed
+pinch to the target's measured width, places the palm on the target's own frame,
+and drives the result through this same bounded action -- and both hands then
+acquire and hold.  This module stays because the two fixtures answer different
+questions: the open-loop one asks whether the environment is *stable* under a
+dumb controller, and the prior-driven one asks whether it can be *solved* at all.
 """
 
 from __future__ import annotations

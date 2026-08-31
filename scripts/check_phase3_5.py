@@ -185,6 +185,47 @@ def _micro_checks() -> list[PackageResult]:
     return results
 
 
+def _rl_env_tiny(root: Path) -> PackageResult:
+    """Read the tiny artifact and check each case behaved as its class requires."""
+
+    manifest_path = root / "datasets/qdgrasp-rl-env-tiny/dataset_manifest.json"
+    hashes_path = root / "datasets/qdgrasp-rl-env-tiny/artifact_hashes.json"
+    if not manifest_path.is_file():
+        return PackageResult("P3.5-17", "QDGrasp-RL-Env-Tiny artifact", STATUS_OPEN, "manifest missing")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    summary = manifest.get("summary", {})
+    cases = {item["case"] for item in manifest.get("cases", [])}
+    required = {
+        "object_only",
+        "generated_scene_positive",
+        "loaded_scene_positive",
+        "negative_out_of_aperture",
+        "random_policy",
+    }
+    complete = (
+        required <= cases
+        and hashes_path.is_file()
+        and summary.get("positive_cases", 0) > 0
+        and summary.get("positive_successes") == summary.get("positive_cases")
+        and summary.get("negatives_behaved") == summary.get("negative_cases")
+        and summary.get("randoms_behaved") == summary.get("random_cases")
+    )
+    missing = sorted(required - cases)
+    return PackageResult(
+        "P3.5-17",
+        "QDGrasp-RL-Env-Tiny artifact",
+        STATUS_DELIVERED if complete else STATUS_OPEN,
+        (
+            f"{summary.get('case_count')} cases; "
+            f"positives {summary.get('positive_successes')}/{summary.get('positive_cases')}, "
+            f"negatives refused {summary.get('negatives_behaved')}/{summary.get('negative_cases')}, "
+            f"random clean {summary.get('randoms_behaved')}/{summary.get('random_cases')}"
+            if complete
+            else f"incomplete; missing cases={missing}"
+        ),
+    )
+
+
 def _outstanding(root: Path) -> list[PackageResult]:
     """Packages that cannot be closed from this machine, stated as such."""
 
@@ -213,12 +254,7 @@ def _outstanding(root: Path) -> list[PackageResult]:
             STATUS_DELIVERED if notebook.is_file() else STATUS_OPEN,
             f"{notebook} present" if notebook.is_file() else "notebook missing",
         ),
-        PackageResult(
-            "P3.5-17",
-            "QDGrasp-RL-Env-Tiny artifact",
-            STATUS_OPEN,
-            "needs a positive scripted fixture; the current fixture runs to the horizon without acquiring",
-        ),
+        _rl_env_tiny(root),
         PackageResult(
             "P3.5-18",
             "independent review and roadmap handoff",
