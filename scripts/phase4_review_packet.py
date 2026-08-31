@@ -63,6 +63,7 @@ REQUIRED_ARTIFACTS: tuple[str, ...] = (
     "tests/model_flow/test_phase4_gate.py",
     "evidence/phase4/overfit-leap-cpu.json",
     "evidence/phase4/overfit-allegro-cpu.json",
+    "evidence/phase4/cuda-refused-devmachine-20260831.json",
 )
 
 #: Evidence the plan requires that this machine cannot produce.  Named here so a
@@ -72,8 +73,10 @@ KNOWN_ABSENT: tuple[dict[str, str], ...] = (
         "artifact": "CUDA forward/backward, parity and memory evidence",
         "gate": "P4-11",
         "reason": (
-            "no NVIDIA GPU on the machine that built this packet. ADR-0006 forbids a CPU run standing in "
-            "for a CUDA one, and §7.4/§7.5 require a measured CUDA overfit and CPU/CUDA FP32 parity."
+            "no NVIDIA GPU on the machine that built this packet -- the probe in "
+            "evidence/phase4/cuda-refused-devmachine-20260831.json records Intel integrated graphics, no "
+            "/dev/nvidia nodes and a CPU-only torch build. ADR-0006 forbids a CPU run standing in for a CUDA "
+            "one, and §7.4/§7.5 require a measured CUDA overfit and CPU/CUDA FP32 parity."
         ),
         "how_to_produce": "run notebooks/phase4_cuda_gate.ipynb on a Kaggle or Colab GPU runtime",
     },
@@ -125,6 +128,11 @@ REVIEW_SCOPE: tuple[dict[str, str], ...] = (
         "area": "CUDA gate",
         "where": "scripts/phase4_cuda_gate.py",
         "question": "ABSENT -- the CUDA gate has not run; see known_absent. Does the harness refuse a CPU run rather than label it?",
+    },
+    {
+        "area": "what the gate accepts as CUDA evidence",
+        "where": "scripts/check_phase4.py::_cuda_records, tests/model_flow/test_phase4_gate.py",
+        "question": "can a refused or partial record satisfy P4-11b by existing? The committed refusal record is the test case: it must stay inert.",
     },
     {
         "area": "scope of the claim",

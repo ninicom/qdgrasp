@@ -44,7 +44,7 @@ không tài liệu nào trong repo vi phạm điều đó.
 python scripts/phase4_review_packet.py --out evidence/phase4/review
 ```
 
-Packet ghi `commit`, `worktree_clean`, hash của 22 artifact bắt buộc, phạm vi
+Packet ghi `commit`, `worktree_clean`, hash của 23 artifact bắt buộc, phạm vi
 kiểm theo §7, và `known_absent` — bằng chứng plan yêu cầu nhưng máy tạo packet
 không sinh được. Verdict luôn `null`.
 
@@ -57,6 +57,7 @@ python -m pytest tests/model_flow -q
 python scripts/check_phase4.py --profile micro
 python scripts/overfit_qdgrasp_flow.py --device cpu --steps 1200
 python scripts/phase4_cuda_gate.py --device cpu
+python scripts/check_phase4.py --profile contract   # P4-11b phải vẫn BLOCKED
 python scripts/check_docs.py --root .
 git diff --check
 ```
@@ -80,13 +81,17 @@ Lệnh thứ ba mất khoảng 5 phút CPU và phải hội tụ dưới bốn n
 | Verdict của overfit | `scripts/overfit_qdgrasp_flow.py` | Verdict đọc trên pose error chứ không trên tổng loss? Lý do có được ghi ngay chỗ đặt ngưỡng? |
 | Config/registry | `qdgrasp/models/config.py`, `qdgrasp/presets/qdgrasp-flow-*.yaml` | Tham số preset lạ bị từ chối hay bị bỏ qua? Preset có đổi được shape mà scale table sở hữu không? |
 | CUDA gate | `scripts/phase4_cuda_gate.py` | **ABSENT.** Xem §5. Harness có từ chối CPU run thay vì gắn nhãn cho nó? |
+| Cổng nhận gì làm CUDA evidence | `scripts/check_phase4.py::_cuda_records` | Một record `refused` hoặc thiếu tay có thể làm `P4-11b` thành delivered chỉ vì file tồn tại không? Record từ chối đã commit là chính test case đó. |
 | Phạm vi tuyên bố | `docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md` | Có câu nào đọc được thành kết quả grasping không? |
 
 ## 5. Những gì reviewer **không** được kết luận từ packet này
 
 - Không có số CUDA nào. Forward/backward, parity FP32 CPU/CUDA và memory scaling
   chưa chạy trên NVIDIA thật; `scripts/phase4_cuda_gate.py` từ chối `--device cpu`
-  và packet ghi `P4-11` là `known_absent`.
+  và packet ghi `P4-11` là `known_absent`. Máy dựng packet không có NVIDIA:
+  `evidence/phase4/cuda-refused-devmachine-20260831.json` ghi lại probe phần
+  cứng (Intel Iris Plus, không có `/dev/nvidia*`, torch `2.11.0+cpu`), và cổng
+  **không** đếm chính file đó là evidence.
 - Overfit có trên cả hai active hand nhưng vẫn chỉ là tám sample mỗi lần, với
   label sinh bằng FK của chính profile. Hai lần hội tụ không cộng lại thành một
   bằng chứng về dữ liệu thật.

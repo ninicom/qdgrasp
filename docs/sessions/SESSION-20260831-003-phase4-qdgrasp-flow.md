@@ -67,7 +67,7 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 | Test ID | Lệnh | Exit code | Kết quả |
 |---|---|---:|---|
 | T-01 | `python -m pytest tests/model_flow -q` | 0 | 63 passed |
-| T-02 | `python -m pytest -q` | 0 | 1252 passed, 1 skipped, 93 subtests |
+| T-02 | `python -m pytest -q` | 0 | 1263 passed, 1 skipped, 93 subtests |
 | T-03 | `python scripts/overfit_qdgrasp_flow.py --report evidence/phase4/overfit-leap-cpu.json` | 0 | converged; xem số đo bên dưới |
 | T-04 | `python scripts/check_docs.py` | 0 | 145 file pass |
 | T-05 | `ruff check` + `ruff format --check` trên file mới | 0 | sạch |
@@ -77,6 +77,8 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 | T-09 | `python scripts/overfit_qdgrasp_flow.py --robot wonik_allegro.yaml` | 0 | palm 0.0462 m, rot 0.0270 rad, joint 0.0372 rad, tip 0.0461 m |
 | T-10 | `python -m pytest tests/contactrich_active -q` | 0 | 408 passed sau khi sửa `audit_closure` |
 | T-11 | `python -m pytest tests/model_flow -q` (sau hai test cuối của §5) | 0 | 65 passed |
+| T-12 | `python -m pytest tests/model_flow -q` (sau khi siết cổng CUDA evidence) | 0 | 74 passed |
+| T-13 | probe phần cứng: `nvidia-smi`, `/dev/nvidia*`, `lspci`, `torch.version.cuda` | — | không có thiết bị NVIDIA nào |
 
 Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố định,
 2 503 821 tham số, 279 s). Allegro (T-09) hội tụ cùng ngưỡng, xem bảng T:
@@ -92,7 +94,7 @@ Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố 
 Đây là bằng chứng rằng **kiến trúc học được**. Nó không nói gì về chất lượng
 grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
 
-## Bốn hiệu chỉnh dựa trên đo đạc
+## Năm hiệu chỉnh dựa trên đo đạc
 
 1. **Overfit phải hỏi một câu tất định.** Lần chạy đầu báo fail (loss 8.04 →
    3.70, palm 0.317 m). Nguyên nhân thứ nhất: mỗi lần gọi lấy một noise mới, nên
@@ -121,13 +123,25 @@ grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
    flag được model attention toàn cục thì test fail, vì lúc đó sự im lặng của nó
    với model thật không có giá trị gì.
 
+5. **Cổng của chính phiên này đếm file thay vì đọc nó.** `check_phase4.py` đánh
+   dấu `P4-11b` là delivered nếu tồn tại bất kỳ `evidence/phase4/cuda-*.json`
+   nào. Nhưng harness ghi record ở **mọi** lần chạy, kể cả lần bị từ chối — cố ý,
+   vì một lần từ chối cũng là kết quả đáng giữ — nên cổng lẽ ra đã được thỏa mãn
+   bởi chính cái máy không chạy được nó. Record nay chỉ được tính khi
+   `verdict=measured`, `device.cuda=true`, mọi hand đo được đều pass, và đủ cả
+   hai active hand; mọi trường hợp khác bị **nêu tên** trong dòng detail chứ
+   không bị bỏ qua.
+
 ## Việc chưa hoàn tất
 
-- **P4-11b — CUDA gate evidence:** `blocked`. Harness và notebook đã sẵn sàng và
-  đã pin commit `9583faf`, nhưng theo `ADR-0006` chỉ một lần chạy trên NVIDIA
-  thật mới thành bằng chứng. Harness từ chối cả `--device cpu` lẫn `--device
-  cuda:0` khi không có CUDA, nên không có đường nào để một lần chạy CPU trở
-  thành CUDA evidence do nhầm lẫn.
+- **P4-11b — CUDA gate evidence:** `blocked`, và không phải vì thiếu công việc.
+  Máy phát triển được probe ở mức phần cứng: không có `nvidia-smi`, không có
+  `/dev/nvidia*`, GPU là Intel Iris Plus G1 tích hợp, torch là `2.11.0+cpu`
+  không có CUDA build. Probe đó được lưu ở
+  `evidence/phase4/cuda-refused-devmachine-20260831.json` để phiên sau không phải
+  suy luận lại, và một test khẳng định chính file đó **không** được cổng tính là
+  evidence. Harness từ chối cả `--device cpu` lẫn `--device cuda:0` khi không có
+  CUDA. Chỉ một runtime GPU thật mới đóng được mục này.
 - **P4-12 — independent review:** `blocked`. Packet và hướng dẫn reviewer đã có;
   verdict thì không, vì tác giả artifact không được tự ký.
 - Nhánh đã được push theo yêu cầu của người dùng trong phiên
@@ -212,7 +226,7 @@ ghi như vậy thay vì viết thành "generalizes across embodiments".
 
 ### Điều kiện phiên sau phải kiểm trước khi tin trạng thái
 
-- `python -m pytest -q` phải còn trả 0 với ít nhất 1254 test pass, **chạy trên
+- `python -m pytest -q` phải còn trả 0 với ít nhất 1263 test pass, **chạy trên
   worktree sạch**. Trên cây bẩn, ledger test của P3.4.3 pass vì lý do sai.
 - `python scripts/check_phase3_5.py --profile micro` phải còn trả `1` với đúng
   hai package mở. Nếu nó trả `0` mà chưa có GPU evidence và review thì cổng đã

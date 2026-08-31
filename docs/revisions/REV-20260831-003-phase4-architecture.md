@@ -86,13 +86,14 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 
 | Verification ID | Lệnh/phương pháp | Kết quả mong đợi | Kết quả thực tế | Trạng thái | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| `V-001` | `python -m pytest tests/model_flow -q` | pass | 63 passed | `pass` | log phiên |
-| `V-002` | `python -m pytest -q` | không regression | 1252 passed, 1 skipped | `pass` | log phiên |
+| `V-001` | `python -m pytest tests/model_flow -q` | pass | 74 passed | `pass` | log phiên |
+| `V-002` | `python -m pytest -q` | không regression | 1263 passed, 1 skipped | `pass` | log phiên |
 | `V-003` | `python scripts/overfit_qdgrasp_flow.py` | hội tụ dưới bốn ngưỡng pose | palm 0.040 m, rot 0.021 rad, joint 0.053 rad, tip 0.041 m | `pass` | `evidence/phase4/overfit-leap-cpu.json` |
 | `V-004` | gradient coverage sau backward | mọi tham số có gradient hữu hạn | 186/186 | `pass` | evidence như trên |
 | `V-005` | `python scripts/check_docs.py` | tài liệu hợp lệ | 145 file pass | `pass` | log phiên |
 | `V-006` | `ruff check` + `ruff format --check` | sạch | sạch | `pass` | log phiên |
 | `V-007` | `python scripts/check_phase4.py --profile micro` | báo đúng trạng thái | 12/14 delivered, exit 1 | `pass` | log phiên |
+| `V-010` | record `verdict=refused` đặt vào `evidence/phase4/` | **không** được tính là evidence | `P4-11b` vẫn `blocked`, record bị nêu tên | `pass` | `tests/model_flow/test_phase4_gate.py` |
 | `V-008` | `python scripts/phase4_cuda_gate.py --device cpu` | từ chối | `verdict=refused` | `pass` | log phiên |
 | `V-009` | `python scripts/overfit_qdgrasp_flow.py --robot wonik_allegro.yaml` | hội tụ | palm 0.046 m, rot 0.027 rad | `pass` | `evidence/phase4/overfit-allegro-cpu.json` |
 
