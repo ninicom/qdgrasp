@@ -22,6 +22,7 @@ import dataclasses
 import pytest
 import torch
 from scipy.spatial.transform import Rotation
+from torch.utils._python_dispatch import TorchDispatchMode
 
 from qdgrasp.models.encoder import EncoderConfig, PointEncoder, masked_mean
 from qdgrasp.models.flow import (
@@ -427,3 +428,128 @@ def test_the_flow_config_rejects_incoherent_shapes() -> None:
     for name in ("conditioning_layers", "flow_layers", "max_joints", "flow_steps", "time_bands"):
         with pytest.raises(ValueError, match=name):
             dataclasses.replace(FlowConfig(), **{name: 0}).validate()
+
+
+# -- P4-05 §5 "no N x N", permutation and determinism ----------------------
+
+
+class _AttentionProbe(TorchDispatchMode):
+    """Record every attention call and every materialised tensor shape.
+
+    Saved-tensor hooks are not enough on their own: a fused attention kernel
+    never materialises its ``[T, T]`` matrix, it recomputes it in the backward
+    pass, so the quadratic cost is real but invisible to autograd's saved
+    tensors.  Dispatch sees the call itself, and the call carries the sequence
+    lengths, which is the thing the memory gate is actually about.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.attention_lengths: list[tuple[int, int]] = []
+        self.output_shapes: list[tuple[int, ...]] = []
+
+    def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+        result = func(*args, **(kwargs or {}))
+        name = str(func)
+        tensors = [item for item in args if isinstance(item, torch.Tensor)]
+        if "attention" in name and len(tensors) >= 2:
+            query, key = tensors[0], tensors[1]
+            if query.dim() >= 3 and key.dim() >= 3:
+                self.attention_lengths.append((int(query.shape[-2]), int(key.shape[-2])))
+        for item in result if isinstance(result, (tuple, list)) else [result]:
+            if isinstance(item, torch.Tensor):
+                self.output_shapes.append(tuple(item.shape))
+        return result
+
+
+def _attention_violations(probe: _AttentionProbe, *, window: int, hand_nodes: int) -> list[tuple[int, int]]:
+    """Attention calls where *both* sides are long -- the forbidden shape.
+
+    Windowed self-attention is ``[window, window]`` and cross-attention is
+    ``[L, T]`` with ``L`` the hand's node count; both keep one side small.  Only
+    a call with two long sides costs ``T^2``.
+    """
+
+    allowed = max(window, hand_nodes)
+    return [pair for pair in probe.attention_lengths if min(pair) > allowed]
+
+
+def test_attention_never_sees_two_long_sides(robots) -> None:
+    """The memory gate, measured on the calls rather than extrapolated.
+
+    ``PLAN.md`` §6 forbids an ``N x N`` tensor.  The check has a negative
+    control in the same test: the identical probe on a model whose window is
+    wider than the cloud *must* report a violation, or the probe is measuring
+    nothing and its silence means nothing.
+    """
+
+    robot = robots["leap_hand.yaml"]
+    points = torch.randn(1, 900, 3) * 0.05
+    graph = robot.to_hand_graph()
+    hand_nodes = graph.num_nodes
+
+    model = GraspFlowModel()
+    tokens = int(tokenize_points(points, model.tokenizer_config).token_mask.sum())
+    assert tokens > model.point_encoder.config.window * 4, "cloud too small to tell the two cases apart"
+
+    probe = _AttentionProbe()
+    with probe, torch.no_grad():
+        model(points, graph, robot)
+    assert probe.attention_lengths, "no attention call seen; the probe did not run"
+    assert not _attention_violations(probe, window=model.point_encoder.config.window, hand_nodes=hand_nodes)
+
+    quadratic = [
+        shape
+        for shape in probe.output_shapes
+        if sum(1 for size in shape if size >= tokens // 2) >= 2
+        and len({size for size in shape if size >= tokens // 2}) == 1
+    ]
+    assert not quadratic, f"materialised tensors with two token-sized dimensions: {quadratic[:5]}"
+
+    # Negative control.
+    global_model = GraspFlowModel(encoder=EncoderConfig(channels=(32, 64), depths=(1, 1), window=4096))
+    control = _AttentionProbe()
+    with control, torch.no_grad():
+        global_model(points, graph, robot)
+    assert _attention_violations(control, window=32, hand_nodes=hand_nodes), (
+        "the probe failed to flag global attention, so its verdict on the real model is worthless"
+    )
+
+
+def test_permuting_the_node_order_does_not_move_the_palm_embedding(robots) -> None:
+    """Message passing reads the edge list, so node order must not matter."""
+
+    torch.manual_seed(0)
+    encoder = HandGraphEncoder()
+    graph = robots["leap_hand.yaml"].to_hand_graph()
+    count = graph.num_nodes
+    permutation = torch.randperm(count, generator=torch.Generator().manual_seed(3))
+    inverse = torch.empty_like(permutation)
+    inverse[permutation] = torch.arange(count)
+
+    permuted = dataclasses.replace(
+        graph,
+        node_names=tuple(graph.node_names[index] for index in permutation.tolist()),
+        node_features=graph.node_features[permutation],
+        edge_index=inverse[graph.edge_index],
+        palm_index=int(inverse[graph.palm_index]),
+        fingertip_indices=tuple(int(inverse[index]) for index in graph.fingertip_indices),
+    )
+
+    original = encoder(graph)
+    shuffled = encoder(permuted)
+    torch.testing.assert_close(original.palm, shuffled.palm, atol=1e-5, rtol=0.0)
+    torch.testing.assert_close(original.summary, shuffled.summary, atol=1e-5, rtol=0.0)
+    torch.testing.assert_close(original.nodes[permutation], shuffled.nodes, atol=1e-5, rtol=0.0)
+
+
+def test_the_same_seed_gives_the_same_grasp_on_the_same_device(robots) -> None:
+    robot = robots["leap_hand.yaml"]
+    graph = robot.to_hand_graph()
+    points = torch.randn(2, 200, 3) * 0.05
+    torch.manual_seed(0)
+    model = GraspFlowModel()
+    first = model(points, graph, robot, generator=torch.Generator().manual_seed(7))
+    second = model(points, graph, robot, generator=torch.Generator().manual_seed(7))
+    torch.testing.assert_close(first.palm_translation, second.palm_translation)
+    torch.testing.assert_close(first.joint_angles, second.joint_angles)

@@ -1,0 +1,12 @@
+# QDGrasp-Flow scale n. Widths and depths come from FLOW_SCALES in
+# qdgrasp/models/config.py; a preset names a scale, it does not restate one.
+schema: qdgrasp/model/v1
+name: qdgrasp-flow-n
+type: qdgrasp_flow
+params:
+  scale: n
+  voxel_size: 0.005
+  extent: 0.5
+  flow_steps: 5
+  max_joints: 32
+  grasps: 8

@@ -7,6 +7,7 @@ configuration allowlist.
 from __future__ import annotations
 
 from .. import dummy as _dummy  # noqa: F401  (registers built-in builders)
+from ..models import config as _flow  # noqa: F401  (registers qdgrasp_flow)
 from .facade import DEFAULT_MODEL, DEFAULT_ROBOT, QDGrasp, load
 from .protocols import GraspDataset, GraspModel
 from .results import GraspResults
