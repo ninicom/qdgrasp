@@ -107,6 +107,9 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 - Báo cáo người thứ ba bị ảnh hưởng: không có.
 - Verdict cũ còn hiệu lực: có. MVP-T `complete` với kết luận âm về phần học,
   P3.5 `in_progress` 17/19, P3.4 `paused_by_ADR-0008` — không mục nào bị đụng.
+  Cổng closure của P3.4.3 được sửa cho chặt hơn (`audit_closure` nay kiểm tồn
+  tại của `test_ids`), nhưng trên ledger thật nó cho 0 violation, nên verdict
+  `FAIL` và `release_blocked=true` giữ nguyên vì đúng lý do cũ.
 - Loại kiểm tra lại cần thiết: `none` cho phase cũ; `full_review` cho chính P4
   khi nó đóng.
 - Đính chính số liệu cần phát hành: không có.

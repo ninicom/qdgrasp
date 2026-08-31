@@ -75,6 +75,7 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 | T-07 | `python scripts/phase4_cuda_gate.py --device cpu` | 1 | từ chối: `verdict=refused` |
 | T-08 | `python scripts/phase4_cuda_gate.py --device cuda:0` | 1 | từ chối: không có CUDA |
 | T-09 | `python scripts/overfit_qdgrasp_flow.py --robot wonik_allegro.yaml` | 0 | palm 0.0462 m, rot 0.0270 rad, joint 0.0372 rad, tip 0.0461 m |
+| T-10 | `python -m pytest tests/contactrich_active -q` | 0 | 408 passed sau khi sửa `audit_closure` |
 
 Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố định,
 2 503 821 tham số, 279 s). Allegro (T-09) hội tụ cùng ngưỡng, xem bảng T:
@@ -137,8 +138,25 @@ grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
 
 ## Sửa đổi phiên trước
 
-Không. Phiên này không đụng tới kết luận của MVP-T hay P3.5; cả hai giữ nguyên
-trạng thái mà `SESSION-20260831-001` và `-002` ghi.
+Một, và nó không thuộc P4.
+
+`tests/contactrich_active/test_closure_trust_chain.py::test_the_ledger_rejects_a_test_path_that_does_not_exist`
+fail lần đầu tiên trong phiên này — không phải vì P4 làm hỏng nó, mà vì đây là
+lần đầu suite chạy trên một worktree **sạch**. Test dựng một manifest giả trong
+đó một requirement `passed` trỏ tới file test không tồn tại, rồi đòi có
+violation. Violation nó vẫn nhận được là `passed claimed on a dirty worktree` —
+đúng với mọi requirement khi cây bẩn và không liên quan gì tới đường dẫn bị giả
+mạo. Cây sạch thì cái cớ đó biến mất và test lộ ra điều nó lẽ ra phải bắt:
+`audit_closure` kiểm tồn tại cho `implementation_refs` và `evidence_refs` nhưng
+**bỏ qua** `test_ids`.
+
+`test_ids` nay đi qua cùng `_missing_paths`. Trên ledger P3.4.3 thật với cây
+sạch, thay đổi này cho **0 violation** — mọi file test được trích dẫn đều có
+thật — nên verdict giữ nguyên `FAIL` và `release_blocked` giữ nguyên `true` vì
+đúng những lý do cũ. Không kết luận nào của P3.4.3 bị đổi; cổng chỉ chặt hơn.
+
+Ngoài mục đó, phiên này không đụng tới kết luận của MVP-T hay P3.5; cả hai giữ
+nguyên trạng thái mà `SESSION-20260831-001` và `-002` ghi.
 
 ## Bàn giao
 
