@@ -2,15 +2,15 @@
 document_id: ROADMAP-001
 document_type: roadmap
 title: Roadmap tổng thể QDGrasp theo tám phase
-version: 1.31.0
+version: 1.32.0
 status: active
 date: 2026-08-31
-revises: ROADMAP-001@1.30.0
+revises: ROADMAP-001@1.31.0
 related_plan: PLAN-V2
-latest_revision_record: docs/revisions/REV-20260831-002-phase3-5-execution.md
-revision_reason: MVP-T đóng, và P3.5 được thi công tới 17/19 mục của cổng với hai mục còn mở.
+latest_revision_record: docs/revisions/REV-20260831-003-phase4-architecture.md
+revision_reason: P4 được thi công 10/13 work package và có execution plan riêng; ba mục còn mở, trong đó cổng CUDA chưa chạy.
 necessity: N2
-impact: Trạng thái MVP-T và P3.5 đổi; mọi gate và blocker của P0–P7 giữ nguyên.
+impact: Trạng thái P4 đổi từ pending sang in_progress; mọi gate và blocker của P0–P7 giữ nguyên, kể cả cổng CUDA của chính P4.
 ---
 
 # Roadmap tổng thể QDGrasp
@@ -74,7 +74,7 @@ tư thêm vào kiến trúc policy.
 | P1 — Framework | Dựng package, CLI, YAML schema, runner và checkpoint contract | Skeleton có `train/val/predict/export` trên dummy model | API/config round-trip, CPU smoke và CUDA dummy train-step pass | complete |
 | P2 — Robot layer | Chuẩn hóa URDF/MJCF, HandGraph, FK, limits, frames và simulator adapter | LEAP/Allegro/Shadow cùng chạy qua một `RobotSpec` | Parse/mesh/FK/MuJoCo fixtures pass cho ba hand | complete |
 | P3 — Data layer | Xây procedural objects/scenes, static/contact-rich grasp data và môi trường asset→scene→RL có thể tái lập | `DGN-Open-Tiny`, `QDGrasp-Scene-Tiny`, `QDGrasp-ContactRich-Tiny` và `QDGrasp-RL-Env-Tiny` có manifest/evidence | Object/scene/trajectory regenerate; raw-mesh/CoACD, virtual-drop/settle, Gym API, frame/physics/CPU-GPU audit và tiny loaders pass | pending |
-| P4 — Model MVP | Xây object encoder, HandGraph conditioning và palm+joint flow | QDGrasp-Flow `n` overfit được tiny dataset | CUDA forward/backward, gradient coverage, finite joints/rotations và tiny overfit pass | pending |
+| P4 — Model MVP | Xây object encoder, HandGraph conditioning và palm+joint flow | QDGrasp-Flow `n` overfit được tiny dataset | CUDA forward/backward, gradient coverage, finite joints/rotations và tiny overfit pass | in_progress — 10/13 package; overfit CPU pass với gradient phủ 186/186, cổng CUDA chưa chạy |
 | P5 — Training & evaluation | Hoàn thiện multi-hand training, quality/contact heads, evaluator và ablation | Checkpoint multi-hand đầu tiên cùng benchmark report | CUDA train/eval/resume, held-out protocol, physics success và ablations tái lập | pending |
 | P6 — Scale & delivery | Scale data/model, tối ưu memory/latency, resume, TorchScript và ONNX | Model `n/s/m`, export bundles và reproducible train recipes | CPU/CUDA/AMP parity, export round-trip, memory/latency gates pass | pending |
 | P7 — Release & paper | Đóng package, model/data cards, paper evidence và community workflow | Public release candidate, model zoo, dataset card và paper artifact bundle | License/security/release review; raw metrics/hash; independent review pass | pending |
@@ -270,6 +270,10 @@ tư thêm vào kiến trúc policy.
 
 ### P4 — Model MVP
 
+- Execution plan: `docs/roadmap/PHASE4_EXECUTION_PLAN.md` (`ROADMAP-P4-001`),
+  work breakdown P4-00…P4-12. Trạng thái đo được ghi ở
+  `docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md`: P4-00…P4-07,
+  P4-09 và P4-10 đã giao; P4-08, P4-11 và P4-12 còn mở.
 - Point-cloud object encoder và variable-length HandGraph conditioning.
 - Sinh trực tiếp palm pose + named joint state bằng flow/diffusion backend.
 - Differentiable FK nối pose với keypoint/contact/force auxiliary heads.
