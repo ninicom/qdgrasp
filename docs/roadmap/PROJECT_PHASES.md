@@ -289,6 +289,11 @@ tư thêm vào kiến trúc policy.
 - Execution plan: `docs/roadmap/PHASE5_EXECUTION_PLAN.md` (`ROADMAP-P5-001`),
   work breakdown P5-00…P5-12. Khóa protocol bằng hash **trước** run đầu tiên;
   `P5-11` không được bắt đầu trước khi `P4-11b` đóng.
+- P5-01/02 đã thi công (`qdgrasp/models/{data,protocol}.py`,
+  `configs/phase5/protocol-v1.yaml`). Chúng đo được rằng `DGN-Open-Tiny` chỉ có
+  **ba** grasp thành công trong toàn bộ train split của hai active hand, nên
+  `P5-03` trở đi bị chặn ở data layer — xem §0.2 của plan và
+  `scripts/check_phase5_inputs.py`, cổng trả `1` cho tới khi đủ positive.
 - Full training loop, sampling, quality head, hard negatives và simulator replay.
 - Multi-hand train, held-out object family và held-out embodiment protocols.
 - Ablation khóa trước khi chạy: graph/no-graph, direct/contact-first, FK
