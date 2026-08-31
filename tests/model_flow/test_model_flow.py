@@ -22,6 +22,7 @@ import dataclasses
 import pytest
 import torch
 from scipy.spatial.transform import Rotation
+from torch.profiler import ProfilerActivity, profile
 from torch.utils._python_dispatch import TorchDispatchMode
 
 from qdgrasp.models.encoder import EncoderConfig, PointEncoder, masked_mean
@@ -553,3 +554,64 @@ def test_the_same_seed_gives_the_same_grasp_on_the_same_device(robots) -> None:
     second = model(points, graph, robot, generator=torch.Generator().manual_seed(7))
     torch.testing.assert_close(first.palm_translation, second.palm_translation)
     torch.testing.assert_close(first.joint_angles, second.joint_angles)
+
+
+def test_doubling_the_tokens_does_not_quadruple_the_allocation(robots) -> None:
+    """§5's memory row, measured on CPU rather than argued.
+
+    This is a claim about *this* model, not a detector: the CPU attention kernel
+    is memory-efficient, so a model with global attention also grows linearly in
+    allocated bytes while growing quadratically in time.  What catches global
+    attention is ``test_attention_never_sees_two_long_sides``; what this catches
+    is a future change that materialises something per-token-pair, which would
+    show up here as a ratio near four.
+    """
+
+    robot = robots["leap_hand.yaml"]
+    graph = robot.to_hand_graph()
+    model = GraspFlowModel(encoder=EncoderConfig(channels=(32, 64), depths=(1, 1)))
+
+    def allocated(count: int) -> tuple[int, int]:
+        points = torch.randn(1, count, 3) * 0.05
+        tokens = int(tokenize_points(points, model.tokenizer_config).token_mask.sum())
+        with profile(activities=[ProfilerActivity.CPU], profile_memory=True) as recorded:
+            prediction = model(points, graph, robot)
+            prediction.palm_translation.sum().backward()
+        return tokens, sum(max(0, event.cpu_memory_usage) for event in recorded.events())
+
+    small_tokens, small_bytes = allocated(600)
+    large_tokens, large_bytes = allocated(1200)
+    assert 1.8 <= large_tokens / small_tokens <= 2.2, "the two runs must actually differ by ~2x in tokens"
+    assert large_bytes / small_bytes < 3.0, (
+        f"allocation grew {large_bytes / small_bytes:.2f}x for {large_tokens / small_tokens:.2f}x the tokens"
+    )
+
+
+def test_the_fk_term_reaches_both_the_palm_and_the_joints(robots) -> None:
+    """§5: the FK consistency loss must move both heads, not just one.
+
+    Fingertips are computed from the palm pose and the joints, so a gradient
+    that arrived at only one of them would mean the term is being satisfied by
+    sliding the whole hand instead of by posing it -- which is exactly the
+    failure the FK term exists to prevent.
+    """
+
+    robot = robots["leap_hand.yaml"]
+    model = GraspFlowModel()
+    joints = len(robot.actuated_joint_names)
+    state = torch.randn(3, model.flow_config.state_dimension, requires_grad=True)
+    translation, rotation, angles = model.decode(state, robot)
+    fingertips = robot.fingertip_positions(translation, rotation, angles)
+    target = torch.zeros(3, len(robot.fingertip_links), 3)
+    torch.nn.functional.mse_loss(fingertips, target).backward()
+
+    assert state.grad is not None
+    translation_grad = state.grad[:, :3].abs().sum()
+    rotation_grad = state.grad[:, 3:12].abs().sum()
+    joint_grad = state.grad[:, 12 : 12 + joints].abs().sum()
+    assert float(translation_grad) > 0.0, "the FK term did not reach the palm translation"
+    assert float(rotation_grad) > 0.0, "the FK term did not reach the palm rotation"
+    assert float(joint_grad) > 0.0, "the FK term did not reach the joints"
+    # Channels past the hand's joint count belong to no joint of this hand and
+    # must stay untouched, or a wider hand's slots would be silently trained.
+    assert float(state.grad[:, 12 + joints :].abs().sum()) == 0.0
