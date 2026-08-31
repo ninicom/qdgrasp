@@ -29,15 +29,11 @@ import yaml
 
 #: The only statuses a requirement may carry. Anything else is a manifest bug,
 #: not a new state: an unrecognised status must never be read as "fine".
-ALLOWED_STATUS: frozenset[str] = frozenset(
-    {"pending", "passed", "failed", "blocked", "paused", "deferred_not_claimed"}
-)
+ALLOWED_STATUS: frozenset[str] = frozenset({"pending", "passed", "failed", "blocked", "paused", "deferred_not_claimed"})
 
 #: Statuses that leave the phase open. ``paused`` and ``deferred_not_claimed``
 #: are open too: they are honest non-coverage, not silent coverage.
-_OPEN_STATUS: frozenset[str] = frozenset(
-    {"pending", "failed", "blocked", "paused", "deferred_not_claimed"}
-)
+_OPEN_STATUS: frozenset[str] = frozenset({"pending", "failed", "blocked", "paused", "deferred_not_claimed"})
 
 MANIFEST_SCHEMA = "qdgrasp/roadmap-requirements/v1"
 
@@ -166,8 +162,7 @@ def load_manifest(path: str | Path) -> RequirementsManifest:
         status = str(entry.get("status", "pending"))
         if status not in ALLOWED_STATUS:
             raise ManifestError(
-                f"{requirement_id} carries status {status!r}, which is not one of "
-                f"{sorted(ALLOWED_STATUS)}"
+                f"{requirement_id} carries status {status!r}, which is not one of {sorted(ALLOWED_STATUS)}"
             )
         requirements.append(
             Requirement(
@@ -283,8 +278,13 @@ def audit_closure(
                 violations.append(f"{requirement.id}: passed without test_ids")
             if not requirement.evidence_refs:
                 violations.append(f"{requirement.id}: passed without evidence_refs")
+            # ``test_ids`` is checked alongside the other refs, not separately:
+            # a passed claim naming a test file that is not in the tree is
+            # exactly as empty as one naming missing evidence, and the only
+            # thing that used to catch it was the dirty-worktree rule, which
+            # says nothing about the test.
             missing = _missing_paths(
-                (*requirement.implementation_refs, *requirement.evidence_refs), root
+                (*requirement.implementation_refs, *requirement.evidence_refs, *requirement.test_ids), root
             )
             if missing:
                 violations.append(f"{requirement.id}: passed but refs do not exist: {sorted(missing)}")
@@ -299,8 +299,7 @@ def audit_closure(
 
         if requirement.status == "deferred_not_claimed" and requirement.evidence_refs:
             violations.append(
-                f"{requirement.id}: deferred_not_claimed may not carry evidence_refs "
-                "(deferral is not coverage)"
+                f"{requirement.id}: deferred_not_claimed may not carry evidence_refs (deferral is not coverage)"
             )
 
     # Deferral is an allowed disposition for an optional package -- the plan
@@ -322,9 +321,7 @@ def audit_closure(
         violations.append("scope claims three_hand_coverage=true; ADR-0008 keeps it false")
     historical = str(scope.get("historical_p3_4_state", ""))
     if historical != "paused_by_ADR-0008":
-        violations.append(
-            f"scope records historical P3.4 as {historical!r}; it stays 'paused_by_ADR-0008'"
-        )
+        violations.append(f"scope records historical P3.4 as {historical!r}; it stays 'paused_by_ADR-0008'")
     active_hands = tuple(str(h) for h in scope.get("active_hands", ()) or ())
     paused_hands = tuple(str(h) for h in scope.get("paused_hands", ()) or ())
     if set(active_hands) & set(paused_hands):
@@ -338,9 +335,7 @@ def audit_closure(
     if not rule.get("allow_dirty_candidate", True) and dirty and require_release:
         violations.append("release candidate audited on a dirty worktree")
 
-    open_required = tuple(
-        sorted(r.id for r in manifest.requirements if r.required and r.is_open)
-    )
+    open_required = tuple(sorted(r.id for r in manifest.requirements if r.required and r.is_open))
 
     verdict, exit_code = _resolve_verdict(
         violations=violations,
@@ -386,9 +381,7 @@ def _resolve_verdict(
     if not open_required:
         return ("PASS", 0)
 
-    open_statuses = {
-        manifest.by_id(requirement_id).status for requirement_id in open_required
-    }
+    open_statuses = {manifest.by_id(requirement_id).status for requirement_id in open_required}
     if open_statuses == {"paused"}:
         return ("PAUSED", 2)
     if open_statuses <= {"paused", "deferred_not_claimed"}:
