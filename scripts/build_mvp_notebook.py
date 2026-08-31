@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "notebooks" / "mvp_grasp_policy.ipynb"
 
 # Replaced with the immutable implementation commit before notebook publication.
-MVP_CODE_REVISION = "0" * 40
+MVP_CODE_REVISION = "c8f2749770fb0ade8552d3b9f576143a63e37a1c"
 MENAGERIE_REVISION = "da76818e269b82289eba39808e2fb91d679d6994"
 
 
