@@ -23,9 +23,11 @@ dist/
 /datasets/*
 !/datasets/dgn-open-tiny/
 !/datasets/qdgrasp-scene-tiny/
+!/datasets/qdgrasp-rl-env-tiny/
 *.pt
 !/datasets/dgn-open-tiny/**
 !/datasets/qdgrasp-scene-tiny/**
+!/datasets/qdgrasp-rl-env-tiny/**
 !/datasets/dgn-open-tiny/**/*.pt
 *.pth
 *.ckpt

@@ -1,0 +1,65 @@
+{
+  "artifacts": [
+    {
+      "bytes": 1068,
+      "path": "assets/generated_target.manifest.json",
+      "sha256": "f2ec3a59c61055f510835d45c6858004cb23307017bbebc846542278860c04c3"
+    },
+    {
+      "bytes": 393,
+      "path": "assets/generated_target.obj",
+      "sha256": "0ef1eb010ccde6641da0894d54f4ac29b83d4e15bb022297a174e85ef564f5aa"
+    },
+    {
+      "bytes": 1049,
+      "path": "assets/loaded_target.manifest.json",
+      "sha256": "aa2e289b99f9fca28715f4262086d5e48cd4efea20b5ac8f40d9f12f869f89b4"
+    },
+    {
+      "bytes": 393,
+      "path": "assets/loaded_target.obj",
+      "sha256": "9cf40422bca7b8f1e04172df11a77c71cb206d71c7adbab501a6b6f09acffc99"
+    },
+    {
+      "bytes": 1060,
+      "path": "assets/random_target.manifest.json",
+      "sha256": "511ae00c77bd716a03f6f901f9526053ea51c1f028ff2bb4baf163d9c79a2bd8"
+    },
+    {
+      "bytes": 393,
+      "path": "assets/random_target.obj",
+      "sha256": "c56c3291c69cb6c1d32ca653f1d6614321f5d67f63a21164e4f9133ca03a41b1"
+    },
+    {
+      "bytes": 1043,
+      "path": "assets/solo.manifest.json",
+      "sha256": "b0f4235b4ce6d4ca46b0621a806ba9330295de649a0544d84ce334f8fcef424e"
+    },
+    {
+      "bytes": 393,
+      "path": "assets/solo.obj",
+      "sha256": "eab0723760358cbf89e607a1632f7c8ad26d0650f3c5ce6435eda637a8d386ae"
+    },
+    {
+      "bytes": 1038,
+      "path": "assets/too_wide.manifest.json",
+      "sha256": "e175b39d07e18c7aa39c683e583eccac68c2fd5b5c5aaf6d0447dd8ec712d11e"
+    },
+    {
+      "bytes": 393,
+      "path": "assets/too_wide.obj",
+      "sha256": "911f8d243ce00561e938ddae886e7989ea663d45cbd391ff64a89be18cdb0c90"
+    },
+    {
+      "bytes": 6536,
+      "path": "dataset_manifest.json",
+      "sha256": "cf8a8bf87abde63a41e469e9c087785a41f7f06dc3a3b07f6f3017a4c3da9460"
+    },
+    {
+      "bytes": 1925,
+      "path": "scenes/loaded_scene.json",
+      "sha256": "9d918e1de5f7f95da8fa8e97fc7271d0c6b1abf2bc71823bfe7f7687c951946a"
+    }
+  ],
+  "schema": "qdgrasp/rl-env-tiny-hashes/v1"
+}

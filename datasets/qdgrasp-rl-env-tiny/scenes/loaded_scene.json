@@ -1,0 +1,99 @@
+{
+  "cameras": [],
+  "environment": "table",
+  "gravity": [
+    0.0,
+    0.0,
+    -9.81
+  ],
+  "license_record": "generated",
+  "objects": [
+    {
+      "T_world_object": [
+        [
+          -0.0009370766569835147,
+          -0.44165500799898894,
+          -0.8971844714420506,
+          -0.02704209851560104
+        ],
+        [
+          -0.07508322605508441,
+          -0.8946212787904185,
+          0.4404716525504871,
+          -0.00299823912255847
+        ],
+        [
+          -0.9971768303829064,
+          0.06777626018606292,
+          -0.03232255408675301,
+          0.05083209185831114
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "asset_ref": "datasets/qdgrasp-rl-env-tiny/assets/loaded_target.manifest.json",
+      "friction": null,
+      "mass": null,
+      "object_id": "loaded_target",
+      "scale": 1.0
+    }
+  ],
+  "redistributable": true,
+  "scene_id": "rl-env-tiny-loaded",
+  "schema": "qdgrasp/scene-spec/v1",
+  "settle_seed": 7,
+  "solver_profile": "default",
+  "source_dataset": "qdgrasp-virtual-drop",
+  "source_record_hash": "a3c534b5f224ccd4fc6b5f4f610000e362237deecb2d7a8680aac9bb7d2510af",
+  "source_split": "generated",
+  "source_version": "qdgrasp/virtual-drop-scene/v1",
+  "supports": [
+    {
+      "T_world_support": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.02
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "geom_type": "box",
+      "params": {
+        "friction": [
+          1.0,
+          0.005,
+          0.0001
+        ],
+        "size": [
+          0.6,
+          0.6,
+          0.04
+        ]
+      },
+      "support_id": "support_surface"
+    }
+  ],
+  "timestep": 0.002
+}
