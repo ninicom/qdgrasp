@@ -79,6 +79,7 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 | T-11 | `python -m pytest tests/model_flow -q` (sau hai test cuối của §5) | 0 | 65 passed |
 | T-12 | `python -m pytest tests/model_flow -q` (sau khi siết cổng CUDA evidence) | 0 | 74 passed |
 | T-13 | probe phần cứng: `nvidia-smi`, `/dev/nvidia*`, `lspci`, `torch.version.cuda` | — | không có thiết bị NVIDIA nào |
+| T-14 | diễn tập notebook: clone commit đã pin vào thư mục rỗng, chạy stage 1/2/3 | 0/0/1 | stage 1 chạy đủ cổng micro, stage 3 từ chối đúng |
 
 Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố định,
 2 503 821 tham số, 279 s). Allegro (T-09) hội tụ cùng ngưỡng, xem bảng T:
@@ -94,7 +95,7 @@ Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố 
 Đây là bằng chứng rằng **kiến trúc học được**. Nó không nói gì về chất lượng
 grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
 
-## Năm hiệu chỉnh dựa trên đo đạc
+## Sáu hiệu chỉnh dựa trên đo đạc
 
 1. **Overfit phải hỏi một câu tất định.** Lần chạy đầu báo fail (loss 8.04 →
    3.70, palm 0.317 m). Nguyên nhân thứ nhất: mỗi lần gọi lấy một noise mới, nên
@@ -131,6 +132,20 @@ grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
    `verdict=measured`, `device.cuda=true`, mọi hand đo được đều pass, và đủ cả
    hai active hand; mọi trường hợp khác bị **nêu tên** trong dòng detail chứ
    không bị bỏ qua.
+
+6. **Notebook export sai tên biến môi trường, và chỉ một lần diễn tập mới thấy.**
+   Không đóng được `P4-11b` từ máy này, nên việc gần nhất với chạy thật là
+   clone commit đã pin vào một thư mục rỗng rồi chạy đúng những lệnh notebook
+   chạy. Stage 1 chết ngay: ba notebook (`mvp_grasp_policy`,
+   `phase3_5_rl_readiness`, `phase4_cuda_gate`) export
+   `QDGRASP_ROBOT_ASSETS` trong khi `qdgrasp/robot/assets.py` đọc
+   `QDGRASP_ROBOT_ASSETS_ROOT`. Trên máy phát triển không ai thấy vì source
+   checkout có fallback `.references/robot-assets`; trên Kaggle thì không.
+   Nghĩa là **cả hai** lần chạy GPU mà dự án đang chờ — P3.5 và P4 — đều sẽ
+   chết ngay sau cell cài đặt, và lỗi trông như lỗi code chứ không như một chữ
+   sai. Đã sửa ở ba notebook và hai script sinh chúng;
+   `tests/model_flow/test_notebook_environment.py` kiểm mọi notebook và builder
+   theo đúng tên mà code đọc. Sau khi sửa, ba stage chạy sạch từ clone trắng.
 
 ## Việc chưa hoàn tất
 
