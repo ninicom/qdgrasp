@@ -13,6 +13,9 @@ revises:
   - session_id: ROADMAP-PROJECT-001
     artifact: docs/roadmap/PROJECT_PHASES.md
     revision: ROADMAP-001@1.31.0
+  - session_id: ROADMAP-P4-001
+    artifact: docs/roadmap/PHASE4_EXECUTION_PLAN.md
+    revision: ROADMAP-P4-001@1.0.0
 reason: "P4 được thi công 12/14 mục của cổng sau khi P3.5 cạn phần việc làm được trên máy phát triển; trạng thái `pending` và việc P4 không có execution plan không còn đúng."
 necessity: N2
 impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo được là học được trên CPU; cổng CUDA của P4 giữ nguyên và chưa mục nào của nó được đánh dấu đạt."
@@ -24,9 +27,10 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 
 - Phiên thực hiện sửa: `SESSION-20260831-003`.
 - Bản ghi hoàn tất: `docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md`.
-- Artifact bị sửa: `docs/roadmap/PROJECT_PHASES.md`.
-- Revision trước sửa: `ROADMAP-001@1.31.0`.
-- Revision sau sửa: `ROADMAP-001@1.32.0`.
+- Artifact bị sửa: `docs/roadmap/PROJECT_PHASES.md`,
+  `docs/roadmap/PHASE4_EXECUTION_PLAN.md`.
+- Revision trước sửa: `ROADMAP-001@1.31.0`, `ROADMAP-P4-001@1.0.0`.
+- Revision sau sửa: `ROADMAP-001@1.32.0`, `ROADMAP-P4-001@1.1.0`.
 - Artifact mới: `docs/roadmap/PHASE4_EXECUTION_PLAN.md` (`ROADMAP-P4-001@1.0.0`),
   `qdgrasp/models/{tokenizer,encoder,hand_graph,flow,losses}.py`,
   `tests/model_flow/test_model_flow.py`, `scripts/overfit_qdgrasp_flow.py`,
@@ -55,7 +59,8 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 ## 4. Phạm vi và tác động
 
 - Tài liệu bị đụng: `docs/roadmap/PROJECT_PHASES.md` (dòng trạng thái P4 và mục
-  `### P4 — Model MVP`).
+  `### P4 — Model MVP`); `docs/roadmap/PHASE4_EXECUTION_PLAN.md` (cột output của
+  §4, không đụng phạm vi, contract hay cổng).
 - Tài liệu được thêm: `docs/roadmap/PHASE4_EXECUTION_PLAN.md`.
 - Không đụng: `PLAN.md`, mọi ADR, mọi gate của P0–P3.5 và P5–P7.
 - `ADR-0006` giữ nguyên và đang chặn P4-11: chưa có bằng chứng CUDA nào cho P4,
@@ -73,6 +78,7 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 | Cổng của P4 | chỉ là văn bản trong §6 của plan | `scripts/check_phase4.py`, đọc được bằng máy |
 | Harness CUDA | không có | `scripts/phase4_cuda_gate.py` + notebook pin commit |
 | Packet review | không có | `scripts/phase4_review_packet.py` + `PHASE4_REVIEWER_GUIDE.md` |
+| §4 của plan | đoán trước `conditioning.py`, `fk_head.py`, `quality.py` | tên file thật; ba head chung một forward pass nên chung file |
 | Bằng chứng học được | không có | `evidence/phase4/overfit-{leap,allegro}-cpu.json` |
 
 ## 6. Xác minh

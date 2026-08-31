@@ -2,11 +2,15 @@
 document_id: ROADMAP-P4-001
 document_type: plan
 title: Kế hoạch thi công Phase 4 — QDGrasp-Flow Model MVP
-version: 1.0.0
+version: 1.1.0
 status: active
 date: 2026-08-31
-revises: none
+revises: ROADMAP-P4-001@1.0.0
 related_plan: PLAN-V2
+latest_revision_record: docs/revisions/REV-20260831-003-phase4-architecture.md
+revision_reason: Sửa cột output của §4 cho khớp code đã viết; ba head nằm chung một forward pass nên chung file.
+necessity: N3
+impact: Không đổi phạm vi, contract hay cổng; chỉ đổi tên file mà mỗi package giao.
 depends_on:
   - ROADMAP-P2-001
   - ROADMAP-P3.1-001
@@ -143,17 +147,23 @@ bù cho một output không hữu hạn: state không hữu hạn là lỗi, kh�
 | P4-01 | Point tokenizer thuần Torch | `qdgrasp/models/tokenizer.py` | 00 |
 | P4-02 | Serialized point encoder + neck | `qdgrasp/models/encoder.py` | 01 |
 | P4-03 | HandGraph encoder biến độ dài | `qdgrasp/models/hand_graph.py` | 00 |
-| P4-04 | World-edge cross-attention | `qdgrasp/models/conditioning.py` | 02/03 |
+| P4-04 | World-edge cross-attention | `qdgrasp/models/flow.py` (`CrossAttentionBlock`) | 02/03 |
 | P4-05 | Rectified-flow palm+joint head | `qdgrasp/models/flow.py` | 04 |
-| P4-06 | FK consistency + keypoint | `qdgrasp/models/fk_head.py` | 05/P2 |
-| P4-07 | Quality head | `qdgrasp/models/quality.py` | 04 |
+| P4-06 | FK consistency + keypoint | `qdgrasp/models/losses.py` + `RobotSpec.fingertip_positions` | 05/P2 |
+| P4-07 | Quality head | `qdgrasp/models/flow.py` (`GraspFlowModel.quality`) | 04 |
 | P4-08 | Config schema + registry `qdgrasp-flow-n` | `qdgrasp/models/config.py`, preset YAML | 01–07 |
 | P4-09 | Loss assembly + gradient coverage | `qdgrasp/models/losses.py` | 08 |
 | P4-10 | Tiny overfit trên CPU | `scripts/overfit_qdgrasp_flow.py` + evidence | 09 |
-| P4-11 | CUDA gate harness | `scripts/phase4_cuda_gate.py`, notebook | 10 |
-| P4-12 | Independent review | packet + verdict | 11 |
+| P4-11 | CUDA gate harness (`a`) và evidence đo được (`b`) | `scripts/phase4_cuda_gate.py`, `notebooks/phase4_cuda_gate.ipynb`, `evidence/phase4/cuda-*.json` | 10 |
+| P4-12 | Independent review | `scripts/phase4_review_packet.py`, `docs/roadmap/PHASE4_REVIEWER_GUIDE.md`, verdict | 11 |
 
 Critical path `00 → 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12`.
+
+`P4-04`, `P4-06` và `P4-07` chia chung một forward pass và một khối
+conditioning, nên chúng nằm chung file với `P4-05` thay vì mỗi thứ một module:
+tách ra thì mỗi bên phải truyền qua lại conditioning đã tính rồi. Cột output ở
+trên ghi vị trí thật; phiên bản `1.0.0` của tài liệu này đoán trước ba tên file
+chưa tồn tại.
 
 ## 5. Test matrix bắt buộc
 

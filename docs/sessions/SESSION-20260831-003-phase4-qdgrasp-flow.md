@@ -47,8 +47,8 @@ Lệch so với work breakdown: P4-04, P4-06 và P4-07 được viết **trong**
 `qdgrasp/models/flow.py` và `losses.py` thay vì `conditioning.py`, `fk_head.py`,
 `quality.py` như §4 của plan liệt kê. Ba phần này chia chung một forward pass và
 một khối conditioning; tách file làm chúng phải truyền qua lại conditioning đã
-tính rồi. Đây là lệch về vị trí file, không phải về phạm vi; plan sẽ được sửa
-tên file khi P4-08 chạm vào registry.
+tính rồi. Đây là lệch về vị trí file, không phải về phạm vi, và §4 của plan đã
+được sửa cho khớp code (`ROADMAP-P4-001@1.1.0`) thay vì để lệch lại đó.
 
 ## Bằng chứng
 
