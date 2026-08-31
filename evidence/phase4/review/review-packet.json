@@ -11,14 +11,14 @@
       "sha256": "cf187fcdd70020bf5139cf54ce4b64939056546ff14fd052ce0d0aac617c500b"
     },
     {
-      "bytes": 15676,
+      "bytes": 16615,
       "path": "docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md",
-      "sha256": "1645964acbcfd050fb1f1c6f381f28eacf9247e69db1238d8fcb30c559a526ce"
+      "sha256": "bc037deb72e5c38e5ba9a79682aae1fa04e048fad5f9e303ef1d5ccfcda6ab18"
     },
     {
-      "bytes": 8152,
+      "bytes": 8296,
       "path": "docs/revisions/REV-20260831-003-phase4-architecture.md",
-      "sha256": "c872d35158ae6b441067dbf58d4e86ccab61f19c8a65692fa9575baa2f4ae2d7"
+      "sha256": "d091b67befef8fefd0533cc9748af2e75e51d19aedf338a1a4454b15f8fabca6"
     },
     {
       "bytes": 7962,
@@ -81,14 +81,14 @@
       "sha256": "709e546163f9351f192b190273a229455df0e7be8e66c5001afb690546dd1374"
     },
     {
-      "bytes": 8444,
+      "bytes": 8443,
       "path": "notebooks/phase4_cuda_gate.ipynb",
-      "sha256": "8affdf1017f0d354112a577ecc21016c1fa5d21f5e0f5f0a0f4a7de144593c60"
+      "sha256": "5b8cb6a931feae59b8076357d349305320ff639db2ab028efbfc1ae4db0020a1"
     },
     {
-      "bytes": 23036,
+      "bytes": 26239,
       "path": "tests/model_flow/test_model_flow.py",
-      "sha256": "a92844630107ad4508b3d062af2a0809b3e7e7eec874bab36a81b33f90c37fea"
+      "sha256": "2c111078a05c0d00123d70a3c578af1eafb6d7c2c7564e6bf2db6e10147016ee"
     },
     {
       "bytes": 7124,
@@ -113,9 +113,9 @@
   ],
   "branch": "feature/mvp-grasp-policy",
   "claim": "The architecture trains. That is the whole claim. ROADMAP-P4-001 \u00a77 forbids citing any number here as a grasping result, and the reviewer is asked to check that no document does.",
-  "commit": "8cb3c8d355d5616a61da015e47d7b88d191a565d",
+  "commit": "943b96cff171ee5a5e6dc2702d75aa2c4cc4df1a",
   "complete": true,
-  "created_at": "2026-08-31T11:22:47.375878+00:00",
+  "created_at": "2026-08-31T11:34:56.870997+00:00",
   "gate_command": "python scripts/check_phase4.py --profile micro",
   "gate_expected_exit": 1,
   "gate_expected_note": "The gate is expected to exit 1 while P4-11b and P4-12 are open. An exit of 0 without CUDA evidence and a signed review means the gate was widened, not that the phase finished.",
@@ -200,7 +200,7 @@
       "robot": "leap_hand.yaml"
     }
   ],
-  "packet_digest": "4de2f2d19f3c7f7ff4b66e25135f4dee7fa6e9ae98ac4583108b3de3c207fd45",
+  "packet_digest": "0c4047975333f0051484d0b2c3d7dc074f997f47f44b37c0bf8321c4e88f864d",
   "phase": "P4",
   "plan": "ROADMAP-P4-001",
   "review_scope": [
