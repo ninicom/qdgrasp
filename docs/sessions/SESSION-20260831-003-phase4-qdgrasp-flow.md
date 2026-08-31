@@ -56,7 +56,7 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 |---|---|---|---|
 | E-01 | plan | `docs/roadmap/PHASE4_EXECUTION_PLAN.md` | `ROADMAP-P4-001@1.0.0` |
 | E-02 | code | `qdgrasp/models/{tokenizer,encoder,hand_graph,flow,losses}.py` | commit `ff5d816` |
-| E-03 | test | `tests/model_flow/` (63 test) | commit `9583faf` |
+| E-03 | test | `tests/model_flow/` (65 test) | commit `2c532ac` |
 | E-04 | evidence | `evidence/phase4/overfit-{leap,allegro}-cpu.json` | commit `9583faf` |
 | E-05 | gate | `scripts/check_phase4.py --profile micro` | 12/14 delivered, exit 1 |
 | E-06 | harness | `scripts/phase4_cuda_gate.py`, `notebooks/phase4_cuda_gate.ipynb` | pin `9583faf` |
@@ -76,6 +76,7 @@ tính rồi. Đây là lệch về vị trí file, không phải về phạm vi,
 | T-08 | `python scripts/phase4_cuda_gate.py --device cuda:0` | 1 | từ chối: không có CUDA |
 | T-09 | `python scripts/overfit_qdgrasp_flow.py --robot wonik_allegro.yaml` | 0 | palm 0.0462 m, rot 0.0270 rad, joint 0.0372 rad, tip 0.0461 m |
 | T-10 | `python -m pytest tests/contactrich_active -q` | 0 | 408 passed sau khi sửa `audit_closure` |
+| T-11 | `python -m pytest tests/model_flow -q` (sau hai test cuối của §5) | 0 | 65 passed |
 
 Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố định,
 2 503 821 tham số, 279 s). Allegro (T-09) hội tụ cùng ngưỡng, xem bảng T:
@@ -129,9 +130,9 @@ grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
   thành CUDA evidence do nhầm lẫn.
 - **P4-12 — independent review:** `blocked`. Packet và hướng dẫn reviewer đã có;
   verdict thì không, vì tác giả artifact không được tự ký.
-- **Nhánh chưa được push.** Notebook pin `9583faf`; Kaggle/Colab clone từ
-  `origin` nên commit đó phải nằm trên origin trước khi notebook chạy được.
-  Việc push là quyết định của người dùng, không phải của phiên này.
+- Nhánh đã được push theo yêu cầu của người dùng trong phiên
+  (`origin/feature/mvp-grasp-policy`), nên commit mà notebook pin đã fetch được.
+  Không còn rào cản kỹ thuật nào cho P4-11b ngoài việc có một runtime GPU.
 - Model chưa được train trên `DGN-Open-Tiny`. Fixture của overfit là label sinh
   bằng FK của chính profile — đủ để một lần không hội tụ có nghĩa là "kiến trúc
   sai", không đủ để nói gì về dữ liệu thật.
@@ -198,7 +199,8 @@ giả. Việc tiếp theo trong repo là **P5 — Training & evaluation**, và n
 
 ### Điều kiện phiên sau phải kiểm trước khi tin trạng thái
 
-- `python -m pytest -q` phải còn trả 0 với ít nhất 1252 test pass.
+- `python -m pytest -q` phải còn trả 0 với ít nhất 1254 test pass, **chạy trên
+  worktree sạch**. Trên cây bẩn, ledger test của P3.4.3 pass vì lý do sai.
 - `python scripts/check_phase3_5.py --profile micro` phải còn trả `1` với đúng
   hai package mở. Nếu nó trả `0` mà chưa có GPU evidence và review thì cổng đã
   bị nới, không phải phase đã xong.
