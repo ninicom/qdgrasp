@@ -1,0 +1,262 @@
+{
+  "artifacts": [
+    {
+      "bytes": 9716,
+      "path": "docs/roadmap/PHASE4_EXECUTION_PLAN.md",
+      "sha256": "b47c5d6056c391e3f27917e9eec3d8f51824c79c616d8c0f98bc7faf4607cd0a"
+    },
+    {
+      "bytes": 5969,
+      "path": "docs/roadmap/PHASE4_REVIEWER_GUIDE.md",
+      "sha256": "cf187fcdd70020bf5139cf54ce4b64939056546ff14fd052ce0d0aac617c500b"
+    },
+    {
+      "bytes": 13815,
+      "path": "docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md",
+      "sha256": "9594f959cea071f84754e2f9429cf1a472cefab25901d7c76f53f5d501c208d8"
+    },
+    {
+      "bytes": 7420,
+      "path": "docs/revisions/REV-20260831-003-phase4-architecture.md",
+      "sha256": "d7f9dc49fe95ca0dfa68481d7aab9457dce56d423ad8f31e37306342d58080a7"
+    },
+    {
+      "bytes": 7962,
+      "path": "qdgrasp/models/tokenizer.py",
+      "sha256": "d2b0bd2f3b537069c6d035206f708420af4f8150f1c73a62d7d3a54f80ac6da4"
+    },
+    {
+      "bytes": 8219,
+      "path": "qdgrasp/models/encoder.py",
+      "sha256": "022dab69eb32af99b44f7435d37f3940f7d17db48155f439dcba237105b82aac"
+    },
+    {
+      "bytes": 5965,
+      "path": "qdgrasp/models/hand_graph.py",
+      "sha256": "438ff3ea5c865d97c460c7b28e6fc73eec2118d53f23754cdfcaf5985ce2d993"
+    },
+    {
+      "bytes": 14876,
+      "path": "qdgrasp/models/flow.py",
+      "sha256": "8069a3c8aede4d828c2ab41f687bae4efeae281f25fd033bbdebae65190b1f7d"
+    },
+    {
+      "bytes": 7092,
+      "path": "qdgrasp/models/losses.py",
+      "sha256": "59591f9e7c76237e63981e8f067e84d085817797079cc4023c28878b5d041c8b"
+    },
+    {
+      "bytes": 14326,
+      "path": "qdgrasp/models/config.py",
+      "sha256": "9a6d834b3bfcca1a2bb5b0cee86fed114a59bdd1484a58eed1d22dc1aca9b1a8"
+    },
+    {
+      "bytes": 307,
+      "path": "qdgrasp/presets/qdgrasp-flow-n.yaml",
+      "sha256": "b4c5e08d5e200822dfcd991abb243fe00d8329068d3fe0cf94e3dd3e7a3d7011"
+    },
+    {
+      "bytes": 307,
+      "path": "qdgrasp/presets/qdgrasp-flow-s.yaml",
+      "sha256": "4d6695bb55e0d6aa02108b7070f72c965838905140c1b4543ed7d34370cf244c"
+    },
+    {
+      "bytes": 307,
+      "path": "qdgrasp/presets/qdgrasp-flow-m.yaml",
+      "sha256": "2f3b9b7a6585808694c3a90513fd77d2ee4f0f6a91e462ff99f80d77360764e9"
+    },
+    {
+      "bytes": 13052,
+      "path": "scripts/check_phase4.py",
+      "sha256": "8d7c4fb4d73a5e3b29b85082f9bd309531a273542a6c7d92a0845578cd8986ee"
+    },
+    {
+      "bytes": 9464,
+      "path": "scripts/overfit_qdgrasp_flow.py",
+      "sha256": "bd412e2733bedf413c42336cafe705d786550675080ab9d8512c890ba8d068e8"
+    },
+    {
+      "bytes": 13241,
+      "path": "scripts/phase4_cuda_gate.py",
+      "sha256": "709e546163f9351f192b190273a229455df0e7be8e66c5001afb690546dd1374"
+    },
+    {
+      "bytes": 8444,
+      "path": "notebooks/phase4_cuda_gate.ipynb",
+      "sha256": "8affdf1017f0d354112a577ecc21016c1fa5d21f5e0f5f0a0f4a7de144593c60"
+    },
+    {
+      "bytes": 23036,
+      "path": "tests/model_flow/test_model_flow.py",
+      "sha256": "a92844630107ad4508b3d062af2a0809b3e7e7eec874bab36a81b33f90c37fea"
+    },
+    {
+      "bytes": 7124,
+      "path": "tests/model_flow/test_model_config.py",
+      "sha256": "f683fe7a833eed4da4e16918ee201dc6a6ae1ae9d2c1b9af0141ec6c90489f83"
+    },
+    {
+      "bytes": 5098,
+      "path": "tests/model_flow/test_phase4_gate.py",
+      "sha256": "16becd404e20e819fcef075be39b671d3d23eaf136954f51871b534276ea74ac"
+    },
+    {
+      "bytes": 8330,
+      "path": "evidence/phase4/overfit-leap-cpu.json",
+      "sha256": "33999991a72dfcb9c7f641fae7d09378d91f93bdbe30d4521eccd694bf2d7cc2"
+    },
+    {
+      "bytes": 8339,
+      "path": "evidence/phase4/overfit-allegro-cpu.json",
+      "sha256": "9b506fa6bcdf7a949b5afc159686100c6ef3ca92294a3e4f42e483c0b1d1829a"
+    }
+  ],
+  "branch": "feature/mvp-grasp-policy",
+  "claim": "The architecture trains. That is the whole claim. ROADMAP-P4-001 \u00a77 forbids citing any number here as a grasping result, and the reviewer is asked to check that no document does.",
+  "commit": "93b330f24a2426d01b6fedb44a85f814aed04785",
+  "complete": true,
+  "created_at": "2026-08-31T10:57:28.076856+00:00",
+  "gate_command": "python scripts/check_phase4.py --profile micro",
+  "gate_expected_exit": 1,
+  "gate_expected_note": "The gate is expected to exit 1 while P4-11b and P4-12 are open. An exit of 0 without CUDA evidence and a signed review means the gate was widened, not that the phase finished.",
+  "known_absent": [
+    {
+      "artifact": "CUDA forward/backward, parity and memory evidence",
+      "gate": "P4-11",
+      "how_to_produce": "run notebooks/phase4_cuda_gate.ipynb on a Kaggle or Colab GPU runtime",
+      "reason": "no NVIDIA GPU on the machine that built this packet. ADR-0006 forbids a CPU run standing in for a CUDA one, and \u00a77.4/\u00a77.5 require a measured CUDA overfit and CPU/CUDA FP32 parity."
+    }
+  ],
+  "missing_artifacts": [],
+  "overfit_summary": [
+    {
+      "converged": true,
+      "device": "cpu",
+      "gradient_coverage": {
+        "covered": 186,
+        "total": 186
+      },
+      "last": {
+        "fingertip_m": 0.046131681650877,
+        "fk_consistency": 0.0007977464701980352,
+        "flow_velocity": 0.2099611610174179,
+        "joint": 0.0024832794442772865,
+        "joint_abs_rad": 0.037181753665208817,
+        "palm_rotation": 0.027028460055589676,
+        "palm_rotation_rad": 0.027028460055589676,
+        "palm_translation": 0.0008028222364373505,
+        "palm_translation_m": 0.04621388763189316,
+        "quality": 1.0050930541183334e-05,
+        "step": 1199,
+        "total": 0.2410835176706314
+      },
+      "pose_thresholds": {
+        "fingertip_m": 0.06,
+        "joint_abs_rad": 0.1,
+        "palm_rotation_rad": 0.05,
+        "palm_translation_m": 0.06
+      },
+      "pose_thresholds_met": {
+        "fingertip_m": true,
+        "joint_abs_rad": true,
+        "palm_rotation_rad": true,
+        "palm_translation_m": true
+      },
+      "robot": "wonik_allegro.yaml"
+    },
+    {
+      "converged": true,
+      "device": "cpu",
+      "gradient_coverage": {
+        "covered": 186,
+        "total": 186
+      },
+      "last": {
+        "fingertip_m": 0.04133924841880798,
+        "fk_consistency": 0.0006196668255142868,
+        "flow_velocity": 0.23779526352882385,
+        "joint": 0.004786255303770304,
+        "joint_abs_rad": 0.05263401195406914,
+        "palm_rotation": 0.02133852429687977,
+        "palm_rotation_rad": 0.02133852429687977,
+        "palm_translation": 0.0006039514555595815,
+        "palm_translation_m": 0.040296632796525955,
+        "quality": 4.707045718532754e-06,
+        "step": 1199,
+        "total": 0.2651483714580536
+      },
+      "pose_thresholds": {
+        "fingertip_m": 0.06,
+        "joint_abs_rad": 0.1,
+        "palm_rotation_rad": 0.05,
+        "palm_translation_m": 0.06
+      },
+      "pose_thresholds_met": {
+        "fingertip_m": true,
+        "joint_abs_rad": true,
+        "palm_rotation_rad": true,
+        "palm_translation_m": true
+      },
+      "robot": "leap_hand.yaml"
+    }
+  ],
+  "packet_digest": "24556a1849607349ebf2b0e25b5f082673be47a3b5f006f2e8d0b129e993d83b",
+  "phase": "P4",
+  "plan": "ROADMAP-P4-001",
+  "review_scope": [
+    {
+      "area": "tokenizer injectivity",
+      "question": "is the token key positional and injective, and is a grid too fine to pack refused rather than aliased?",
+      "where": "qdgrasp/models/tokenizer.py, tests/model_flow/test_model_flow.py"
+    },
+    {
+      "area": "no N x N",
+      "question": "does any attention call have two long sides, and does the probe that says otherwise have a working negative control?",
+      "where": "qdgrasp/models/encoder.py, qdgrasp/models/flow.py, test_attention_never_sees_two_long_sides"
+    },
+    {
+      "area": "cross-embodiment",
+      "question": "do LEAP (18 nodes) and Allegro (22) run through one encoder with no size compiled in, and is node order irrelevant?",
+      "where": "qdgrasp/models/hand_graph.py"
+    },
+    {
+      "area": "output validity",
+      "question": "is every rotation in SO(3) within 1e-4 and every joint inside its named limit, by construction rather than by clipping afterwards?",
+      "where": "qdgrasp/models/flow.py"
+    },
+    {
+      "area": "loss accounting",
+      "question": "is the total the sum of the logged terms, is an unknown term refused, and is rotation error geodesic?",
+      "where": "qdgrasp/models/losses.py"
+    },
+    {
+      "area": "gradient coverage",
+      "question": "does every trainable parameter receive a finite gradient after one backward?",
+      "where": "qdgrasp/models/losses.py, evidence/phase4/overfit-leap-cpu.json"
+    },
+    {
+      "area": "the overfit verdict",
+      "question": "is the verdict read off pose error rather than the total, and is the reason for that stated where the thresholds are set?",
+      "where": "scripts/overfit_qdgrasp_flow.py"
+    },
+    {
+      "area": "config and registry",
+      "question": "is an unknown preset parameter refused rather than ignored, and can a preset change a shape the scale table owns?",
+      "where": "qdgrasp/models/config.py, qdgrasp/presets/qdgrasp-flow-*.yaml"
+    },
+    {
+      "area": "CUDA gate",
+      "question": "ABSENT -- the CUDA gate has not run; see known_absent. Does the harness refuse a CPU run rather than label it?",
+      "where": "scripts/phase4_cuda_gate.py"
+    },
+    {
+      "area": "scope of the claim",
+      "question": "is every P4 number presented as architecture evidence, with no sentence that could be read as a grasping result?",
+      "where": "docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md"
+    }
+  ],
+  "schema": "qdgrasp/evidence/phase4-review-packet/v1",
+  "verdict": null,
+  "verdict_note": "This packet carries no verdict. The author of an artifact may not sign its review (docs/governance/THIRD_PARTY_REVIEW.md); an independent reviewer records the verdict against the packet digest below.",
+  "worktree_clean": true
+}

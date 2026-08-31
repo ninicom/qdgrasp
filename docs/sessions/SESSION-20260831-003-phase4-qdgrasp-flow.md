@@ -60,7 +60,7 @@ tên file khi P4-08 chạm vào registry.
 | E-04 | evidence | `evidence/phase4/overfit-{leap,allegro}-cpu.json` | commit `9583faf` |
 | E-05 | gate | `scripts/check_phase4.py --profile micro` | 12/14 delivered, exit 1 |
 | E-06 | harness | `scripts/phase4_cuda_gate.py`, `notebooks/phase4_cuda_gate.ipynb` | pin `9583faf` |
-| E-07 | review | `scripts/phase4_review_packet.py`, `docs/roadmap/PHASE4_REVIEWER_GUIDE.md` | 22 artifact hashed |
+| E-07 | review | `evidence/phase4/review/review-packet.json` | digest `24556a1849607349ebf2b0e25b5f082673be47a3b5f006f2e8d0b129e993d83b` tại `93b330f` |
 
 ## Kiểm tra đã chạy
 
@@ -163,7 +163,9 @@ trạng thái mà `SESSION-20260831-001` và `-002` ghi.
    và lưu kết quả vào `evidence/phase4/cuda-<gpu>-<ngày>.json` — đó là chỗ
    `check_phase4.py` tìm nó. Đầu vào duy nhất hợp lệ cho P4-11b.
 4. Chỉ định reviewer độc lập cho P4-12, theo
-   `docs/roadmap/PHASE4_REVIEWER_GUIDE.md`.
+   `docs/roadmap/PHASE4_REVIEWER_GUIDE.md`. Packet đã sinh ở worktree sạch:
+   digest `24556a1849607349ebf2b0e25b5f082673be47a3b5f006f2e8d0b129e993d83b`
+   tại commit `93b330f`, 22 artifact, `complete: true`, `verdict: null`.
 
 ### Việc tiếp theo trong repo
 
