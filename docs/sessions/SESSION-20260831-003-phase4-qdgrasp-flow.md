@@ -37,7 +37,11 @@ related_plan: ROADMAP-P4-001
 | P4-06 | FK consistency: fingertip tính từ palm+joint bằng FK của P2, không dự đoán song song | `qdgrasp/models/losses.py`, `RobotSpec.fingertip_positions` | verified |
 | P4-07 | Quality head trên conditioning | `qdgrasp/models/flow.py` (`GraspFlowModel.quality`) | verified |
 | P4-09 | Loss assembly: tổng **bằng** tổng các term được log, term lạ bị từ chối, rotation error là geodesic | `qdgrasp/models/losses.py` | verified |
-| P4-10 | Tiny overfit trên CPU: kiến trúc học được, gradient phủ 186/186 tham số | `scripts/overfit_qdgrasp_flow.py`, `evidence/phase4/overfit-leap-cpu.json` | verified |
+| P4-08 | Scale table `n`/`s`/`m` là nơi duy nhất ghi width/depth; preset đặt tên scale và override năm scalar, tham số lạ bị **từ chối** chứ không bị bỏ qua; model chạy được qua facade P1 của cả hai tay | `qdgrasp/models/config.py`, `qdgrasp/presets/qdgrasp-flow-{n,s,m}.yaml` | verified |
+| P4-10 | Tiny overfit trên CPU cho **cả hai** active hand: kiến trúc học được, gradient phủ 186/186 tham số | `scripts/overfit_qdgrasp_flow.py`, `evidence/phase4/overfit-{leap,allegro}-cpu.json` | verified |
+| P4-11a | Harness CUDA gate và notebook pin commit; harness từ chối `--device cpu` và từ chối nhãn CUDA khi không có CUDA | `scripts/phase4_cuda_gate.py`, `notebooks/phase4_cuda_gate.ipynb` | verified |
+| P4-12a | Packet review bất biến và hướng dẫn reviewer; packet không mang verdict | `scripts/phase4_review_packet.py`, `docs/roadmap/PHASE4_REVIEWER_GUIDE.md` | verified |
+| — | Cổng đọc được bằng máy cho P4, báo từng package delivered/open/blocked | `scripts/check_phase4.py` | verified |
 
 Lệch so với work breakdown: P4-04, P4-06 và P4-07 được viết **trong**
 `qdgrasp/models/flow.py` và `losses.py` thay vì `conditioning.py`, `fk_head.py`,
@@ -52,21 +56,28 @@ tên file khi P4-08 chạm vào registry.
 |---|---|---|---|
 | E-01 | plan | `docs/roadmap/PHASE4_EXECUTION_PLAN.md` | `ROADMAP-P4-001@1.0.0` |
 | E-02 | code | `qdgrasp/models/{tokenizer,encoder,hand_graph,flow,losses}.py` | commit `ff5d816` |
-| E-03 | test | `tests/model_flow/test_model_flow.py` (33 test) | commit `ff5d816` |
-| E-04 | evidence | `evidence/phase4/overfit-leap-cpu.json` | commit `ff5d816` |
+| E-03 | test | `tests/model_flow/` (63 test) | commit `9583faf` |
+| E-04 | evidence | `evidence/phase4/overfit-{leap,allegro}-cpu.json` | commit `9583faf` |
+| E-05 | gate | `scripts/check_phase4.py --profile micro` | 12/14 delivered, exit 1 |
+| E-06 | harness | `scripts/phase4_cuda_gate.py`, `notebooks/phase4_cuda_gate.ipynb` | pin `9583faf` |
+| E-07 | review | `scripts/phase4_review_packet.py`, `docs/roadmap/PHASE4_REVIEWER_GUIDE.md` | 22 artifact hashed |
 
 ## Kiểm tra đã chạy
 
 | Test ID | Lệnh | Exit code | Kết quả |
 |---|---|---:|---|
-| T-01 | `python -m pytest tests/model_flow -q` | 0 | 33 passed |
-| T-02 | `python -m pytest -q` | 0 | 1222 passed, 1 skipped, 93 subtests |
+| T-01 | `python -m pytest tests/model_flow -q` | 0 | 63 passed |
+| T-02 | `python -m pytest -q` | 0 | 1252 passed, 1 skipped, 93 subtests |
 | T-03 | `python scripts/overfit_qdgrasp_flow.py --report evidence/phase4/overfit-leap-cpu.json` | 0 | converged; xem số đo bên dưới |
 | T-04 | `python scripts/check_docs.py` | 0 | 145 file pass |
-| T-05 | `ruff check` + `ruff format --check` trên file mới | 0 | 8 file sạch |
+| T-05 | `ruff check` + `ruff format --check` trên file mới | 0 | sạch |
+| T-06 | `python scripts/check_phase4.py --profile micro` | 1 | 12/14 delivered; hai package còn mở |
+| T-07 | `python scripts/phase4_cuda_gate.py --device cpu` | 1 | từ chối: `verdict=refused` |
+| T-08 | `python scripts/phase4_cuda_gate.py --device cuda:0` | 1 | từ chối: không có CUDA |
+| T-09 | `python scripts/overfit_qdgrasp_flow.py --robot wonik_allegro.yaml` | 0 | palm 0.0462 m, rot 0.0270 rad, joint 0.0372 rad, tip 0.0461 m |
 
 Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố định,
-2 503 821 tham số, 279 s):
+2 503 821 tham số, 279 s). Allegro (T-09) hội tụ cùng ngưỡng, xem bảng T:
 
 | Đại lượng | Bước 0 | Bước 1199 | Ngưỡng |
 |---|---:|---:|---:|
@@ -79,7 +90,7 @@ Số đo của T-03 (LEAP, 8 sample, 256 điểm, 1200 bước, CPU, noise cố 
 Đây là bằng chứng rằng **kiến trúc học được**. Nó không nói gì về chất lượng
 grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
 
-## Ba hiệu chỉnh dựa trên đo đạc
+## Bốn hiệu chỉnh dựa trên đo đạc
 
 1. **Overfit phải hỏi một câu tất định.** Lần chạy đầu báo fail (loss 8.04 →
    3.70, palm 0.317 m). Nguyên nhân thứ nhất: mỗi lần gọi lấy một noise mới, nên
@@ -99,20 +110,30 @@ grasp, và `ROADMAP-P4-001` §7 cấm trích nó như thể có.
    bước. Test được tách đôi: một test ghim tính chất đồng nhất lúc khởi tạo, một
    test nhấc head khỏi 0 rồi mới đo ảnh hưởng của số bước.
 
+4. **Một probe im lặng vì lý do sai thì tệ hơn không có probe.** Test "không có
+   tensor `N×N`" ban đầu đọc saved tensor của autograd. Nó pass — nhưng negative
+   control cho thấy nó cũng pass trên một model dùng attention toàn cục: kernel
+   attention hợp nhất **tính lại** ma trận ở backward nên autograd không bao giờ
+   thấy nó. Test được viết lại trên `TorchDispatchMode`, đọc chính lời gọi và độ
+   dài chuỗi của nó, và negative control nằm **trong** test: nếu probe không
+   flag được model attention toàn cục thì test fail, vì lúc đó sự im lặng của nó
+   với model thật không có giá trị gì.
+
 ## Việc chưa hoàn tất
 
-- **P4-08 — config schema + registry `qdgrasp-flow-n`:** `open`. Chưa bắt đầu.
-  Đây là package đầu tiên phiên sau nên làm; nó cũng là chỗ sửa tên file trong
-  §4 của plan cho khớp thực tế.
-- **P4-11 — CUDA gate harness:** `open`. Cần `scripts/phase4_cuda_gate.py` và
-  notebook; theo `ADR-0006`, forward/backward/memory smoke của model phải chạy
-  trên NVIDIA thật, và CPU chỉ là correctness reference.
-- **P4-12 — independent review:** `blocked`. Tác giả artifact không được tự ký.
-- Chưa có `scripts/check_phase4.py`. Cổng của P4 hiện chỉ tồn tại dưới dạng văn
-  bản trong §6 của plan; phiên sau nên viết nó cùng P4-08 để trạng thái phase
-  đọc được bằng máy chứ không bằng mắt.
-- Overfit mới chạy trên LEAP. Allegro có test kiến trúc (33 test bao cả hai tay)
-  nhưng chưa có evidence overfit riêng.
+- **P4-11b — CUDA gate evidence:** `blocked`. Harness và notebook đã sẵn sàng và
+  đã pin commit `9583faf`, nhưng theo `ADR-0006` chỉ một lần chạy trên NVIDIA
+  thật mới thành bằng chứng. Harness từ chối cả `--device cpu` lẫn `--device
+  cuda:0` khi không có CUDA, nên không có đường nào để một lần chạy CPU trở
+  thành CUDA evidence do nhầm lẫn.
+- **P4-12 — independent review:** `blocked`. Packet và hướng dẫn reviewer đã có;
+  verdict thì không, vì tác giả artifact không được tự ký.
+- **Nhánh chưa được push.** Notebook pin `9583faf`; Kaggle/Colab clone từ
+  `origin` nên commit đó phải nằm trên origin trước khi notebook chạy được.
+  Việc push là quyết định của người dùng, không phải của phiên này.
+- Model chưa được train trên `DGN-Open-Tiny`. Fixture của overfit là label sinh
+  bằng FK của chính profile — đủ để một lần không hội tụ có nghĩa là "kiến trúc
+  sai", không đủ để nói gì về dữ liệu thật.
 
 ## Sửa đổi phiên trước
 
@@ -127,7 +148,7 @@ trạng thái mà `SESSION-20260831-001` và `-002` ghi.
 |---|---|---|
 | `ROADMAP-MVP-001` (MVP-T) | **complete**, `experimental_non_release` | không; kết luận âm đã ghi: policy học được **không** vượt controller prior |
 | `ROADMAP-P3.5-001` | **in_progress**, 17/19 | P3.5-15 (cần GPU), P3.5-18 (cần reviewer) |
-| `ROADMAP-P4-001` | **in_progress**, 10/13 | P4-08, P4-11, P4-12 |
+| `ROADMAP-P4-001` | **in_progress**, 12/14 | P4-11b (cần GPU), P4-12 (cần reviewer) |
 
 ### Việc cần người, không cần thêm code
 
@@ -138,29 +159,40 @@ trạng thái mà `SESSION-20260831-001` và `-002` ghi.
 2. Chỉ định reviewer độc lập ký packet P3.5, digest
    `e1062c476a679515e54c25140b81e3c4a8ea515503b004aac7c93e9e02ca0c05`
    tại commit `dc0d08a` (`scripts/phase3_5_review_packet.py`).
+3. Push nhánh, rồi chạy `notebooks/phase4_cuda_gate.ipynb` trên Kaggle/Colab GPU
+   và lưu kết quả vào `evidence/phase4/cuda-<gpu>-<ngày>.json` — đó là chỗ
+   `check_phase4.py` tìm nó. Đầu vào duy nhất hợp lệ cho P4-11b.
+4. Chỉ định reviewer độc lập cho P4-12, theo
+   `docs/roadmap/PHASE4_REVIEWER_GUIDE.md`.
 
-### Việc tiếp theo trong repo, theo thứ tự phụ thuộc
+### Việc tiếp theo trong repo
 
-1. P4-08 — config schema và registry `qdgrasp-flow-n`, kèm sửa tên file §4 của
-   `ROADMAP-P4-001`.
-2. `scripts/check_phase4.py` — cổng đọc được bằng máy, báo từng package là
-   delivered/open/blocked như `check_phase3_5.py` làm.
-3. P4-11 — CUDA gate harness và notebook, cùng khuôn với harness P3.5: từ chối
-   gắn nhãn CUDA khi không có CUDA.
+Không còn package P4 nào làm được trên máy này. Hai mục còn lại đều cần thứ
+không tồn tại ở đây: một GPU NVIDIA thật và một người kiểm tra không phải tác
+giả. Việc tiếp theo trong repo là **P5 — Training & evaluation**, và nó cần
+`ROADMAP-P5-001` trước khi viết dòng code nào, đúng như P4 đã cần
+`ROADMAP-P4-001`.
 
 ### Điều kiện phiên sau phải kiểm trước khi tin trạng thái
 
-- `python -m pytest -q` phải còn trả 0 với ít nhất 1222 test pass.
+- `python -m pytest -q` phải còn trả 0 với ít nhất 1252 test pass.
 - `python scripts/check_phase3_5.py --profile micro` phải còn trả `1` với đúng
   hai package mở. Nếu nó trả `0` mà chưa có GPU evidence và review thì cổng đã
   bị nới, không phải phase đã xong.
+- `python scripts/check_phase4.py --profile micro` phải còn trả `1` với đúng hai
+  package mở. Nếu nó trả `0` mà chưa có CUDA evidence và review thì cổng đã bị
+  nới, không phải phase đã xong.
 - `python scripts/overfit_qdgrasp_flow.py` phải còn hội tụ dưới bốn ngưỡng pose
   đã pin. Nếu ai đó nới ngưỡng thay vì sửa model, evidence cũ trong
-  `evidence/phase4/overfit-leap-cpu.json` ghi lại số đo gốc để đối chiếu.
+  `evidence/phase4/overfit-*-cpu.json` ghi lại số đo gốc để đối chiếu.
+- `python scripts/phase4_cuda_gate.py --device cpu` phải còn **fail** với
+  `verdict: refused`. Nếu nó trả `measured` trên máy không có GPU thì harness đã
+  bị phá và mọi evidence sau đó vô giá trị.
 
 ### Nhánh và commit
 
-- Nhánh `feature/mvp-grasp-policy`, chưa push, 235 commit trước `main`.
-- Hai commit của P4: `ff5d816` — kế hoạch, năm module model, script overfit,
-  33 test và evidence; và commit chứa chính tài liệu này cùng
-  `REV-20260831-003`.
+- Nhánh `feature/mvp-grasp-policy`, chưa push, 237 commit trước `main`.
+- Commit của P4: `ff5d816` (kế hoạch, năm module model, script overfit, test và
+  evidence LEAP), `d21525d` (bản ghi phiên và revision record), `9583faf`
+  (config/registry, hai cổng, packet review, evidence Allegro), cùng commit pin
+  notebook và commit chứa bản cập nhật này.

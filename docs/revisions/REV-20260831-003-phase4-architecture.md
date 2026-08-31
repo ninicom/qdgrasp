@@ -13,7 +13,7 @@ revises:
   - session_id: ROADMAP-PROJECT-001
     artifact: docs/roadmap/PROJECT_PHASES.md
     revision: ROADMAP-001@1.31.0
-reason: "P4 được thi công 10/13 work package sau khi P3.5 cạn phần việc làm được trên máy phát triển; trạng thái `pending` và việc P4 không có execution plan không còn đúng."
+reason: "P4 được thi công 12/14 mục của cổng sau khi P3.5 cạn phần việc làm được trên máy phát triển; trạng thái `pending` và việc P4 không có execution plan không còn đúng."
 necessity: N2
 impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo được là học được trên CPU; cổng CUDA của P4 giữ nguyên và chưa mục nào của nó được đánh dấu đạt."
 ---
@@ -34,8 +34,8 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 
 ## 2. Lý do chỉnh sửa
 
-- `PROJECT_PHASES.md` ghi P4 là `pending`. Sau phiên này P4 có 10/13 work
-  package đã giao kèm test, nên `pending` mô tả sai trạng thái.
+- `PROJECT_PHASES.md` ghi P4 là `pending`. Sau phiên này P4 có 12/14 mục của
+  cổng đã giao kèm test, nên `pending` mô tả sai trạng thái.
 - P4 là phase duy nhất được mô tả trong `PLAN.md` §M3 và `PROJECT_PHASES.md`
   nhưng không có execution plan, trong khi mọi phase trước đều có. Thiếu nó thì
   không có scope khóa, không có test matrix và không có cổng đóng để đối chiếu.
@@ -67,27 +67,34 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 
 | Thay đổi | Trước | Sau |
 | --- | --- | --- |
-| Trạng thái P4 trong bảng phase | `pending` | `in_progress — 10/13 package; kiến trúc overfit được trên CPU, cổng CUDA chưa chạy` |
+| Trạng thái P4 trong bảng phase | `pending` | `in_progress — 12/14 mục; kiến trúc overfit được trên CPU cho cả hai active hand, cổng CUDA chưa chạy` |
 | Execution plan của P4 | không có | `docs/roadmap/PHASE4_EXECUTION_PLAN.md` |
-| Model code | `qdgrasp/models/` chỉ có `__init__.py` | tokenizer, encoder, hand graph, flow head, losses |
-| Bằng chứng học được | không có | `evidence/phase4/overfit-leap-cpu.json` |
+| Model code | `qdgrasp/models/` chỉ có `__init__.py` | tokenizer, encoder, hand graph, flow head, losses, config/registry |
+| Cổng của P4 | chỉ là văn bản trong §6 của plan | `scripts/check_phase4.py`, đọc được bằng máy |
+| Harness CUDA | không có | `scripts/phase4_cuda_gate.py` + notebook pin commit |
+| Packet review | không có | `scripts/phase4_review_packet.py` + `PHASE4_REVIEWER_GUIDE.md` |
+| Bằng chứng học được | không có | `evidence/phase4/overfit-{leap,allegro}-cpu.json` |
 
 ## 6. Xác minh
 
 | Verification ID | Lệnh/phương pháp | Kết quả mong đợi | Kết quả thực tế | Trạng thái | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| `V-001` | `python -m pytest tests/model_flow -q` | pass | 33 passed | `pass` | log phiên |
-| `V-002` | `python -m pytest -q` | không regression | 1222 passed, 1 skipped | `pass` | log phiên |
+| `V-001` | `python -m pytest tests/model_flow -q` | pass | 63 passed | `pass` | log phiên |
+| `V-002` | `python -m pytest -q` | không regression | 1252 passed, 1 skipped | `pass` | log phiên |
 | `V-003` | `python scripts/overfit_qdgrasp_flow.py` | hội tụ dưới bốn ngưỡng pose | palm 0.040 m, rot 0.021 rad, joint 0.053 rad, tip 0.041 m | `pass` | `evidence/phase4/overfit-leap-cpu.json` |
 | `V-004` | gradient coverage sau backward | mọi tham số có gradient hữu hạn | 186/186 | `pass` | evidence như trên |
 | `V-005` | `python scripts/check_docs.py` | tài liệu hợp lệ | 145 file pass | `pass` | log phiên |
-| `V-006` | `ruff check` + `ruff format --check` | sạch | 8 file sạch | `pass` | log phiên |
+| `V-006` | `ruff check` + `ruff format --check` | sạch | sạch | `pass` | log phiên |
+| `V-007` | `python scripts/check_phase4.py --profile micro` | báo đúng trạng thái | 12/14 delivered, exit 1 | `pass` | log phiên |
+| `V-008` | `python scripts/phase4_cuda_gate.py --device cpu` | từ chối | `verdict=refused` | `pass` | log phiên |
+| `V-009` | `python scripts/overfit_qdgrasp_flow.py --robot wonik_allegro.yaml` | hội tụ | palm 0.046 m, rot 0.027 rad | `pass` | `evidence/phase4/overfit-allegro-cpu.json` |
 
-- Kiểm tra chưa chạy: toàn bộ cổng CUDA của P4 (`P4-11`) vì không có NVIDIA GPU
-  trên máy phát triển; overfit trên Allegro; independent review (`P4-12`).
-- Khả năng rollback: các module trong `qdgrasp/models/` là bổ sung thuần, chưa
-  được import bởi bất kỳ đường chạy nào ngoài script overfit và test của chính
-  chúng; gỡ chúng không đổi hành vi của P0–P3.5.
+- Kiểm tra chưa chạy: toàn bộ cổng CUDA của P4 (`P4-11b`) vì không có NVIDIA
+  GPU trên máy phát triển; independent review (`P4-12`).
+- Khả năng rollback: các module trong `qdgrasp/models/` là bổ sung thuần. Điểm
+  duy nhất chúng chạm vào code cũ là một dòng import trong `qdgrasp/api/__init__.py`
+  để đăng ký builder `qdgrasp_flow`; gỡ dòng đó và thư mục `models/` đưa hành vi
+  của P0–P3.5 về nguyên trạng.
 
 ## 7. Ảnh hưởng tới báo cáo và quyết định cũ
 
@@ -104,7 +111,9 @@ impact: "P4 chuyển từ pending sang in_progress với kiến trúc đo đư�
 - Tác giả: claude-agent, 2026-08-31, UTC+07.
 - Người kiểm tra: chưa có; `P4-12` vẫn mở.
 - Kết luận: phần thi công của phiên đã hoàn tất và được đo. P4 **không** được
-  ghi `complete`: ba package còn lại được nêu tên cùng lý do, và cổng nặng nhất
-  của phase — forward/backward trên CUDA thật — chưa chạy một lần nào.
+  ghi `complete`: hai mục còn lại được nêu tên cùng lý do, và cổng nặng nhất của
+  phase — forward/backward trên CUDA thật — chưa chạy một lần nào. Cả hai đều
+  cần thứ không tồn tại trên máy phát triển: một GPU NVIDIA thật và một người
+  kiểm tra không phải tác giả.
 - Liên kết bản ghi hoàn tất phiên hiện tại:
   `docs/sessions/SESSION-20260831-003-phase4-qdgrasp-flow.md`.
