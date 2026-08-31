@@ -1,0 +1,204 @@
+{
+  "artifacts": [
+    {
+      "bytes": 35657,
+      "path": "docs/roadmap/PHASE3_5_ASSET_SCENE_RL_READINESS_PLAN.md",
+      "sha256": "f08c1bce1c4ade5710d3a56a4fce1ec372ba4718f7a459e597a441d8d41b79e0"
+    },
+    {
+      "bytes": 8730,
+      "path": "docs/sessions/SESSION-20260831-002-phase3-5-ingest-and-rl-contracts.md",
+      "sha256": "ee318f731d928866a51b76b4a78eca88a063e830167bed5044ca01ade2e6bd0c"
+    },
+    {
+      "bytes": 8834,
+      "path": "docs/revisions/REV-20260831-002-phase3-5-execution.md",
+      "sha256": "6b01f129662b79ad57cd8b4053b0c042ee03ba17558a2fbee1830809b1eecf38"
+    },
+    {
+      "bytes": 25426,
+      "path": "qdgrasp/objects/ingest.py",
+      "sha256": "5d363578589099dda6e422a81961300fe5308390cd55a072ce3d2c57c8b0b2c1"
+    },
+    {
+      "bytes": 29667,
+      "path": "qdgrasp/objects/coacd.py",
+      "sha256": "74d8e50117bfe6e17d963a5db8072fc3c4cc48190626f5819c9e1bb22b8825b4"
+    },
+    {
+      "bytes": 8240,
+      "path": "qdgrasp/objects/manifest_v2.py",
+      "sha256": "4dcb57a9eb9afbf8bc206866bc88472cc099d396437cbf65b9249d377dc81218"
+    },
+    {
+      "bytes": 4811,
+      "path": "qdgrasp/scenes/resolver.py",
+      "sha256": "4858862f851813c1ecd109c3042b541424fbffc1a0b303ea096fac56018b89a1"
+    },
+    {
+      "bytes": 7501,
+      "path": "qdgrasp/scenes/serialize.py",
+      "sha256": "1710788ba5b30cd95088427f5c772e55cee5ea7606c9f07c01af6934ee396ff7"
+    },
+    {
+      "bytes": 15073,
+      "path": "qdgrasp/scenes/virtual_drop.py",
+      "sha256": "e2c5433e4bedfad8ed39c6b8dd96fb62911e40d40312ca1d2fdbb3c088120496"
+    },
+    {
+      "bytes": 17717,
+      "path": "qdgrasp/scenes/settle.py",
+      "sha256": "e3a75ffc8afb7838ac7b1d93c581b3e488538c1b43b3344d6bdc6ec43cdd3d2f"
+    },
+    {
+      "bytes": 11741,
+      "path": "qdgrasp/rl/contracts.py",
+      "sha256": "386e613e340b2efeebbdf129e5b410a354ff20820fca7ae93eb0ca790aece92c"
+    },
+    {
+      "bytes": 8748,
+      "path": "qdgrasp/rl/randomization.py",
+      "sha256": "d3ce5c3f21c47d456200a7181bcc25521042649bf8ad8440fe864d5bba3983fa"
+    },
+    {
+      "bytes": 11498,
+      "path": "qdgrasp/rl/envs/hand_scene.py",
+      "sha256": "1bc59ed5b65ad2a388a93313de8874fa50a83a50bcd17c8cc88596e179387013"
+    },
+    {
+      "bytes": 11318,
+      "path": "qdgrasp/rl/envs/object_settle.py",
+      "sha256": "e37eb2cbde7759cc74b15d048c7f7ded26255c7abe573444a23c9a98aca5a36b"
+    },
+    {
+      "bytes": 30975,
+      "path": "qdgrasp/rl/envs/dex_acquire.py",
+      "sha256": "ef3f5c4bbcca2dd10eeace641bf50efbf59760c9baee152a1cb24e9224c49cd0"
+    },
+    {
+      "bytes": 8380,
+      "path": "qdgrasp/rl/tasks/scripted.py",
+      "sha256": "978751a0dd0cb37696f697c8814f495356660aa6eab36d214fdce81b52b358c6"
+    },
+    {
+      "bytes": 16030,
+      "path": "qdgrasp/rl/tasks/grasp_prior.py",
+      "sha256": "d321b02fb372c2948d26384ef26ae8fe54de94013b90439cd9723d4aabf37c31"
+    },
+    {
+      "bytes": 12319,
+      "path": "scripts/check_phase3_5.py",
+      "sha256": "dad2582f6b7be7a5de878f6f927b0d14137148d0e84d4b3b9f4c8476c2b5be77"
+    },
+    {
+      "bytes": 9426,
+      "path": "scripts/phase3_5_gpu_rl_readiness.py",
+      "sha256": "7e00343f1e970f6946f579a5e0253c32e4b57dde37d2d601426a406e37507c79"
+    },
+    {
+      "bytes": 11449,
+      "path": "scripts/generate_rl_env_tiny.py",
+      "sha256": "20db69124d29754d4fbcbbe6978ea52efefdd3c480e067af618ac4bebf1e00f0"
+    },
+    {
+      "bytes": 7804,
+      "path": "notebooks/phase3_5_rl_readiness.ipynb",
+      "sha256": "3a9de6284aae1e89ebddb2f7b97609cd6e8413d98e6fe91d06f85bbb898a4278"
+    },
+    {
+      "bytes": 6536,
+      "path": "datasets/qdgrasp-rl-env-tiny/dataset_manifest.json",
+      "sha256": "cf8a8bf87abde63a41e469e9c087785a41f7f06dc3a3b07f6f3017a4c3da9460"
+    },
+    {
+      "bytes": 1997,
+      "path": "datasets/qdgrasp-rl-env-tiny/artifact_hashes.json",
+      "sha256": "ca3b2d06f0dc0215b48b6e66169c30f36ade6a1a0d5076258fd552b19f6c2d8e"
+    }
+  ],
+  "branch": "feature/mvp-grasp-policy",
+  "commit": "6aa97ba095f984638128c706bdd2002352fd6184",
+  "complete": false,
+  "created_at": "2026-08-31T08:07:54.464195+00:00",
+  "gate_command": "python scripts/check_phase3_5.py --profile micro",
+  "gate_expected_exit": 1,
+  "gate_expected_note": "The gate is expected to exit 1 while P3.5-15 and P3.5-18 are open. An exit of 0 without GPU evidence and a signed review means the gate was widened, not that the phase finished.",
+  "known_absent": [
+    {
+      "artifact": "GPU backend spike evidence",
+      "gate": "P3.5-15",
+      "how_to_produce": "run notebooks/phase3_5_rl_readiness.ipynb on a Kaggle or Colab GPU runtime",
+      "reason": "no NVIDIA GPU on the machine that built this packet. ADR-0006 forbids a CPU run standing in for a CUDA one, and \u00a77 forbids a backend decision without measured two-hand parity."
+    },
+    {
+      "artifact": "CoACD output-class parity against the Stage 0 artifacts",
+      "gate": "P3.5-03/04 test matrix",
+      "how_to_produce": "install the audited CoACD wheel and ManifoldPlus, then re-run the profile parity fixture",
+      "reason": "neither CoACD nor ManifoldPlus is installed, and neither was added as a dependency. The profile's parameters are pinned and tested; the parts it produces are not."
+    }
+  ],
+  "missing_artifacts": [],
+  "packet_digest": "9e7622b83a970662f536fca77efaabcefea8018e9aadf414403573c552177e1b",
+  "phase": "P3.5",
+  "plan": "ROADMAP-P3.5-001",
+  "review_scope": [
+    {
+      "area": "asset transforms and units",
+      "question": "is the unit scale applied exactly once, and is every transform recorded with the raw input hash?",
+      "where": "qdgrasp/objects/ingest.py, tests/assets_ingest/test_ingest.py"
+    },
+    {
+      "area": "CoACD surface and security",
+      "question": "no network, no implicit writes, every official parameter typed and in the config hash?",
+      "where": "qdgrasp/objects/coacd.py, tests/assets_ingest/test_coacd_api.py"
+    },
+    {
+      "area": "settle semantics",
+      "question": "does 'settled' require every object quiet simultaneously for the pinned consecutive steps?",
+      "where": "qdgrasp/scenes/settle.py, tests/rl_env/test_scene_and_envs.py"
+    },
+    {
+      "area": "scene resolution",
+      "question": "does a broken scene reference fail rather than silently become a generated scene?",
+      "where": "qdgrasp/scenes/resolver.py"
+    },
+    {
+      "area": "Gym API",
+      "question": "are terminated and truncated separated, and does every terminated step name one reason?",
+      "where": "qdgrasp/rl/contracts.py, qdgrasp/rl/envs/"
+    },
+    {
+      "area": "reward accounting",
+      "question": "is the total the sum of logged terms, and can no positive term pay for a safety barrier?",
+      "where": "qdgrasp/rl/contracts.py"
+    },
+    {
+      "area": "backend parity",
+      "question": "ABSENT -- the GPU spike has not run; see known_absent",
+      "where": "scripts/phase3_5_gpu_rl_readiness.py"
+    },
+    {
+      "area": "cloud evidence",
+      "question": "does the notebook pin an immutable commit and refuse to label a CPU run as GPU evidence?",
+      "where": "notebooks/phase3_5_rl_readiness.ipynb"
+    },
+    {
+      "area": "artifact",
+      "question": "do the positive, negative and random cases each behave as their class requires, with hashes?",
+      "where": "datasets/qdgrasp-rl-env-tiny/"
+    }
+  ],
+  "rl_env_tiny_summary": {
+    "case_count": 9,
+    "negative_cases": 2,
+    "negatives_behaved": 2,
+    "positive_cases": 4,
+    "positive_successes": 4,
+    "random_cases": 2,
+    "randoms_behaved": 2
+  },
+  "schema": "qdgrasp/evidence/phase3.5-review-packet/v1",
+  "verdict": null,
+  "verdict_note": "This packet carries no verdict. The author of an artifact may not sign its review (docs/governance/THIRD_PARTY_REVIEW.md); an independent reviewer records the verdict against the packet digest below.",
+  "worktree_clean": false
+}

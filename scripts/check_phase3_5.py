@@ -259,7 +259,13 @@ def _outstanding(root: Path) -> list[PackageResult]:
             "P3.5-18",
             "independent review and roadmap handoff",
             STATUS_BLOCKED,
-            "the author of an artifact may not sign its verdict",
+            (
+                "review packet and reviewer guide prepared"
+                if (root / "scripts/phase3_5_review_packet.py").is_file()
+                and (root / "docs/roadmap/PHASE3_5_REVIEWER_GUIDE.md").is_file()
+                else "no review packet prepared"
+            )
+            + "; the verdict is still outstanding because the author of an artifact may not sign it",
         ),
     ]
 
