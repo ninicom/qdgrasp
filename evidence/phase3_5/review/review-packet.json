@@ -86,9 +86,9 @@
       "sha256": "d321b02fb372c2948d26384ef26ae8fe54de94013b90439cd9723d4aabf37c31"
     },
     {
-      "bytes": 12319,
+      "bytes": 12647,
       "path": "scripts/check_phase3_5.py",
-      "sha256": "dad2582f6b7be7a5de878f6f927b0d14137148d0e84d4b3b9f4c8476c2b5be77"
+      "sha256": "f5614682846ea617fce72df2b8e16d696a418514cca278f9b0425646a4193013"
     },
     {
       "bytes": 9426,
@@ -117,9 +117,9 @@
     }
   ],
   "branch": "feature/mvp-grasp-policy",
-  "commit": "6aa97ba095f984638128c706bdd2002352fd6184",
-  "complete": false,
-  "created_at": "2026-08-31T08:07:54.464195+00:00",
+  "commit": "dc0d08a74847af8f41b70c4a6c078743c0749a5c",
+  "complete": true,
+  "created_at": "2026-08-31T08:10:21.378905+00:00",
   "gate_command": "python scripts/check_phase3_5.py --profile micro",
   "gate_expected_exit": 1,
   "gate_expected_note": "The gate is expected to exit 1 while P3.5-15 and P3.5-18 are open. An exit of 0 without GPU evidence and a signed review means the gate was widened, not that the phase finished.",
@@ -138,7 +138,7 @@
     }
   ],
   "missing_artifacts": [],
-  "packet_digest": "9e7622b83a970662f536fca77efaabcefea8018e9aadf414403573c552177e1b",
+  "packet_digest": "e1062c476a679515e54c25140b81e3c4a8ea515503b004aac7c93e9e02ca0c05",
   "phase": "P3.5",
   "plan": "ROADMAP-P3.5-001",
   "review_scope": [
@@ -200,5 +200,5 @@
   "schema": "qdgrasp/evidence/phase3.5-review-packet/v1",
   "verdict": null,
   "verdict_note": "This packet carries no verdict. The author of an artifact may not sign its review (docs/governance/THIRD_PARTY_REVIEW.md); an independent reviewer records the verdict against the packet digest below.",
-  "worktree_clean": false
+  "worktree_clean": true
 }
