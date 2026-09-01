@@ -87,6 +87,45 @@ def test_a_bundle_whose_flow_steps_differ_is_refused(tmp_path: Path) -> None:
     )
 
 
+@characterization("COR-09", note="architecture semantics were implied by the installed code")
+def test_a_bundle_produced_under_other_architecture_semantics_is_refused(tmp_path: Path) -> None:
+    """``PLAN.md`` §9.6 asks for the joint parameterization to be written down.
+
+    A configuration says how wide the model is, not what its numbers mean.  The
+    same document under the old ``tanh``-clamped joints and the new ``atanh``
+    latent produces the same tensor shapes and a different hand pose, so the
+    bundle records the semantics and the loader compares them.
+    """
+
+    from qdgrasp.api import QDGrasp
+    from qdgrasp.engine.checkpoint import MANIFEST_FILE, _canonical_hash
+
+    trained = QDGrasp("qdgrasp-flow-n.yaml", robot="leap_hand.yaml")
+    info = trained.save_bundle(tmp_path / "bundle")
+    assert info.manifest["semantics"]["joint_parameterization"] == "atanh-normalized-limits/v1"
+
+    manifest = json.loads((info.directory / MANIFEST_FILE).read_text(encoding="utf-8"))
+    manifest["semantics"]["joint_parameterization"] = "tanh-clamped-limits/v0"
+    hashes = dict(manifest["hashes"])
+    hashes["semantics"] = _canonical_hash(manifest["semantics"])
+    hashes.pop("bundle")
+    probe = dict(manifest)
+    probe["hashes"] = hashes
+    hashes["bundle"] = _canonical_hash(probe)
+    manifest["hashes"] = hashes
+    (info.directory / MANIFEST_FILE).write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    refuses(
+        lambda: QDGrasp("qdgrasp-flow-n.yaml", robot="leap_hand.yaml").load_weights(info.directory),
+        because=(
+            "weights produced under the superseded joint parameterization loaded into a model that reads "
+            "the latent differently; every tensor fits and the joints they describe do not"
+        ),
+    )
+
+
 @characterization("COR-09", note="one robot hash serves both roles")
 def test_a_bundle_separates_the_training_hand_from_the_runtime_hand(tmp_path: Path) -> None:
     """A stored bundle names the hand it was trained on; a transfer names both.

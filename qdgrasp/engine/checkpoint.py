@@ -101,6 +101,11 @@ def save_public_bundle(
     weights_path = target / WEIGHTS_FILE
     save_safetensors(tensors, str(weights_path))
 
+    # Code-level meanings a configuration cannot express.  A model that does not
+    # declare any says so with an empty mapping rather than being absent, so the
+    # gate below compares like with like.
+    semantics = dict(model.semantics()) if hasattr(model, "semantics") else {}
+
     manifest: dict[str, Any] = {
         "schema": BUNDLE_SCHEMA,
         "qdgrasp_version": __version__,
@@ -108,6 +113,7 @@ def save_public_bundle(
         "model_config": model_config.to_document(),
         "training_robot_config": robot_config.to_document(),
         "preprocess": preprocess,
+        "semantics": semantics,
         "data_manifest": data_manifest or {},
         "tensors": {key: {"shape": list(value.shape), "dtype": str(value.dtype)} for key, value in tensors.items()},
         "hashes": {
@@ -116,6 +122,7 @@ def save_public_bundle(
             # against is a runtime fact, and lives in an EmbodimentBinding.
             "training_robot_config": robot_config.content_hash(),
             "preprocess": _canonical_hash(preprocess),
+            "semantics": _canonical_hash(semantics),
             "weights": sha256_file(weights_path),
         },
     }
@@ -147,11 +154,17 @@ def read_bundle_manifest(directory: str | Path) -> dict[str, Any]:
     weights_hash = sha256_file(target / WEIGHTS_FILE)
     if weights_hash != recorded["weights"]:
         raise ConfigError(f"{target}: weights hash mismatch")
-    missing = [key for key in ("preprocess", "model_config", "training_robot_config") if key not in recorded]
+    missing = [
+        key
+        for key in ("preprocess", "model_config", "training_robot_config", "semantics")
+        if key not in recorded
+    ]
     if missing:
         raise ConfigError(f"{target}: bundle manifest records no {missing} hash")
     if _canonical_hash(manifest.get("preprocess", {})) != recorded["preprocess"]:
         raise ConfigError(f"{target}: the preprocess hash does not describe the preprocess document beside it")
+    if _canonical_hash(manifest.get("semantics", {})) != recorded["semantics"]:
+        raise ConfigError(f"{target}: the semantics hash does not describe the semantics document beside it")
     return manifest
 
 
@@ -190,6 +203,13 @@ def load_public_bundle(
         raise ConfigError(
             f"{target}: preprocessing contract mismatch; the bundle declares {manifest['preprocess']!r}. "
             "Feeding inputs prepared another way produces confident predictions about a different scene"
+        )
+    declared = dict(model.semantics()) if hasattr(model, "semantics") else {}
+    if declared != manifest.get("semantics", {}):
+        raise ConfigError(
+            f"{target}: architecture semantics mismatch; the bundle was produced under "
+            f"{manifest.get('semantics', {})!r} and this build means {declared!r}. The tensors fit and the "
+            "joints they describe do not"
         )
     if binding is not None:
         if binding.training_robot_hash != training_hash:

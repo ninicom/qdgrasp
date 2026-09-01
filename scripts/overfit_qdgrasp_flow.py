@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -30,9 +31,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from qdgrasp.models.flow import GraspFlowModel
+from qdgrasp import __version__
+from qdgrasp.models.flow import GraspFlowModel, model_semantics
 from qdgrasp.models.losses import LossWeights, forward_and_loss, gradient_coverage
 from qdgrasp.robot.spec import RobotSpec
+from qdgrasp.runtime import environment_info
 
 
 def build_fixture(robot: RobotSpec, samples: int, points: int, seed: int, device: torch.device):
@@ -81,6 +84,20 @@ def pose_errors(prediction, batch) -> dict[str, float]:
         "joint_abs_rad": float(joint.detach()),
         "fingertip_m": float(fingertip.detach()),
     }
+
+
+def _git(*args: str) -> str:
+    return subprocess.run(
+        ["git", *args], capture_output=True, text=True, check=False, cwd=REPO_ROOT
+    ).stdout.strip()
+
+
+def _git_commit() -> str:
+    return _git("rev-parse", "HEAD") or "unknown"
+
+
+def _worktree_dirty() -> bool:
+    return bool(_git("status", "--porcelain"))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -165,8 +182,20 @@ def main(argv: list[str] | None = None) -> int:
     converged = all(met.values()) and last["total"] < first["total"]
 
     report = {
-        "schema": "qdgrasp/phase4-overfit/v1",
+        # v2: the run records what produced it.  ``PLAN.md`` §9.1 superseded the
+        # v1 evidence when the joint parameterization and the quality objective
+        # changed, and evidence that cannot say which semantics it was measured
+        # under is exactly how that happens quietly.
+        "schema": "qdgrasp/phase4-overfit/v2",
         "robot": args.robot,
+        "identity": {
+            "qdgrasp_version": __version__,
+            "git_commit": _git_commit(),
+            "worktree_dirty": _worktree_dirty(),
+            "robot_config_hash": robot.config.content_hash(),
+            "model_semantics": model_semantics(),
+            "environment": environment_info().to_dict(),
+        },
         "device": str(device),
         "cuda": device.type == "cuda",
         "samples": args.samples,

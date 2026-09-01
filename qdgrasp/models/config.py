@@ -31,7 +31,7 @@ from qdgrasp.api.results import GraspResults
 from qdgrasp.config.registry import register_model
 from qdgrasp.config.schema import ConfigError, ModelConfig
 from qdgrasp.models.encoder import EncoderConfig
-from qdgrasp.models.flow import FlowConfig, GraspFlowModel, GraspPrediction
+from qdgrasp.models.flow import FlowConfig, GraspFlowModel, GraspPrediction, model_semantics
 from qdgrasp.models.hand_graph import HandGraphEncoderConfig
 from qdgrasp.models.losses import LossWeights, forward_and_loss, geodesic_rotation_error, masked_sample_mean
 from qdgrasp.models.tokenizer import TokenizerConfig
@@ -362,6 +362,12 @@ class QDGraspFlow(nn.Module):
             training_robot_hash=training_robot_hash or self.robot_hash,
             runtime_robot_hash=runtime_robot_hash or self.robot_hash,
         )
+
+    @staticmethod
+    def semantics() -> dict[str, str]:
+        """Code-level meanings the configuration document cannot express."""
+
+        return model_semantics()
 
     def preprocess_schema(self) -> dict[str, Any]:
         return {

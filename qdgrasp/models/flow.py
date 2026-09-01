@@ -44,6 +44,25 @@ from qdgrasp.models.tokenizer import TokenizerConfig, tokenize_points
 from qdgrasp.robot.graph import HandGraph
 from qdgrasp.robot.spec import RobotSpec
 
+#: How joint targets are carried in the flow's latent state.  ``PLAN.md`` §9.6
+#: asks for this to be written down rather than implied by the code that
+#: happens to be installed: two checkpoints with identical configuration and
+#: identical tensor shapes mean different things under different answers here.
+JOINT_PARAMETERIZATION = "atanh-normalized-limits/v1"
+
+#: The quality head's conditioning.  ``observation-only/v0`` scored every
+#: candidate for one object identically; this one reads the candidate too.
+QUALITY_CONDITIONING = "observation-and-candidate/v1"
+
+
+def model_semantics() -> dict[str, str]:
+    """Code-level meanings a configuration document cannot express."""
+
+    return {
+        "joint_parameterization": JOINT_PARAMETERIZATION,
+        "quality_conditioning": QUALITY_CONDITIONING,
+    }
+
 
 def rotation_from_9d(raw: torch.Tensor) -> torch.Tensor:
     """Project a raw 9-vector onto SO(3) by Gram-Schmidt.
@@ -240,6 +259,12 @@ class GraspPrediction:
 
 class GraspFlowModel(nn.Module):
     """Object points plus a hand graph in; an executable grasp out."""
+
+    @staticmethod
+    def semantics() -> dict[str, str]:
+        """What this architecture means, beyond what its configuration says."""
+
+        return model_semantics()
 
     def __init__(
         self,
