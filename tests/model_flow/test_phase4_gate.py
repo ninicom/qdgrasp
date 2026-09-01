@@ -211,14 +211,47 @@ def packet_script():
     return _load("phase4_review_packet")
 
 
-def test_verify_accepts_the_committed_packet_on_a_clean_tree(packet_script) -> None:
-    """The one command a reviewer runs before signing."""
+def test_verify_refuses_the_committed_packet_now_that_its_sources_moved(packet_script) -> None:
+    """The one command a reviewer runs before signing, answering honestly.
+
+    The corrective track of ``PLAN.md`` §9 changed the joint parameterization,
+    the quality objective and the tokeniser this packet was signed over, and §9.1
+    records the consequence: the Phase 4 evidence is superseded for release and
+    has to be produced again, not re-signed. So the packet must now be refused,
+    and it must be refused *by name* -- a verifier that shrugged at a moved
+    source would let the old numbers keep vouching for new code.
+
+    ``R8`` regenerates this packet after the remaining gates close; until then a
+    green result here would be the finding, not the fix.
+    """
 
     path = REPO_ROOT / "evidence/phase4/review/review-packet.json"
     ok, findings = packet_script.verify_packet(path)
-    mismatches = [item for item in findings if not item.startswith("packet records commit")]
+    drifted = [item for item in findings if "does not match the packet's" in item]
+
+    assert not ok
+    assert drifted, f"the packet was signed over code that has since changed; findings were {findings}"
+    assert any("qdgrasp/models/flow.py" in item or "qdgrasp/models/tokenizer.py" in item for item in drifted)
+
+
+def test_verify_accepts_a_packet_built_from_the_tree_it_describes(packet_script, tmp_path: Path) -> None:
+    """The mechanical check still passes on a packet that matches its sources."""
+
+    packet = packet_script.build_packet()
+    target = tmp_path / "review-packet.json"
+    target.write_text(json.dumps(packet, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    ok, findings = packet_script.verify_packet(target)
+    # Whether the tree is clean and which commit is recorded are separate
+    # statements from "the bytes this packet describes are the bytes on disk",
+    # and only the last one is what this test is about.
+    mismatches = [
+        item
+        for item in findings
+        if not item.startswith("packet records commit") and "working tree is dirty" not in item
+    ]
     assert not mismatches, mismatches
-    assert ok
+    assert ok == (findings == [])
 
 
 def test_verify_refuses_a_packet_whose_artifact_moved(packet_script, tmp_path: Path) -> None:
