@@ -2,7 +2,7 @@
   "converged": true,
   "cuda": false,
   "device": "cpu",
-  "elapsed_s": 273.21203521700227,
+  "elapsed_s": 273.3738406379998,
   "first": {
     "fingertip_m": 1.9147000312805176,
     "fk_consistency": 1.3722865581512451,
@@ -206,6 +206,24 @@
       "total": 0.3448707163333893
     }
   ],
+  "identity": {
+    "environment": {
+      "cuda_available": false,
+      "cuda_build": null,
+      "cuda_device_count": 0,
+      "cuda_device_name": null,
+      "python": "3.11.16",
+      "torch": "2.11.0+cpu"
+    },
+    "git_commit": "f45ca6527a540d633877a2000653af2668522304",
+    "model_semantics": {
+      "joint_parameterization": "atanh-normalized-limits/v1",
+      "quality_conditioning": "observation-and-candidate/v1"
+    },
+    "qdgrasp_version": "0.1.0a1",
+    "robot_config_hash": "c2539640ca6ec35c37131bb09930c57102a7a6d2bb3351bdaf1924079bac3ef7",
+    "worktree_dirty": false
+  },
   "last": {
     "fingertip_m": 0.05847863480448723,
     "fk_consistency": 0.0012458960991352797,
@@ -237,7 +255,7 @@
   },
   "robot": "wonik_allegro.yaml",
   "samples": 8,
-  "schema": "qdgrasp/phase4-overfit/v1",
+  "schema": "qdgrasp/phase4-overfit/v2",
   "seed": 0,
   "steps": 1200
 }

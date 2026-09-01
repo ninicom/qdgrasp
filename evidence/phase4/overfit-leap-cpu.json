@@ -2,7 +2,7 @@
   "converged": true,
   "cuda": false,
   "device": "cpu",
-  "elapsed_s": 270.9902102050037,
+  "elapsed_s": 269.5512182759994,
   "first": {
     "fingertip_m": 1.8380675315856934,
     "fk_consistency": 1.2614542245864868,
@@ -206,6 +206,24 @@
       "total": 0.28181204199790955
     }
   ],
+  "identity": {
+    "environment": {
+      "cuda_available": false,
+      "cuda_build": null,
+      "cuda_device_count": 0,
+      "cuda_device_name": null,
+      "python": "3.11.16",
+      "torch": "2.11.0+cpu"
+    },
+    "git_commit": "f45ca6527a540d633877a2000653af2668522304",
+    "model_semantics": {
+      "joint_parameterization": "atanh-normalized-limits/v1",
+      "quality_conditioning": "observation-and-candidate/v1"
+    },
+    "qdgrasp_version": "0.1.0a1",
+    "robot_config_hash": "7f002e8e70028ac5ff62dedb2602d23dbc1f3603f28187d58a7078e9ffcea7ba",
+    "worktree_dirty": false
+  },
   "last": {
     "fingertip_m": 0.04180634394288063,
     "fk_consistency": 0.0006564285140484571,
@@ -237,7 +255,7 @@
   },
   "robot": "leap_hand.yaml",
   "samples": 8,
-  "schema": "qdgrasp/phase4-overfit/v1",
+  "schema": "qdgrasp/phase4-overfit/v2",
   "seed": 0,
   "steps": 1200
 }
