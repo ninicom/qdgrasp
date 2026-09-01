@@ -64,6 +64,9 @@ qdgrasp = [
 [tool.pytest.ini_options]
 testpaths = ["tests", "scripts/tests"]
 pythonpath = ["."]
+markers = [
+  "corrective(finding): characterization test for one PLAN.md §9.2 finding",
+]
 
 [tool.ruff]
 target-version = "py311"

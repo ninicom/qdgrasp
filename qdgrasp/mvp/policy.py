@@ -224,7 +224,11 @@ def save_checkpoint(
 def load_checkpoint(path: str | Path) -> dict[str, Any]:
     payload = torch.load(Path(path), map_location="cpu", weights_only=False)
     if payload.get("schema") != POLICY_SCHEMA_V0:
-        raise ValueError(f"unsupported policy checkpoint schema: {payload.get('schema')!r}")
+        raise ValueError(
+            f"unsupported policy checkpoint schema: {payload.get('schema')!r}; this build reads "
+            f"{POLICY_SCHEMA_V0!r}. A checkpoint written under another schema describes a different "
+            "action contract and is not the same policy"
+        )
     return payload
 
 

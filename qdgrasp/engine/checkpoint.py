@@ -111,7 +111,11 @@ def read_bundle_manifest(directory: str | Path) -> dict[str, Any]:
         raise ConfigError(f"{target}: missing {MANIFEST_FILE}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("schema") != BUNDLE_SCHEMA:
-        raise ConfigError(f"{target}: unsupported bundle schema {manifest.get('schema')!r}")
+        raise ConfigError(
+            f"{target}: unsupported bundle schema {manifest.get('schema')!r}; this build reads "
+            f"{BUNDLE_SCHEMA!r}. A bundle written under another schema was produced by different "
+            "semantics and is not loadable as if it were this one"
+        )
     recorded = dict(manifest["hashes"])
     declared_bundle = recorded.pop("bundle")
     probe = dict(manifest)
@@ -179,7 +183,11 @@ class ResumeState:
 
         payload = torch.load(Path(path), map_location="cpu", weights_only=True)
         if payload.get("schema") != RESUME_SCHEMA:
-            raise ConfigError(f"{path}: unsupported resume schema {payload.get('schema')!r}")
+            raise ConfigError(
+                f"{path}: unsupported resume schema {payload.get('schema')!r}; this build reads "
+                f"{RESUME_SCHEMA!r}. Resume is an exact continuation, so a state written under another "
+                "schema is a different run rather than an older one"
+            )
         return cls(
             global_step=int(payload["global_step"]),
             model=payload["model"],

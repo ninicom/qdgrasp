@@ -23,6 +23,7 @@ from ..config import (
     parse_document,
     resolve_runtime,
 )
+from ..corrective import assert_public_training_allowed
 from ..engine.callbacks import Callback, CallbackList, ProgressLogger
 from ..engine.checkpoint import BundleInfo, load_public_bundle, read_bundle_manifest, save_public_bundle
 from ..engine.runner import RunResult, Runner
@@ -72,6 +73,8 @@ class QDGrasp:
                 f"model type '{self.model_config.type}' does not satisfy the GraspModel protocol"
             )
         self.bundle_manifest: dict[str, Any] | None = None
+        #: Last corrective-gate decision, set whenever a dataset is opened.
+        self.gate_report: Any | None = None
         if weights is not None:
             self.load_weights(weights)
 
@@ -115,8 +118,12 @@ class QDGrasp:
     def _run_config(self, overrides: dict[str, Any]) -> RunConfig:
         return parse_document(overrides, RunConfig, origin="run configuration")
 
-    def _datasets(self, data: str | Path, splits: Sequence[str]) -> tuple[Any, dict[str, Any]]:
+    def _datasets(self, data: str | Path, splits: Sequence[str], *, purpose: str) -> tuple[Any, dict[str, Any]]:
         data_config = load_data_config(data)
+        # PLAN.md §9.3: a corpus that fails its own audit or positive gate stops
+        # the public path here, before a model, an optimiser or a run directory
+        # exists to make the attempt look like a run that merely went badly.
+        self.gate_report = assert_public_training_allowed(data_config, purpose=purpose)
         builder_name = getattr(data_config, "type", None) or getattr(data_config, "schema_version", "dgn_open")
         builder = get_dataset_builder(builder_name)
         return data_config, {split: builder(data_config, self.robot_config, split=split) for split in splits}
@@ -130,7 +137,7 @@ class QDGrasp:
 
         run_config = self._run_config(overrides)
         runtime = resolve_runtime(run_config)
-        data_config, datasets = self._datasets(data, ("train", "val"))
+        data_config, datasets = self._datasets(data, ("train", "val"), purpose="training")
         runner = Runner(
             run_config=run_config,
             runtime=runtime,
@@ -152,7 +159,7 @@ class QDGrasp:
 
         run_config = self._run_config(overrides)
         runtime = resolve_runtime(run_config)
-        _data_config, datasets = self._datasets(data, ("val",))
+        _data_config, datasets = self._datasets(data, ("val",), purpose="validation")
         runner = Runner(
             run_config=run_config,
             runtime=runtime,
@@ -196,6 +203,7 @@ class QDGrasp:
         instance.robot_config = parse_document(manifest["robot_config"], RobotConfig, origin=str(directory))
         builder = get_model_builder(instance.model_config.type)
         instance.module = builder(instance.model_config, instance.robot_config)
+        instance.gate_report = None
         instance.bundle_manifest = load_public_bundle(directory, instance.module, robot_config=instance.robot_config)
         return instance
 
