@@ -165,6 +165,48 @@ class VelocityField(nn.Module):
         return self.output(hidden)
 
 
+class CandidateQualityHead(nn.Module):
+    """Score one grasp candidate in the context that produced it.
+
+    A grasp score is only useful for ranking when it depends on the candidate.
+    Keeping the observation and latent state as separate arguments makes that
+    contract explicit at every call site and lets a batch contain positive and
+    negative grasps that share exactly the same observation.
+    """
+
+    def __init__(self, conditioning_channels: int, state_dimension: int) -> None:
+        super().__init__()
+        self.conditioning_channels = conditioning_channels
+        self.state_dimension = state_dimension
+        inputs = conditioning_channels + state_dimension
+        hidden = max(conditioning_channels // 2, 1)
+        self.network = nn.Sequential(
+            nn.LayerNorm(inputs),
+            nn.Linear(inputs, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+
+    def forward(self, conditioning: torch.Tensor, candidate_state: torch.Tensor) -> torch.Tensor:
+        if conditioning.ndim != 2 or candidate_state.ndim != 2:
+            raise ValueError(
+                "quality expects conditioning [B, C] and candidate_state [B, D], got "
+                f"{tuple(conditioning.shape)} and {tuple(candidate_state.shape)}"
+            )
+        if conditioning.shape[0] != candidate_state.shape[0]:
+            raise ValueError(
+                "quality conditioning and candidate_state must have the same batch size, got "
+                f"{conditioning.shape[0]} and {candidate_state.shape[0]}"
+            )
+        if conditioning.shape[1] != self.conditioning_channels or candidate_state.shape[1] != self.state_dimension:
+            raise ValueError(
+                "quality feature dimensions must be "
+                f"C={self.conditioning_channels}, D={self.state_dimension}; got "
+                f"C={conditioning.shape[1]}, D={candidate_state.shape[1]}"
+            )
+        return self.network(torch.cat([conditioning, candidate_state], dim=-1)).squeeze(-1)
+
+
 @dataclasses.dataclass
 class GraspPrediction:
     """One generated, executable grasp plus what it implies."""
@@ -215,26 +257,76 @@ class GraspFlowModel(nn.Module):
         )
         self.conditioning_pool = nn.Sequential(nn.LayerNorm(channels), nn.Linear(channels, channels))
         self.velocity = VelocityField(self.flow_config)
-        self.quality = nn.Sequential(
-            nn.LayerNorm(channels), nn.Linear(channels, channels // 2), nn.GELU(), nn.Linear(channels // 2, 1)
-        )
+        self.quality = CandidateQualityHead(channels, self.flow_config.state_dimension)
 
     # -- conditioning ------------------------------------------------------
 
-    def encode(self, points: torch.Tensor, graph: HandGraph) -> tuple[torch.Tensor, HandGraphEmbedding]:
+    def encode(
+        self,
+        points: torch.Tensor,
+        graph: HandGraph,
+        point_mask: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, HandGraphEmbedding]:
         """Fuse the object and the hand into one conditioning vector per sample."""
 
-        tokenized = tokenize_points(points, self.tokenizer_config)
-        token_features = self.point_encoder(tokenized.token_positions, tokenized.token_mask)
+        token_positions, token_mask = self._tokenize_observation(points, point_mask)
+        token_features = self.point_encoder(token_positions, token_mask)
         keys = self.point_projection(token_features)
 
         hand = self.hand_encoder(graph)
         queries = self.hand_projection(hand.nodes).unsqueeze(0).expand(points.shape[0], -1, -1)
         for block in self.conditioning:
-            queries = block(queries, keys, tokenized.token_mask)
+            queries = block(queries, keys, token_mask)
         pooled_hand = queries.mean(dim=1)
-        pooled_object = masked_mean(keys, tokenized.token_mask)
+        pooled_object = masked_mean(keys, token_mask)
         return self.conditioning_pool(pooled_hand + pooled_object), hand
+
+    def _tokenize_observation(
+        self, points: torch.Tensor, point_mask: torch.Tensor | None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Tokenize real points only, excluding padded coordinates entirely.
+
+        The regular tokenizer has no point-level mask because its public contract
+        receives a dense cloud.  Dataset batches are padded, though, and a zero
+        placeholder must not become a real voxel at the origin.  Ragged rows are
+        therefore tokenized independently and repadded at the *token* level,
+        where the encoder already has an explicit mask.
+        """
+
+        if point_mask is None:
+            tokenized = tokenize_points(points, self.tokenizer_config)
+            return tokenized.token_positions, tokenized.token_mask
+
+        if points.ndim != 3 or points.shape[-1] != 3:
+            raise ValueError(f"points must have shape [B, N, 3], got {tuple(points.shape)}")
+        mask = torch.as_tensor(point_mask, device=points.device)
+        if mask.ndim == 1 and points.shape[0] == 1:
+            mask = mask.unsqueeze(0)
+        if mask.shape != points.shape[:2]:
+            raise ValueError(
+                f"point_mask must have shape {tuple(points.shape[:2])}, got {tuple(mask.shape)}"
+            )
+        if mask.dtype != torch.bool:
+            if not bool(torch.all((mask == 0) | (mask == 1))):
+                raise ValueError("point_mask values must be boolean or 0/1")
+            mask = mask.to(torch.bool)
+        valid_counts = mask.sum(dim=1)
+        if bool(torch.any(valid_counts == 0)):
+            raise ValueError("each observation needs at least one valid point")
+
+        rows: list[torch.Tensor] = []
+        for index in range(points.shape[0]):
+            tokenized = tokenize_points(points[index, mask[index]].unsqueeze(0), self.tokenizer_config)
+            rows.append(tokenized.token_positions[0])
+
+        max_tokens = max(row.shape[0] for row in rows)
+        positions = points.new_zeros((points.shape[0], max_tokens, 3))
+        token_mask = points.new_zeros((points.shape[0], max_tokens))
+        for index, row in enumerate(rows):
+            count = row.shape[0]
+            positions[index, :count] = row
+            token_mask[index, :count] = 1.0
+        return positions, token_mask
 
     # -- generation --------------------------------------------------------
 
@@ -299,8 +391,10 @@ class GraspFlowModel(nn.Module):
         graph: HandGraph,
         robot: RobotSpec,
         generator: torch.Generator | None = None,
+        *,
+        point_mask: torch.Tensor | None = None,
     ) -> GraspPrediction:
-        conditioning, _hand = self.encode(points, graph)
+        conditioning, _hand = self.encode(points, graph, point_mask=point_mask)
         state = self.sample_state(conditioning, generator=generator)
         translation, rotation, joints = self.decode(state, robot)
         fingertips = robot.fingertip_positions(translation, rotation, joints)
@@ -309,7 +403,7 @@ class GraspFlowModel(nn.Module):
             palm_rotation=rotation,
             joint_angles=joints,
             fingertips=fingertips,
-            quality_logit=self.quality(conditioning).squeeze(-1),
+            quality_logit=self.quality(conditioning, state),
             raw_state=state,
         )
 
@@ -327,12 +421,44 @@ class GraspFlowModel(nn.Module):
         interpolated = noise + time.unsqueeze(-1) * (target_state - noise)
         return interpolated, target_state - noise
 
-    def encode_target(self, batch_palm_pos, batch_palm_rot, batch_joints) -> torch.Tensor:
-        """Pack a ground-truth grasp into the flow's state layout."""
+    def encode_target(
+        self,
+        batch_palm_pos: torch.Tensor,
+        batch_palm_rot: torch.Tensor,
+        batch_joints: torch.Tensor,
+        robot: RobotSpec,
+        *,
+        epsilon: float = 1e-6,
+    ) -> torch.Tensor:
+        """Pack a physical grasp into the exact latent coordinates ``decode`` reads.
+
+        Joint channels use the inverse of :func:`clamp_to_limits`.  Clamping the
+        normalized coordinate just inside ``(-1, 1)`` keeps targets at a declared
+        joint limit finite while retaining sub-microradian round-trip accuracy for
+        the shipped profiles.
+        """
 
         batch = batch_palm_pos.shape[0]
+        joint_count = len(robot.actuated_joint_names)
+        if batch_joints.ndim != 2 or batch_joints.shape != (batch, joint_count):
+            raise ValueError(
+                f"joint target for {robot.config.name} must have shape {(batch, joint_count)}, "
+                f"got {tuple(batch_joints.shape)}"
+            )
+        if not 0.0 < epsilon < 1.0:
+            raise ValueError(f"epsilon must lie in (0, 1), got {epsilon}")
+
+        lower, upper = self._joint_limits(robot, batch_joints.device, batch_joints.dtype)
+        tolerance = 1e-6
+        if bool(torch.any(batch_joints < lower - tolerance)) or bool(torch.any(batch_joints > upper + tolerance)):
+            raise ValueError(f"joint target for {robot.config.name} lies outside its declared limits")
+        centre = (upper + lower) / 2.0
+        half = (upper - lower) / 2.0
+        normalized = ((batch_joints - centre) / half).clamp(-1.0 + epsilon, 1.0 - epsilon)
+        latent_joints = torch.atanh(normalized)
+
         joints = torch.zeros(
             batch, self.flow_config.max_joints, device=batch_palm_pos.device, dtype=batch_palm_pos.dtype
         )
-        joints[:, : batch_joints.shape[1]] = batch_joints
+        joints[:, :joint_count] = latent_joints.to(device=batch_palm_pos.device, dtype=batch_palm_pos.dtype)
         return torch.cat([batch_palm_pos, batch_palm_rot.reshape(batch, 9), joints], dim=-1)

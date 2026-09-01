@@ -91,10 +91,64 @@ def geodesic_rotation_error(predicted: torch.Tensor, target: torch.Tensor) -> to
     return torch.arccos(cosine)
 
 
+def _validity_mask(
+    mask: torch.Tensor | None,
+    *,
+    batch_size: int,
+    device: torch.device,
+    name: str,
+) -> torch.Tensor:
+    """Normalize one explicit sample-validity field to a strict boolean vector."""
+
+    if mask is None:
+        return torch.ones(batch_size, dtype=torch.bool, device=device)
+    value = torch.as_tensor(mask, device=device)
+    if value.ndim == 0 and batch_size == 1:
+        value = value.reshape(1)
+    if value.ndim == 2 and value.shape[1] == 1:
+        value = value[:, 0]
+    if value.shape != (batch_size,):
+        raise ValueError(f"{name} must have shape {(batch_size,)}, got {tuple(value.shape)}")
+    if value.dtype != torch.bool:
+        if not bool(torch.all((value == 0) | (value == 1))):
+            raise ValueError(f"{name} values must be boolean or 0/1")
+        value = value.to(torch.bool)
+    return value
+
+
+def masked_sample_mean(
+    values: torch.Tensor,
+    mask: torch.Tensor | None,
+    *,
+    name: str = "target_valid",
+) -> torch.Tensor:
+    """Average per-sample values over valid samples only.
+
+    All trailing dimensions are first averaged within a sample.  An empty mask
+    returns a differentiable zero, so a placeholder-only batch is finite and can
+    participate in a normal backward pass without manufacturing a gradient.
+    """
+
+    if values.ndim < 1:
+        raise ValueError("masked_sample_mean expects a batch dimension")
+    valid = _validity_mask(mask, batch_size=values.shape[0], device=values.device, name=name)
+    per_sample = values.reshape(values.shape[0], -1).mean(dim=1) if values.ndim > 1 else values
+    selected = torch.where(valid, per_sample, torch.zeros_like(per_sample))
+    return selected.sum() / valid.sum().clamp(min=1).to(selected.dtype)
+
+
+def _replace_invalid(values: torch.Tensor, valid: torch.Tensor, replacement: torch.Tensor) -> torch.Tensor:
+    """Replace invalid rows before arithmetic so NaN placeholders cannot leak through ``0 * NaN``."""
+
+    shape = (valid.shape[0],) + (1,) * (values.ndim - 1)
+    return torch.where(valid.reshape(shape), values, replacement)
+
+
 def compute_losses(
     model: GraspFlowModel,
     prediction: GraspPrediction,
     conditioning: torch.Tensor,
+    robot: RobotSpec,
     *,
     palm_pos: torch.Tensor,
     palm_rot: torch.Tensor,
@@ -103,27 +157,99 @@ def compute_losses(
     success: torch.Tensor,
     weights: LossWeights | None = None,
     generator: torch.Generator | None = None,
+    kinematics_valid: torch.Tensor | None = None,
+    pose_target_valid: torch.Tensor | None = None,
+    joint_target_valid: torch.Tensor | None = None,
+    fk_target_valid: torch.Tensor | None = None,
 ) -> LossBreakdown:
-    """Assemble every term for one batch."""
+    """Assemble every term, excluding samples without the corresponding target."""
 
     settings = weights or LossWeights()
     settings.validate()
 
-    target_state = model.encode_target(palm_pos, palm_rot, joint_angles)
+    batch_size = palm_pos.shape[0]
+    device = palm_pos.device
+    pose_valid = _validity_mask(
+        pose_target_valid, batch_size=batch_size, device=device, name="pose_target_valid"
+    )
+    joint_valid = _validity_mask(
+        joint_target_valid, batch_size=batch_size, device=device, name="joint_target_valid"
+    )
+    fk_valid = _validity_mask(fk_target_valid, batch_size=batch_size, device=device, name="fk_target_valid")
+    # Old callers carry no validity fields and remain all-valid.  Once individual
+    # fields are supplied, the natural fallback for the full flow target is the
+    # intersection of pose and joint validity.
+    if kinematics_valid is None:
+        kinematics_mask = pose_valid & joint_valid
+    else:
+        kinematics_mask = _validity_mask(
+            kinematics_valid, batch_size=batch_size, device=device, name="kinematics_valid"
+        )
+    flow_valid = kinematics_mask & pose_valid & joint_valid
+
+    safe_palm_pos = _replace_invalid(palm_pos, pose_valid, torch.zeros_like(palm_pos))
+    identity = torch.eye(3, device=palm_rot.device, dtype=palm_rot.dtype).expand_as(palm_rot)
+    safe_palm_rot = _replace_invalid(palm_rot, pose_valid, identity)
+    lower, upper = model._joint_limits(robot, joint_angles.device, joint_angles.dtype)
+    centre = ((lower + upper) / 2.0).unsqueeze(0).expand_as(joint_angles)
+    safe_joints = _replace_invalid(joint_angles, joint_valid, centre)
+    safe_fingertips = _replace_invalid(
+        fingertip_positions, fk_valid, torch.zeros_like(fingertip_positions)
+    )
+
+    target_state = model.encode_target(safe_palm_pos, safe_palm_rot, safe_joints, robot)
     noise = torch.randn(target_state.shape, device=target_state.device, dtype=target_state.dtype, generator=generator)
     time = torch.rand(target_state.shape[0], device=target_state.device, dtype=target_state.dtype, generator=generator)
     interpolated, velocity_target = model.velocity_target(target_state, noise, time)
     velocity_prediction = model.velocity(interpolated, time, conditioning)
+    target_quality_logit = model.quality(conditioning, target_state)
+    quality_target = torch.as_tensor(success, device=target_quality_logit.device, dtype=target_quality_logit.dtype)
+    if quality_target.ndim == 2 and quality_target.shape[1] == 1:
+        quality_target = quality_target[:, 0]
+    if quality_target.shape != (batch_size,):
+        raise ValueError(f"success must have shape {(batch_size,)}, got {tuple(quality_target.shape)}")
+    valid_quality_targets = quality_target[flow_valid]
+    if valid_quality_targets.numel() and (
+        not bool(torch.isfinite(valid_quality_targets).all())
+        or bool(torch.any((valid_quality_targets < 0.0) | (valid_quality_targets > 1.0)))
+    ):
+        raise ValueError("success targets with valid kinematics must be finite values in [0, 1]")
+    safe_success = torch.where(
+        flow_valid,
+        quality_target,
+        torch.zeros_like(target_quality_logit),
+    )
 
     terms = {
-        "flow_velocity": settings.flow_velocity * nn.functional.mse_loss(velocity_prediction, velocity_target),
-        "palm_translation": settings.palm_translation * nn.functional.mse_loss(prediction.palm_translation, palm_pos),
-        "palm_rotation": settings.palm_rotation * geodesic_rotation_error(prediction.palm_rotation, palm_rot).mean(),
-        "joint": settings.joint * nn.functional.mse_loss(prediction.joint_angles, joint_angles),
-        "fk_consistency": settings.fk_consistency * nn.functional.mse_loss(prediction.fingertips, fingertip_positions),
+        "flow_velocity": settings.flow_velocity
+        * masked_sample_mean(
+            (velocity_prediction - velocity_target).square(), flow_valid, name="kinematics_valid"
+        ),
+        "palm_translation": settings.palm_translation
+        * masked_sample_mean(
+            (prediction.palm_translation - safe_palm_pos).square(), pose_valid, name="pose_target_valid"
+        ),
+        "palm_rotation": settings.palm_rotation
+        * masked_sample_mean(
+            geodesic_rotation_error(prediction.palm_rotation, safe_palm_rot),
+            pose_valid,
+            name="pose_target_valid",
+        ),
+        "joint": settings.joint
+        * masked_sample_mean(
+            (prediction.joint_angles - safe_joints).square(), joint_valid, name="joint_target_valid"
+        ),
+        "fk_consistency": settings.fk_consistency
+        * masked_sample_mean(
+            (prediction.fingertips - safe_fingertips).square(), fk_valid, name="fk_target_valid"
+        ),
         "quality": settings.quality
-        * nn.functional.binary_cross_entropy_with_logits(
-            prediction.quality_logit, success.to(prediction.quality_logit.dtype)
+        * masked_sample_mean(
+            nn.functional.binary_cross_entropy_with_logits(
+                target_quality_logit, safe_success, reduction="none"
+            ),
+            flow_valid,
+            name="kinematics_valid",
         ),
     }
     return LossBreakdown(terms=terms)
@@ -143,6 +269,11 @@ def forward_and_loss(
     weights: LossWeights | None = None,
     generator: torch.Generator | None = None,
     sample_noise: torch.Tensor | None = None,
+    point_mask: torch.Tensor | None = None,
+    kinematics_valid: torch.Tensor | None = None,
+    pose_target_valid: torch.Tensor | None = None,
+    joint_target_valid: torch.Tensor | None = None,
+    fk_target_valid: torch.Tensor | None = None,
 ) -> tuple[GraspPrediction, LossBreakdown]:
     """One training step's forward pass, sharing conditioning between both uses.
 
@@ -151,7 +282,7 @@ def forward_and_loss(
     importantly, let the two paths drift apart under dropout.
     """
 
-    conditioning, _hand = model.encode(points, graph)
+    conditioning, _hand = model.encode(points, graph, point_mask=point_mask)
     state = model.sample_state(conditioning, generator=generator, noise=sample_noise)
     translation, rotation, joints = model.decode(state, robot)
     prediction = GraspPrediction(
@@ -159,13 +290,14 @@ def forward_and_loss(
         palm_rotation=rotation,
         joint_angles=joints,
         fingertips=robot.fingertip_positions(translation, rotation, joints),
-        quality_logit=model.quality(conditioning).squeeze(-1),
+        quality_logit=model.quality(conditioning, state),
         raw_state=state,
     )
     losses = compute_losses(
         model,
         prediction,
         conditioning,
+        robot,
         palm_pos=palm_pos,
         palm_rot=palm_rot,
         joint_angles=joint_angles,
@@ -173,6 +305,10 @@ def forward_and_loss(
         success=success,
         weights=weights,
         generator=generator,
+        kinematics_valid=kinematics_valid,
+        pose_target_valid=pose_target_valid,
+        joint_target_valid=joint_target_valid,
+        fk_target_valid=fk_target_valid,
     )
     return prediction, losses
 

@@ -48,16 +48,35 @@ def test_public_validation_will_not_start_on_the_current_corpus() -> None:
         QDGrasp().val(CORPUS_CONFIG, batch_size=2)
 
 
-def test_the_report_names_both_failing_checks_and_the_reason() -> None:
+def test_the_report_names_the_failing_check_and_its_reason() -> None:
     report = evaluate(_corpus_config(), purpose="training")
 
     assert report.gated
     assert report.dataset_id == "dgn-open-tiny-v1"
     assert not report.allowed
-    failed = {check.name: check.detail for check in report.checks if check.failed}
-    assert set(failed) == {"canonical_dataset_audit", "phase5_positive_gate"}
-    assert "source drift" in failed["canonical_dataset_audit"] or "provenance" in failed["canonical_dataset_audit"]
-    assert "floor" in failed["phase5_positive_gate"]
+    checks = {check.name: check for check in report.checks}
+    assert set(checks) == {"canonical_dataset_audit", "phase5_positive_gate"}
+
+    audit = checks["canonical_dataset_audit"]
+    assert audit.failed
+    assert any(word in audit.detail for word in ("drift", "mismatch", "provenance")), audit.detail
+
+    # One root cause is reported once: an unverifiable corpus is not counted.
+    positive = checks["phase5_positive_gate"]
+    assert positive.status == "skip"
+    assert "canonical audit" in positive.detail
+
+
+def test_the_positive_gate_reports_the_floor_on_a_corpus_it_can_verify(verified_corpus) -> None:
+    """The other half of the stop, measured where the audit does not block it."""
+
+    report = evaluate({"dataset_root": str(verified_corpus)}, purpose="training")
+
+    checks = {check.name: check for check in report.checks}
+    assert checks["canonical_dataset_audit"].status == "pass"
+    assert checks["phase5_positive_gate"].failed
+    assert "floor" in checks["phase5_positive_gate"].detail
+    assert not report.allowed
 
 
 def test_a_dataset_that_claims_no_provenance_is_not_gated() -> None:

@@ -20,6 +20,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
+from qdgrasp.config.schema import ConfigError
+from qdgrasp.dataset.artifact_io import resolve_contained_regular_file
 from qdgrasp.dataset.dynamic_contracts import (
     CONTACTRICH_MANIFEST_SCHEMA_V2,
     DynamicGraspTrajectory,
@@ -71,7 +73,7 @@ class ContactRichActiveDataset:
             raise DatasetRejected(f"no shard for split {name!r}")
         samples: list[tuple[DynamicGraspTrajectory, DynamicSearchOutcome]] = []
         for shard in shards:
-            samples.extend(read_trajectory_shard(self.root / shard["path"]))
+            samples.extend(read_trajectory_shard(_safe_path(self.root, shard["path"])))
         return tuple(samples)
 
     def iter_splits(self) -> Iterator[tuple[str, int]]:
@@ -81,10 +83,10 @@ class ContactRichActiveDataset:
 
 def _safe_path(root: Path, relative: str) -> Path:
     """Resolve a shard path, refusing anything that escapes the dataset root."""
-    candidate = (root / relative).resolve()
-    if not str(candidate).startswith(str(root.resolve())):
-        raise DatasetRejected(f"shard path {relative!r} escapes the dataset root")
-    return candidate
+    try:
+        return resolve_contained_regular_file(root, relative)
+    except (ConfigError, OSError) as exc:
+        raise DatasetRejected(f"shard path {relative!r} escapes the dataset root: {exc}") from exc
 
 
 def verify(root: str | Path, *, allow_blocked: bool = False) -> list[str]:

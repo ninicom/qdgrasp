@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 import random
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -35,7 +37,7 @@ class RngSnapshot:
         return payload
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> "RngSnapshot":
+    def from_payload(cls, payload: dict[str, Any]) -> RngSnapshot:
         """Rebuild a snapshot written by :meth:`to_payload`."""
 
         count = int(payload.get("rng_torch_cuda_count", 0))
@@ -64,6 +66,33 @@ def seed_everything(seed: int, *, deterministic: bool = True) -> int:
     return seed
 
 
+@contextmanager
+def isolated_rng(seed: int) -> Iterator[None]:
+    """Run a block from a fixed RNG state without advancing its caller's streams.
+
+    Validation code cannot always accept an explicit :class:`torch.Generator`.
+    Temporarily seeding every process-local stream therefore gives it a stable
+    draw while the snapshot/restore boundary keeps validation observational: a
+    different validation cadence cannot change the following training step.
+
+    Unlike :func:`seed_everything`, this helper deliberately leaves process-wide
+    deterministic-kernel policy and ``PYTHONHASHSEED`` untouched.
+    """
+
+    if not 0 <= seed < 2**32:
+        raise ValueError(f"seed must fit in 32 bits, got {seed}")
+    snapshot = capture_rng()
+    try:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+        yield
+    finally:
+        restore_rng(snapshot)
+
+
 def capture_rng() -> RngSnapshot:
     """Snapshot every RNG stream QDGrasp advances during a run."""
 
@@ -84,7 +113,13 @@ def restore_rng(snapshot: RngSnapshot) -> None:
     random.setstate((python_state[0], tuple(python_state[1]), python_state[2]))
     numpy_state = json.loads(snapshot.numpy)
     np.random.set_state(
-        (numpy_state[0], np.array(numpy_state[1], dtype=np.uint32), int(numpy_state[2]), int(numpy_state[3]), float(numpy_state[4]))
+        (
+            numpy_state[0],
+            np.array(numpy_state[1], dtype=np.uint32),
+            int(numpy_state[2]),
+            int(numpy_state[3]),
+            float(numpy_state[4]),
+        )
     )
     torch.set_rng_state(snapshot.torch_cpu.to(torch.uint8))
     for index, state in enumerate(snapshot.torch_cuda):

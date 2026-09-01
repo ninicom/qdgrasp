@@ -87,7 +87,11 @@ def test_the_held_out_family_never_appears_in_train() -> None:
     )
 
 
-@characterization("COR-02", note="stratification inside a shape is described as a family hold-out")
+@characterization(
+    "COR-02",
+    note="stratification inside a shape is described as a family hold-out",
+    satisfied_by="R3",
+)
 def test_the_splitter_does_not_call_stratification_a_family_hold_out() -> None:
     from qdgrasp.dataset.split import create_object_family_splits
 
@@ -124,7 +128,7 @@ def test_family_is_read_from_the_object_manifest_not_from_the_id() -> None:
     )
 
 
-@characterization("COR-02", note="no materialised protocol view exists")
+@characterization("COR-02", note="no materialised protocol view exists", satisfied_by="R3")
 def test_a_protocol_view_is_materialised_before_the_runner() -> None:
     from qdgrasp.models import protocol as protocol_module
 

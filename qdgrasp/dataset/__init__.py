@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .artifact import DatasetArtifact, RobotSampleContract, VerifiedShard
 from .batch import GraspBatch
 from .loader import DgnOpenDataset, create_dgn_open_dataset
 from .manifest import DatasetManifestSpec, ShardMetadata, load_dataset_manifest, save_dataset_manifest
@@ -15,10 +16,13 @@ __all__ = (
     "DATA_SCHEMA_V2",
     "CameraModel",
     "DataConfigV2",
+    "DatasetArtifact",
     "DatasetManifestSpec",
     "DgnOpenDataset",
     "GraspBatch",
+    "RobotSampleContract",
     "ShardMetadata",
+    "VerifiedShard",
     "create_dgn_open_dataset",
     "create_object_family_splits",
     "derive_seed",

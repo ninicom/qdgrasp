@@ -98,6 +98,7 @@ def outcome_to_sample(
         raise RuntimeError("dynamic-valid outcome lacks passing rollout evidence")
 
     is_success = bool(outcome.dynamic_valid)
+    kinematics_valid = outcome.kinematics is not None
     quality = (
         float(outcome.dynamic_validation.trajectory_metrics.get("lift_achieved", 0.0))
         if is_success and outcome.dynamic_validation is not None
@@ -160,6 +161,13 @@ def outcome_to_sample(
         "collision_valid": outcome.collision_valid,
         "static_force_valid": outcome.static_force_valid,
         "dynamic_valid": outcome.dynamic_valid,
+        # Target validity is explicit.  Zero joint angles and an identity palm
+        # are legitimate measurements, so consumers must never infer whether a
+        # target exists from its numeric value.
+        "kinematics_valid": kinematics_valid,
+        "pose_target_valid": kinematics_valid,
+        "joint_target_valid": kinematics_valid,
+        "fk_target_valid": kinematics_valid,
     }
 
 
@@ -278,8 +286,15 @@ def generate_tiny_dataset(
                     f"positive-control budget for {robot_name} exceeds its validated ceiling"
                 )
 
-    # Disjoint split by object family
-    splits = create_object_family_splits(objects, val_fraction=0.25, seed=base_seed)
+    # The locked Phase-5 generalisation claim holds the complete compound
+    # family out.  The splitter assigns whole families, never members within a
+    # shape, so this physical split now agrees with the claim it carries.
+    splits = create_object_family_splits(
+        objects,
+        val_fraction=0.25,
+        seed=base_seed,
+        val_families=("compound",),
+    )
     logger.info(f"Split objects: train={splits['train']}, val={splits['val']}")
 
     robot_hashes = {name: spec.config.content_hash() for name, spec in robot_specs.items()}

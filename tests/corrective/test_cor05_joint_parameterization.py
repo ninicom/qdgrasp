@@ -38,7 +38,7 @@ def test_encode_then_decode_returns_the_joints_it_was_given(profile: str) -> Non
     palm_pos = torch.zeros(3, 3)
     palm_rot = torch.eye(3).expand(3, 3, 3).contiguous()
 
-    state = model.encode_target(palm_pos, palm_rot, joints)
+    state = model.encode_target(palm_pos, palm_rot, joints, robot)
     _translation, _rotation, decoded = model.decode(state, robot)
     error = (decoded - joints).abs().max()
 

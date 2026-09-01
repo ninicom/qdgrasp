@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -23,9 +23,8 @@ from torch import nn
 from .. import __version__
 from ..config.schema import ConfigError, ModelConfig, RobotConfig
 
-
 BUNDLE_SCHEMA = "qdgrasp/bundle/v1"
-RESUME_SCHEMA = "qdgrasp/resume/v1"
+RESUME_SCHEMA = "qdgrasp/resume/v2"
 WEIGHTS_FILE = "weights.safetensors"
 MANIFEST_FILE = "bundle.json"
 RESUME_FILE = "resume.pt"
@@ -41,8 +40,16 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _canonical_hash(payload: dict[str, Any]) -> str:
+def canonical_hash(payload: Any) -> str:
+    """Stable SHA-256 for an artifact identity represented as JSON data."""
+
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def _canonical_hash(payload: dict[str, Any]) -> str:
+    """Backward-compatible private spelling used by the bundle v1 code."""
+
+    return canonical_hash(payload)
 
 
 @dataclass(frozen=True)
@@ -85,7 +92,7 @@ def save_public_bundle(
     manifest: dict[str, Any] = {
         "schema": BUNDLE_SCHEMA,
         "qdgrasp_version": __version__,
-        "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "model_config": model_config.to_document(),
         "robot_config": robot_config.to_document(),
         "preprocess": preprocess,
@@ -128,7 +135,9 @@ def read_bundle_manifest(directory: str | Path) -> dict[str, Any]:
     return manifest
 
 
-def load_public_bundle(directory: str | Path, model: nn.Module, *, robot_config: RobotConfig | None = None) -> dict[str, Any]:
+def load_public_bundle(
+    directory: str | Path, model: nn.Module, *, robot_config: RobotConfig | None = None
+) -> dict[str, Any]:
     """Verify a bundle, optionally gate it on a robot profile, and load the weights."""
 
     target = Path(directory)
@@ -147,12 +156,32 @@ def load_public_bundle(directory: str | Path, model: nn.Module, *, robot_config:
 
 @dataclass
 class ResumeState:
-    """Everything needed to continue a run bit-for-bit."""
+    """Everything needed to continue one *identified* run bit-for-bit.
+
+    Resume is deliberately stricter than loading weights.  A caller must prove
+    that the model, exact robot, dataset/protocol view and effective optimiser
+    schedule are the same before any mutable training state is restored.
+    """
 
     global_step: int
+    qdgrasp_version: str
+    model_config: dict[str, Any]
+    model_config_hash: str
+    robot_config: dict[str, Any]
+    robot_config_hash: str
+    data_manifest: dict[str, Any]
+    data_manifest_hash: str
+    protocol_hash: str | None
+    dataset_view_hash: str | None
+    effective_run_config: dict[str, Any]
+    effective_run_config_hash: str
+    optimizer_config: dict[str, Any]
+    scheduler_config: dict[str, Any]
+    weights_source: dict[str, str]
     model: dict[str, torch.Tensor]
     optimizer: dict[str, Any]
     scheduler: dict[str, Any]
+    stream: dict[str, Any]
     scaler: dict[str, Any]
     ema: dict[str, Any]
     rng: dict[str, Any]
@@ -166,9 +195,24 @@ class ResumeState:
             {
                 "schema": RESUME_SCHEMA,
                 "global_step": self.global_step,
+                "qdgrasp_version": self.qdgrasp_version,
+                "model_config": self.model_config,
+                "model_config_hash": self.model_config_hash,
+                "robot_config": self.robot_config,
+                "robot_config_hash": self.robot_config_hash,
+                "data_manifest": self.data_manifest,
+                "data_manifest_hash": self.data_manifest_hash,
+                "protocol_hash": self.protocol_hash,
+                "dataset_view_hash": self.dataset_view_hash,
+                "effective_run_config": self.effective_run_config,
+                "effective_run_config_hash": self.effective_run_config_hash,
+                "optimizer_config": self.optimizer_config,
+                "scheduler_config": self.scheduler_config,
+                "weights_source": self.weights_source,
                 "model": self.model,
                 "optimizer": self.optimizer,
                 "scheduler": self.scheduler,
+                "stream": self.stream,
                 "scaler": self.scaler,
                 "ema": self.ema,
                 "rng": self.rng,
@@ -178,21 +222,81 @@ class ResumeState:
         return target
 
     @classmethod
-    def load(cls, path: str | Path) -> "ResumeState":
+    def load(cls, path: str | Path) -> ResumeState:
         """Read a resume artifact with ``weights_only=True``."""
 
         payload = torch.load(Path(path), map_location="cpu", weights_only=True)
+        if not isinstance(payload, dict):
+            raise ConfigError(f"{path}: resume artifact must contain a mapping")
         if payload.get("schema") != RESUME_SCHEMA:
             raise ConfigError(
                 f"{path}: unsupported resume schema {payload.get('schema')!r}; this build reads "
                 f"{RESUME_SCHEMA!r}. Resume is an exact continuation, so a state written under another "
                 "schema is a different run rather than an older one"
             )
+        required = {
+            "global_step",
+            "qdgrasp_version",
+            "model_config",
+            "model_config_hash",
+            "robot_config",
+            "robot_config_hash",
+            "data_manifest",
+            "data_manifest_hash",
+            "protocol_hash",
+            "dataset_view_hash",
+            "effective_run_config",
+            "effective_run_config_hash",
+            "optimizer_config",
+            "scheduler_config",
+            "weights_source",
+            "model",
+            "optimizer",
+            "scheduler",
+            "stream",
+            "scaler",
+            "ema",
+            "rng",
+        }
+        missing = sorted(required - set(payload))
+        if missing:
+            raise ConfigError(f"{path}: resume/v2 is missing required fields {missing}")
+
+        hashed_documents = (
+            ("model_config", "model_config_hash"),
+            ("robot_config", "robot_config_hash"),
+            ("data_manifest", "data_manifest_hash"),
+            ("effective_run_config", "effective_run_config_hash"),
+        )
+        for document_key, hash_key in hashed_documents:
+            document = payload[document_key]
+            if not isinstance(document, dict):
+                raise ConfigError(f"{path}: {document_key} must be a mapping")
+            actual = canonical_hash(document)
+            if actual != payload[hash_key]:
+                raise ConfigError(
+                    f"{path}: {document_key} hash mismatch (declared={payload[hash_key]!r}, actual={actual!r})"
+                )
         return cls(
             global_step=int(payload["global_step"]),
+            qdgrasp_version=str(payload["qdgrasp_version"]),
+            model_config=payload["model_config"],
+            model_config_hash=str(payload["model_config_hash"]),
+            robot_config=payload["robot_config"],
+            robot_config_hash=str(payload["robot_config_hash"]),
+            data_manifest=payload["data_manifest"],
+            data_manifest_hash=str(payload["data_manifest_hash"]),
+            protocol_hash=None if payload["protocol_hash"] is None else str(payload["protocol_hash"]),
+            dataset_view_hash=None if payload["dataset_view_hash"] is None else str(payload["dataset_view_hash"]),
+            effective_run_config=payload["effective_run_config"],
+            effective_run_config_hash=str(payload["effective_run_config_hash"]),
+            optimizer_config=payload["optimizer_config"],
+            scheduler_config=payload["scheduler_config"],
+            weights_source=payload["weights_source"],
             model=payload["model"],
             optimizer=payload["optimizer"],
             scheduler=payload["scheduler"],
+            stream=payload["stream"],
             scaler=payload["scaler"],
             ema=payload["ema"],
             rng=payload["rng"],

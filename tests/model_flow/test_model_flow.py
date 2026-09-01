@@ -375,7 +375,8 @@ def test_every_trainable_parameter_receives_a_finite_gradient(profile: str, robo
     batch_size = 3
     palm_pos = torch.randn(batch_size, 3) * 0.05
     palm_rot = torch.tensor(Rotation.random(batch_size, random_state=0).as_matrix(), dtype=torch.float32)
-    joints = torch.zeros(batch_size, joint_count)
+    lower, upper = model._joint_limits(robot, torch.device("cpu"), torch.float32)
+    joints = ((lower + upper) / 2.0).expand(batch_size, joint_count).clone()
 
     _prediction, losses = forward_and_loss(
         model,
@@ -408,18 +409,20 @@ def test_the_flow_target_is_the_straight_path_velocity() -> None:
         torch.testing.assert_close(interpolated, noise + value * (target - noise))
 
 
-def test_encode_target_places_joints_after_the_pose(robots) -> None:
+def test_encode_target_uses_the_inverse_joint_parameterization(robots) -> None:
     model = GraspFlowModel()
     robot = robots["leap_hand.yaml"]
     joint_count = len(robot.actuated_joint_names)
     palm_pos = torch.arange(3, dtype=torch.float32).reshape(1, 3)
     palm_rot = torch.eye(3).reshape(1, 3, 3)
-    joints = torch.full((1, joint_count), 0.5)
-    state = model.encode_target(palm_pos, palm_rot, joints)
+    lower, upper = model._joint_limits(robot, torch.device("cpu"), torch.float32)
+    joints = (lower + 0.65 * (upper - lower)).unsqueeze(0)
+    state = model.encode_target(palm_pos, palm_rot, joints, robot)
     assert state.shape == (1, model.flow_config.state_dimension)
     torch.testing.assert_close(state[0, :3], palm_pos[0])
     torch.testing.assert_close(state[0, 3:12], torch.eye(3).reshape(9))
-    torch.testing.assert_close(state[0, 12 : 12 + joint_count], joints[0])
+    _translation, _rotation, decoded_joints = model.decode(state, robot)
+    torch.testing.assert_close(decoded_joints, joints, atol=1e-5, rtol=0.0)
     assert float(state[0, 12 + joint_count :].abs().max()) == 0.0
 
 

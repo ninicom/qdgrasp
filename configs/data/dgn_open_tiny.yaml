@@ -2,13 +2,9 @@ schema: qdgrasp/data/v2
 name: dgn_open_tiny
 dataset_root: datasets/dgn-open-tiny
 manifest_file: dataset_manifest.json
+protocol_file: configs/phase5/protocol-v2.yaml
 point_count: 1024
-batch_size: 4
-num_workers: 0
-pin_memory: false
-drop_last: false
 seed: 42
 robot_profiles:
   - leap_hand.yaml
   - wonik_allegro.yaml
-  - shadow_hand.yaml

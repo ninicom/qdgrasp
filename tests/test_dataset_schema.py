@@ -31,18 +31,15 @@ def test_data_schema_v2_round_trip() -> None:
         "name": "dgn_open_test",
         "dataset_root": "datasets/dgn-open-tiny",
         "manifest_file": "dataset_manifest.json",
+        "protocol_file": "configs/phase5/protocol-v2.yaml",
         "point_count": 1024,
-        "batch_size": 16,
-        "num_workers": 2,
-        "pin_memory": True,
-        "drop_last": False,
         "seed": 42,
-        "robot_profiles": ["leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"],
+        "robot_profiles": ["leap_hand.yaml", "wonik_allegro.yaml"],
     }
     cfg = parse_document(doc, DataConfigV2, origin="test")
     assert cfg.schema_version == DATA_SCHEMA_V2
     assert cfg.name == "dgn_open_test"
-    assert cfg.batch_size == 16
+    assert cfg.protocol_file == "configs/phase5/protocol-v2.yaml"
 
     dumped = dump_document(cfg)
     reparsed = parse_document(yaml.safe_load(dumped), DataConfigV2, origin="round_trip")
@@ -56,6 +53,18 @@ def test_data_schema_v2_rejects_extra_keys() -> None:
         "name": "bad_data",
         "dataset_root": "datasets/test",
         "unknown_extra_field": 123,
+    }
+    with pytest.raises(ConfigError):
+        parse_document(doc, DataConfigV2, origin="test")
+
+
+@pytest.mark.parametrize("removed_key", ["batch_size", "num_workers", "pin_memory", "drop_last"])
+def test_data_schema_v2_rejects_runner_keys_that_would_be_noops(removed_key: str) -> None:
+    doc = {
+        "schema": "qdgrasp/data/v2",
+        "name": "bad_data",
+        "dataset_root": "datasets/test",
+        removed_key: 1,
     }
     with pytest.raises(ConfigError):
         parse_document(doc, DataConfigV2, origin="test")

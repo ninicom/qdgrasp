@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
 from qdgrasp.config.loader import load_robot_config
 from qdgrasp.config.schema import ConfigError
@@ -29,8 +30,24 @@ audit_dataset_manifest = _CHECKER.audit_dataset_manifest
 
 
 def _sample(object_id: str, success: bool) -> dict[str, object]:
+    """A complete training sample.
+
+    The audit reads the tensors now, not only the labels: a fixture that carries
+    a verdict but no grasp cannot demonstrate that the audit accepts a corpus,
+    because there is nothing in it a trainer could consume.
+    """
+
+    profile = load_robot_config("robots/leap_hand.yaml")
+    joints = len(profile.joints)
+    fingertips = len(getattr(profile, "fingertip_links", ()))
     return {
-        "success": float(success),
+        "points": torch.zeros((8, 3), dtype=torch.float32),
+        "palm_pos": torch.zeros(3, dtype=torch.float32),
+        "palm_rot": torch.eye(3, dtype=torch.float32),
+        "joint_angles": torch.zeros(joints, dtype=torch.float32),
+        "fingertip_positions": torch.zeros((fingertips, 3), dtype=torch.float32),
+        "quality": torch.tensor(float(success), dtype=torch.float32),
+        "success": torch.tensor(float(success), dtype=torch.float32),
         "dynamic_valid": success,
         "static_force_valid": True,
         "collision_valid": True,

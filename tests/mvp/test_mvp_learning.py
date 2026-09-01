@@ -255,13 +255,17 @@ def test_reload_probe_survives_the_save_load_boundary(tmp_path, scope, prior) ->
     assert verify_reload_probe(path)
 
     # Corrupting the weights without rewriting the probe must be detected: that
-    # is exactly the failure `checkpoint_reload_mismatch` is meant to catch.
+    # is exactly the failure `checkpoint_reload_mismatch` is meant to catch.  The
+    # content lineage now catches it one step earlier than the probe does, and
+    # refuses the checkpoint outright rather than reporting a mismatch about an
+    # artifact it already knows was rewritten.
     import torch
 
     payload = load_checkpoint(path)
     payload["state_dict"]["actor.0.bias"] = payload["state_dict"]["actor.0.bias"] + 1.0
     torch.save(payload, path)
-    assert not verify_reload_probe(path)
+    with pytest.raises(ValueError, match="weight lineage mismatch"):
+        verify_reload_probe(path)
 
 
 def test_worker_pool_survives_a_torch_trained_parent(scope: MvpScopeConfig) -> None:

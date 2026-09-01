@@ -29,14 +29,20 @@ from qdgrasp.corrective import registry
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def characterization(finding_id: str, *, note: str = "") -> Callable[[F], F]:
-    """Bind a test to a registered finding and follow the registry's verdict."""
+def characterization(finding_id: str, *, note: str = "", satisfied_by: str = "") -> Callable[[F], F]:
+    """Bind a test to a registered finding and follow the registry's verdict.
+
+    ``satisfied_by`` names the PR that already delivered this part of the chain
+    while the chain as a whole is still open -- typically because the rest of it
+    waits on data regeneration.  Such a test is an ordinary regression test from
+    then on: it may not fail, and it may not be marked satisfied while it does.
+    """
 
     finding = registry.get(finding_id)
 
     def decorate(function: F) -> F:
         marked = pytest.mark.corrective(finding_id)(function)
-        if finding.is_open:
+        if finding.is_open and not satisfied_by:
             reason = f"{finding.describe()}"
             if note:
                 reason = f"{reason} [{note}]"
@@ -78,6 +84,8 @@ def sample(robot_name: str = "leap_hand", object_id: str = "prim_box_01", *, joi
         "quality": torch.tensor(0.0),
         "object_id": object_id,
         "robot_name": robot_name,
+        "robot_profile_hash": hashlib.sha256(f"profile:{robot_name}".encode()).hexdigest(),
+        "joint_names": tuple(f"{robot_name}:joint_{index}" for index in range(joints)),
     }
 
 

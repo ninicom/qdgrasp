@@ -14,7 +14,9 @@ environment it is being loaded against.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +27,9 @@ from torch import nn
 from qdgrasp.mvp.env import OBSERVATION_DIMENSION
 
 POLICY_SCHEMA_V0 = "qdgrasp/mvp-policy/v0"
+POLICY_SCHEMA_V1 = "qdgrasp/mvp-policy/v1"
+POLICY_SCHEMA = POLICY_SCHEMA_V1
+ACTION_DISTRIBUTION = "tanh-squashed-normal/v1"
 
 #: Bounds on the learned log standard deviation.  The floor keeps PPO's
 #: exploration from collapsing to a delta; the ceiling keeps a bounded residual
@@ -109,12 +114,17 @@ class ResidualActorCritic(nn.Module):
         nn.init.zeros_(final.bias)
 
     def mean_action(self, observation: torch.Tensor) -> torch.Tensor:
-        return torch.tanh(self.actor(observation))
+        return torch.tanh(self.latent_mean(observation))
 
-    def distribution(self, observation: torch.Tensor) -> torch.distributions.Normal:
-        mean = self.mean_action(observation)
+    def latent_mean(self, observation: torch.Tensor) -> torch.Tensor:
+        """Mean in unconstrained action space, before the tanh bijection."""
+
+        return self.actor(observation)
+
+    def distribution(self, observation: torch.Tensor) -> SquashedNormal:
+        mean = self.latent_mean(observation)
         log_std = self.log_std.clamp(*LOG_STD_BOUNDS)
-        return torch.distributions.Normal(mean, log_std.exp())
+        return SquashedNormal(mean, log_std.exp())
 
     def value(self, observation: torch.Tensor) -> torch.Tensor:
         return self.critic(observation).squeeze(-1)
@@ -126,6 +136,43 @@ class ResidualActorCritic(nn.Module):
         log_prob = distribution.log_prob(action).sum(-1)
         entropy = distribution.entropy().sum(-1)
         return log_prob, entropy, self.value(observation)
+
+
+class SquashedNormal:
+    """A Normal in latent space mapped bijectively into ``(-1, 1)``.
+
+    The environment executes the returned value and PPO evaluates that same
+    value with the tanh change-of-variables correction.  This removes the old
+    raw-Normal/clip mismatch where PPO assigned probability to an action the
+    environment never executed.
+    """
+
+    _EPS = 1e-6
+
+    def __init__(self, loc: torch.Tensor, scale: torch.Tensor) -> None:
+        self.base = torch.distributions.Normal(loc, scale)
+
+    @property
+    def mean(self) -> torch.Tensor:
+        return torch.tanh(self.base.mean)
+
+    def sample(self, sample_shape: torch.Size = torch.Size()) -> torch.Tensor:
+        return torch.tanh(self.base.sample(sample_shape))
+
+    def rsample(self, sample_shape: torch.Size = torch.Size()) -> torch.Tensor:
+        return torch.tanh(self.base.rsample(sample_shape))
+
+    def log_prob(self, action: torch.Tensor) -> torch.Tensor:
+        bounded = action.clamp(-1.0 + self._EPS, 1.0 - self._EPS)
+        latent = torch.atanh(bounded)
+        correction = torch.log(1.0 - bounded.square() + self._EPS)
+        return self.base.log_prob(latent) - correction
+
+    def entropy(self) -> torch.Tensor:
+        # The transformed distribution has no closed-form entropy.  The latent
+        # entropy is a stable exploration proxy and does not change which action
+        # PPO evaluates; the policy ratio uses the exact corrected log density.
+        return self.base.entropy()
 
 
 def _mlp(inputs: int, hidden: tuple[int, ...], outputs: int) -> nn.Sequential:
@@ -157,6 +204,27 @@ class MvpPolicy:
 #: recomputed by any other, on any machine, without shipping the seed too.
 _PROBE_SEED = 0xC0FFEE
 _PROBE_SAMPLES = 16
+
+
+def _canonical_hash(document: dict[str, Any]) -> str:
+    encoded = json.dumps(document, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _state_dict_hash(state_dict: dict[str, Any]) -> str:
+    """Content digest over tensor names, shapes, dtypes and bytes."""
+
+    digest = hashlib.sha256()
+    for name in sorted(state_dict):
+        tensor = state_dict[name]
+        if not isinstance(tensor, torch.Tensor):
+            raise ValueError(f"state_dict entry {name!r} is not a tensor")
+        value = tensor.detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(value.dtype).encode("ascii"))
+        digest.update(json.dumps(list(value.shape)).encode("ascii"))
+        digest.update(value.view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
 
 
 def _reload_probe(network: ResidualActorCritic, normalizer: RunningNormalizer) -> dict[str, Any]:
@@ -202,33 +270,65 @@ def save_checkpoint(
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
+    normalizer_document = normalizer.to_document()
+    state_dict = network.state_dict()
+    metadata_document = dict(metadata or {})
     payload = {
-        "schema": POLICY_SCHEMA_V0,
+        "schema": POLICY_SCHEMA,
         "stage": stage,
         "fingerprint": dict(fingerprint),
         "architecture": {
             "observation_dim": network.observation_dim,
             "action_dim": network.action_dim,
             "hidden": list(network.hidden),
+            "action_distribution": ACTION_DISTRIBUTION,
         },
-        "normalizer": normalizer.to_document(),
-        "metadata": dict(metadata or {}),
-        "state_dict": network.state_dict(),
+        "normalizer": normalizer_document,
+        "metadata": metadata_document,
+        "lineage": {
+            "parent": metadata_document.get("parent"),
+            "fingerprint_hash": _canonical_hash(dict(fingerprint)),
+            "normalizer_hash": _canonical_hash(normalizer_document),
+            "weights_hash": _state_dict_hash(state_dict),
+            "dataset_content_hash": metadata_document.get("dataset_content_hash"),
+        },
+        "state_dict": state_dict,
         "optimizer_state": optimizer_state,
         "reload_probe": _reload_probe(network, normalizer),
     }
-    torch.save(payload, target)
+    temporary = target.with_name(f".{target.name}.tmp-{os.getpid()}")
+    try:
+        torch.save(payload, temporary)
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
     return target
 
 
 def load_checkpoint(path: str | Path) -> dict[str, Any]:
-    payload = torch.load(Path(path), map_location="cpu", weights_only=False)
-    if payload.get("schema") != POLICY_SCHEMA_V0:
+    payload = torch.load(Path(path), map_location="cpu", weights_only=True)
+    if not isinstance(payload, dict):
+        raise ValueError(f"invalid policy checkpoint payload in {path}: expected a mapping")
+    if payload.get("schema") != POLICY_SCHEMA:
         raise ValueError(
             f"unsupported policy checkpoint schema: {payload.get('schema')!r}; this build reads "
-            f"{POLICY_SCHEMA_V0!r}. A checkpoint written under another schema describes a different "
+            f"{POLICY_SCHEMA!r}. A checkpoint written under another schema describes a different "
             "action contract and is not the same policy"
         )
+    architecture = payload.get("architecture")
+    if not isinstance(architecture, dict) or architecture.get("action_distribution") != ACTION_DISTRIBUTION:
+        raise ValueError(
+            f"{path}: checkpoint does not declare action distribution {ACTION_DISTRIBUTION!r}"
+        )
+    lineage = payload.get("lineage")
+    if not isinstance(lineage, dict):
+        raise ValueError(f"{path}: checkpoint is missing content lineage")
+    if lineage.get("fingerprint_hash") != _canonical_hash(payload.get("fingerprint", {})):
+        raise ValueError(f"{path}: checkpoint fingerprint lineage mismatch")
+    if lineage.get("normalizer_hash") != _canonical_hash(payload.get("normalizer", {})):
+        raise ValueError(f"{path}: checkpoint normalizer lineage mismatch")
+    if lineage.get("weights_hash") != _state_dict_hash(payload.get("state_dict", {})):
+        raise ValueError(f"{path}: checkpoint weight lineage mismatch")
     return payload
 
 

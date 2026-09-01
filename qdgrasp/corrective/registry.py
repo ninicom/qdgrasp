@@ -78,6 +78,7 @@ FINDINGS: tuple[Finding, ...] = (
             "one safe artifact I/O path: weights_only=True, constrained relative paths, and a malicious "
             "reducer that never runs"
         ),
+        status="closed",
     ),
     Finding(
         id="COR-01",
@@ -89,6 +90,7 @@ FINDINGS: tuple[Finding, ...] = (
             "sample/manifest contracts, and the facade calls none of the gates"
         ),
         target="DatasetArtifact.open_verified() as the single entry point for audit, gate, facade and Runner",
+        status="closed",
     ),
     Finding(
         id="COR-02",
@@ -111,6 +113,7 @@ FINDINGS: tuple[Finding, ...] = (
             "so an Allegro sample reaches a LEAP-bound model because both have 16 joints"
         ),
         target="one canonical collator that carries robot identity, and a model that asserts or groups on it",
+        status="closed",
     ),
     Finding(
         id="COR-04",
@@ -133,6 +136,7 @@ FINDINGS: tuple[Finding, ...] = (
             "limits, so the flow target and the decoded pose are two different parameterizations"
         ),
         target="an inverse parameterization whose round-trip is below 1e-5 rad on both active hands",
+        status="closed",
     ),
     Finding(
         id="COR-06",
@@ -144,6 +148,7 @@ FINDINGS: tuple[Finding, ...] = (
             "scores identically and a ranking test passes on ties"
         ),
         target="a candidate-aware quality head, ranked against negatives that share the observation",
+        status="closed",
     ),
     Finding(
         id="COR-07",
@@ -155,6 +160,7 @@ FINDINGS: tuple[Finding, ...] = (
             "batch size and the loss curve depends on val_interval; EMA is updated but never used"
         ),
         target="separated RNG streams, sample-weighted deterministic validation and an explicit EMA contract",
+        status="closed",
     ),
     Finding(
         id="COR-08",
@@ -166,6 +172,7 @@ FINDINGS: tuple[Finding, ...] = (
             "on matching shapes, and records no real AMP scaler"
         ),
         target="resume/v2: full identity validated before any state mutation, exact continuation only",
+        status="closed",
     ),
     Finding(
         id="COR-09",
@@ -199,6 +206,7 @@ FINDINGS: tuple[Finding, ...] = (
             "stamps the current environment fingerprint onto it"
         ),
         target="the guard runs before the first episode, and the report records stored, effective and verdict",
+        status="closed",
     ),
     Finding(
         id="COR-12",
@@ -243,8 +251,8 @@ PLANNED_SCHEMA_BUMPS: tuple[SchemaBump, ...] = (
         constant="DATASET_MANIFEST_SCHEMA_V2",
         current="qdgrasp/dataset-manifest/v2",
         planned="qdgrasp/dataset-manifest/v3",
-        finding="COR-01",
-        reason="unified sample schema, constrained relative paths and validity flags",
+        finding="COR-04",
+        reason="target-validity flags become required sample fields, so old shards stop being readable",
     ),
     SchemaBump(
         artifact="public bundle",
@@ -267,7 +275,7 @@ PLANNED_SCHEMA_BUMPS: tuple[SchemaBump, ...] = (
     SchemaBump(
         artifact="MVP policy checkpoint",
         module="qdgrasp.mvp.policy",
-        constant="POLICY_SCHEMA_V0",
+        constant="POLICY_SCHEMA",
         current="qdgrasp/mvp-policy/v0",
         planned="qdgrasp/mvp-policy/v1",
         finding="COR-11",
@@ -276,7 +284,7 @@ PLANNED_SCHEMA_BUMPS: tuple[SchemaBump, ...] = (
     SchemaBump(
         artifact="MVP evaluation report",
         module="qdgrasp.mvp.evaluate",
-        constant="EVAL_REPORT_SCHEMA_V0",
+        constant="EVAL_REPORT_SCHEMA",
         current="qdgrasp/mvp-eval-report/v0",
         planned="qdgrasp/mvp-eval-report/v1",
         finding="COR-11",

@@ -35,18 +35,21 @@ MINIMUM_POSITIVES_PER_HAND = 25
 
 
 def measure(dataset_root: Path, protocol_path: Path) -> dict[str, Any]:
-    from qdgrasp.models.data import iter_active_datasets, load_manifest
+    from qdgrasp.config.active_scope import ACTIVE_HANDS
+    from qdgrasp.dataset import DatasetArtifact
     from qdgrasp.models.protocol import check_dataset_agreement, load_protocol
 
     protocol = load_protocol(protocol_path)
-    manifest = load_manifest(dataset_root)
+    artifact = DatasetArtifact.open_verified(dataset_root)
+    manifest = artifact.manifest.model_dump(by_alias=True)
     check_dataset_agreement(protocol, manifest)
 
     wanted = {"train": set(protocol.train_objects), "val": set(protocol.val_objects)}
     rows: list[dict[str, Any]] = []
     for split, objects in wanted.items():
-        for robot, dataset in iter_active_datasets(dataset_root, split=split, verify=False):
-            kept = [sample for sample in dataset if sample["object_id"] in objects]
+        for robot in ACTIVE_HANDS:
+            samples = artifact.samples(split=split, robot_name=robot)
+            kept = [sample for sample in samples if sample["object_id"] in objects]
             positives = sum(int(float(sample["success"])) for sample in kept)
             rows.append(
                 {
@@ -61,7 +64,8 @@ def measure(dataset_root: Path, protocol_path: Path) -> dict[str, Any]:
     train_rows = [row for row in rows if row["split"] == "train"]
     return {
         "schema": "qdgrasp/phase5-inputs/v1",
-        "dataset_id": manifest.get("dataset_id"),
+        "dataset_id": artifact.manifest.dataset_id,
+        "dataset_manifest_hash": artifact.manifest_hash,
         "protocol": protocol.name,
         "protocol_hash": protocol.protocol_hash,
         "minimum_positives_per_hand": MINIMUM_POSITIVES_PER_HAND,
@@ -74,11 +78,21 @@ def measure(dataset_root: Path, protocol_path: Path) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=REPO_ROOT / "datasets/dgn-open-tiny")
-    parser.add_argument("--protocol", type=Path, default=REPO_ROOT / "configs/phase5/protocol-v1.yaml")
+    parser.add_argument("--protocol", type=Path, default=REPO_ROOT / "configs/phase5/protocol-v2.yaml")
     parser.add_argument("--json", type=Path, default=None)
     args = parser.parse_args(argv)
 
-    report = measure(args.dataset, args.protocol)
+    try:
+        report = measure(args.dataset, args.protocol)
+    except Exception as error:  # noqa: BLE001 - the gate reports, it does not traceback
+        print(f"dataset       {args.dataset}")
+        print(f"protocol      {args.protocol}")
+        print(
+            f"\nThe corpus could not be measured: {type(error).__name__}: {error}\n"
+            "A dataset that cannot be verified cannot be counted, so P5 stays blocked on the data layer."
+        )
+        return 1
+
     print(f"dataset       {report['dataset_id']}")
     print(f"protocol      {report['protocol']}  ({report['protocol_hash'][:16]}…)")
     print(f"{'split':6s} {'hand':16s} {'samples':>8s} {'positives':>10s} {'fraction':>9s} {'objects':>8s}")

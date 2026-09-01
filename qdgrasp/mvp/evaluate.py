@@ -29,6 +29,8 @@ from qdgrasp.mvp.env import DexAcquireMvpEnv, EpisodeResult, environment_fingerp
 from qdgrasp.mvp.prior import DEFAULT_PRIOR_PATH, PinchPriorTable
 
 EVAL_REPORT_SCHEMA_V0 = "qdgrasp/mvp-eval-report/v0"
+EVAL_REPORT_SCHEMA_V1 = "qdgrasp/mvp-eval-report/v1"
+EVAL_REPORT_SCHEMA = EVAL_REPORT_SCHEMA_V1
 
 #: A policy is anything that maps an observation to a unit action.  ``None``
 #: means the controller prior alone, which is the baseline every tier is read
@@ -140,6 +142,33 @@ _SPAWN = multiprocessing.get_context("spawn")
 _WORKER: dict[str, Any] = {}
 
 
+def verify_checkpoint_fingerprint(
+    checkpoint_path: str | Path | None,
+    expected: dict[str, str],
+) -> dict[str, Any]:
+    """Verify a candidate identity before an environment or episode exists."""
+
+    if checkpoint_path is None:
+        return {"stored": None, "effective": dict(expected), "verdict": "not_applicable"}
+    from qdgrasp.mvp.policy import load_checkpoint
+
+    payload = load_checkpoint(checkpoint_path)
+    stored = payload.get("fingerprint")
+    if not isinstance(stored, dict):
+        raise ValueError(f"checkpoint {checkpoint_path} has no fingerprint mapping")
+    mismatched = {
+        key: {"stored": stored.get(key), "effective": value}
+        for key, value in expected.items()
+        if stored.get(key) != value
+    }
+    extra = sorted(set(stored) - set(expected))
+    if mismatched or extra:
+        raise ValueError(
+            f"checkpoint fingerprint does not match this environment: mismatched={mismatched}, extra={extra}"
+        )
+    return {"stored": dict(stored), "effective": dict(expected), "verdict": "match"}
+
+
 def _limit_worker_threads() -> None:
     """One torch thread per worker: the parallelism is across episodes."""
 
@@ -150,14 +179,20 @@ def _limit_worker_threads() -> None:
 
 def _worker_init(scope_path: str | None, prior_path: str, checkpoint_path: str | None) -> None:
     _limit_worker_threads()
+    _WORKER.clear()
     scope = load_mvp_scope(scope_path)
     prior = PinchPriorTable.load(prior_path)
-    _WORKER["env"] = DexAcquireMvpEnv(scope, prior)
-    _WORKER["policy"] = None
+    expected = environment_fingerprint(scope, prior)
+    verification = verify_checkpoint_fingerprint(checkpoint_path, expected)
+    policy = None
     if checkpoint_path is not None:
         from qdgrasp.mvp.policy import load_policy  # local import: torch is heavy
 
-        _WORKER["policy"] = load_policy(checkpoint_path)
+        policy = load_policy(checkpoint_path, fingerprint=expected)
+    # Construct the simulator only after the artifact has been admitted.  A
+    # foreign checkpoint must not be able to produce even an empty ledger row.
+    env = DexAcquireMvpEnv(scope, prior)
+    _WORKER.update({"env": env, "policy": policy, "fingerprint_verification": verification})
 
 
 def _worker_episode(job: tuple[int, str, bool, str | None]) -> dict[str, Any]:
@@ -190,6 +225,12 @@ def run_episodes(
     workers: int | None = None,
 ) -> list[EpisodeResult]:
     """Run a batch of episodes, in parallel when more than one worker is asked."""
+
+    # Parent-side preflight makes failure synchronous and guarantees no worker
+    # has constructed an environment before identity is known.
+    scope = load_mvp_scope(scope_path)
+    prior = PinchPriorTable.load(prior_path)
+    verify_checkpoint_fingerprint(checkpoint_path, environment_fingerprint(scope, prior))
 
     count = workers if workers is not None else max(1, (os.cpu_count() or 2) - 1)
     if count <= 1:
@@ -247,6 +288,8 @@ def evaluate_candidate(
 ) -> dict[str, Any]:
     """Run every tier and produce the locked-evaluation report document."""
 
+    effective_fingerprint = environment_fingerprint(scope, prior)
+    verification = verify_checkpoint_fingerprint(checkpoint_path, effective_fingerprint)
     reports = [
         evaluate_tier(
             tier,
@@ -264,10 +307,14 @@ def evaluate_candidate(
             dataclasses.replace(item, checkpoint_reload_mismatch=reload_mismatch, passed=False) for item in reports
         ]
     return {
-        "schema": EVAL_REPORT_SCHEMA_V0,
+        "schema": EVAL_REPORT_SCHEMA,
         "candidate": label,
         "checkpoint": checkpoint_path,
-        "fingerprint": environment_fingerprint(scope, prior),
+        # Retained as the convenient effective identity for existing report
+        # consumers; ``checkpoint_fingerprint`` is the audit trail that proves
+        # whether those values came from the artifact or only from the live env.
+        "fingerprint": effective_fingerprint,
+        "checkpoint_fingerprint": verification,
         "tiers": [report.to_document() for report in reports],
         "all_tiers_passed": all(report.passed for report in reports),
     }

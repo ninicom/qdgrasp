@@ -103,23 +103,26 @@ def _worker_rollout(job: tuple[int, str, str, int]) -> dict[str, Any]:
     rng = np.random.default_rng(seed ^ (version * 0x9E3779B1))
 
     observations: list[np.ndarray] = []
-    raw_actions: list[np.ndarray] = []
+    executed_actions: list[np.ndarray] = []
     rewards: list[float] = []
     observation = env.reset(seed, split)  # type: ignore[arg-type]
     while not env.done:
         normalised = torch.as_tensor(normalizer(observation), dtype=torch.float32).unsqueeze(0)
         with torch.no_grad():
-            mean = network.mean_action(normalised)[0].numpy().astype(np.float64)
-        action = mean + std * rng.standard_normal(mean.shape[0])
+            latent_mean = network.latent_mean(normalised)[0].numpy().astype(np.float64)
+        # Sample in unconstrained space and apply the same tanh bijection whose
+        # corrected density ``network.evaluate`` computes.  The stored action is
+        # therefore exactly the bounded action the environment executes.
+        action = np.tanh(latent_mean + std * rng.standard_normal(latent_mean.shape[0]))
         observations.append(np.asarray(observation, dtype=np.float32))
-        raw_actions.append(action.astype(np.float32))
+        executed_actions.append(action.astype(np.float32))
         observation, reward, _, _ = env.step(action)
         rewards.append(float(reward))
     result = env.result
     assert result is not None
     return {
         "observations": np.stack(observations),
-        "actions": np.stack(raw_actions),
+        "actions": np.stack(executed_actions),
         "rewards": np.asarray(rewards, dtype=np.float32),
         "success": bool(result.success),
         "failure_bucket": result.failure_bucket,

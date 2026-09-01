@@ -23,6 +23,7 @@ SUITE = Path(__file__).resolve().parent
 
 _PLAN_ROW = re.compile(r"^\|\s*`(COR-\d\d)`\s*\|\s*([^|]+?)\s*\|")
 _TEST_MARK = re.compile(r'@characterization\(\s*"(COR-\d\d)"')
+_SATISFIED = re.compile(r'@characterization\((?:[^()]|\([^()]*\))*?satisfied_by="([^"]*)"', re.DOTALL)
 
 
 def _plan_findings() -> dict[str, str]:
@@ -93,6 +94,23 @@ def test_a_planned_schema_bump_pins_the_version_in_the_code(bump: registry.Schem
         f"{bump.module}.{bump.constant} is {actual!r}; with {finding.id} {finding.status} it should be "
         f"{expected!r}. A schema moves when the semantics move, and the registry has to move with it."
     )
+
+
+def test_a_delivered_part_of_an_open_chain_names_the_pull_request_that_delivered_it() -> None:
+    """``satisfied_by`` turns an expected failure into a regression test.
+
+    That is only honest when the marker points at real work, so the value has to
+    be a PR from §9.11.  The test passing is enforced by pytest itself: a
+    satisfied test carries no xfail, so it fails the run if it regresses.
+    """
+
+    declared: dict[str, list[str]] = {}
+    for path in sorted(SUITE.glob("test_*.py")):
+        for value in _SATISFIED.findall(path.read_text(encoding="utf-8")):
+            declared.setdefault(value, []).append(path.name)
+
+    invalid = sorted(value for value in declared if not re.fullmatch(r"R[1-9]", value))
+    assert not invalid, f"satisfied_by must name a PR from PLAN.md §9.11; got {invalid}"
 
 
 def test_release_stays_blocked_while_any_finding_is_open() -> None:

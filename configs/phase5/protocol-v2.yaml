@@ -1,0 +1,56 @@
+# Corrected Phase 5 evaluation protocol.
+#
+# Version 2 binds family membership explicitly to the values read from the
+# hashed object manifests and removes hand-specific calibration bars from the
+# cross-embodiment comparison.  Editing any value changes protocol_hash.
+schema: qdgrasp/protocol/v2
+name: phase5-dgn-open-tiny-v2
+dataset_id: dgn-open-tiny-v1
+
+object_families:
+  comp_t_shape_01: compound
+  prim_box_01: primitive
+  prim_capsule_01: primitive
+  prim_cylinder_01: primitive
+  prim_sphere_01: primitive
+  sq_01: superquadric
+  sq_02: superquadric
+  sq_03: superquadric
+  sq_04: superquadric
+
+splits:
+  # Positive-control bars are calibrated to one hand and therefore are not
+  # admissible in the shared LEAP -> Allegro object matrix.
+  train_objects:
+    - prim_box_01
+    - prim_capsule_01
+    - prim_cylinder_01
+    - prim_sphere_01
+    - sq_01
+    - sq_02
+    - sq_03
+  val_objects:
+    - comp_t_shape_01
+    - sq_04
+  heldout_family: compound
+  heldout_embodiment:
+    train_hand: leap_hand
+    test_hand: wonik_allegro
+
+seeds: [0, 1, 2]
+
+ablations:
+  - baseline
+  - no_graph
+  - direct_only
+  - no_fk_consistency
+
+metrics:
+  - success
+  - collision
+  - penetration
+  - diversity
+  - coverage
+  - latency
+
+selection: pose_then_physics

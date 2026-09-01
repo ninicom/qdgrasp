@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+
 import pytest
 import torch
 
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset.batch import GraspBatch
 from qdgrasp.dataset.loader import DgnOpenDataset
-from qdgrasp.dataset.manifest import DatasetManifestSpec, ShardMetadata, save_dataset_manifest
 from qdgrasp.dataset.shards import read_shard_file, write_shard_file
 
 
@@ -62,51 +62,46 @@ def test_grasp_batch_collate_and_to() -> None:
         assert batch_pinned.points is batch.points
 
 
-def test_dgn_open_dataset_load_shards() -> None:
-    samples_train = _make_dummy_samples(4)
-    samples_val = _make_dummy_samples(2)
+def test_dgn_open_dataset_load_shards(verified_corpus) -> None:
+    """The public loader opens a verified corpus and pads with an honest mask.
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        p_train = root / "train_shard_0.pt"
-        p_val = root / "val_shard_0.pt"
+    Built on the real shards rather than a hand-written manifest: the loader now
+    goes through ``DatasetArtifact.open_verified``, so a fixture that satisfies
+    only the manifest schema is no longer a corpus it would accept -- which is
+    the point of having one entry point.
+    """
 
-        sha_train = write_shard_file(samples_train, p_train)
-        sha_val = write_shard_file(samples_val, p_val)
+    subsampled = DgnOpenDataset(
+        dataset_root=verified_corpus,
+        split="train",
+        robot_name="leap_hand",
+        point_count=256,
+    )
+    assert len(subsampled) == 44
+    item = subsampled[0]
+    assert item["points"].shape == (256, 3)
+    assert bool(item["point_mask"].all()), "a subsampled cloud has no padding to mask"
+    assert item["robot_name"] == "leap_hand"
+    assert item["robot_profile_hash"] == subsampled.manifest_spec.robot_profile_hashes["leap_hand"]
 
-        manifest = DatasetManifestSpec(
-            dataset_id="test_tiny",
-            generator_version="0.1.0a1",
-            seed=42,
-            environment_fingerprint={"torch": "2.11"},
-            robot_profile_hashes={"leap": "abc"},
-            splits={"train": ["obj_0", "obj_1", "obj_2", "obj_3"], "val": ["obj_4", "obj_5"]},
-            shards=[
-                ShardMetadata(
-                    filename="train_shard_0.pt",
-                    sha256=sha_train,
-                    num_samples=4,
-                    positive_samples=2,
-                    robot_name="leap_hand",
-                    split="train",
-                ),
-                ShardMetadata(
-                    filename="val_shard_0.pt",
-                    sha256=sha_val,
-                    num_samples=2,
-                    positive_samples=1,
-                    robot_name="leap_hand",
-                    split="val",
-                ),
-            ],
-            success_criteria={"min_contacts": 1.0},
+    padded = DgnOpenDataset(
+        dataset_root=verified_corpus,
+        split="val",
+        robot_name="leap_hand",
+        point_count=2048,
+    )
+    assert len(padded) > 0
+    padded_item = padded[0]
+    assert padded_item["points"].shape == (2048, 3)
+    assert int(padded_item["point_mask"].sum()) == 1024
+    assert not bool(padded_item["point_mask"][1024:].any())
+
+
+def test_the_loader_refuses_a_robot_outside_the_config_allowlist(verified_corpus) -> None:
+    with pytest.raises(ConfigError, match="allowlist"):
+        DgnOpenDataset(
+            dataset_root=verified_corpus,
+            split="train",
+            robot_name="wonik_allegro",
+            allowed_robot_names=["leap_hand.yaml"],
         )
-        save_dataset_manifest(manifest, root / "dataset_manifest.json")
-
-        ds_train = DgnOpenDataset(dataset_root=root, split="train", point_count=256)
-        assert len(ds_train) == 4
-        item = ds_train[0]
-        assert item["points"].shape == (256, 3)  # Padded to point_count
-
-        ds_val = DgnOpenDataset(dataset_root=root, split="val", point_count=128)
-        assert len(ds_val) == 2

@@ -33,7 +33,7 @@ from qdgrasp.config.schema import ConfigError, ModelConfig
 from qdgrasp.models.encoder import EncoderConfig
 from qdgrasp.models.flow import FlowConfig, GraspFlowModel, GraspPrediction
 from qdgrasp.models.hand_graph import HandGraphEncoderConfig
-from qdgrasp.models.losses import LossWeights, forward_and_loss, geodesic_rotation_error
+from qdgrasp.models.losses import LossWeights, forward_and_loss, geodesic_rotation_error, masked_sample_mean
 from qdgrasp.models.tokenizer import TokenizerConfig
 from qdgrasp.robot.graph import HandGraph
 from qdgrasp.robot.schema import RobotConfigV2
@@ -246,8 +246,14 @@ class QDGraspFlow(nn.Module):
     def joint_names(self) -> tuple[str, ...]:
         return tuple(self.robot.actuated_joint_names)
 
-    def forward(self, points: torch.Tensor, generator: torch.Generator | None = None) -> GraspPrediction:
-        return self.model(points, self.graph, self.robot, generator=generator)
+    def forward(
+        self,
+        points: torch.Tensor,
+        generator: torch.Generator | None = None,
+        *,
+        point_mask: torch.Tensor | None = None,
+    ) -> GraspPrediction:
+        return self.model(points, self.graph, self.robot, generator=generator, point_mask=point_mask)
 
     # -- engine contract ---------------------------------------------------
 
@@ -261,13 +267,21 @@ class QDGraspFlow(nn.Module):
         prediction, losses = self._forward_and_loss(batch)
         metrics = {name: value.detach() for name, value in losses.terms.items()}
         metrics["total"] = losses.total.detach()
-        metrics["palm_translation_m"] = (
-            torch.linalg.norm(prediction.palm_translation - batch["palm_pos"], dim=-1).mean().detach()
-        )
-        metrics["palm_rotation_rad"] = (
-            geodesic_rotation_error(prediction.palm_rotation, batch["palm_rot"]).mean().detach()
-        )
-        metrics["joint_abs_rad"] = (prediction.joint_angles - batch["joint_angles"]).abs().mean().detach()
+        metrics["palm_translation_m"] = masked_sample_mean(
+            torch.linalg.norm(prediction.palm_translation - batch["palm_pos"], dim=-1),
+            batch.get("pose_target_valid"),
+            name="pose_target_valid",
+        ).detach()
+        metrics["palm_rotation_rad"] = masked_sample_mean(
+            geodesic_rotation_error(prediction.palm_rotation, batch["palm_rot"]),
+            batch.get("pose_target_valid"),
+            name="pose_target_valid",
+        ).detach()
+        metrics["joint_abs_rad"] = masked_sample_mean(
+            (prediction.joint_angles - batch["joint_angles"]).abs(),
+            batch.get("joint_target_valid"),
+            name="joint_target_valid",
+        ).detach()
         return metrics
 
     def _forward_and_loss(self, batch: dict[str, torch.Tensor]):
@@ -287,6 +301,11 @@ class QDGraspFlow(nn.Module):
             fingertip_positions=batch["fingertip_positions"],
             success=batch["success"],
             weights=LossWeights(),
+            point_mask=batch.get("point_mask"),
+            kinematics_valid=batch.get("kinematics_valid"),
+            pose_target_valid=batch.get("pose_target_valid"),
+            joint_target_valid=batch.get("joint_target_valid"),
+            fk_target_valid=batch.get("fk_target_valid"),
         )
 
     def _settings_hash(self) -> str:

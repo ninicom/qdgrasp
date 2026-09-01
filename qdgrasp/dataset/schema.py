@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from ..config.active_scope import DEFAULT_ROBOT_PROFILES
 from ..config.registry import register_document_schema
@@ -21,17 +21,17 @@ class DataConfigV2(_Document):
     name: str
     dataset_root: str
     manifest_file: str = "dataset_manifest.json"
+    protocol_file: str | None = None
     point_count: int = 1024
-    batch_size: int = 16
-    num_workers: int = 0
-    pin_memory: bool = False
-    drop_last: bool = False
+    # Used for deterministic resampling when a cloud does not have point_count
+    # points.  Batch/DataLoader knobs belong to RunConfig and are deliberately
+    # rejected here instead of being accepted as silent no-ops.
     seed: int = 42
     #: Defaults to the active corpus of ADR-0008. A paused hand may still be
     #: listed explicitly in a config file, but nothing selects one by default.
     robot_profiles: tuple[str, ...] = DEFAULT_ROBOT_PROFILES
 
-    @field_validator("point_count", "batch_size")
+    @field_validator("point_count")
     @classmethod
     def _validate_positive(cls, value: int, info: Any) -> int:
         if value <= 0:

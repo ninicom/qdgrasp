@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -19,8 +21,21 @@ def write_shard_file(
     p = Path(output_path)
     p.parent.mkdir(parents=True, exist_ok=True)
 
-    # Use deterministic torch save format
-    torch.save(samples, p, _use_new_zipfile_serialization=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=p.parent,
+        prefix=f".{p.name}.",
+        suffix=".tmp",
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            torch.save(samples, handle, _use_new_zipfile_serialization=True)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, p)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
 
     data = p.read_bytes()
     return hashlib.sha256(data).hexdigest()
@@ -43,7 +58,10 @@ def read_shard_file(
                 f"integrity mismatch for shard {p}: expected {expected_sha256}, got {actual_hash}"
             )
 
-    loaded = torch.load(p, map_location="cpu", weights_only=False)
+    try:
+        loaded = torch.load(p, map_location="cpu", weights_only=True)
+    except Exception as exc:
+        raise ConfigError(f"unsafe or invalid shard payload in {p}: {exc}") from exc
     if not isinstance(loaded, list):
         raise ConfigError(f"invalid shard format in {p}: expected list of samples")
     return loaded

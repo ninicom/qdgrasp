@@ -198,23 +198,44 @@ def canonical_audit(root: Path) -> CheckResult:
 
 
 def _locked_protocol_for(dataset_id: str | None) -> Path | None:
-    """The locked protocol document that names this dataset, if one exists."""
+    """The current locked protocol for this dataset, if one exists.
+
+    A superseded protocol is still on disk -- that is the point of locking one
+    by hash -- so candidates are parsed and the ones the current schema refuses
+    are skipped.  Picking the first filename would measure the dataset against
+    a protocol nobody is running.
+    """
 
     if dataset_id is None:
         return None
     directory = repository_root() / _PROTOCOL_DIRECTORY
     if not directory.is_dir():
         return None
+
+    from ..models.protocol import ProtocolError, load_protocol
+
     for path in sorted(directory.glob("*.yaml")):
-        text = path.read_text(encoding="utf-8")
-        if f"dataset_id: {dataset_id}" in text or f'dataset_id: "{dataset_id}"' in text:
+        try:
+            protocol = load_protocol(path)
+        except (ProtocolError, OSError, ValueError):
+            continue
+        if protocol.dataset_id == dataset_id:
             return path
     return None
 
 
-def positive_gate(root: Path, dataset_id: str | None) -> CheckResult:
+def positive_gate(root: Path, dataset_id: str | None, *, audited: bool = True) -> CheckResult:
     """Does the locked protocol's train split hold enough positives to train on?"""
 
+    if not audited:
+        return CheckResult(
+            name="phase5_positive_gate",
+            status="skip",
+            detail=(
+                "not measured: the canonical audit refused this corpus, and counting samples the artifact "
+                "cannot vouch for would describe whatever bytes are on disk"
+            ),
+        )
     protocol = _locked_protocol_for(dataset_id)
     if protocol is None:
         return CheckResult(
@@ -285,7 +306,8 @@ def evaluate(data_config: Any, *, purpose: str = "training") -> GateReport:
         )
     assert root is not None
     dataset_id = read_dataset_id(root)
-    checks = (canonical_audit(root), positive_gate(root, dataset_id))
+    audit = canonical_audit(root)
+    checks = (audit, positive_gate(root, dataset_id, audited=not audit.failed))
     return GateReport(
         purpose=purpose,
         gated=True,

@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+DATASET = REPO_ROOT / "datasets/dgn-open-tiny"
+PROTOCOL = REPO_ROOT / "configs/phase5/protocol-v2.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -28,12 +30,20 @@ def gate():
     return module
 
 
-def test_the_gate_reports_insufficient_and_exits_nonzero(gate) -> None:
+def test_the_gate_refuses_a_corpus_it_cannot_verify(gate, capsys) -> None:
+    """The shipped corpus fails its own audit, so there is nothing to count."""
+
     assert gate.main([]) == 1
+    assert "could not be measured" in capsys.readouterr().out
 
 
-def test_the_measurement_names_every_active_hand_and_split(gate) -> None:
-    report = gate.measure(REPO_ROOT / "datasets/dgn-open-tiny", REPO_ROOT / "configs/phase5/protocol-v1.yaml")
+def test_the_gate_reports_insufficient_and_exits_nonzero(gate, verified_corpus, capsys) -> None:
+    assert gate.main(["--dataset", str(verified_corpus), "--protocol", str(PROTOCOL)]) == 1
+    assert "Not enough successful grasps" in capsys.readouterr().out
+
+
+def test_the_measurement_names_every_active_hand_and_split(gate, verified_corpus) -> None:
+    report = gate.measure(verified_corpus, PROTOCOL)
     pairs = {(row["split"], row["robot"]) for row in report["rows"]}
     assert pairs == {
         ("train", "leap_hand"),
@@ -45,18 +55,18 @@ def test_the_measurement_names_every_active_hand_and_split(gate) -> None:
     assert report["train_positives_total"] < gate.MINIMUM_POSITIVES_PER_HAND
 
 
-def test_the_floor_is_per_hand_not_across_hands(gate) -> None:
+def test_the_floor_is_per_hand_not_across_hands(gate, verified_corpus) -> None:
     """Two hands each half-covered is not one hand covered."""
 
-    report = gate.measure(REPO_ROOT / "datasets/dgn-open-tiny", REPO_ROOT / "configs/phase5/protocol-v1.yaml")
+    report = gate.measure(verified_corpus, PROTOCOL)
     train = [row for row in report["rows"] if row["split"] == "train"]
     assert len(train) == 2
     assert report["sufficient"] == all(row["positives"] >= gate.MINIMUM_POSITIVES_PER_HAND for row in train)
 
 
-def test_the_report_carries_the_protocol_hash(gate) -> None:
+def test_the_report_carries_the_protocol_hash(gate, verified_corpus) -> None:
     """A count is about a split, so it has to name which split."""
 
-    report = gate.measure(REPO_ROOT / "datasets/dgn-open-tiny", REPO_ROOT / "configs/phase5/protocol-v1.yaml")
+    report = gate.measure(verified_corpus, PROTOCOL)
     assert len(report["protocol_hash"]) == 64
     assert report["dataset_id"] == "dgn-open-tiny-v1"

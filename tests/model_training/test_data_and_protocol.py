@@ -37,7 +37,7 @@ from qdgrasp.models.protocol import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET = REPO_ROOT / "datasets/dgn-open-tiny"
-PROTOCOL = REPO_ROOT / "configs/phase5/protocol-v1.yaml"
+PROTOCOL = REPO_ROOT / "configs/phase5/protocol-v2.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -141,6 +141,19 @@ def test_the_dataset_reports_how_few_positives_it_has() -> None:
 # -- P5-02 protocol --------------------------------------------------------
 
 
+def _bind_family(document: dict, object_id: str, family: str) -> dict:
+    """Add an object's declared family, as ``qdgrasp/protocol/v2`` requires."""
+
+    document["object_families"][object_id] = family
+    return document
+
+
+def _unbind_family(document: dict, object_id: str) -> dict:
+    document["object_families"].pop(object_id, None)
+    return document
+
+
+
 def test_the_shipped_protocol_is_valid_and_matches_the_dataset(manifest) -> None:
     protocol = load_protocol(PROTOCOL)
     check_dataset_agreement(protocol, manifest)
@@ -169,15 +182,24 @@ def test_an_object_in_both_splits_is_leakage(protocol_document) -> None:
 def test_a_held_out_family_with_a_member_in_train_is_refused(protocol_document) -> None:
     document = copy.deepcopy(protocol_document)
     document["splits"]["train_objects"].append("comp_l_shape_01")
+    _bind_family(document, "comp_l_shape_01", "compound")
     with pytest.raises(ProtocolError, match="held-out family"):
         parse_protocol(document)
 
 
 def test_a_held_out_family_nothing_measures_is_refused(protocol_document) -> None:
     document = copy.deepcopy(protocol_document)
-    document["splits"]["val_objects"] = [
-        name for name in document["splits"]["val_objects"] if not name.startswith("comp")
+    held_out = document["splits"]["heldout_family"]
+    dropped = [
+        object_id
+        for object_id in document["splits"]["val_objects"]
+        if document["object_families"][object_id] == held_out
     ]
+    document["splits"]["val_objects"] = [
+        object_id for object_id in document["splits"]["val_objects"] if object_id not in dropped
+    ]
+    for object_id in dropped:
+        _unbind_family(document, object_id)
     with pytest.raises(ProtocolError, match="no member in val"):
         parse_protocol(document)
 
@@ -193,7 +215,8 @@ def test_a_held_out_family_nothing_measures_is_refused(protocol_document) -> Non
         (lambda d: d.update(ablations=["no_graph"]), "must include 'baseline'"),
         (lambda d: d.update(metrics=["success", "vibes"]), "unknown metric"),
         (lambda d: d.update(selection="total_loss"), "unknown selection rule"),
-        (lambda d: d.update(schema="qdgrasp/protocol/v2"), "unsupported protocol schema"),
+        (lambda d: d.update(schema="qdgrasp/protocol/v1"), "unsupported protocol schema"),
+        (lambda d: d["object_families"].pop("sq_04"), "must exactly cover"),
     ],
 )
 def test_a_protocol_that_cannot_be_measured_is_refused(protocol_document, mutate, message) -> None:
@@ -213,5 +236,6 @@ def test_total_loss_is_not_a_selectable_rule() -> None:
 def test_a_protocol_naming_objects_the_dataset_lacks_is_refused(manifest, protocol_document) -> None:
     document = copy.deepcopy(protocol_document)
     document["splits"]["val_objects"].append("prim_torus_99")
+    _bind_family(document, "prim_torus_99", "primitive")
     with pytest.raises(ProtocolError, match="does not contain"):
         check_dataset_agreement(parse_protocol(document), manifest)

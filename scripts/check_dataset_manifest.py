@@ -11,7 +11,8 @@ from pathlib import Path
 
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.config.loader import load_robot_config
-from qdgrasp.dataset.manifest import DATASET_MANIFEST_SCHEMA_V2, load_dataset_manifest
+from qdgrasp.dataset import DatasetArtifact
+from qdgrasp.dataset.manifest import DATASET_MANIFEST_SCHEMA_V2
 from qdgrasp.objects.manifest import load_object_asset
 from qdgrasp.dataset.shards import read_shard_file
 
@@ -19,11 +20,9 @@ from qdgrasp.dataset.shards import read_shard_file
 def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
     """Perform a complete cryptographic audit of all shards and procedural objects."""
     root = Path(dataset_root).resolve()
-    manifest_path = root / "dataset_manifest.json"
-    if not manifest_path.is_file():
-        raise ConfigError(f"dataset manifest missing: {manifest_path}")
-
-    manifest = load_dataset_manifest(manifest_path)
+    artifact = DatasetArtifact.open_verified(root)
+    manifest_path = artifact.manifest_path
+    manifest = artifact.manifest
 
     if manifest.schema_version != DATASET_MANIFEST_SCHEMA_V2:
         raise ConfigError(
