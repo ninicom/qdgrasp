@@ -37,6 +37,8 @@ def test_public_training_will_not_start_on_the_current_corpus() -> None:
         QDGrasp().train(CORPUS_CONFIG, max_steps=1, run_name="corrective-blocked", project_dir="runs")
 
     message = str(error.value)
+    # Both checks are named whichever one failed, so a reader can see what was
+    # asked as well as what refused.
     assert "canonical_dataset_audit" in message
     assert "phase5_positive_gate" in message
 
@@ -49,6 +51,15 @@ def test_public_validation_will_not_start_on_the_current_corpus() -> None:
 
 
 def test_the_report_names_the_failing_check_and_its_reason() -> None:
+    """R8 regenerated the corpus, so the audit passes and the floor does not.
+
+    The stop has two halves and they fail at different times.  Provenance is now
+    intact -- the dataset was produced from a recorded clean commit and its
+    sources hash to what is on disk -- and the corpus still holds five positives
+    where the protocol's train split needs twenty-five per hand.  Training is
+    refused for that reason alone, and the report says which reason.
+    """
+
     report = evaluate(_corpus_config(), purpose="training")
 
     assert report.gated
@@ -57,25 +68,47 @@ def test_the_report_names_the_failing_check_and_its_reason() -> None:
     checks = {check.name: check for check in report.checks}
     assert set(checks) == {"canonical_dataset_audit", "phase5_positive_gate"}
 
-    audit = checks["canonical_dataset_audit"]
-    assert audit.failed
-    assert any(word in audit.detail for word in ("drift", "mismatch", "provenance")), audit.detail
-
-    # One root cause is reported once: an unverifiable corpus is not counted.
-    positive = checks["phase5_positive_gate"]
-    assert positive.status == "skip"
-    assert "canonical audit" in positive.detail
-
-
-def test_the_positive_gate_reports_the_floor_on_a_corpus_it_can_verify(verified_corpus) -> None:
-    """The other half of the stop, measured where the audit does not block it."""
-
-    report = evaluate({"dataset_root": str(verified_corpus)}, purpose="training")
-
-    checks = {check.name: check for check in report.checks}
     assert checks["canonical_dataset_audit"].status == "pass"
-    assert checks["phase5_positive_gate"].failed
-    assert "floor" in checks["phase5_positive_gate"].detail
+
+    positive = checks["phase5_positive_gate"]
+    assert positive.failed
+    assert "floor" in positive.detail
+
+
+def test_a_corpus_whose_sources_drifted_is_not_counted(tmp_path: Path) -> None:
+    """One root cause, reported once: an unverifiable corpus is not measured.
+
+    Source drift is how a dataset stops describing the code that made it, and
+    once that is true its sample counts are about whatever bytes are on disk.
+    The positive gate therefore declines to measure rather than reporting a
+    number beside a failed audit.
+    """
+
+    import json
+    import shutil
+
+    root = tmp_path / "datasets" / "drifted"
+    shutil.copytree(REPO_ROOT / "datasets" / "dgn-open-tiny", root)
+    manifest_path = root / "dataset_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # The sources have to be present for "drifted" to mean drifted rather than
+    # "missing": the audit resolves them relative to the project the dataset
+    # sits in.
+    for name in manifest["generator_source_hashes"]:
+        target = tmp_path / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO_ROOT / name, target)
+    drifted = min(manifest["generator_source_hashes"])
+    manifest["generator_source_hashes"][drifted] = "0" * 64
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+    report = evaluate({"dataset_root": str(root)}, purpose="training")
+    checks = {check.name: check for check in report.checks}
+
+    assert checks["canonical_dataset_audit"].failed
+    assert "mismatch" in checks["canonical_dataset_audit"].detail
+    assert checks["phase5_positive_gate"].status == "skip"
+    assert "canonical audit" in checks["phase5_positive_gate"].detail
     assert not report.allowed
 
 

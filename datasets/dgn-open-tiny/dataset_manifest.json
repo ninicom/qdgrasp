@@ -10,10 +10,10 @@
     "python": "3.11.16",
     "torch": "2.11.0+cpu"
   },
-  "generator_commit": "07e18357552216d5973595d8640c480d9aafdd67",
+  "generator_commit": "4941be86924717a1298d9e11865f2933708face7",
   "generator_source_hashes": {
-    "qdgrasp/dataset/manifest.py": "dd9044e05084844a823c0827d7f20bdccc26e17550b96261dfaf0732b50b6f6f",
-    "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "2b6883766042ccf50863b710f1baa5a62efbe40d402627cd0d17a88c5b22634a",
+    "qdgrasp/dataset/manifest.py": "95748c69e64bdce20ff6e6916cc356ac56b0bb4128184e435755f54d9b40b096",
+    "qdgrasp/dataset/pipeline/certifiers/contact_force.py": "555429b9f6dc5c54a52fbd4fa132acd25dd0de876cc4da6103ab10f5cb5068c8",
     "qdgrasp/dataset/pipeline/certifiers/grasp_wrench.py": "478c0ffeaa5321ac91c201687d528fd6fe80484ce030af2c634d2bdcf3db8ead",
     "qdgrasp/dataset/pipeline/contracts.py": "f9d5a0bc734091f3b264565bd9d8395ac79a9e6985919a63fe9c66d8b4796da3",
     "qdgrasp/dataset/pipeline/filter.py": "609586abe7a78208e4ec77c1bf4ecad3e3c2c3ae3e0c491223e27393516bbfbd",
@@ -25,8 +25,8 @@
     "qdgrasp/dataset/pipeline/proposals/wrench_guided.py": "0e2a09aa995cce7886f85e9e778e35cedf12de4be7cc4aad656aa3ff4ef51cf5",
     "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py": "797eb0356467906baf53fcb12585ebe35d2ba5d775afdfce306ac951209c70ea",
     "qdgrasp/dataset/pipeline/solvers/region_dls.py": "863ebbfcfffeffbf20a15be200684c4a4e38e26a63018d8643e372ca121a393e",
-    "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "a4b38e7e1d1beea034d62b7823e9f73641d0e4042ffe1aa619c416464136133c",
-    "scripts/generate_dgn_open_tiny.py": "74e6680004676f5b94be2701edc9e01e3aeb90ac45590598a70c7c7344692e60"
+    "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py": "2b570d94c0ebd791cbf5cf97899670bf5998e3df093ed513bfc9e2817a36f185",
+    "scripts/generate_dgn_open_tiny.py": "69518d9b098ec2cf005ba8e6c4f19740c9e0544a82e371debe407335a74b248a"
   },
   "generator_version": "0.1.0a1",
   "generator_worktree_dirty": false,
@@ -42,8 +42,6 @@
     "pc_allegro_02": "bc117306db360e757411695f517e7868160adf20058f5c409dc030802ed4fe07",
     "pc_leap_01": "211bf5a20ac7c25345c398ff600b80646df22613e8858989b5d2ba09d02f3a08",
     "pc_leap_02": "5117d4999c7e92b96ce90adba511cc42d94922c308dd7aacf89131c48a83929d",
-    "pc_shadow_01": "f7ba4a385ff37f7aaa5aaea13105a823df04cb4738cb2a81573c118682000705",
-    "pc_shadow_02": "b9d2aef2034470f45c947d4bb0eaab9b873a114bae77e0b1708b10b6d5be1a35",
     "prim_box_01": "611e6d01c31583cb1143be00f53f75d27d901b6c803548b7489e338abd0a2869",
     "prim_capsule_01": "43ed7c25f7ee3c669c57ea05efcc871353ac254bb9f9ebcb5a3486d848755b3b",
     "prim_cylinder_01": "f17bd7f85d69750afdb1ccdcead13b929a97333059a26dae8eb16996f2ecc07d",
@@ -58,90 +56,69 @@
   "release_blocked": false,
   "robot_profile_hashes": {
     "leap_hand": "7f002e8e70028ac5ff62dedb2602d23dbc1f3603f28187d58a7078e9ffcea7ba",
-    "shadow_hand": "afde7a6a3aab3d560b06d695f23c70d012438b230f7846e1c72f68adc8b84dd1",
     "wonik_allegro": "c2539640ca6ec35c37131bb09930c57102a7a6d2bb3351bdaf1924079bac3ef7"
   },
-  "schema": "qdgrasp/dataset-manifest/v2",
+  "schema": "qdgrasp/dataset-manifest/v3",
   "seed": 42,
   "shards": [
     {
       "filename": "shards/train_leap_hand.pt",
-      "num_samples": 44,
+      "num_samples": 36,
       "positive_samples": 1,
       "recipe_id": "region_opposition_v1",
       "robot_name": "leap_hand",
-      "sha256": "24db99163de63c91c4da0738fa7e71e4f93d54986df503e2794aef4907670168",
+      "sha256": "4113fd4a9e05b892e83d3df772ee5f70f4e7f9cd033ce86624ed3f7baa552d63",
       "split": "train"
     },
     {
       "filename": "shards/train_wonik_allegro.pt",
-      "num_samples": 54,
-      "positive_samples": 2,
-      "recipe_id": "region_opposition_v1",
-      "robot_name": "wonik_allegro",
-      "sha256": "9bd0aad310fc2ab9ecb4f3ae87f7400164fc7f9d7bd8dae27ee0f10192def42a",
-      "split": "train"
-    },
-    {
-      "filename": "shards/train_shadow_hand.pt",
-      "num_samples": 50,
+      "num_samples": 46,
       "positive_samples": 1,
       "recipe_id": "region_opposition_v1",
-      "robot_name": "shadow_hand",
-      "sha256": "e5e07735ecf9a2359b8559b89e13169d7ce6f4b78df171184161c018130e2f21",
+      "robot_name": "wonik_allegro",
+      "sha256": "cfbb4849e0f1ca2aff5e9742279b0b5df54a4d88a302ddce51bec0c707f2dbc0",
       "split": "train"
     },
     {
       "filename": "shards/val_leap_hand.pt",
-      "num_samples": 12,
+      "num_samples": 20,
       "positive_samples": 1,
       "recipe_id": "region_opposition_v1",
       "robot_name": "leap_hand",
-      "sha256": "8481efdb3933244830e80d21eea1ef489923cf547da4f72a19ad92c35b66dc9e",
+      "sha256": "c310173ddd853ac91b7154d450923eb2d0b5de04b231f754473a66f9b699c3b4",
       "split": "val"
     },
     {
       "filename": "shards/val_wonik_allegro.pt",
-      "num_samples": 22,
-      "positive_samples": 1,
+      "num_samples": 30,
+      "positive_samples": 2,
       "recipe_id": "region_opposition_v1",
       "robot_name": "wonik_allegro",
-      "sha256": "23cf50717a53fc3f6d01022d33348416aea2658c9ff31af4f04e51df769be521",
-      "split": "val"
-    },
-    {
-      "filename": "shards/val_shadow_hand.pt",
-      "num_samples": 18,
-      "positive_samples": 1,
-      "recipe_id": "region_opposition_v1",
-      "robot_name": "shadow_hand",
-      "sha256": "c250c30eb3da790d456067fee0d145ef2d0c39c583beb689a396d9d67d427c67",
+      "sha256": "33d3e1576e2bda3a9ebd8da302ce512d65b8ce3e15f9f689f004b39af364bc35",
       "split": "val"
     }
   ],
   "solver_module": "region_dls",
   "splits": {
     "train": [
-      "comp_dumbbell_01",
-      "comp_l_shape_01",
-      "comp_t_shape_02",
-      "pc_allegro_02",
+      "pc_allegro_01",
       "pc_leap_01",
-      "pc_shadow_02",
       "prim_box_01",
       "prim_capsule_01",
       "prim_cylinder_01",
       "prim_sphere_01",
       "sq_01",
       "sq_02",
-      "sq_03"
+      "sq_03",
+      "sq_04"
     ],
     "val": [
+      "comp_dumbbell_01",
+      "comp_l_shape_01",
       "comp_t_shape_01",
-      "pc_allegro_01",
-      "pc_leap_02",
-      "pc_shadow_01",
-      "sq_04"
+      "comp_t_shape_02",
+      "pc_allegro_02",
+      "pc_leap_02"
     ]
   },
   "success_criteria": {

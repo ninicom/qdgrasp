@@ -1,11 +1,14 @@
 """Fixtures shared across the suite.
 
 The only one here is a corpus whose provenance is self-consistent.  The dataset
-in the repository is not: its recorded generator sources have drifted, and
-``PLAN.md`` §9.5 fixes that by regenerating the dataset rather than by editing
-the manifest to agree with the drift.  Until then, a test that needs a corpus
-the verifier accepts materialises the real shards with honest provenance here,
-so "can this be opened" and "is this the released artifact" stay two questions.
+in the repository is too, since R8 regenerated it -- but it stops being so the
+moment anyone edits a file the manifest records as a generator source, which is
+a normal thing to do halfway through a change.
+
+That drift is a release finding, not a reason for a dozen unrelated tests to go
+red, so tests that only need "a corpus the loader accepts" take this copy.  The
+tests that are *about* provenance read the artifact in the tree directly, and
+they are the ones that must notice.
 """
 
 from __future__ import annotations

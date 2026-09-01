@@ -182,9 +182,11 @@ def test_an_object_in_both_splits_is_leakage(protocol_document) -> None:
 
 
 def test_a_held_out_family_with_a_member_in_train_is_refused(protocol_document) -> None:
+    # A member the protocol does not already place, so the refusal is about the
+    # family rather than about the object being on both sides.
     document = copy.deepcopy(protocol_document)
-    document["splits"]["train_objects"].append("comp_l_shape_01")
-    _bind_family(document, "comp_l_shape_01", "compound")
+    document["splits"]["train_objects"].append("comp_extra_01")
+    _bind_family(document, "comp_extra_01", "compound")
     with pytest.raises(ProtocolError, match="held-out family"):
         parse_protocol(document)
 
@@ -192,6 +194,11 @@ def test_a_held_out_family_with_a_member_in_train_is_refused(protocol_document) 
 def test_a_held_out_family_nothing_measures_is_refused(protocol_document) -> None:
     document = copy.deepcopy(protocol_document)
     held_out = document["splits"]["heldout_family"]
+    # Val holds only the held-out family, so something else has to stay behind:
+    # an empty val is refused for its own reason and would hide this one.
+    document["splits"]["val_objects"].append("sq_extra_01")
+    _bind_family(document, "sq_extra_01", "superquadric")
+
     dropped = [
         object_id
         for object_id in document["splits"]["val_objects"]

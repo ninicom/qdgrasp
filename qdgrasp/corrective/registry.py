@@ -108,9 +108,10 @@ FINDINGS: tuple[Finding, ...] = (
         ),
         target="a materialised ProtocolDatasetView keyed on (split, robot, object_id) that fails on leakage",
         blocked_on=(
-            "R8: the view reaches the public path, but the G2 gate also needs a canonical audit that "
-            "passes and a train split that clears the positive floor, and both need the dataset "
-            "regenerated from a clean commit"
+            "positive yield: R8 regenerated the corpus, so the view reaches the public path and the "
+            "canonical audit passes, but the G2 gate also asks that each declared train hand clear the "
+            "positive floor and the recipe yields one positive per hand. That is a pipeline question, "
+            "not a plumbing one, and no relabelling closes it"
         ),
     ),
     Finding(
