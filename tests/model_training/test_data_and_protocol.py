@@ -10,22 +10,18 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
 from pathlib import Path
 
 import pytest
 import torch
 import yaml
 
-from qdgrasp.models.data import (
-    ACTIVE_HANDS,
-    DatasetError,
-    FlowDataset,
-    collate,
-    iter_active_datasets,
-    load_manifest,
-    load_shard,
-    shard_refs,
-)
+from qdgrasp.config.active_scope import ACTIVE_HANDS
+from qdgrasp.config.schema import ConfigError
+from qdgrasp.dataset import DatasetArtifact
+from qdgrasp.dataset.loader import DgnOpenDataset
+from qdgrasp.engine.sampling import BatchIdentityError, collate_samples, iterate_batches
 from qdgrasp.models.protocol import (
     ABLATION_REGISTRY,
     SELECTION_REGISTRY,
@@ -41,8 +37,13 @@ PROTOCOL = REPO_ROOT / "configs/phase5/protocol-v2.yaml"
 
 
 @pytest.fixture(scope="module")
-def manifest() -> dict:
-    return load_manifest(DATASET)
+def artifact() -> DatasetArtifact:
+    return DatasetArtifact.open_verified(DATASET)
+
+
+@pytest.fixture(scope="module")
+def manifest(artifact: DatasetArtifact) -> dict:
+    return artifact.manifest.model_dump(by_alias=True)
 
 
 @pytest.fixture(scope="module")
@@ -53,34 +54,41 @@ def protocol_document() -> dict:
 # -- P5-01 adapter ---------------------------------------------------------
 
 
-def test_the_shipped_shards_match_their_manifest_hashes(manifest) -> None:
+def test_the_shipped_shards_match_their_manifest_hashes(artifact: DatasetArtifact) -> None:
     """The dataset and its manifest must describe the same bytes."""
 
-    for ref in shard_refs(manifest, split=None):
-        samples = load_shard(DATASET, ref, verify=True)
-        assert len(samples) == ref.num_samples
+    assert artifact.shards
+    for shard in artifact.shards:
+        assert len(shard.samples) == shard.metadata.num_samples
 
 
-def test_a_shard_that_drifted_from_the_manifest_is_refused(manifest, tmp_path: Path) -> None:
-    ref = shard_refs(manifest, split="val", robots=["leap_hand"])[0]
-    (tmp_path / "shards").mkdir(parents=True)
-    torch.save([], tmp_path / ref.filename)
-    (tmp_path / "dataset_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
-    with pytest.raises(DatasetError, match="describe different data"):
-        load_shard(tmp_path, ref, verify=True)
+def _copy_verified_corpus(destination_project: Path) -> Path:
+    destination = destination_project / "datasets" / DATASET.name
+    shutil.copytree(DATASET, destination)
+    manifest = json.loads((destination / "dataset_manifest.json").read_text(encoding="utf-8"))
+    for source_name in manifest["generator_source_hashes"]:
+        target = destination_project / source_name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPO_ROOT / source_name, target)
+    return destination
+
+
+def test_a_shard_that_drifted_from_the_manifest_is_refused(tmp_path: Path) -> None:
+    root = _copy_verified_corpus(tmp_path)
+    manifest = json.loads((root / "dataset_manifest.json").read_text(encoding="utf-8"))
+    shard = next(item for item in manifest["shards"] if item["split"] == "val")
+    torch.save([], root / shard["filename"])
+    with pytest.raises(ConfigError, match="integrity mismatch"):
+        DatasetArtifact.open_verified(root)
 
 
 def test_a_paused_hand_is_not_loaded_by_a_default_workload(manifest) -> None:
     """ADR-0008: an active release contains no Shadow shard."""
 
     assert not any(entry["robot_name"] == "shadow_hand" for entry in manifest["shards"])
-    assert all(ref.robot_name in ACTIVE_HANDS for ref in shard_refs(manifest, split="train"))
-    with pytest.raises(DatasetError, match="paused by ADR-0008"):
-        shard_refs(manifest, split="train", robots=["shadow_hand"])
-    # A release cannot gain Shadow data merely because a caller opts into a
-    # diagnostic; only a separately declared historical artifact may hold it.
-    with pytest.raises(DatasetError, match="no shard"):
-        shard_refs(manifest, split="train", robots=["shadow_hand"], allow_paused=True)
+    assert set(manifest["robot_profile_hashes"]) == set(ACTIVE_HANDS)
+    with pytest.raises(ConfigError, match="allowlist"):
+        DgnOpenDataset(DATASET, split="train", robot_name="shadow_hand")
 
 
 def test_an_invalidated_dataset_is_refused(manifest, tmp_path: Path) -> None:
@@ -88,50 +96,62 @@ def test_an_invalidated_dataset_is_refused(manifest, tmp_path: Path) -> None:
     broken["invalidated"] = True
     broken["invalidation_reason"] = "regenerated under a different certifier"
     (tmp_path / "dataset_manifest.json").write_text(json.dumps(broken), encoding="utf-8")
-    with pytest.raises(DatasetError, match="invalidated"):
-        load_manifest(tmp_path)
+    with pytest.raises(ConfigError, match="invalidated"):
+        DatasetArtifact.open_verified(tmp_path)
 
 
 def test_a_batch_may_not_mix_hands() -> None:
-    leap = FlowDataset(DATASET, split="val", robot="leap_hand", verify=False)
-    allegro = FlowDataset(DATASET, split="val", robot="wonik_allegro", verify=False)
-    with pytest.raises(DatasetError, match="may not mix robots"):
-        collate([leap[0], allegro[0]])
+    leap = DgnOpenDataset(DATASET, split="val", robot_name="leap_hand")
+    allegro = DgnOpenDataset(DATASET, split="val", robot_name="wonik_allegro")
+    with pytest.raises(BatchIdentityError, match="may not mix robots"):
+        collate_samples([leap[0], allegro[0]])
 
 
 def test_collate_produces_exactly_what_the_loss_consumes() -> None:
-    dataset = FlowDataset(DATASET, split="val", robot="leap_hand", verify=False)
-    batch = collate([dataset[index] for index in range(4)])
-    assert set(batch) == {
+    dataset = DgnOpenDataset(DATASET, split="val", robot_name="leap_hand")
+    batch = collate_samples([dataset[index] for index in range(4)])
+    assert {
         "points",
+        "point_mask",
         "palm_pos",
         "palm_rot",
         "joint_angles",
         "fingertip_positions",
         "success",
-    }
+        "kinematics_valid",
+        "pose_target_valid",
+        "joint_target_valid",
+        "fk_target_valid",
+        "robot_name",
+        "robot_profile_hash",
+        "joint_names",
+    } <= set(batch)
     assert batch["points"].shape[0] == 4
     assert batch["success"].shape == (4,)
-    assert all(tensor.dtype == torch.float32 for tensor in batch.values())
+    for field in ("points", "palm_pos", "palm_rot", "joint_angles", "fingertip_positions", "success"):
+        assert batch[field].dtype == torch.float32
+    for field in ("point_mask", "kinematics_valid", "pose_target_valid", "joint_target_valid", "fk_target_valid"):
+        assert batch[field].dtype == torch.bool
 
 
 def test_batches_cover_every_sample_exactly_once() -> None:
-    dataset = FlowDataset(DATASET, split="val", robot="leap_hand", verify=False)
-    seen = sum(batch["points"].shape[0] for batch in dataset.batches(5))
+    dataset = DgnOpenDataset(DATASET, split="val", robot_name="leap_hand")
+    seen = sum(batch["points"].shape[0] for batch in iterate_batches(dataset, 5))
     assert seen == len(dataset)
 
 
 def test_an_empty_batch_is_refused() -> None:
-    with pytest.raises(DatasetError, match="empty batch"):
-        collate([])
+    with pytest.raises(BatchIdentityError, match="empty batch"):
+        collate_samples([])
 
 
 def test_the_dataset_reports_how_few_positives_it_has() -> None:
     """The number that decides whether any of P5 is meaningful."""
 
+    datasets = {robot: DgnOpenDataset(DATASET, split="train", robot_name=robot) for robot in ACTIVE_HANDS}
     fractions = {
-        robot: dataset.positive_fraction
-        for robot, dataset in iter_active_datasets(DATASET, split="train", verify=False)
+        robot: sum(float(sample["success"]) for sample in dataset.samples) / len(dataset)
+        for robot, dataset in datasets.items()
     }
     assert set(fractions) == set(ACTIVE_HANDS)
     # This asserts the corpus is what it is, not that it is good enough: every
@@ -153,7 +173,6 @@ def _bind_family(document: dict, object_id: str, family: str) -> dict:
 def _unbind_family(document: dict, object_id: str) -> dict:
     document["object_families"].pop(object_id, None)
     return document
-
 
 
 def test_the_shipped_protocol_is_valid_and_matches_the_dataset(manifest) -> None:

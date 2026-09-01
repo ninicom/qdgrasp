@@ -215,7 +215,7 @@ Một report có `cuda: false` không được dùng làm kết quả chất lư
 | ID | Công việc | Output | Phụ thuộc |
 | --- | --- | --- | --- |
 | P5-00 | Khóa scope/contract/protocol | tài liệu này | — |
-| P5-01 | Adapter dataset → batch của model | `qdgrasp/models/data.py` | 00, P3.1 |
+| P5-01 | Verified dataset → canonical Runner batch | `qdgrasp/dataset/loader.py`, `qdgrasp/engine/sampling.py` | 00, P3.1 |
 | P5-02 | Protocol split khóa bằng hash + kiểm rò rỉ | `configs/phase5/protocol-v1.yaml`, `qdgrasp/models/protocol.py` | 01 |
 | P5-03 | Vòng train qua `Runner`, AMP, schedule, seed | `qdgrasp/models/train.py` | 02 |
 | P5-04 | Exact resume trùng bit | `qdgrasp/models/train.py` + test | 03 |

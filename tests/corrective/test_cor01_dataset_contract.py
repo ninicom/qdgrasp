@@ -1,9 +1,8 @@
 """COR-01: three loaders, three contracts, and a facade that gates on none.
 
-``scripts/check_dataset_manifest.py`` audits a corpus, ``qdgrasp.models.data``
-adapts it for Phase 5, and ``qdgrasp.dataset.loader`` is what the public facade
-actually opens.  Each has its own idea of what a valid sample is, so a corpus
-can pass the audit and still reach a trainer through a path that never asked.
+The historical audit, Phase 5 adapter and public loader each had their own idea
+of what a valid sample was, so a corpus could pass one and reach training
+through another.  They now share ``DatasetArtifact.open_verified``.
 
 G1's target is one verified entry point, ``DatasetArtifact.open_verified()``,
 used by the audit, the gate, the facade and the Runner alike.
@@ -46,18 +45,10 @@ def test_every_loader_refuses_the_same_incomplete_sample(tmp_path: Path) -> None
     digest = write_shard(root / "shards" / "train.pt", [incomplete])
     write_manifest(root, manifest_document(filename="shards/train.pt", sha256=digest))
 
-    from qdgrasp.models.data import DatasetError, ShardRef, load_shard
+    from qdgrasp.dataset import DatasetArtifact
 
-    ref = ShardRef(
-        filename="shards/train.pt",
-        robot_name="leap_hand",
-        split="train",
-        sha256=digest,
-        num_samples=1,
-        positive_samples=0,
-    )
-    with pytest.raises(DatasetError):
-        load_shard(root, ref)
+    with pytest.raises(ConfigError):
+        DatasetArtifact.open_verified(root)
 
     from qdgrasp.dataset.loader import DgnOpenDataset
 

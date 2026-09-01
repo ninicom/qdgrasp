@@ -140,3 +140,5 @@ def test_the_base_wheel_quarantines_the_legacy_namespaces() -> None:
     wheel_gate = (PROJECT_ROOT / "scripts" / "check_wheel.py").read_text(encoding="utf-8")
     assert '"qdgrasp/data/"' in wheel_gate
     assert '"qdgrasp/nn/"' in wheel_gate
+    assert '"qdgrasp/models/data.py"' in wheel_gate
+    assert not (PACKAGE_ROOT / "models" / "data.py").exists()

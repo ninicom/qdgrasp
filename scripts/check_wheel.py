@@ -25,6 +25,7 @@ REQUIRED_MEMBERS = {
     "qdgrasp/presets/robots/shadow_hand.yaml",
 }
 FORBIDDEN_PREFIXES = ("qdgrasp/data/", "qdgrasp/nn/")
+FORBIDDEN_MEMBERS = {"qdgrasp/models/data.py"}
 ASSET_ROOT = ROOT / ".references" / "robot-assets"
 
 
@@ -66,6 +67,7 @@ def verify_members(wheel: Path) -> None:
     if missing:
         raise RuntimeError(f"wheel is missing required nested package data: {missing}")
     forbidden = sorted(member for member in members if member.startswith(FORBIDDEN_PREFIXES))
+    forbidden.extend(sorted(FORBIDDEN_MEMBERS & members))
     if forbidden:
         raise RuntimeError(f"wheel contains quarantined legacy namespaces: {forbidden[:20]}")
 

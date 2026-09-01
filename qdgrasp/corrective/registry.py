@@ -232,7 +232,7 @@ FINDINGS: tuple[Finding, ...] = (
             "packaged legacy namespace still holds exec/eval/unsafe loads"
         ),
         target="masked padding, config keys that either take effect or are refused, and a quarantined legacy surface",
-        blocked_on="R9: remove the duplicate models.data contract and complete the active-core static/package gates",
+        status="closed",
     ),
 )
 
@@ -315,8 +315,7 @@ def get(finding_id: str) -> Finding:
         return FINDINGS_BY_ID[finding_id]
     except KeyError:
         raise CorrectiveError(
-            f"{finding_id!r} is not a registered corrective finding; PLAN.md §9.2 lists "
-            f"{sorted(FINDINGS_BY_ID)}"
+            f"{finding_id!r} is not a registered corrective finding; PLAN.md §9.2 lists {sorted(FINDINGS_BY_ID)}"
         ) from None
 
 

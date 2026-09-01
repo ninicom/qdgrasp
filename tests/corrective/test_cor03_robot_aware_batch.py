@@ -1,13 +1,8 @@
 """COR-03: the guard against mixed hands is not on the path that collates.
 
-``qdgrasp.models.data.collate`` refuses a batch that mixes robots, and says why
-in the docstring.  The Runner does not call it; it calls ``default_collate``,
-which will happily stack a LEAP sample and an Allegro sample because both hands
-have sixteen actuated joints.  The model then evaluates the whole batch against
-whichever ``HandGraph`` it was constructed with.
-
-The guard is not wrong.  It is just not reachable from the public training path,
-which is the difference between having a check and being checked.
+The old side adapter guarded mixed robots, while the Runner used a different
+collator.  The canonical Runner collator now owns the identity check and carries
+the robot profile and joint order with every batch.
 """
 
 from __future__ import annotations
