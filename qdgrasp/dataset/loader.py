@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 
 from ..config.registry import register_dataset
 from ..config.schema import ConfigError
 from ..models.protocol import ProtocolDatasetView, load_protocol
 from .artifact import DatasetArtifact
-from .batch import GraspBatch
 from .rng import derive_seed
 from .schema import DataConfigV2
 
@@ -140,6 +140,10 @@ class DgnOpenDataset(Dataset):
             "collision_valid": item["collision_valid"],
             "static_force_valid": item["static_force_valid"],
             "dynamic_valid": item["dynamic_valid"],
+            "kinematics_valid": item["kinematics_valid"],
+            "pose_target_valid": item["pose_target_valid"],
+            "joint_target_valid": item["joint_target_valid"],
+            "fk_target_valid": item["fk_target_valid"],
             # Phase 1 legacy aliases
             "target_translation": item["palm_pos"],
             "target_rotation": item["palm_rot"],
@@ -158,9 +162,7 @@ class DgnOpenDataset(Dataset):
             "license": self.manifest_spec.license,
             "dataset_manifest_hash": self.artifact.manifest_hash,
             "robot_profile_hash": (
-                self.manifest_spec.robot_profile_hashes[self.robot_name]
-                if self.robot_name is not None
-                else "mixed"
+                self.manifest_spec.robot_profile_hashes[self.robot_name] if self.robot_name is not None else "mixed"
             ),
         }
         if self.protocol_view is not None:
@@ -196,7 +198,7 @@ def create_dgn_open_dataset(config: Any, *args: Any, split: str = "train", **kwa
     robot_config = None
     if len(args) > 0 and hasattr(args[0], "name"):
         robot_config = args[0]
-        robot_name = getattr(robot_config, "name")
+        robot_name = robot_config.name
     elif "robot_config" in kwargs and hasattr(kwargs["robot_config"], "name"):
         robot_config = kwargs["robot_config"]
         robot_name = robot_config.name

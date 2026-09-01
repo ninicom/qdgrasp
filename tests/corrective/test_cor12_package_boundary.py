@@ -21,11 +21,13 @@ attack surface.
 from __future__ import annotations
 
 import ast
+import tomllib
 from pathlib import Path
 
 from _corrective_support import characterization
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "qdgrasp"
+PROJECT_ROOT = PACKAGE_ROOT.parent
 
 
 @characterization(
@@ -57,11 +59,7 @@ def _keys_read_from_the_config(source: Path, function: str) -> set[str]:
     """Which fields the builder actually reads off the configuration object."""
 
     tree = ast.parse(source.read_text(encoding="utf-8"))
-    target = next(
-        node
-        for node in ast.walk(tree)
-        if isinstance(node, ast.FunctionDef) and node.name == function
-    )
+    target = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == function)
     read: set[str] = set()
     for node in ast.walk(target):
         if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "config":
@@ -113,7 +111,11 @@ def _dangerous_calls(path: Path) -> list[str]:
     return findings
 
 
-@characterization("COR-12", note="the packaged namespace still holds exec/eval/unsafe loads")
+@characterization(
+    "COR-12",
+    note="the packaged namespace still holds exec/eval/unsafe loads",
+    satisfied_by="R9",
+)
 def test_the_installed_package_has_no_code_execution_surface() -> None:
     findings: list[str] = []
     for path in sorted(PACKAGE_ROOT.rglob("*.py")):
@@ -122,3 +124,19 @@ def test_the_installed_package_has_no_code_execution_surface() -> None:
     assert not findings, "the wheel installs {} code-execution sites:\n  {}".format(
         len(findings), "\n  ".join(item.replace(str(PACKAGE_ROOT.parent) + "/", "") for item in findings[:20])
     )
+
+
+@characterization(
+    "COR-12",
+    note="legacy namespaces are still discovered into the base wheel",
+    satisfied_by="R9",
+)
+def test_the_base_wheel_quarantines_the_legacy_namespaces() -> None:
+    document = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    excluded = set(document["tool"]["setuptools"]["packages"]["find"].get("exclude", ()))
+    required = {"qdgrasp.data", "qdgrasp.data.*", "qdgrasp.nn", "qdgrasp.nn.*"}
+    assert required <= excluded
+
+    wheel_gate = (PROJECT_ROOT / "scripts" / "check_wheel.py").read_text(encoding="utf-8")
+    assert '"qdgrasp/data/"' in wheel_gate
+    assert '"qdgrasp/nn/"' in wheel_gate

@@ -26,7 +26,6 @@ from ultralytics.utils import (
     clean_url,
     colorstr,
     emojis,
-    is_dir_writeable,
 )
 from ultralytics.utils.checks import check_file, check_font, is_ascii, normalize_platform_uri
 from ultralytics.utils.downloads import download, safe_download
@@ -626,11 +625,11 @@ def check_det_dataset(dataset: str, autodownload: bool = True, split: str = "") 
             r = None  # success
             if s.startswith("http") and s.endswith(".zip"):  # URL
                 safe_download(url=s, dir=DATASETS_DIR, delete=True)
-            elif s.startswith("bash "):  # bash script
-                LOGGER.info(f"Running {s} ...")
-                subprocess.run(s.split(), check=True)
-            else:  # python script
-                exec(s, {"yaml": data})  # noqa: S102
+            else:
+                raise ValueError(
+                    "dataset YAML download commands are disabled; provide an HTTP(S) ZIP URL or "
+                    "download the dataset explicitly before loading it"
+                )
             dt = f"({round(time.time() - t, 1)}s)"
             s = f"success ✅ {dt}, saved to {colorstr('bold', DATASETS_DIR)}" if r in {0, None} else f"failure {dt} ❌"
             LOGGER.info(f"Dataset download {s}\n")
@@ -778,30 +777,26 @@ def compress_one_image(f: str, f_new: str | None = None, max_dim: int = 1920, qu
 
 
 def load_dataset_cache_file(path: Path) -> dict:
-    """Load an Ultralytics *.cache dictionary from path."""
-    import gc
+    """Refuse legacy object-array caches, which are pickle payloads in disguise.
 
-    gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585
-    cache = np.load(str(path), allow_pickle=True).item()  # load dict
-    gc.enable()
-    return cache
+    Callers already treat ``FileNotFoundError`` as a cache miss and rescan the
+    source dataset.  Keeping that behaviour is slower than deserialising a
+    cache, but it does not grant a dataset directory a code-execution path.
+    """
+
+    raise FileNotFoundError(f"unsafe legacy dataset cache is disabled: {path}")
 
 
 def save_dataset_cache_file(prefix: str, path: Path, x: dict, version: str):
-    """Save an Ultralytics dataset *.cache dictionary x to path."""
-    x["version"] = version  # add cache version
-    if is_dir_writeable(path.parent):
-        if path.exists():
-            path.unlink()  # remove *.cache file if exists
-        try:
-            with open(str(path), "wb") as file:  # context manager here fixes windows async np.save bug
-                np.save(file, x)
-            LOGGER.info(f"{prefix}New cache created: {path}")
-        except Exception as e:
-            Path(path).unlink(missing_ok=True)  # remove partially written file
-            LOGGER.warning(f"{prefix}WARNING ⚠️ Failed to save cache to {path}: {e}")
-    else:
-        LOGGER.warning(f"{prefix}Cache directory {path.parent} is not writable, cache not saved.")
+    """Skip the pickle-backed legacy cache format.
+
+    The in-memory scan result remains valid for the current run.  A future
+    cache format must have an explicit schema and encode arrays without Python
+    objects before persistence is re-enabled.
+    """
+
+    del x, version
+    LOGGER.info(f"{prefix}Dataset cache not written: unsafe legacy format is disabled ({path})")
 
 
 def add_polygon_background(data: dict) -> dict:

@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any
 
 import torch
 
@@ -21,7 +22,7 @@ from ..config.loader import load_robot_config
 from ..config.schema import ConfigError
 from ..objects.schema import ObjectManifestSpec
 from .artifact_io import resolve_contained_regular_file, validate_relative_artifact_path
-from .manifest import DATASET_MANIFEST_SCHEMA_V2, DatasetManifestSpec, ShardMetadata, load_dataset_manifest
+from .manifest import DATASET_MANIFEST_SCHEMA_V3, DatasetManifestSpec, ShardMetadata, load_dataset_manifest
 from .shards import read_shard_file
 
 _TENSOR_FIELDS = (
@@ -33,12 +34,18 @@ _TENSOR_FIELDS = (
     "success",
     "quality",
 )
-_VALIDITY_FIELDS = (
+_PIPELINE_VALIDITY_FIELDS = (
     "proposal_valid",
     "ik_valid",
     "collision_valid",
     "static_force_valid",
     "dynamic_valid",
+)
+_TARGET_VALIDITY_FIELDS = (
+    "kinematics_valid",
+    "pose_target_valid",
+    "joint_target_valid",
+    "fk_target_valid",
 )
 _PROVENANCE_FIELDS = (
     "frame",
@@ -52,7 +59,14 @@ _PROVENANCE_FIELDS = (
     "failure_reason",
 )
 _REQUIRED_SAMPLE_FIELDS = frozenset(
-    (*_TENSOR_FIELDS, *_VALIDITY_FIELDS, *_PROVENANCE_FIELDS, "object_id", "robot_name")
+    (
+        *_TENSOR_FIELDS,
+        *_PIPELINE_VALIDITY_FIELDS,
+        *_TARGET_VALIDITY_FIELDS,
+        *_PROVENANCE_FIELDS,
+        "object_id",
+        "robot_name",
+    )
 )
 
 
@@ -105,7 +119,7 @@ class DatasetArtifact:
         root: str | Path,
         *,
         manifest_file: str = "dataset_manifest.json",
-    ) -> "DatasetArtifact":
+    ) -> DatasetArtifact:
         """Open and fully verify a release artifact before exposing samples."""
 
         try:
@@ -146,9 +160,7 @@ class DatasetArtifact:
             verified_shards.append(VerifiedShard(metadata, path, tuple(validated)))
 
         expected_pairs = {
-            (split_name, robot_name)
-            for split_name in manifest.splits
-            for robot_name in manifest.robot_profile_hashes
+            (split_name, robot_name) for split_name in manifest.splits for robot_name in manifest.robot_profile_hashes
         }
         observed_pairs = {(shard.metadata.split, shard.metadata.robot_name) for shard in verified_shards}
         if observed_pairs != expected_pairs:
@@ -169,9 +181,9 @@ class DatasetArtifact:
 
     @staticmethod
     def _verify_release_contract(root: Path, manifest: DatasetManifestSpec) -> None:
-        if manifest.schema_version != DATASET_MANIFEST_SCHEMA_V2:
+        if manifest.schema_version != DATASET_MANIFEST_SCHEMA_V3:
             raise ConfigError(
-                f"unsupported dataset schema {manifest.schema_version!r}; expected {DATASET_MANIFEST_SCHEMA_V2!r}"
+                f"unsupported dataset schema {manifest.schema_version!r}; expected {DATASET_MANIFEST_SCHEMA_V3!r}"
             )
         if manifest.release_blocked:
             raise ConfigError("dataset manifest has release_blocked=True")
@@ -224,8 +236,7 @@ class DatasetArtifact:
             actual_hash = profile.content_hash()
             if actual_hash != expected_hash:
                 raise ConfigError(
-                    f"robot profile provenance mismatch for {robot_name}: "
-                    f"expected {expected_hash}, got {actual_hash}"
+                    f"robot profile provenance mismatch for {robot_name}: expected {expected_hash}, got {actual_hash}"
                 )
             contracts[robot_name] = RobotSampleContract(
                 profile_hash=actual_hash,
@@ -309,9 +320,7 @@ class DatasetArtifact:
             raise ConfigError(f"{label}.points must have shape [N, 3] with N >= 1")
         for field, shape in expected_shapes.items():
             if tuple(sample[field].shape) != shape:
-                raise ConfigError(
-                    f"{label}.{field} has shape {tuple(sample[field].shape)}, expected {shape}"
-                )
+                raise ConfigError(f"{label}.{field} has shape {tuple(sample[field].shape)}, expected {shape}")
 
         robot_name = sample["robot_name"]
         object_id = sample["object_id"]
@@ -320,12 +329,17 @@ class DatasetArtifact:
         if not isinstance(object_id, str) or object_id not in manifest.splits[shard.split]:
             raise ConfigError(f"{label} object {object_id!r} is not in split {shard.split!r}")
 
-        for field in _VALIDITY_FIELDS:
+        for field in (*_PIPELINE_VALIDITY_FIELDS, *_TARGET_VALIDITY_FIELDS):
             if not isinstance(sample[field], bool):
                 raise ConfigError(f"{label}.{field} must be bool")
-        flags = [bool(sample[field]) for field in _VALIDITY_FIELDS]
+        flags = [bool(sample[field]) for field in _PIPELINE_VALIDITY_FIELDS]
         if any(flags[position] and not flags[position - 1] for position in range(1, len(flags))):
             raise ConfigError(f"{label} has non-monotonic pipeline validity flags")
+
+        if bool(sample["kinematics_valid"]) and not (
+            bool(sample["pose_target_valid"]) and bool(sample["joint_target_valid"])
+        ):
+            raise ConfigError(f"{label} marks complete kinematics valid without valid pose and joint targets")
 
         success = float(sample["success"])
         if success not in {0.0, 1.0}:

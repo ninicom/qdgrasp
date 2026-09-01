@@ -86,6 +86,10 @@ def sample(robot_name: str = "leap_hand", object_id: str = "prim_box_01", *, joi
         "robot_name": robot_name,
         "robot_profile_hash": hashlib.sha256(f"profile:{robot_name}".encode()).hexdigest(),
         "joint_names": tuple(f"{robot_name}:joint_{index}" for index in range(joints)),
+        "kinematics_valid": True,
+        "pose_target_valid": True,
+        "joint_target_valid": True,
+        "fk_target_valid": True,
     }
 
 
@@ -110,7 +114,7 @@ def manifest_document(
     """A manifest the current schema accepts, with one shard entry."""
 
     return {
-        "schema": "qdgrasp/dataset-manifest/v2",
+        "schema": "qdgrasp/dataset-manifest/v3",
         "dataset_id": dataset_id,
         "generator_version": "characterization",
         "generator_commit": "0" * 40,

@@ -135,6 +135,7 @@ FINDINGS: tuple[Finding, ...] = (
             "measurements, because no sample carries target-validity flags"
         ),
         target="explicit validity masks, so a placeholder produces no geometric gradient",
+        status="closed",
     ),
     Finding(
         id="COR-05",
@@ -230,6 +231,7 @@ FINDINGS: tuple[Finding, ...] = (
             "packaged legacy namespace still holds exec/eval/unsafe loads"
         ),
         target="masked padding, config keys that either take effect or are refused, and a quarantined legacy surface",
+        blocked_on="R9: remove the duplicate models.data contract and complete the active-core static/package gates",
     ),
 )
 
@@ -260,7 +262,7 @@ PLANNED_SCHEMA_BUMPS: tuple[SchemaBump, ...] = (
     SchemaBump(
         artifact="dataset manifest",
         module="qdgrasp.dataset.manifest",
-        constant="DATASET_MANIFEST_SCHEMA_V2",
+        constant="DATASET_MANIFEST_SCHEMA",
         current="qdgrasp/dataset-manifest/v2",
         planned="qdgrasp/dataset-manifest/v3",
         finding="COR-04",

@@ -10,6 +10,7 @@ from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset.batch import GraspBatch
 from qdgrasp.dataset.loader import DgnOpenDataset
 from qdgrasp.dataset.shards import read_shard_file, write_shard_file
+from qdgrasp.engine.sampling import collate_samples
 
 
 def _make_dummy_samples(n: int = 4) -> list[dict[str, object]]:
@@ -26,6 +27,10 @@ def _make_dummy_samples(n: int = 4) -> list[dict[str, object]]:
                 "quality": torch.tensor(0.05),
                 "object_id": f"obj_{i}",
                 "robot_name": "leap_hand",
+                "kinematics_valid": True,
+                "pose_target_valid": True,
+                "joint_target_valid": True,
+                "fk_target_valid": True,
             }
         )
     return samples
@@ -54,6 +59,8 @@ def test_grasp_batch_collate_and_to() -> None:
     assert batch.palm_pos.shape == (4, 3)
     assert batch.palm_rot.shape == (4, 3, 3)
     assert len(batch.object_ids) == 4
+    assert bool(batch.kinematics_valid.all())
+    assert batch.pose_target_valid.dtype == torch.bool
 
     batch_pinned = batch.pin_memory()
     if torch.cuda.is_available():
@@ -77,12 +84,22 @@ def test_dgn_open_dataset_load_shards(verified_corpus) -> None:
         robot_name="leap_hand",
         point_count=256,
     )
-    assert len(subsampled) == 44
+    expected = next(
+        shard.num_samples
+        for shard in subsampled.manifest_spec.shards
+        if shard.split == "train" and shard.robot_name == "leap_hand"
+    )
+    assert len(subsampled) == expected
     item = subsampled[0]
     assert item["points"].shape == (256, 3)
     assert bool(item["point_mask"].all()), "a subsampled cloud has no padding to mask"
     assert item["robot_name"] == "leap_hand"
     assert item["robot_profile_hash"] == subsampled.manifest_spec.robot_profile_hashes["leap_hand"]
+    assert {"kinematics_valid", "pose_target_valid", "joint_target_valid", "fk_target_valid"} <= set(item)
+    batch = collate_samples([subsampled[0], subsampled[1]])
+    for field in ("kinematics_valid", "pose_target_valid", "joint_target_valid", "fk_target_valid"):
+        assert batch[field].shape == (2,)
+        assert batch[field].dtype == torch.bool
 
     padded = DgnOpenDataset(
         dataset_root=verified_corpus,

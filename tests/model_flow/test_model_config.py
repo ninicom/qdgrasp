@@ -138,6 +138,10 @@ def test_training_and_validation_steps_run(leap: RobotSpec) -> None:
         "joint_angles": torch.zeros(3, joints),
         "fingertip_positions": torch.zeros(3, len(leap.fingertip_links), 3),
         "success": torch.tensor([1.0, 0.0, 1.0]),
+        "kinematics_valid": torch.ones(3, dtype=torch.bool),
+        "pose_target_valid": torch.ones(3, dtype=torch.bool),
+        "joint_target_valid": torch.ones(3, dtype=torch.bool),
+        "fk_target_valid": torch.ones(3, dtype=torch.bool),
     }
     loss = module.training_step(batch)
     assert loss.requires_grad and torch.isfinite(loss)
@@ -150,6 +154,21 @@ def test_an_incomplete_batch_is_named_not_guessed(leap: RobotSpec) -> None:
     module = QDGraspFlow(FlowModelSettings(), leap)
     with pytest.raises(KeyError, match="fingertip_positions"):
         module.training_step({"points": torch.randn(1, 32, 3)})
+
+
+def test_training_refuses_targets_without_validity_contract(leap: RobotSpec) -> None:
+    module = QDGraspFlow(FlowModelSettings(), leap)
+    joints = len(leap.actuated_joint_names)
+    batch = {
+        "points": torch.randn(1, 32, 3),
+        "palm_pos": torch.zeros(1, 3),
+        "palm_rot": torch.eye(3).unsqueeze(0),
+        "joint_angles": torch.zeros(1, joints),
+        "fingertip_positions": torch.zeros(1, len(leap.fingertip_links), 3),
+        "success": torch.zeros(1),
+    }
+    with pytest.raises(KeyError, match="pose_target_valid"):
+        module.training_step(batch)
 
 
 def test_the_graph_travels_with_the_weights(leap: RobotSpec) -> None:

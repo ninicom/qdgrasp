@@ -92,9 +92,7 @@ def outcome_to_sample(
     )
     if any(stage_flags[index] and not stage_flags[index - 1] for index in range(1, 5)):
         raise RuntimeError("pipeline outcome has non-monotonic stage flags")
-    if outcome.dynamic_valid and (
-        outcome.dynamic_validation is None or not outcome.dynamic_validation.passed
-    ):
+    if outcome.dynamic_valid and (outcome.dynamic_validation is None or not outcome.dynamic_validation.passed):
         raise RuntimeError("dynamic-valid outcome lacks passing rollout evidence")
 
     is_success = bool(outcome.dynamic_valid)
@@ -171,10 +169,6 @@ def outcome_to_sample(
     }
 
 
-
-
-
-
 def generate_tiny_dataset(
     output_dir: str | Path = "datasets/dgn-open-tiny",
     base_seed: int = 42,
@@ -189,6 +183,28 @@ def generate_tiny_dataset(
     produces is ``non_release``: reproducing history does not give the pause an
     exception, and does not create new three-hand coverage.
     """
+    repo_root = Path(__file__).resolve().parent.parent
+    generator_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    dirty_output = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=all"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if dirty_output:
+        changed = ", ".join(line[3:] for line in dirty_output.splitlines()[:8])
+        raise RuntimeError(
+            "refusing to generate a release corpus from a dirty worktree; "
+            f"commit or remove the pending paths first ({changed})"
+        )
+
     recipe = get_recipe(recipe_id)
     if historical_reproduction is None:
         profiles = DEFAULT_ROBOT_PROFILES
@@ -198,10 +214,7 @@ def generate_tiny_dataset(
         profiles = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
         scope = historical_reproduction_scope(historical_reproduction, profiles)
     robot_configs = [(name.removesuffix(".yaml"), name) for name in profiles]
-    robot_specs = {
-        name: RobotSpec.from_config(cfg_name, sample_anchors=False)
-        for name, cfg_name in robot_configs
-    }
+    robot_specs = {name: RobotSpec.from_config(cfg_name, sample_anchors=False) for name, cfg_name in robot_configs}
     for spec in robot_specs.values():
         validate_profile_for_release(spec.config)
 
@@ -223,10 +236,7 @@ def generate_tiny_dataset(
         ("prim_capsule_01", "primitive", "capsule", generate_capsule, {}),
     ]
     # 2. Generate 4 superquadrics
-    sq_defs = [
-        (f"sq_{i:02d}", "superquadric", "superquadric", generate_superquadric, {})
-        for i in range(1, 5)
-    ]
+    sq_defs = [(f"sq_{i:02d}", "superquadric", "superquadric", generate_superquadric, {}) for i in range(1, 5)]
     # 3. Generate 4 compound convex shapes
     comp_defs = [
         ("comp_t_shape_01", "compound", "t_shape", generate_compound_convex, {"shape_family": "t_shape"}),
@@ -254,10 +264,13 @@ def generate_tiny_dataset(
         objects.append(manifest)
         meshes[obj_id] = mesh
 
+    benchmark_objects = tuple(objects)
+
     # Positive-control objects: same generator contract as every other object,
     # but each one is only ever paired with the hand it was calibrated for.
     positive_control: dict[str, dict[str, Any]] = {}
-    for robot_name, variants in POSITIVE_CONTROL_VARIANTS.items():
+    for robot_name in robot_specs:
+        variants = POSITIVE_CONTROL_VARIANTS[robot_name]
         for obj_id, params in variants:
             bar = build_grasp_bar(robot_name, **params)
             inertia_scale = bar.mass / float(bar.mesh.volume)
@@ -282,19 +295,38 @@ def generate_tiny_dataset(
                 "budget": POSITIVE_CONTROL_BUDGETS[robot_name],
             }
             if positive_control[obj_id]["budget"] > bar.candidate_budget:
-                raise RuntimeError(
-                    f"positive-control budget for {robot_name} exceeds its validated ceiling"
-                )
+                raise RuntimeError(f"positive-control budget for {robot_name} exceeds its validated ceiling")
+
+    # A normal release contains only the active hands.  Remove exact files left
+    # by an earlier declared three-hand reproduction so the release-file audit
+    # cannot mistake historical Shadow artifacts for active scope.
+    for robot_name in sorted(set(POSITIVE_CONTROL_VARIANTS) - set(robot_specs)):
+        for split_name in ("train", "val"):
+            (shards_dir / f"{split_name}_{robot_name}.pt").unlink(missing_ok=True)
+        for object_id, _params in POSITIVE_CONTROL_VARIANTS[robot_name]:
+            (obj_dir / f"{object_id}.obj").unlink(missing_ok=True)
+            (obj_dir / f"{object_id}.manifest.json").unlink(missing_ok=True)
 
     # The locked Phase-5 generalisation claim holds the complete compound
     # family out.  The splitter assigns whole families, never members within a
     # shape, so this physical split now agrees with the claim it carries.
     splits = create_object_family_splits(
-        objects,
+        benchmark_objects,
         val_fraction=0.25,
         seed=base_seed,
         val_families=("compound",),
     )
+    # Calibration controls are outside the protocol's object matrix.  Each hand
+    # has two independently generated controls so both physical shards retain a
+    # measured positive/negative health check without leaking a benchmark
+    # family across the train/validation boundary.
+    for robot_name in robot_specs:
+        variants = POSITIVE_CONTROL_VARIANTS[robot_name]
+        if len(variants) != 2:
+            raise RuntimeError(f"{robot_name} must declare exactly two positive-control variants")
+        splits["train"].append(variants[0][0])
+        splits["val"].append(variants[1][0])
+    splits = {name: sorted(object_ids) for name, object_ids in splits.items()}
     logger.info(f"Split objects: train={splits['train']}, val={splits['val']}")
 
     robot_hashes = {name: spec.config.content_hash() for name, spec in robot_specs.items()}
@@ -331,7 +363,7 @@ def generate_tiny_dataset(
                     num_candidates = control["budget"]
                     object_pos = control["object_pos"]
 
-                outcomes, reasons = run_pipeline_chunk(
+                outcomes, _reasons = run_pipeline_chunk(
                     recipe_id=recipe_id,
                     spec=spec,
                     mesh=mesh,
@@ -371,19 +403,14 @@ def generate_tiny_dataset(
                 recipe_id=recipe_id,
             )
             shard_metas.append(shard_meta)
-            logger.info(
-                f"Generated {shard_filename}: {len(samples)} samples ({positives} pos), sha256={sha[:12]}..."
-            )
+            logger.info(f"Generated {shard_filename}: {len(samples)} samples ({positives} pos), sha256={sha[:12]}...")
 
     # Top-level dataset manifest
     env_info = environment_info().to_dict()
     object_hashes = {
-        obj.object_id: hashlib.sha256(
-            (obj_dir / f"{obj.object_id}.manifest.json").read_bytes()
-        ).hexdigest()
+        obj.object_id: hashlib.sha256((obj_dir / f"{obj.object_id}.manifest.json").read_bytes()).hexdigest()
         for obj in objects
     }
-    repo_root = Path(__file__).resolve().parent.parent
     source_names = [
         "scripts/generate_dgn_open_tiny.py",
         "qdgrasp/dataset/manifest.py",
@@ -401,37 +428,11 @@ def generate_tiny_dataset(
         "qdgrasp/dataset/pipeline/observers/contact_load.py",
         "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py",
     ]
-    source_hashes = {
-        name: hashlib.sha256((repo_root / name).read_bytes()).hexdigest()
-        for name in source_names
-    }
+    source_hashes = {name: hashlib.sha256((repo_root / name).read_bytes()).hexdigest() for name in source_names}
     release_blocked = any(
-        shard.positive_samples == 0 or shard.positive_samples == shard.num_samples
-        for shard in shard_metas
+        shard.positive_samples == 0 or shard.positive_samples == shard.num_samples for shard in shard_metas
     )
-    generator_commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=repo_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    # Check if tracked source files have uncommitted changes
-    dirty_output = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
-        cwd=repo_root,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    # Exclude dataset manifest itself from dirty flag
-    source_dirty = any(
-        not line.strip().endswith("dataset_manifest.json")
-        for line in dirty_output.splitlines()
-        if line.strip()
-    )
-    generator_worktree_dirty = source_dirty
-    release_blocked = release_blocked or generator_worktree_dirty
+    generator_worktree_dirty = False
     # A historical reproduction can never be release evidence, whatever else
     # the shard statistics say.
     if scope is not None and scope.non_release:

@@ -16,7 +16,6 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_MEMBERS = {
     "qdgrasp/assets/derived/allegro_hand_description_right_A.normalized.urdf",
@@ -25,6 +24,7 @@ REQUIRED_MEMBERS = {
     "qdgrasp/presets/robots/wonik_allegro.yaml",
     "qdgrasp/presets/robots/shadow_hand.yaml",
 }
+FORBIDDEN_PREFIXES = ("qdgrasp/data/", "qdgrasp/nn/")
 ASSET_ROOT = ROOT / ".references" / "robot-assets"
 
 
@@ -32,8 +32,24 @@ def build_wheel(output_dir: Path) -> Path:
     uv = shutil.which("uv")
     if uv is None:
         raise RuntimeError("uv is required to build the wheel check")
+    # Build from a fresh, minimal source tree.  Setuptools' reusable ``build/``
+    # directory can retain packages that were removed from discovery and then
+    # silently copy them into a later wheel, defeating a package quarantine.
+    source_root = output_dir.parent / "source"
+    source_root.mkdir(parents=True)
+    for filename in ("pyproject.toml", "README.md", "LICENSE", "NOTICE"):
+        shutil.copy2(ROOT / filename, source_root / filename)
+    shutil.copytree(
+        ROOT / "qdgrasp",
+        source_root / "qdgrasp",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
     result = subprocess.run(
-        [uv, "build", "--wheel", "--out-dir", str(output_dir)], cwd=ROOT, capture_output=True, text=True
+        [uv, "build", "--wheel", "--out-dir", str(output_dir)],
+        cwd=source_root,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if result.returncode:
         raise RuntimeError(f"wheel build failed: {result.stderr.strip() or result.stdout.strip()}")
@@ -49,6 +65,9 @@ def verify_members(wheel: Path) -> None:
     missing = sorted(REQUIRED_MEMBERS - members)
     if missing:
         raise RuntimeError(f"wheel is missing required nested package data: {missing}")
+    forbidden = sorted(member for member in members if member.startswith(FORBIDDEN_PREFIXES))
+    if forbidden:
+        raise RuntimeError(f"wheel contains quarantined legacy namespaces: {forbidden[:20]}")
 
 
 def verify_installed_profile(wheel: Path, install_root: Path, cwd: Path) -> None:
@@ -71,6 +90,7 @@ def verify_installed_profile(wheel: Path, install_root: Path, cwd: Path) -> None
         cwd=cwd,
         capture_output=True,
         text=True,
+        check=False,
     )
     if install.returncode:
         raise RuntimeError(f"could not install wheel into isolated target: {install.stderr.strip()}")
@@ -89,7 +109,7 @@ if spec.config.name != 'leap_hand':
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(install_root)
     environment["QDGRASP_ROBOT_ASSETS_ROOT"] = str(ASSET_ROOT)
-    check = subprocess.run([sys.executable, "-c", code], cwd=cwd, env=environment)
+    check = subprocess.run([sys.executable, "-c", code], cwd=cwd, env=environment, check=False)
     if check.returncode:
         raise RuntimeError("installed wheel cannot discover and load the LEAP robot profile")
 

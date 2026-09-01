@@ -47,8 +47,12 @@ qdgrasp = "qdgrasp.cli:main"
 Repository = "https://github.com/ninicom/qdgrasp"
 Issues = "https://github.com/ninicom/qdgrasp/issues"
 
+[tool.setuptools]
+include-package-data = false
+
 [tool.setuptools.packages.find]
 include = ["qdgrasp*"]
+exclude = ["qdgrasp.data", "qdgrasp.data.*", "qdgrasp.nn", "qdgrasp.nn.*"]
 
 [tool.setuptools.package-data]
 qdgrasp = [

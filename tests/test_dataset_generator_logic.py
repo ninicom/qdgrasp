@@ -8,9 +8,7 @@ import numpy as np
 import pytest
 import trimesh
 
-from qdgrasp.config import ConfigError
-from qdgrasp.dataset.pipeline.contracts import PipelineOutcome
-
+from qdgrasp.dataset.pipeline.contracts import KinematicSolution, PipelineOutcome
 
 _GENERATOR_SPEC = importlib.util.spec_from_file_location(
     "generate_dgn_open_tiny",
@@ -55,6 +53,10 @@ def test_static_pass_dynamic_fail_remains_negative_and_points_use_object_frame()
     assert float(sample["success"]) == 0.0
     assert float(sample["quality"]) == 0.0
     assert not sample["dynamic_valid"]
+    assert not sample["kinematics_valid"]
+    assert not sample["pose_target_valid"]
+    assert not sample["joint_target_valid"]
+    assert not sample["fk_target_valid"]
     assert sample["frame"] == "object"
     points = sample["points"].numpy()
     assert np.all(np.abs(points) <= 0.025001)
@@ -83,3 +85,43 @@ def test_generator_rejects_dynamic_positive_without_rollout_evidence():
             robot_name="mock",
             recipe_id="surface_fixed_v1",
         )
+
+
+def test_nonconverged_solver_output_remains_an_explicit_measured_target():
+    kinematics = KinematicSolution(
+        q=np.zeros(2),
+        palm_pos=np.array([0.01, 0.02, 0.03]),
+        palm_rot=np.eye(3),
+        achieved_contacts=np.zeros((2, 3)),
+        achieved_normals=np.zeros((2, 3)),
+        position_residuals=np.ones(2),
+        normal_residuals=np.ones(2),
+        converged=np.array(False),
+        reason=np.array("max_iter"),
+    )
+    outcome = PipelineOutcome(
+        proposal_valid=True,
+        ik_valid=False,
+        collision_valid=False,
+        static_force_valid=False,
+        dynamic_valid=False,
+        failure_stage="ik",
+        failure_reason="max_iter",
+        recipe_id="surface_fixed_v1",
+        kinematics=kinematics,
+    )
+
+    sample = outcome_to_sample(
+        outcome,
+        spec=_spec(),
+        mesh=trimesh.creation.box(extents=(0.05, 0.05, 0.05)),
+        rng=np.random.default_rng(42),
+        object_id="box",
+        robot_name="mock",
+        recipe_id="surface_fixed_v1",
+    )
+
+    assert not sample["ik_valid"]
+    assert all(
+        sample[name] for name in ("kinematics_valid", "pose_target_valid", "joint_target_valid", "fk_target_valid")
+    )

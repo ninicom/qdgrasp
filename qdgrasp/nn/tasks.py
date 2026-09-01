@@ -1962,9 +1962,9 @@ def parse_model(d, ch, verbose=True):
 
     restricted = _SafeLoad.restricted()
     if act:
-        # redefine default activation, i.e. Conv.default_act = torch.nn.SiLU(). Under restricted loading, resolve the
-        # spec without eval() (see _SafeLoad.activation).
-        Conv.default_act = _SafeLoad.activation(act) if restricted else eval(act)
+        # Redefine the default activation without executing the model YAML.
+        # The resolver permits only torch.nn classes with literal arguments.
+        Conv.default_act = _SafeLoad.activation(act)
         if verbose:
             LOGGER.info(f"{colorstr('activation:')} {act}")  # print
 
@@ -2216,12 +2216,18 @@ def guess_model_task(model):
             return cfg2task(model)
     # Guess from PyTorch model
     if isinstance(model, torch.nn.Module):  # PyTorch model
-        for x in "model.args", "model.model.args", "model.model.model.args":
+        def nested_attribute(root: object, path: str) -> object:
+            value = root
+            for attribute in path.split("."):
+                value = getattr(value, attribute)
+            return value
+
+        for x in "args", "model.args", "model.model.args":
             with contextlib.suppress(Exception):
-                return eval(x)["task"]  # nosec B307: safe eval of known attribute paths
-        for x in "model.yaml", "model.model.yaml", "model.model.model.yaml":
+                return nested_attribute(model, x)["task"]
+        for x in "yaml", "model.yaml", "model.model.yaml":
             with contextlib.suppress(Exception):
-                return cfg2task(eval(x))  # nosec B307: safe eval of known attribute paths
+                return cfg2task(nested_attribute(model, x))
         for m in model.modules():
             if isinstance(m, SemanticSegment):
                 return "semantic"

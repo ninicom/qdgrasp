@@ -126,7 +126,7 @@ def load_shard(root: Path, ref: ShardRef, *, verify: bool = True) -> list[dict]:
                 f"shard {ref.filename} hashes to {actual}, the manifest says {ref.sha256}; "
                 "the dataset and its manifest describe different data"
             )
-    samples = torch.load(path, weights_only=False)
+    samples = torch.load(path, map_location="cpu", weights_only=True)
     if len(samples) != ref.num_samples:
         raise DatasetError(f"shard {ref.filename} holds {len(samples)} samples, the manifest says {ref.num_samples}")
     for index, sample in enumerate(samples):

@@ -8,7 +8,10 @@ name: phase5-dgn-open-tiny-v2
 dataset_id: dgn-open-tiny-v1
 
 object_families:
+  comp_dumbbell_01: compound
+  comp_l_shape_01: compound
   comp_t_shape_01: compound
+  comp_t_shape_02: compound
   prim_box_01: primitive
   prim_capsule_01: primitive
   prim_cylinder_01: primitive
@@ -29,9 +32,12 @@ splits:
     - sq_01
     - sq_02
     - sq_03
-  val_objects:
-    - comp_t_shape_01
     - sq_04
+  val_objects:
+    - comp_dumbbell_01
+    - comp_l_shape_01
+    - comp_t_shape_01
+    - comp_t_shape_02
   heldout_family: compound
   heldout_embodiment:
     train_hand: leap_hand

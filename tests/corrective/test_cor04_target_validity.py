@@ -25,9 +25,9 @@ VALIDITY_FIELDS = ("kinematics_valid", "pose_target_valid", "joint_target_valid"
 
 @characterization("COR-04", note="samples carry no validity flags")
 def test_a_sample_says_which_of_its_targets_are_measurements() -> None:
-    from qdgrasp.models.data import FlowDataset
+    from qdgrasp.dataset.loader import DgnOpenDataset
 
-    dataset = FlowDataset(DATASET, split="train", robot="leap_hand")
+    dataset = DgnOpenDataset(DATASET, split="train", robot_name="leap_hand")
     assert len(dataset) > 0
     first = dataset[0]
 
@@ -58,6 +58,7 @@ def test_adding_a_placeholder_does_not_change_the_pose_loss() -> None:
     fingertips = robot.fingertip_positions(palm_pos, palm_rot, joints)
     success = torch.tensor([1.0, 0.0])
     noise = torch.randn(2, model.flow_config.state_dimension, generator=torch.Generator().manual_seed(2))
+    valid = torch.tensor([True, False])
 
     def palm_term(count: int) -> torch.Tensor:
         _prediction, losses = forward_and_loss(
@@ -72,6 +73,10 @@ def test_adding_a_placeholder_does_not_change_the_pose_loss() -> None:
             success=success[:count],
             generator=torch.Generator().manual_seed(3),
             sample_noise=noise[:count],
+            kinematics_valid=valid[:count],
+            pose_target_valid=valid[:count],
+            joint_target_valid=valid[:count],
+            fk_target_valid=valid[:count],
         )
         return losses.terms["palm_translation"].detach()
 

@@ -9,12 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from qdgrasp.config.schema import ConfigError
 from qdgrasp.config.loader import load_robot_config
+from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset import DatasetArtifact
-from qdgrasp.dataset.manifest import DATASET_MANIFEST_SCHEMA_V2
-from qdgrasp.objects.manifest import load_object_asset
+from qdgrasp.dataset.manifest import DATASET_MANIFEST_SCHEMA_V3
 from qdgrasp.dataset.shards import read_shard_file
+from qdgrasp.objects.manifest import load_object_asset
 
 
 def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
@@ -24,11 +24,8 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
     manifest_path = artifact.manifest_path
     manifest = artifact.manifest
 
-    if manifest.schema_version != DATASET_MANIFEST_SCHEMA_V2:
-        raise ConfigError(
-            f"release manifest must use {DATASET_MANIFEST_SCHEMA_V2}, "
-            f"got {manifest.schema_version}"
-        )
+    if manifest.schema_version != DATASET_MANIFEST_SCHEMA_V3:
+        raise ConfigError(f"release manifest must use {DATASET_MANIFEST_SCHEMA_V3}, got {manifest.schema_version}")
     if manifest.recipe_id == "legacy" or manifest.proposal_module == "legacy":
         raise ConfigError("dataset manifest lacks recipe/module provenance")
     if not manifest.generator_source_hashes:
@@ -40,8 +37,7 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         raise ConfigError("dataset manifest has release_blocked=True")
     if manifest.invalidated:
         raise ConfigError(
-            "dataset manifest is marked invalidated: "
-            f"{manifest.invalidation_reason or 'no reason recorded'}"
+            f"dataset manifest is marked invalidated: {manifest.invalidation_reason or 'no reason recorded'}"
         )
     if manifest.generator_commit == "legacy" or manifest.generator_worktree_dirty:
         raise ConfigError("dataset was not generated from a recorded clean commit")
@@ -112,50 +108,63 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         samples = read_shard_file(shard_p, expected_sha256=shard.sha256)
         if len(samples) != shard.num_samples:
             raise ConfigError(
-                f"sample count mismatch on {shard.filename}: "
-                f"manifest={shard.num_samples}, actual={len(samples)}"
+                f"sample count mismatch on {shard.filename}: manifest={shard.num_samples}, actual={len(samples)}"
             )
         actual_positives = 0
         for sample_index, sample in enumerate(samples):
             required = {
-                "success", "dynamic_valid", "static_force_valid", "collision_valid",
-                "ik_valid", "proposal_valid", "recipe_id", "frame",
-                "proposal_module", "solver_module", "certifier_version",
-                "dynamic_protocol_version", "success_schema_version",
-                "object_id", "robot_name", "failure_stage", "failure_reason",
+                "success",
+                "dynamic_valid",
+                "static_force_valid",
+                "collision_valid",
+                "ik_valid",
+                "proposal_valid",
+                "recipe_id",
+                "frame",
+                "proposal_module",
+                "solver_module",
+                "certifier_version",
+                "dynamic_protocol_version",
+                "success_schema_version",
+                "object_id",
+                "robot_name",
+                "failure_stage",
+                "failure_reason",
+                "kinematics_valid",
+                "pose_target_valid",
+                "joint_target_valid",
+                "fk_target_valid",
             }
             missing = sorted(required - set(sample))
             if missing:
-                raise ConfigError(
-                    f"sample {sample_index} in {shard.filename} lacks {missing}"
-                )
+                raise ConfigError(f"sample {sample_index} in {shard.filename} lacks {missing}")
             success = bool(float(sample["success"]) > 0.5)
             dynamic_valid = bool(sample["dynamic_valid"])
             if success != dynamic_valid:
-                raise ConfigError(
-                    f"sample {sample_index} in {shard.filename} has success/dynamic mismatch"
-                )
+                raise ConfigError(f"sample {sample_index} in {shard.filename} has success/dynamic mismatch")
             if success and not all(
                 bool(sample[field])
                 for field in (
-                    "proposal_valid", "ik_valid", "collision_valid",
-                    "static_force_valid", "dynamic_valid",
+                    "proposal_valid",
+                    "ik_valid",
+                    "collision_valid",
+                    "static_force_valid",
+                    "dynamic_valid",
                 )
             ):
-                raise ConfigError(
-                    f"positive sample {sample_index} in {shard.filename} skipped a stage"
-                )
+                raise ConfigError(f"positive sample {sample_index} in {shard.filename} skipped a stage")
             stage_flags = [
                 bool(sample[field])
                 for field in (
-                    "proposal_valid", "ik_valid", "collision_valid",
-                    "static_force_valid", "dynamic_valid",
+                    "proposal_valid",
+                    "ik_valid",
+                    "collision_valid",
+                    "static_force_valid",
+                    "dynamic_valid",
                 )
             ]
             if any(stage_flags[index] and not stage_flags[index - 1] for index in range(1, 5)):
-                raise ConfigError(
-                    f"sample {sample_index} in {shard.filename} has non-monotonic stage flags"
-                )
+                raise ConfigError(f"sample {sample_index} in {shard.filename} has non-monotonic stage flags")
             expected_failure_stage = next(
                 (
                     stage
@@ -173,16 +182,9 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
             else:
                 stage_matches = actual_failure_stage == expected_failure_stage
             if not stage_matches:
-                raise ConfigError(
-                    f"sample {sample_index} in {shard.filename} has inconsistent failure stage"
-                )
-            if (
-                sample["robot_name"] != shard.robot_name
-                or sample["object_id"] not in manifest.splits[shard.split]
-            ):
-                raise ConfigError(
-                    f"sample {sample_index} in {shard.filename} has split/robot drift"
-                )
+                raise ConfigError(f"sample {sample_index} in {shard.filename} has inconsistent failure stage")
+            if sample["robot_name"] != shard.robot_name or sample["object_id"] not in manifest.splits[shard.split]:
+                raise ConfigError(f"sample {sample_index} in {shard.filename} has split/robot drift")
             sample_provenance = (
                 sample["recipe_id"],
                 sample["proposal_module"],
@@ -202,9 +204,7 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
                 or sample["frame"] != "object"
                 or sample["success_schema_version"] != "dynamic-only-v1"
             ):
-                raise ConfigError(
-                    f"sample {sample_index} in {shard.filename} has provenance/frame drift"
-                )
+                raise ConfigError(f"sample {sample_index} in {shard.filename} has provenance/frame drift")
             actual_positives += int(success)
         if actual_positives != shard.positive_samples:
             raise ConfigError(
@@ -220,9 +220,7 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
             raise ConfigError(f"shard {shard.filename} has 0 negative samples")
 
     expected_pairs = {
-        (split_name, robot_name)
-        for split_name in manifest.splits
-        for robot_name in manifest.robot_profile_hashes
+        (split_name, robot_name) for split_name in manifest.splits for robot_name in manifest.robot_profile_hashes
     }
     if observed_pairs != expected_pairs:
         raise ConfigError(
@@ -236,10 +234,16 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
 
     repo_root = root.parent.parent
     try:
-        in_repo = subprocess.run(
-            ["git", "rev-parse", "--is-inside-work-tree"], cwd=str(repo_root),
-            capture_output=True, text=True,
-        ).returncode == 0
+        in_repo = (
+            subprocess.run(
+                ["git", "rev-parse", "--is-inside-work-tree"],
+                cwd=str(repo_root),
+                capture_output=True,
+                text=True,
+                check=False,
+            ).returncode
+            == 0
+        )
     except FileNotFoundError:
         in_repo = False
     for source_name, expected_hash in manifest.generator_source_hashes.items():
@@ -259,6 +263,7 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
             cwd=str(repo_root),
             capture_output=True,
             text=True,
+            check=False,
         )
         if commit_check.returncode != 0:
             raise ConfigError(f"unknown generator commit: {manifest.generator_commit}")
@@ -269,20 +274,15 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         expected_release_relative.add(Path("objects") / f"{obj_id}.manifest.json")
         expected_release_relative.add(Path("objects") / f"{obj_id}.obj")
     actual_release_relative = {Path("dataset_manifest.json")}
+    actual_release_relative.update(path.relative_to(root) for path in (root / "shards").glob("*.pt"))
     actual_release_relative.update(
-        path.relative_to(root) for path in (root / "shards").glob("*.pt")
-    )
-    actual_release_relative.update(
-        path.relative_to(root)
-        for pattern in ("*.manifest.json", "*.obj")
-        for path in (root / "objects").glob(pattern)
+        path.relative_to(root) for pattern in ("*.manifest.json", "*.obj") for path in (root / "objects").glob(pattern)
     )
     stale = actual_release_relative - expected_release_relative
     missing = expected_release_relative - actual_release_relative
     if stale or missing:
         raise ConfigError(
-            f"release file set mismatch: stale={sorted(map(str, stale))}, "
-            f"missing={sorted(map(str, missing))}"
+            f"release file set mismatch: stale={sorted(map(str, stale))}, missing={sorted(map(str, missing))}"
         )
 
     # Check ignore and tracking status for every released artifact.
@@ -294,14 +294,20 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         for release_file in release_files if in_repo else ():
             relative = release_file.relative_to(repo_root)
             res_ignore = subprocess.run(
-                ["git", "check-ignore", "--no-index", "-q", str(relative)], cwd=str(repo_root),
-                capture_output=True, text=True,
+                ["git", "check-ignore", "--no-index", "-q", str(relative)],
+                cwd=str(repo_root),
+                capture_output=True,
+                text=True,
+                check=False,
             )
             if res_ignore.returncode == 0:
                 raise ConfigError(f"release artifact is ignored: {relative}")
             res_tracked = subprocess.run(
-                ["git", "ls-files", "--error-unmatch", str(relative)], cwd=str(repo_root),
-                capture_output=True, text=True,
+                ["git", "ls-files", "--error-unmatch", str(relative)],
+                cwd=str(repo_root),
+                capture_output=True,
+                text=True,
+                check=False,
             )
             if res_tracked.returncode != 0:
                 raise ConfigError(f"release artifact is not tracked: {relative}")
@@ -326,7 +332,7 @@ def main() -> None:
     try:
         summary = audit_dataset_manifest(args.root)
         print(json.dumps(summary, indent=2, sort_keys=True))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - CLI gate reports one fail-closed verdict
         print(f"Audit FAIL: {exc}", file=sys.stderr)
         sys.exit(1)
 

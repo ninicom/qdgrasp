@@ -13,6 +13,8 @@ from .artifact_io import atomic_write_text, validate_relative_artifact_path
 
 DATASET_MANIFEST_SCHEMA_V1 = "qdgrasp/dataset-manifest/v1"
 DATASET_MANIFEST_SCHEMA_V2 = "qdgrasp/dataset-manifest/v2"
+DATASET_MANIFEST_SCHEMA_V3 = "qdgrasp/dataset-manifest/v3"
+DATASET_MANIFEST_SCHEMA = DATASET_MANIFEST_SCHEMA_V3
 
 RelativeArtifactPath = Annotated[str, AfterValidator(validate_relative_artifact_path)]
 Sha256Hex = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
@@ -32,7 +34,7 @@ class ShardMetadata(BaseModel):
     recipe_id: str = "legacy"
 
     @model_validator(mode="after")
-    def _positive_count_fits_shard(self) -> "ShardMetadata":
+    def _positive_count_fits_shard(self) -> ShardMetadata:
         if self.positive_samples > self.num_samples:
             raise ValueError("positive_samples may not exceed num_samples")
         return self
@@ -43,8 +45,8 @@ class DatasetManifestSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
 
-    schema_version: Literal["qdgrasp/dataset-manifest/v2"] = Field(
-        default=DATASET_MANIFEST_SCHEMA_V2,
+    schema_version: Literal["qdgrasp/dataset-manifest/v3"] = Field(
+        default=DATASET_MANIFEST_SCHEMA_V3,
         alias="schema",
     )
     dataset_id: str
@@ -70,7 +72,7 @@ class DatasetManifestSpec(BaseModel):
     invalidation_reason: str = ""
 
     @model_validator(mode="after")
-    def _manifest_references_are_coherent(self) -> "DatasetManifestSpec":
+    def _manifest_references_are_coherent(self) -> DatasetManifestSpec:
         split_names = set(self.splits)
         if not split_names:
             raise ValueError("dataset manifest must declare at least one split")

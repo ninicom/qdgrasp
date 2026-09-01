@@ -71,14 +71,16 @@ def test_a_shard_that_drifted_from_the_manifest_is_refused(manifest, tmp_path: P
 
 
 def test_a_paused_hand_is_not_loaded_by_a_default_workload(manifest) -> None:
-    """ADR-0008: Shadow's shards stay in the dataset, out of default workloads."""
+    """ADR-0008: an active release contains no Shadow shard."""
 
-    assert any(entry["robot_name"] == "shadow_hand" for entry in manifest["shards"])
+    assert not any(entry["robot_name"] == "shadow_hand" for entry in manifest["shards"])
     assert all(ref.robot_name in ACTIVE_HANDS for ref in shard_refs(manifest, split="train"))
     with pytest.raises(DatasetError, match="paused by ADR-0008"):
         shard_refs(manifest, split="train", robots=["shadow_hand"])
-    # Only a declared diagnostic may reach it, and it has to say so.
-    assert shard_refs(manifest, split="train", robots=["shadow_hand"], allow_paused=True)
+    # A release cannot gain Shadow data merely because a caller opts into a
+    # diagnostic; only a separately declared historical artifact may hold it.
+    with pytest.raises(DatasetError, match="no shard"):
+        shard_refs(manifest, split="train", robots=["shadow_hand"], allow_paused=True)
 
 
 def test_an_invalidated_dataset_is_refused(manifest, tmp_path: Path) -> None:

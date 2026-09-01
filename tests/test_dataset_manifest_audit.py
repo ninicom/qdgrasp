@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +54,10 @@ def _sample(object_id: str, success: bool) -> dict[str, object]:
         "collision_valid": True,
         "ik_valid": True,
         "proposal_valid": True,
+        "kinematics_valid": True,
+        "pose_target_valid": True,
+        "joint_target_valid": True,
+        "fk_target_valid": True,
         "recipe_id": "surface_fixed_v1",
         "frame": "object",
         "proposal_module": "surface_fixed",
@@ -77,9 +82,7 @@ def _make_release(tmp_path: Path) -> tuple[Path, DatasetManifestSpec]:
 
     object_hashes = {}
     for index, object_id in enumerate(("train_box", "val_box")):
-        mesh, geoms, params, mass, inertia = generate_box(
-            np.random.default_rng(index), size_range=(0.04, 0.04)
-        )
+        mesh, geoms, params, mass, inertia = generate_box(np.random.default_rng(index), size_range=(0.04, 0.04))
         mesh_bytes, object_manifest = create_object_asset(
             object_id,
             "primitive",
@@ -96,9 +99,7 @@ def _make_release(tmp_path: Path) -> tuple[Path, DatasetManifestSpec]:
     shard_metadata = []
     for split, object_id in (("train", "train_box"), ("val", "val_box")):
         filename = f"shards/{split}_leap_hand.pt"
-        shard_hash = write_shard_file(
-            [_sample(object_id, True), _sample(object_id, False)], root / filename
-        )
+        shard_hash = write_shard_file([_sample(object_id, True), _sample(object_id, False)], root / filename)
         shard_metadata.append(
             ShardMetadata(
                 filename=filename,
@@ -121,9 +122,7 @@ def _make_release(tmp_path: Path) -> tuple[Path, DatasetManifestSpec]:
         environment_fingerprint={"python": "test"},
         robot_profile_hashes={"leap_hand": profile.content_hash()},
         object_manifest_hashes=object_hashes,
-        generator_source_hashes={
-            "scripts/fixture_generator.py": hashlib.sha256(source_path.read_bytes()).hexdigest()
-        },
+        generator_source_hashes={"scripts/fixture_generator.py": hashlib.sha256(source_path.read_bytes()).hexdigest()},
         recipe_id="surface_fixed_v1",
         proposal_module="surface_fixed",
         solver_module="fixed_contact_dls",
@@ -165,4 +164,45 @@ def test_manifest_audit_rejects_stale_release_file(tmp_path):
     (root / "shards" / "stale.pt").write_bytes(b"stale")
 
     with pytest.raises(ConfigError, match="release file set mismatch"):
+        audit_dataset_manifest(root)
+
+
+def test_manifest_v2_is_rejected_after_target_validity_became_mandatory(tmp_path):
+    root, _ = _make_release(tmp_path)
+    path = root / "dataset_manifest.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["schema"] = "qdgrasp/dataset-manifest/v2"
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="dataset-manifest/v3"):
+        audit_dataset_manifest(root)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda sample: sample.pop("pose_target_valid"), "pose_target_valid"),
+        (lambda sample: sample.update(joint_target_valid="yes"), "joint_target_valid must be bool"),
+        (
+            lambda sample: sample.update(
+                kinematics_valid=True,
+                pose_target_valid=False,
+                joint_target_valid=True,
+            ),
+            "complete kinematics",
+        ),
+    ],
+)
+def test_manifest_refuses_invalid_target_validity_contract(tmp_path, mutate, message):
+    root, manifest = _make_release(tmp_path)
+    metadata = manifest.shards[0]
+    shard_path = root / metadata.filename
+    samples = torch.load(shard_path, map_location="cpu", weights_only=True)
+    mutate(samples[0])
+    digest = write_shard_file(samples, shard_path)
+    replacement = metadata.model_copy(update={"sha256": digest})
+    updated = manifest.model_copy(update={"shards": [replacement, *manifest.shards[1:]]})
+    save_dataset_manifest(updated, root / "dataset_manifest.json")
+
+    with pytest.raises(ConfigError, match=message):
         audit_dataset_manifest(root)

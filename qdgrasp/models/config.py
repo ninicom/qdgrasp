@@ -269,24 +269,36 @@ class QDGraspFlow(nn.Module):
         metrics["total"] = losses.total.detach()
         metrics["palm_translation_m"] = masked_sample_mean(
             torch.linalg.norm(prediction.palm_translation - batch["palm_pos"], dim=-1),
-            batch.get("pose_target_valid"),
+            batch["pose_target_valid"],
             name="pose_target_valid",
         ).detach()
         metrics["palm_rotation_rad"] = masked_sample_mean(
             geodesic_rotation_error(prediction.palm_rotation, batch["palm_rot"]),
-            batch.get("pose_target_valid"),
+            batch["pose_target_valid"],
             name="pose_target_valid",
         ).detach()
         metrics["joint_abs_rad"] = masked_sample_mean(
             (prediction.joint_angles - batch["joint_angles"]).abs(),
-            batch.get("joint_target_valid"),
+            batch["joint_target_valid"],
             name="joint_target_valid",
         ).detach()
         return metrics
 
     def _forward_and_loss(self, batch: dict[str, torch.Tensor]):
         missing = sorted(
-            {"points", "palm_pos", "palm_rot", "joint_angles", "fingertip_positions", "success"} - set(batch)
+            {
+                "points",
+                "palm_pos",
+                "palm_rot",
+                "joint_angles",
+                "fingertip_positions",
+                "success",
+                "kinematics_valid",
+                "pose_target_valid",
+                "joint_target_valid",
+                "fk_target_valid",
+            }
+            - set(batch)
         )
         if missing:
             raise KeyError(f"batch is missing {missing}")
@@ -302,10 +314,10 @@ class QDGraspFlow(nn.Module):
             success=batch["success"],
             weights=LossWeights(),
             point_mask=batch.get("point_mask"),
-            kinematics_valid=batch.get("kinematics_valid"),
-            pose_target_valid=batch.get("pose_target_valid"),
-            joint_target_valid=batch.get("joint_target_valid"),
-            fk_target_valid=batch.get("fk_target_valid"),
+            kinematics_valid=batch["kinematics_valid"],
+            pose_target_valid=batch["pose_target_valid"],
+            joint_target_valid=batch["joint_target_valid"],
+            fk_target_valid=batch["fk_target_valid"],
         )
 
     def _settings_hash(self) -> str:
