@@ -2,17 +2,17 @@
 document_id: PLAN-V2
 document_type: plan
 title: QDGrasp — thư viện dexterous grasp cộng đồng dưới AGPL-3.0
-version: 4.5.0
+version: 4.6.0
 status: active
-date: 2026-08-22
+date: 2026-09-01
 approved_date: 2026-08-22
-revises: PLAN-V2@4.4.0
+revises: PLAN-V2@4.5.0
 supersedes: docs/archive/PLAN.pre-v2.md
 revision_record: docs/revisions/REV-20260821-001-plan-v2.md
-latest_revision_record: docs/revisions/REV-20260831-001-grasp-policy-mvp-closure.md
-revision_reason: Đóng Grasp Policy MVP tạm thời với artifact experimental_non_release và ghi kèm kết quả âm của phần học.
-necessity: N2
-impact: ContactRich v1 tiếp tục release-blocked; ContactRich-Active-Tiny cũng release-blocked cho tới khi CUDA gate và reviewer độc lập xong. P4 static/offline không bị chặn. MVP tạm thời đã đóng và không gỡ blocker nào.
+latest_revision_record: docs/revisions/REV-20260901-001-cross-component-remediation-plan.md
+revision_reason: Audit liên mô-đun phát hiện đường thực thi pickle, protocol không đi vào trainer, supervision/Flow semantics mâu thuẫn và artifact lifecycle không giữ đúng danh tính; phải thêm corrective track bắt buộc trước khi tiếp tục P4/P5 hoặc phát hành.
+necessity: N3
+impact: DGN-Open-Tiny hiện tại và Flow checkpoint/evidence cũ không được dùng làm release evidence; P4/P5 phải qua corrective gates ở §9. MVP round 3 giữ experimental_non_release và cần revalidation sau khi vá fingerprint/checkpoint path.
 ---
 
 # QDGrasp — kế hoạch triển khai chính thức
@@ -54,6 +54,12 @@ tier trong phạm vi LEAP + một cuboid trên bàn + quan sát state. Nó **kh�
 blocker nào ở trên, và số của nó không phải bằng chứng release hay bằng chứng
 GPU physics. Kết quả âm cần ghi kèm: trong phạm vi đó, controller prior một mình
 đã đạt cùng mức, nên MVP không chứng minh giá trị của phần học.
+
+Audit liên mô-đun ngày 2026-09-01 phát hiện các unit contract riêng lẻ có thể
+pass trong khi chuỗi dataset → protocol → model → runner → artifact sai nghĩa
+hoặc không an toàn. Corrective track bắt buộc tại **§9** có quyền chặn P4/P5 và
+release cho tới khi từng gate ở đó có bằng chứng mới. Nó không nới CUDA,
+independent-review, license hay release gate đã có.
 
 ## 1. Mục tiêu và quyết định nền
 
@@ -462,3 +468,317 @@ của database không thay thế license của từng mesh.
 - Exact Ultralytics API/config/CLI compatibility hoặc dùng thương hiệu YOLO.
 - Universal checkpoint cho mọi robot, MPS/XPU/NPU và exporter ngoài
   PyTorch/TorchScript/ONNX.
+
+## 9. Corrective remediation bắt buộc sau audit liên mô-đun 2026-09-01
+
+Mục này là corrective track có mức cần thiết `N3`. Nó được thêm vì audit đã
+tái hiện được lỗi an toàn và lỗi đúng-sai chỉ xuất hiện khi ghép nhiều subsystem;
+việc toàn bộ unit test hiện tại pass không phủ định các kết quả đó. Không được
+bắt đầu full training, chọn checkpoint, chạy held-out evaluation hoặc phát hành
+Flow/DGN trước khi các gate tương ứng trong mục này đóng.
+
+### 9.1 Baseline và trạng thái đóng băng
+
+| Kiểm tra | Kết quả tại audit | Cách đọc bắt buộc |
+|---|---:|---|
+| Full test suite | `1306 passed, 1 skipped, 93 subtests`, 23 warning | Regression hiện hữu pass; interaction contract bên dưới chưa được test |
+| Canonical DGN audit | `FAIL` | Ba source hash drift: `contact_force.py`, `mujoco_rollout.py`, `generate_dgn_open_tiny.py` |
+| Phase 5 input gate | LEAP `1/32`, Allegro `2/42` positive trong logical train view | Corpus chưa đủ tín hiệu để train; P5 phải dừng |
+| Protocol leakage probe | `12` sample `comp_*` ngoài protocol trên mỗi active hand | Public façade đang train physical split, không train protocol view |
+| Ruff | `514` finding, `329` auto-fixable | Chưa phải release gate dùng được; không auto-fix lẫn với semantic changes |
+| Mypy | `1480` finding toàn package; `112` trong core khi bỏ missing imports | Legacy/optional và core chưa có biên type-check rõ |
+
+Trạng thái bắt buộc ngay sau audit:
+
+- `datasets/dgn-open-tiny` là **non-release input** cho tới khi regenerate từ
+  clean commit và canonical audit pass. Không đổi hash manifest để hợp thức hóa
+  byte cũ mà không tái sinh dữ liệu.
+- Mọi Flow checkpoint/evidence sinh dưới joint parameterization, quality head
+  hoặc target-mask cũ là **superseded for release**. Chúng có thể giữ làm
+  artifact lịch sử nhưng không được so trực tiếp với run sau sửa.
+- Phase 4 overfit phải chạy lại sau khi sửa latent joint và quality objective.
+- Phase 5 giữ blocked cho tới khi data, protocol, Runner và CUDA gate đều pass.
+- MVP round 3 hiện khớp fingerprint của world hiện tại, nhưng vẫn giữ
+  `experimental_non_release`; evaluator/checkpoint guard phải được vá và
+  revalidate trước khi dùng lại. Nếu PPO distribution đổi, checkpoint PPO cũ
+  trở thành artifact lịch sử chứ không được migrate như cùng một policy.
+
+### 9.2 Registry các chuỗi lỗi phải khắc phục
+
+| ID | Mức | Chuỗi lỗi đã tái hiện | Kết quả đích |
+|---|---|---|---|
+| `COR-00` | S0 | Manifest cho phép absolute/escape path; shard và MVP checkpoint dùng `torch.load(weights_only=False)`; Phase 5 có `verify=False`; ContactRich dùng string-prefix containment | Một safe artifact I/O path, `weights_only=True`, schema/path bị ràng buộc và malicious reducer không chạy |
+| `COR-01` | S1 | Canonical audit, Phase 5 adapter và public loader dùng ba sample/manifest contract khác nhau; façade không gọi audit/gate | Một `DatasetArtifact.open_verified()` là entry point duy nhất cho audit, gate, façade và Runner |
+| `COR-02` | S1 | Physical splitter stratify bên trong shape nhưng tuyên bố family-heldout; protocol lọc hậu kỳ, suy family từ prefix và không đi vào trainer | `ProtocolDatasetView` materialize chính xác `(split, robot, object_id)` và fail trên dư/thiếu/leakage |
+| `COR-03` | S1 | Guard chống mixed robot nằm trong helper phụ; Runner dùng `default_collate`; LEAP-bound model nhận sample Allegro vì cùng 16 joint | Batch giữ robot/profile/joint-order identity và model assert hoặc group đúng graph |
+| `COR-04` | S1 | Generator dùng zero/identity cho missing kinematics; adapter bỏ validity flags; loss hồi quy mọi sample | Explicit target-validity masks; placeholder không tạo geometric gradient |
+| `COR-05` | S1 | `encode_target` ghi joint vật lý còn `decode` áp joint-limit `tanh`; flow loss và joint/FK loss kéo về hai nghiệm | Inverse parameterization có round-trip `<1e-5 rad` trên LEAP/Allegro |
+| `COR-06` | S1 | Quality head chỉ nhận observation; K grasp khác nhau có cùng score; test ranking chấp nhận toàn tie | Candidate-aware quality head và ranking test có positive/negative cùng observation |
+| `COR-07` | S1/S2 | Validation tiêu RNG train, đổi mode, metric phụ thuộc draw/batch size; EMA được cập nhật nhưng không dùng | RNG streams tách biệt, validation deterministic/sample-weighted, EMA semantics tường minh |
+| `COR-08` | S1 | Resume thiếu model/robot/data/protocol identity, nhận LEAP state cho Allegro và âm thầm giữ LR/EMA cũ; actual AMP scaler không được lưu | `resume/v2` exact, validate trước mutation, effective config và scaler được ghi; transfer dùng API khác |
+| `COR-09` | S1 | Bundle không gate model/preprocess, `from_bundle` hard-code robot/v1, exact robot gate lại cấm held-out inference | Versioned parser, exact semantic bundle checks và explicit cross-embodiment compatibility binding |
+| `COR-10` | S1 | Flow export trace dataclass, stochastic draw và Python token topology; dummy-only tests che lỗi | Tensor-only deterministic export adapter với explicit noise và dynamic-shape parity |
+| `COR-11` | S1/S2 | MVP worker bỏ qua checkpoint fingerprint rồi stamp fingerprint hiện tại; demo provenance thiếu content lineage; PPO contract nói bounded nhưng env mới clip | Guard trước episode/report, complete lineage và bounded-action semantics nhất quán |
+| `COR-12` | S2 | Zero point padding không có input mask; config có dead/no-op key; packaged legacy còn `exec`, `eval`, unsafe load; lint/type gates không dùng được | Mask/resampling đúng, config key có effect hoặc bị từ chối, legacy bị quarantine/hardening, core static gates sạch |
+
+Các invariant không được giải quyết bằng cảnh báo hoặc lọc im lặng. Sai robot,
+split, protocol, schema, fingerprint hoặc artifact identity phải fail trước khi
+model/optimizer/env bị mutate hoặc episode/train step đầu tiên chạy.
+
+### 9.3 G0 — Đóng đường chạy sai và khóa regression
+
+**Phạm vi:** `COR-00`…`COR-12`, chưa sửa semantics.
+
+1. Thêm hard-stop ở public train khi canonical audit hoặc positive gate fail.
+2. Thêm characterization tests cho mọi repro của audit: malicious shard,
+   mixed-hand batch, protocol leakage, placeholder gradient, joint round-trip,
+   quality ties, validation RNG, cross-robot resume, semantic bundle mismatch,
+   Flow export và foreign MVP fingerprint.
+3. Bump dự kiến schema/version; loader cũ phải báo incompatibility rõ thay vì
+   load checkpoint như cùng semantics.
+4. Không tạo release evidence mới trong giai đoạn này.
+
+**Gate G0:** public command không thể bắt đầu P5 với corpus hiện tại; tất cả
+characterization tests fail vì đúng lỗi đã biết trước khi implementation được
+sửa, rồi chuyển thành regression pass theo từng giai đoạn sau.
+
+### 9.4 G1 — Safe artifact I/O và một dataset contract duy nhất
+
+**Work package:**
+
+- Tạo helper containment bắt buộc bằng
+  `resolved.is_relative_to(root.resolve())`; từ chối absolute path, `..`,
+  symlink escape, sibling-prefix và non-regular file.
+- Dùng `Literal` cho schema và constrained relative path cho mọi manifest entry.
+- Chuyển active dataset/MVP checkpoint load sang `weights_only=True` hoặc format
+  tensor/JSON không pickle; xóa production `verify=False`.
+- Phân biệt integrity và trust: SHA-256 xác nhận byte không đổi nhưng không xác
+  nhận người phát hành. Artifact ngoài repository cần trust policy/signature.
+- Viết artifact atomically và không để bundle/manifest nửa chừng trông hợp lệ.
+- Hợp nhất sample schema gồm identity, target tensors, validity flags, shape,
+  dtype, finiteness và semantic joint order.
+- `DatasetArtifact.open_verified()` phải kiểm schema, release flags,
+  source/object/robot hashes, path và sample contract trước khi trả dataset.
+
+**Gate G1:**
+
+- Absolute, traversal, sibling-prefix và symlink escape đều bị từ chối.
+- Malicious `__reduce__` không thực thi và marker không xuất hiện.
+- Sáu DGN shard và checkpoint MVP hiện tại đọc được bằng safe loader.
+- Audit, gate, façade và Runner dùng cùng entry point; fixture thiếu tensor train
+  không thể pass canonical audit.
+
+### 9.5 G2 — Protocol view, target validity và tái sinh dữ liệu
+
+**Work package:**
+
+- Thay splitter hiện tại bằng group-aware split hoặc coi base physical split là
+  non-generalization; không được mô tả stratification là family holdout.
+- Family/shape lấy từ object manifest đã hash, không từ prefix object ID.
+- Materialize `ProtocolDatasetView` trước Runner; lưu và kiểm
+  `dataset_manifest_hash`, `protocol_hash`, `dataset_view_hash`.
+- Tách protocol within-hand khỏi held-out embodiment. Với LEAP→Allegro,
+  `count(train, wonik_allegro)` phải bằng `0`.
+- Khóa ma trận object-per-hand. Positive-control hand-specific phải bị loại khỏi
+  cross-hand comparison hoặc có exemption được khai báo và hash.
+- Thêm `kinematics_valid`, `pose_target_valid`, `joint_target_valid`,
+  `fk_target_valid`; không suy validity từ giá trị zero.
+- Flow/pose/joint/FK chỉ dùng sample có target hợp lệ; quality dùng positive và
+  negative theo objective đã khóa.
+- Sửa generator/split trước, sau đó regenerate DGN từ clean commit hiện tại.
+
+**Gate G2:**
+
+- Canonical audit pass và không còn source drift.
+- Physical/logical split không rò family theo claim đã chọn.
+- Không có `comp_*` trong logical train view.
+- Không sample nào bị lọc im lặng; actual count bằng protocol expected count.
+- Proposal-fail không tạo gradient lên flow/pose/joint/FK; thêm placeholder
+  negative không đổi pose loss.
+- Mỗi declared train hand đạt positive floor. Floor `25` chỉ là input gate,
+  không được trình bày như bảo đảm statistical power.
+
+### 9.6 G3 — Robot-aware batch và sửa semantics QDGrasp-Flow
+
+**Work package:**
+
+- Runner dùng một canonical collator giữ `robot_name`, profile hash và ordered
+  joint names. Model bound robot assert identity; mixed batch hoặc bị từ chối,
+  hoặc được group thành sub-batch dùng đúng HandGraph.
+- `encode_target(..., robot)` dùng inverse joint transform:
+  `atanh(clamp((q-centre)/half, -1+eps, 1-eps))`.
+- Ghi `joint_parameterization` trong model/bundle schema; checkpoint cũ không
+  được load như cùng architecture semantics.
+- Quality head nhận observation conditioning cùng candidate latent/decoded pose.
+  Nhãn target phải gắn với encoded target tương ứng, không với một random draw.
+- Bổ sung hard/free-space/on-policy negative cùng observation cho ranking.
+- Point cloud ngắn dùng explicit point mask xuyên tokenizer hoặc deterministic
+  resampling; zero padding không được tạo voxel thật tại origin.
+
+**Gate G3:**
+
+- Runner-path mixed LEAP/Allegro test raise hoặc group đúng graph.
+- `decode(encode(q)) < 1e-5 rad` cho cả hai active hand, kể cả gần limit; gradient
+  hữu hạn.
+- Giữ observation, đổi candidate làm logit đổi; hoán vị candidate làm score
+  hoán vị; overfit được hai candidate cùng object có nhãn trái ngược.
+- Prediction bất biến với lượng padding hợp lệ.
+- Chạy lại Phase 4 overfit và gradient coverage; evidence mới mang schema/hash
+  mới và không so trực tiếp với evidence cũ.
+
+### 9.7 G4 — Runner deterministic, metric đúng và resume/v2
+
+**Work package:**
+
+- Tách generator cho batch order, train sampling, flow noise/time, validation và
+  inference. Validation noise cố định theo seed + protocol/view + sample ID,
+  độc lập batch grouping.
+- Snapshot/restore outer RNG như lớp bảo vệ; trả model về mode trước validation.
+- Metric contract trả numerator/count hoặc per-sample tensor; aggregate theo
+  sample count và all-reduce cả hai khi distributed.
+- Quyết định một EMA contract: khi bật, validation/checkpoint selection/public
+  bundle dùng EMA; nếu không hỗ trợ thì bỏ option. Bundle ghi `weights_source`,
+  decay và update count.
+- `resume/v2` lưu model config/hash, exact training robot, dataset/protocol/view
+  digest, optimizer/schedule/effective run config, actual AMP scaler, RNG
+  streams, EMA và code/package version.
+- Validate identity trước mọi state mutation. `resume` là exact continuation;
+  weight transfer dùng `init_from`/API khác.
+- Allowlist override như session budget/max steps; ghi old/requested/effective
+  value. LR, EMA, batch size, precision hoặc schedule khác phải bị từ chối hoặc
+  qua migration tường minh.
+
+**Gate G4:**
+
+- Hai lần validation bit-exact, không đổi outer RNG hoặc model mode.
+- Đổi `val_interval` không đổi loss curve/final model.
+- Continuous và split+resume Flow run bit-exact trên CPU; CUDA FP32/AMP gate lưu
+  và khôi phục scaler thật.
+- Metric bất biến theo batch size, kể cả `N % batch_size != 0`.
+- Cross-robot, same-size-different-data, semantic-model hoặc protocol mismatch
+  fail trước `load_state_dict`; valid resume vẫn bit-exact.
+- Khi EMA bật, bundle tensors và validation weights khớp EMA shadow.
+
+### 9.8 G5 — Bundle, cross-embodiment binding và export
+
+**Work package:**
+
+- Parse embedded config bằng versioned schema registry; `robot/v2` round-trip
+  không đi qua class `robot/v1` cố định.
+- Bundle loader so exact model config/hash và canonical preprocess trước load
+  tensor. Runtime result không được gắn live model hash cho source weights có
+  semantics khác.
+- Tách `training_robot_hash` khỏi `runtime_robot_hash`. Inference transfer chỉ
+  qua explicit compatibility binding kiểm graph feature schema, joint capacity/
+  mapping, frame, FK/contact capability và protocol permission. Resume vẫn exact.
+- Export adapter nhận `points` và explicit initial noise/state; trả tuple tensor
+  ổn định gồm translation, rotation, named joints và probability score.
+- Tensor hóa tokenizer/export path cho dynamic point/token topology; format chưa
+  hỗ trợ phải bị chặn trong capability matrix thay vì rơi vào tracer runtime.
+
+**Gate G5:**
+
+- Flow + robot/v2 save → `from_bundle` → predict round-trip.
+- Thay `flow_steps`, voxel size, extent, grasp count hoặc preprocess làm load
+  fail trước state mutation.
+- LEAP weights chỉ bind Allegro qua explicit compatible path và result ghi cả
+  training/runtime robot; incompatible profile fail.
+- TorchScript/ONNX eager parity với cùng `points + noise`, nhiều batch/point
+  count và cả hai active hand; metadata khớp output thật.
+
+### 9.9 G6 — MVP fingerprint, checkpoint và action contract
+
+**Work package:**
+
+- Compute expected environment fingerprint một lần; truyền vào serial/spawn
+  worker, locked evaluation và dev promotion. Validate trước khi tạo env, episode,
+  ledger hoặc report.
+- Report ghi stored fingerprint, effective fingerprint và match verdict; mismatch
+  abort mà không sinh report/ledger có vẻ hợp lệ.
+- Checkpoint schema typed, `weights_only=True`, giới hạn shape/size và có parent
+  lineage.
+- Demonstration manifest hash arrays, ledger, normalizer, BC/PPO config và parent
+  checkpoint; cùng summary nhưng khác content phải có digest khác.
+- Chọn một action semantics:
+  - ưu tiên tanh-squashed Gaussian với Jacobian-correct log-prob; hoặc
+  - giữ raw latent Normal nhưng đổi tên/contract, lưu latent+executed action và
+    báo clip/saturation rate. Không được gọi distribution là bounded trong khi
+    env mới thực hiện clipping.
+
+**Gate G6:**
+
+- Foreign checkpoint fail với `workers=1` và nhiều worker, cả evaluation lẫn
+  dev promotion; không có ledger/report sau fail.
+- Mutation từng fingerprint/demo field bị phát hiện.
+- Unchanged PPO parameters cho ratio `1`; action thực thi hữu hạn/đúng bound và
+  log-prob hữu hạn gần boundary.
+- MVP round 3 được revalidate bằng guard mới; nếu policy distribution đổi thì
+  train/evaluate checkpoint mới thay vì sửa nhãn checkpoint cũ.
+
+### 9.10 G7 — Package boundary, static gates và tái tạo evidence
+
+**Work package:**
+
+- Tách/quarantine legacy namespace khỏi wheel chính, hoặc loại mọi đường
+  `exec`, unrestricted `eval`, unsafe checkpoint load và `allow_pickle=True`
+  trên input không tin cậy. Optional legacy dependency không được biến thành
+  attack surface của base package.
+- Mọi config key phải có effect được test hoặc bị từ chối. Các field
+  `num_workers`, `pin_memory`, `drop_last`, `seed`, `robot_profiles` không được
+  im lặng no-op.
+- Cấu hình Ruff/Mypy theo active core và optional/legacy boundary. Sửa semantic
+  finding thủ công trước; mechanical import/style cleanup là PR riêng.
+- Chạy full suite, docs checker, security tests, CPU/CUDA/AMP gates, real Flow
+  export, multi-seed training và held-out evaluation.
+- Chỉ sau khi toàn bộ corrective gate pass mới regenerate dataset card, model
+  card, run manifests, benchmark/evidence và review packet.
+
+**Gate G7 và điều kiện mở lại release:**
+
+1. `COR-00`…`COR-12` có regression test và owner/verdict rõ.
+2. Canonical DGN audit, protocol view audit và positive gate pass.
+3. Full suite, active-core Ruff/Mypy, docs checker và package content audit pass.
+4. CPU correctness, CUDA FP32/AMP, resume, EMA, export và simulator gates pass.
+5. Independent reviewer xác nhận security boundary, protocol isolation,
+   artifact identity và evidence disposition.
+6. Artifact mới ghi đủ model, training/runtime robot, data, protocol/view,
+   preprocess, environment, code và effective run hashes.
+
+### 9.11 Thứ tự PR và dependency
+
+| PR | Nội dung | Phụ thuộc | Không được gộp cùng |
+|---|---|---|---|
+| `R1` | Characterization tests + hard-stop release/P5 | không | semantic fix |
+| `R2` | Safe artifact I/O + unified manifest/sample schema | `R1` | data regeneration |
+| `R3` | ProtocolDatasetView + split/hand/object matrix + target masks | `R2` | Flow architecture rewrite |
+| `R4` | Robot-aware collator + joint parameterization + candidate quality | `R3` | lint auto-fix |
+| `R5` | RNG/metrics/EMA + resume/v2 | `R4` | cross-embodiment transfer |
+| `R6` | Bundle parser/compatibility binding + Flow export | `R5` | legacy cleanup |
+| `R7` | MVP fingerprint/demo/action remediation | `R2` | unrelated Flow changes |
+| `R8` | Regenerate DGN, rerun P4/P5/MVP evidence | `R3`–`R7` | code changes chưa review |
+| `R9` | Legacy quarantine + static cleanup + final release packet | `R8` | semantic migrations |
+
+Mỗi PR phải ghi rõ schema migration, artifact bị supersede, negative tests và
+rollback. Không dùng một mega-PR vừa đổi semantics, regenerate data, auto-fix
+lint và thay evidence vì review sẽ không còn tách được nguyên nhân khỏi kết quả.
+
+### 9.12 Interaction test matrix bắt buộc
+
+Ngoài unit test hiện hữu, CI phải chạy các chuỗi đầy đủ sau:
+
+1. `manifest → verified artifact → protocol view → Runner batch → loss` với
+   negative cases cho path, schema, split, robot, object và validity mask.
+2. `Flow train → deterministic val → partial resume → bundle` so với continuous
+   run trên CPU và CUDA/AMP.
+3. `LEAP train bundle → explicit Allegro inference binding → held-out report`,
+   đồng thời chứng minh không Allegro sample nào vào train view.
+4. `real Flow → TorchScript/ONNX → runtime` trên nhiều point count, cùng explicit
+   noise và output schema.
+5. `MVP checkpoint → fingerprint guard → spawn workers → ledger/report`, gồm
+   checkpoint ngoại lai và demonstration bit mutation.
+6. `malicious dataset/checkpoint → public CLI/API`, chứng minh không code được
+   thực thi và không partial artifact được công nhận.
+
+Một unit helper pass không được dùng thay interaction test của đúng public path;
+đây là nguyên nhân guard mixed-robot, protocol và fingerprint đã tồn tại nhưng
+vẫn bị bypass trong audit này.
