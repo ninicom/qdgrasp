@@ -113,5 +113,30 @@ def test_a_delivered_part_of_an_open_chain_names_the_pull_request_that_delivered
     assert not invalid, f"satisfied_by must name a PR from PLAN.md §9.11; got {invalid}"
 
 
+def test_an_open_finding_with_nothing_left_failing_says_what_it_waits_on() -> None:
+    """Otherwise "no test fails" quietly reads as "the gate is closed"."""
+
+    satisfied_only: list[str] = []
+    for path in sorted(SUITE.glob("test_*.py")):
+        text = path.read_text(encoding="utf-8")
+        for block in text.split("@characterization")[1:]:
+            match = re.match(r'\(\s*"(COR-\d\d)"', block)
+            if match is None:
+                continue
+            finding_id = match.group(1)
+            header = block.split("def ", 1)[0]
+            if registry.get(finding_id).is_open and "satisfied_by=" not in header:
+                satisfied_only.append(finding_id)
+
+    still_failing = set(satisfied_only)
+    for finding in registry.open_findings():
+        if finding.id in still_failing:
+            continue
+        assert finding.blocked_on, (
+            f"{finding.id} is open and no longer has a failing characterization test; it has to record "
+            "what its gate is waiting on, or be closed"
+        )
+
+
 def test_release_stays_blocked_while_any_finding_is_open() -> None:
     assert registry.release_is_blocked() == bool(registry.open_findings())

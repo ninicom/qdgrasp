@@ -23,28 +23,34 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import torch
-from _corrective_support import characterization, manifest_document, sample, write_manifest, write_shard
+from _corrective_support import characterization
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "qdgrasp"
 
 
-@characterization("COR-12", note="zero padding is indistinguishable from geometry")
-def test_a_padded_point_cloud_carries_a_mask(tmp_path: Path) -> None:
+@characterization(
+    "COR-12",
+    note="zero padding is indistinguishable from geometry",
+    satisfied_by="R2",
+)
+def test_a_padded_point_cloud_carries_a_mask(verified_corpus) -> None:
     from qdgrasp.dataset.loader import DgnOpenDataset
 
-    short = sample()
-    short["points"] = torch.randn(10, 3)
-    root = tmp_path / "corpus"
-    digest = write_shard(root / "shards" / "train.pt", [short])
-    write_manifest(root, manifest_document(filename="shards/train.pt", sha256=digest))
-
-    item = DgnOpenDataset(dataset_root=root, split="train", point_count=64)[0]
+    dataset = DgnOpenDataset(
+        dataset_root=verified_corpus,
+        split="train",
+        robot_name="leap_hand",
+        point_count=4096,
+    )
+    item = dataset[0]
 
     assert "point_mask" in item, (
-        "a cloud of 10 points was padded to 64 with zeros and no mask; the tokenizer cannot tell the padding "
-        "from a real cluster of points at the origin"
+        "a short cloud was padded with zeros and no mask; the tokenizer cannot tell the padding from a real "
+        "cluster of points at the origin"
     )
+    padded = int((~item["point_mask"]).sum())
+    assert padded > 0, "this fixture is only meaningful when padding actually happened"
+    assert bool((item["points"][item["point_mask"]] != 0).any())
 
 
 def _keys_read_from_the_config(source: Path, function: str) -> set[str]:
@@ -70,7 +76,7 @@ def _keys_read_from_the_config(source: Path, function: str) -> set[str]:
     return read
 
 
-@characterization("COR-12", note="v2 data-config keys are read by nobody")
+@characterization("COR-12", note="v2 data-config keys are read by nobody", satisfied_by="R3")
 def test_every_data_config_key_reaches_the_dataset_it_configures() -> None:
     from qdgrasp.dataset.schema import DataConfigV2
 

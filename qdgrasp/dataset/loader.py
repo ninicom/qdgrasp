@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from ..config.registry import register_dataset
 from ..config.schema import ConfigError
+from ..models.protocol import ProtocolDatasetView, load_protocol
 from .artifact import DatasetArtifact
 from .batch import GraspBatch
 from .rng import derive_seed
@@ -29,6 +30,7 @@ class DgnOpenDataset(Dataset):
         seed: int = 0,
         allowed_robot_names: Sequence[str] | None = None,
         robot_config: Any | None = None,
+        protocol_file: str | Path | None = None,
     ) -> None:
         self.root = Path(dataset_root).resolve()
         self.split = split
@@ -65,7 +67,31 @@ class DgnOpenDataset(Dataset):
             if tuple(getattr(robot_config, "joints", ())) != expected_joints:
                 raise ConfigError(f"bound robot joint order does not match artifact contract for {robot_name}")
 
-        self.samples = list(self.artifact.samples(split=split, robot_name=robot_name))
+        physical = self.artifact.samples(split=split, robot_name=robot_name)
+        self.protocol_view: ProtocolDatasetView | None = None
+        if protocol_file is None:
+            self.samples = list(physical)
+        else:
+            # A protocol names an exact (split, robot, object_id) matrix, so it
+            # can only be materialised for one hand at a time.  Training "on the
+            # protocol" while reading every hand's shards is the thing this
+            # refuses.
+            if robot_name is None:
+                raise ConfigError(
+                    "a protocol view is defined per hand; open the dataset with a robot profile or drop "
+                    "protocol_file to read the physical split"
+                )
+            protocol = load_protocol(protocol_file)
+            self.protocol_view = ProtocolDatasetView(
+                physical,
+                protocol=protocol,
+                split=split,
+                robot=robot_name,
+                manifest=self.manifest_spec.model_dump(by_alias=True),
+                dataset_root=self.root,
+                dataset_manifest_hash=self.artifact.manifest_hash,
+            )
+            self.samples = list(self.protocol_view)
 
     def __len__(self) -> int:
         return len(self.samples)
@@ -122,7 +148,7 @@ class DgnOpenDataset(Dataset):
 
     def manifest(self) -> dict[str, Any]:
         """Return dataset provenance metadata for training run manifest."""
-        return {
+        document: dict[str, Any] = {
             "dataset_id": self.manifest_spec.dataset_id,
             "generator_version": self.manifest_spec.generator_version,
             "seed": self.manifest_spec.seed,
@@ -137,6 +163,9 @@ class DgnOpenDataset(Dataset):
                 else "mixed"
             ),
         }
+        if self.protocol_view is not None:
+            document["protocol_view"] = self.protocol_view.manifest()
+        return document
 
 
 def create_dgn_open_dataset(config: Any, *args: Any, split: str = "train", **kwargs: Any) -> Dataset:
@@ -147,18 +176,21 @@ def create_dgn_open_dataset(config: Any, *args: Any, split: str = "train", **kwa
         m_file = config.manifest_file
         seed = config.seed
         allowed_profiles = config.robot_profiles
+        protocol_file = config.protocol_file
     elif isinstance(config, dict):
         root = config.get("dataset_root", "datasets/dgn-open-tiny")
         p_count = config.get("point_count", 1024)
         m_file = config.get("manifest_file", "dataset_manifest.json")
         seed = config.get("seed", 0)
         allowed_profiles = config.get("robot_profiles")
+        protocol_file = config.get("protocol_file")
     else:
         root = getattr(config, "dataset_root", "datasets/dgn-open-tiny")
         p_count = getattr(config, "point_count", 1024)
         m_file = getattr(config, "manifest_file", "dataset_manifest.json")
         seed = getattr(config, "seed", 0)
         allowed_profiles = getattr(config, "robot_profiles", None)
+        protocol_file = getattr(config, "protocol_file", None)
 
     robot_name = None
     robot_config = None
@@ -180,6 +212,7 @@ def create_dgn_open_dataset(config: Any, *args: Any, split: str = "train", **kwa
         seed=seed,
         allowed_robot_names=allowed_profiles,
         robot_config=robot_config,
+        protocol_file=protocol_file,
     )
 
 

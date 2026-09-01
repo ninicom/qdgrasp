@@ -3,8 +3,9 @@
 The protocol document holds out the ``comp`` family and names an exact object
 list per split.  The corpus on disk is split by a different rule, and the public
 dataset opens the corpus rather than the protocol -- so a run can present itself
-as trained under ``phase5-dgn-open-tiny-v1`` while having trained on objects the
-protocol excludes.
+as trained under a locked protocol while having trained on objects the protocol
+excludes.  The corpus keeps those samples -- they belong to other experiments --
+so what has to change is which view the trainer opens, not which bytes exist.
 
 The split's own claim is the second half.  ``create_object_family_splits``
 promises "no family or shape leakage" and then stratifies *within* each shape,
@@ -22,7 +23,7 @@ from _corrective_support import characterization
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATASET = REPO_ROOT / "datasets/dgn-open-tiny"
-PROTOCOL = REPO_ROOT / "configs/phase5/protocol-v1.yaml"
+PROTOCOL = REPO_ROOT / "configs/phase5/protocol-v2.yaml"
 
 ACTIVE_HANDS = ("leap_hand", "wonik_allegro")
 
@@ -48,17 +49,34 @@ def _make_object(object_id: str, family: str, shape_type: str):
     )
 
 
-@characterization("COR-02", note="the physical train split carries objects the protocol excludes")
-def test_the_train_split_holds_no_object_outside_the_protocol() -> None:
-    from qdgrasp.models.data import FlowDataset
+def _train_view(corpus: Path, robot: str):
+    """What the public path opens for one hand's train split."""
+
+    from qdgrasp.dataset.loader import DgnOpenDataset
+
+    return DgnOpenDataset(
+        dataset_root=corpus,
+        split="train",
+        robot_name=robot,
+        point_count=256,
+        protocol_file=PROTOCOL,
+    )
+
+
+@characterization(
+    "COR-02",
+    note="the physical train split carries objects the protocol excludes",
+    satisfied_by="R3",
+)
+def test_the_train_split_holds_no_object_outside_the_protocol(verified_corpus) -> None:
     from qdgrasp.models.protocol import load_protocol
 
     protocol = load_protocol(PROTOCOL)
     allowed = set(protocol.train_objects)
     leaked: dict[str, list[str]] = {}
     for hand in ACTIVE_HANDS:
-        dataset = FlowDataset(DATASET, split="train", robot=hand)
-        outside = sorted(set(dataset.object_ids) - allowed)
+        view = _train_view(verified_corpus, hand)
+        outside = sorted({str(sample["object_id"]) for sample in view} - allowed)
         if outside:
             leaked[hand] = outside
 
@@ -68,16 +86,21 @@ def test_the_train_split_holds_no_object_outside_the_protocol() -> None:
     )
 
 
-@characterization("COR-02", note="the held-out family is present in the physical train split")
-def test_the_held_out_family_never_appears_in_train() -> None:
-    from qdgrasp.models.data import FlowDataset
+@characterization(
+    "COR-02",
+    note="the held-out family is present in the physical train split",
+    satisfied_by="R3",
+)
+def test_the_held_out_family_never_appears_in_train(verified_corpus) -> None:
     from qdgrasp.models.protocol import load_protocol
 
     protocol = load_protocol(PROTOCOL)
     present: dict[str, int] = {}
     for hand in ACTIVE_HANDS:
-        dataset = FlowDataset(DATASET, split="train", robot=hand)
-        count = sum(1 for item in dataset if str(item["object_id"]).startswith(f"{protocol.heldout_family}_"))
+        view = _train_view(verified_corpus, hand)
+        count = sum(
+            1 for sample in view if protocol.family_of(str(sample["object_id"])) == protocol.heldout_family
+        )
         if count:
             present[hand] = count
 
@@ -109,7 +132,11 @@ def test_the_splitter_does_not_call_stratification_a_family_hold_out() -> None:
     )
 
 
-@characterization("COR-02", note="family is inferred from the object id prefix")
+@characterization(
+    "COR-02",
+    note="family is inferred from the object id prefix",
+    satisfied_by="R3",
+)
 def test_family_is_read_from_the_object_manifest_not_from_the_id() -> None:
     """``prim_box_01`` is family ``primitive``; the prefix says ``prim``."""
 
@@ -138,16 +165,19 @@ def test_a_protocol_view_is_materialised_before_the_runner() -> None:
     )
 
 
-@characterization("COR-02", note="the held-out hand is trainable through the public path")
-def test_the_held_out_hand_has_no_train_samples() -> None:
-    from qdgrasp.models.data import FlowDataset
+@characterization(
+    "COR-02",
+    note="the held-out hand is trainable through the public path",
+    satisfied_by="R3",
+)
+def test_the_held_out_hand_has_no_train_samples(verified_corpus) -> None:
     from qdgrasp.models.protocol import load_protocol
 
     protocol = load_protocol(PROTOCOL)
     test_hand = protocol.heldout_embodiment.test_hand
-    dataset = FlowDataset(DATASET, split="train", robot=test_hand)
+    view = _train_view(verified_corpus, test_hand)
 
-    assert len(dataset) == 0, (
-        f"{test_hand} is the held-out embodiment yet its train split holds {len(dataset)} samples; "
+    assert len(view) == 0, (
+        f"{test_hand} is the held-out embodiment yet its train split holds {len(view)} samples; "
         "count(train, held-out hand) must be 0 for a cross-embodiment claim to mean anything"
     )

@@ -52,6 +52,11 @@ class Finding:
     chain: str
     target: str
     status: Status = "open"
+    #: Why an open finding has no failing test left: the code landed, and the
+    #: gate that closes it waits on something else -- usually the dataset
+    #: regeneration in R8.  "Nothing fails any more" is not the same claim as
+    #: "the gate is closed", and this field keeps them apart.
+    blocked_on: str = ""
 
     @property
     def is_open(self) -> bool:
@@ -102,6 +107,11 @@ FINDINGS: tuple[Finding, ...] = (
             "filters after the fact instead of reaching the trainer"
         ),
         target="a materialised ProtocolDatasetView keyed on (split, robot, object_id) that fails on leakage",
+        blocked_on=(
+            "R8: the view reaches the public path, but the G2 gate also needs a canonical audit that "
+            "passes and a train split that clears the positive floor, and both need the dataset "
+            "regenerated from a clean commit"
+        ),
     ),
     Finding(
         id="COR-03",
