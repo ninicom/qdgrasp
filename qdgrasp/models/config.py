@@ -313,7 +313,13 @@ class QDGraspFlow(nn.Module):
         return f"settings:{hashlib.sha256(payload.encode('utf-8')).hexdigest()}"
 
     @torch.no_grad()
-    def predict_results(self, points: torch.Tensor) -> GraspResults:
+    def predict_results(
+        self,
+        points: torch.Tensor,
+        *,
+        training_robot_hash: str | None = None,
+        runtime_robot_hash: str | None = None,
+    ) -> GraspResults:
         """Draw ``settings.grasps`` grasps for one cloud, ranked by quality.
 
         The flow head is generative, so ``K`` grasps are ``K`` draws from one
@@ -341,7 +347,8 @@ class QDGraspFlow(nn.Module):
             seed_points=seed_points,
             frame=self.robot.config.frame,
             model_hash=self.model_hash,
-            robot_hash=self.robot_hash,
+            training_robot_hash=training_robot_hash or self.robot_hash,
+            runtime_robot_hash=runtime_robot_hash or self.robot_hash,
         )
 
     def preprocess_schema(self) -> dict[str, Any]:

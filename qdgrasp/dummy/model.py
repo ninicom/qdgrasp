@@ -103,7 +103,13 @@ class DummyGraspModel(nn.Module):
         }
 
     @torch.no_grad()
-    def predict_results(self, points: torch.Tensor) -> GraspResults:
+    def predict_results(
+        self,
+        points: torch.Tensor,
+        *,
+        training_robot_hash: str | None = None,
+        runtime_robot_hash: str | None = None,
+    ) -> GraspResults:
         """Rank the grasps produced for a single ``[N, 3]`` point cloud."""
 
         if points.dim() == 2:
@@ -121,7 +127,8 @@ class DummyGraspModel(nn.Module):
             seed_points=points[0].mean(dim=0, keepdim=True).expand(len(order), 3).contiguous(),
             frame=self.robot_config.frame,
             model_hash=self.model_config.content_hash(),
-            robot_hash=self.robot_config.content_hash(),
+            training_robot_hash=training_robot_hash or self.robot_config.content_hash(),
+            runtime_robot_hash=runtime_robot_hash or self.robot_config.content_hash(),
         )
 
     def preprocess_schema(self) -> dict[str, Any]:

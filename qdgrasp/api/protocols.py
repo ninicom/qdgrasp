@@ -23,7 +23,13 @@ class GraspModel(Protocol):
     def validation_step(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         """Return scalar metrics for one batch."""
 
-    def predict_results(self, points: torch.Tensor) -> GraspResults:
+    def predict_results(
+        self,
+        points: torch.Tensor,
+        *,
+        training_robot_hash: str | None = None,
+        runtime_robot_hash: str | None = None,
+    ) -> GraspResults:
         """Convert one point cloud ``[N, 3]`` into ranked grasps."""
 
     def preprocess_schema(self) -> dict[str, Any]:

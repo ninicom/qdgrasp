@@ -128,6 +128,25 @@ def load_model_config(reference: str | Path) -> ModelConfig:
     return load_document(reference, ModelConfig)
 
 
+def parse_versioned_document(mapping: dict[str, Any], kind: str, *, origin: str) -> _Document:
+    """Validate an embedded mapping against the model its own ``schema`` names.
+
+    A bundle carries its configuration inline, so rebuilding from one has to
+    dispatch on the schema the document declares.  Parsing it as a fixed class
+    means a profile written under any other version is either refused for the
+    wrong reason or, worse, coerced into a shape it never had.
+    """
+
+    schema_id = mapping.get("schema")
+    if not isinstance(schema_id, str):
+        raise ConfigError(f"{origin}: document is missing a string 'schema' identifier")
+    try:
+        model = get_document_model(kind, schema_id)
+    except RegistryError as exc:
+        raise ConfigError(f"{origin}: {exc}") from exc
+    return parse_document(mapping, model, origin=origin)
+
+
 def load_versioned_document(reference: str | Path, kind: str) -> _Document:
     """Load a document and dispatch on its declared ``schema`` identifier.
 

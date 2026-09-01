@@ -31,7 +31,11 @@ class GraspResults:
         seed_points: Seed point per grasp ``[K, 3]``.
         frame: Name of the frame the poses are expressed in.
         model_hash: Content hash of the model configuration that produced this.
-        robot_hash: Content hash of the robot profile used.
+        training_robot_hash: Content hash of the profile the weights were
+            produced for.
+        runtime_robot_hash: Content hash of the profile these poses were
+            generated against.  Equal to ``training_robot_hash`` unless an
+            explicit cross-embodiment binding was used.
     """
 
     translation: torch.Tensor
@@ -42,7 +46,8 @@ class GraspResults:
     seed_points: torch.Tensor
     frame: str
     model_hash: str
-    robot_hash: str
+    training_robot_hash: str
+    runtime_robot_hash: str
 
     def __post_init__(self) -> None:
         count = self.translation.shape[0]
@@ -103,7 +108,8 @@ class GraspResults:
             "seed_points": detached.seed_points.detach().numpy(),
             "frame": self.frame,
             "model_hash": self.model_hash,
-            "robot_hash": self.robot_hash,
+            "training_robot_hash": self.training_robot_hash,
+            "runtime_robot_hash": self.runtime_robot_hash,
         }
 
     def metadata(self) -> dict[str, Any]:
@@ -114,7 +120,8 @@ class GraspResults:
             "joint_names": list(self.joint_names),
             "frame": self.frame,
             "model_hash": self.model_hash,
-            "robot_hash": self.robot_hash,
+            "training_robot_hash": self.training_robot_hash,
+            "runtime_robot_hash": self.runtime_robot_hash,
         }
 
     def save(self, path: str | Path) -> Path:
@@ -151,7 +158,8 @@ class GraspResults:
                 seed_points=torch.from_numpy(archive["seed_points"]),
                 frame=metadata["frame"],
                 model_hash=metadata["model_hash"],
-                robot_hash=metadata["robot_hash"],
+                training_robot_hash=metadata["training_robot_hash"],
+                runtime_robot_hash=metadata["runtime_robot_hash"],
             )
 
     def summary(self) -> str:
@@ -163,7 +171,8 @@ class GraspResults:
         return (
             f"GraspResults(count={len(self)}, joints={len(self.joint_names)}, frame='{self.frame}', "
             f"device='{self.device}', score=[{worst:.4f}, {best:.4f}], "
-            f"model={self.model_hash[:12]}, robot={self.robot_hash[:12]})"
+            f"model={self.model_hash[:12]}, trained_on={self.training_robot_hash[:12]}, "
+            f"run_on={self.runtime_robot_hash[:12]})"
         )
 
     def plot(self, *_args: Any, **_kwargs: Any) -> None:

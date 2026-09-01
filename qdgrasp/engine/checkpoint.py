@@ -22,8 +22,14 @@ from torch import nn
 
 from .. import __version__
 from ..config.schema import ConfigError, ModelConfig, RobotConfig
+from .compatibility import EmbodimentBinding
 
-BUNDLE_SCHEMA = "qdgrasp/bundle/v1"
+BUNDLE_SCHEMA_V1 = "qdgrasp/bundle/v1"
+BUNDLE_SCHEMA_V2 = "qdgrasp/bundle/v2"
+#: The schema this build writes and reads.  ``v1`` recorded one ambiguous
+#: ``robot_config`` hash and gated a load on tensor shape; a bundle written
+#: under it was produced by different semantics and is not loadable here.
+BUNDLE_SCHEMA = BUNDLE_SCHEMA_V2
 RESUME_SCHEMA = "qdgrasp/resume/v2"
 WEIGHTS_FILE = "weights.safetensors"
 MANIFEST_FILE = "bundle.json"
@@ -69,7 +75,13 @@ class BundleInfo:
 
     @property
     def robot_hash(self) -> str:
-        return str(self.manifest["hashes"]["robot_config"])
+        """Hash of the profile the weights were *trained* on."""
+
+        return str(self.manifest["hashes"]["training_robot_config"])
+
+    @property
+    def preprocess_hash(self) -> str:
+        return str(self.manifest["hashes"]["preprocess"])
 
 
 def save_public_bundle(
@@ -94,13 +106,16 @@ def save_public_bundle(
         "qdgrasp_version": __version__,
         "created_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "model_config": model_config.to_document(),
-        "robot_config": robot_config.to_document(),
+        "training_robot_config": robot_config.to_document(),
         "preprocess": preprocess,
         "data_manifest": data_manifest or {},
         "tensors": {key: {"shape": list(value.shape), "dtype": str(value.dtype)} for key, value in tensors.items()},
         "hashes": {
             "model_config": model_config.content_hash(),
-            "robot_config": robot_config.content_hash(),
+            # The hand these weights were produced for.  What they are *run*
+            # against is a runtime fact, and lives in an EmbodimentBinding.
+            "training_robot_config": robot_config.content_hash(),
+            "preprocess": _canonical_hash(preprocess),
             "weights": sha256_file(weights_path),
         },
     }
@@ -132,20 +147,64 @@ def read_bundle_manifest(directory: str | Path) -> dict[str, Any]:
     weights_hash = sha256_file(target / WEIGHTS_FILE)
     if weights_hash != recorded["weights"]:
         raise ConfigError(f"{target}: weights hash mismatch")
+    missing = [key for key in ("preprocess", "model_config", "training_robot_config") if key not in recorded]
+    if missing:
+        raise ConfigError(f"{target}: bundle manifest records no {missing} hash")
+    if _canonical_hash(manifest.get("preprocess", {})) != recorded["preprocess"]:
+        raise ConfigError(f"{target}: the preprocess hash does not describe the preprocess document beside it")
     return manifest
 
 
 def load_public_bundle(
-    directory: str | Path, model: nn.Module, *, robot_config: RobotConfig | None = None
+    directory: str | Path,
+    model: nn.Module,
+    *,
+    robot_config: RobotConfig | None = None,
+    model_config: ModelConfig | None = None,
+    preprocess: dict[str, Any] | None = None,
+    binding: EmbodimentBinding | None = None,
 ) -> dict[str, Any]:
-    """Verify a bundle, optionally gate it on a robot profile, and load the weights."""
+    """Verify a bundle semantically, then load the weights.
+
+    Every check happens before ``load_state_dict``: a mismatch discovered after
+    the module has been mutated leaves a model that is neither the one on disk
+    nor the one that was constructed.
+
+    Shapes are the last thing compared, not the first.  Two configurations can
+    produce identically shaped tensors and mean different things -- a different
+    number of flow steps, a preprocessing declared in millimetres -- and a
+    loader that only fits tensors accepts both.
+    """
 
     target = Path(directory)
     manifest = read_bundle_manifest(target)
-    if robot_config is not None and robot_config.content_hash() != manifest["hashes"]["robot_config"]:
+    training_hash = manifest["hashes"]["training_robot_config"]
+
+    if model_config is not None and model_config.content_hash() != manifest["hashes"]["model_config"]:
+        raise ConfigError(
+            f"{target}: model configuration hash mismatch; the bundle holds "
+            f"{manifest['model_config'].get('name')!r} and its weights mean what that configuration says "
+            "they mean"
+        )
+    if preprocess is not None and _canonical_hash(preprocess) != _canonical_hash(manifest["preprocess"]):
+        raise ConfigError(
+            f"{target}: preprocessing contract mismatch; the bundle declares {manifest['preprocess']!r}. "
+            "Feeding inputs prepared another way produces confident predictions about a different scene"
+        )
+    if binding is not None:
+        if binding.training_robot_hash != training_hash:
+            raise ConfigError(
+                f"{target}: the binding was made for training profile {binding.training_robot!r} and this "
+                "bundle was produced for another one"
+            )
+        if robot_config is not None and binding.runtime_robot_hash != robot_config.content_hash():
+            raise ConfigError(f"{target}: the binding does not name the runtime profile being loaded")
+    elif robot_config is not None and robot_config.content_hash() != training_hash:
         raise ConfigError(
             f"{target}: robot profile hash mismatch; bundle was produced for "
-            f"'{manifest['robot_config']['name']}' with joints {manifest['robot_config']['joints']}"
+            f"'{manifest['training_robot_config']['name']}' with joints "
+            f"{manifest['training_robot_config']['joints']}. Running it on another hand needs an explicit "
+            "EmbodimentBinding, not a relaxed comparison"
         )
     tensors = load_safetensors(str(target / WEIGHTS_FILE))
     missing, unexpected = model.load_state_dict(tensors, strict=False)

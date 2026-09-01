@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import torch
 from torch import nn
 
 from ..config import (
     ConfigError,
-    DataConfig,
     ModelConfig,
     RobotConfig,
     RunConfig,
@@ -21,17 +21,18 @@ from ..config import (
     load_model_config,
     load_robot_config,
     parse_document,
+    parse_versioned_document,
     resolve_runtime,
 )
 from ..corrective import assert_public_training_allowed
 from ..engine.callbacks import Callback, CallbackList, ProgressLogger
 from ..engine.checkpoint import BundleInfo, load_public_bundle, read_bundle_manifest, save_public_bundle
-from ..engine.runner import RunResult, Runner
+from ..engine.compatibility import EmbodimentBinding, bind_embodiment
+from ..engine.runner import Runner, RunResult
 from ..engine.seeding import seed_everything
 from ..export import ExportResult, export_bundle
 from .protocols import GraspModel
 from .results import GraspResults
-
 
 LOGGER = logging.getLogger("qdgrasp.api")
 
@@ -75,6 +76,8 @@ class QDGrasp:
         self.bundle_manifest: dict[str, Any] | None = None
         #: Last corrective-gate decision, set whenever a dataset is opened.
         self.gate_report: Any | None = None
+        #: Declared cross-embodiment binding, when weights run on another hand.
+        self.embodiment_binding: EmbodimentBinding | None = None
         if weights is not None:
             self.load_weights(weights)
 
@@ -97,11 +100,39 @@ class QDGrasp:
 
         return self.robot_config.content_hash()
 
-    def load_weights(self, directory: str | Path) -> dict[str, Any]:
-        """Load a public bundle, rejecting a mismatched robot profile."""
+    def load_weights(
+        self,
+        directory: str | Path,
+        *,
+        binding: EmbodimentBinding | None = None,
+    ) -> dict[str, Any]:
+        """Load a public bundle, rejecting one whose semantics differ from this model.
 
-        self.bundle_manifest = load_public_bundle(directory, self.module, robot_config=self.robot_config)
+        The comparison covers the model configuration and the declared
+        preprocessing as well as the robot profile: identically shaped weights
+        produced under other settings are a different model, not this one.  Pass
+        ``binding`` to run weights against a hand they were not trained on.
+        """
+
+        self.bundle_manifest = load_public_bundle(
+            directory,
+            self.module,
+            robot_config=self.robot_config,
+            model_config=self.model_config,
+            preprocess=self.module.preprocess_schema(),
+            binding=binding,
+        )
+        self.embodiment_binding = binding
         return self.bundle_manifest
+
+    def bind_to(self, runtime_robot: str | Path, *, protocol: Any | None = None) -> EmbodimentBinding:
+        """Declare that this model's weights may drive another hand.
+
+        ``protocol`` is the locked protocol whose held-out embodiment permits the
+        pairing; without one, only the identity binding exists.
+        """
+
+        return bind_embodiment(self.robot_config, load_robot_config(runtime_robot), protocol=protocol)
 
     def save_bundle(self, directory: str | Path, *, data_manifest: dict[str, Any] | None = None) -> BundleInfo:
         """Write the current weights as a public bundle."""
@@ -177,7 +208,15 @@ class QDGrasp:
         self.module.to(runtime.device)
         self.module.eval()
         tensor = torch.as_tensor(points, dtype=torch.float32, device=runtime.device)
-        return self.module.predict_results(tensor)
+        # After a declared transfer the module's own profile is the runtime hand,
+        # not the one the weights were produced for; the binding is the only
+        # place that still knows both.
+        binding = self.embodiment_binding
+        return self.module.predict_results(
+            tensor,
+            training_robot_hash=binding.training_robot_hash if binding is not None else None,
+            runtime_robot_hash=binding.runtime_robot_hash if binding is not None else None,
+        )
 
     def export(self, *, fmt: str = "torchscript", out_dir: str | Path = "runs/export", verify: bool = True) -> ExportResult:
         """Export the current weights to TorchScript or ONNX with a metadata sidecar."""
@@ -194,17 +233,29 @@ class QDGrasp:
         )
 
     @classmethod
-    def from_bundle(cls, directory: str | Path) -> "QDGrasp":
+    def from_bundle(cls, directory: str | Path) -> QDGrasp:
         """Rebuild a façade straight from a public bundle directory."""
 
         manifest = read_bundle_manifest(directory)
         instance = cls.__new__(cls)
-        instance.model_config = parse_document(manifest["model_config"], ModelConfig, origin=str(directory))
-        instance.robot_config = parse_document(manifest["robot_config"], RobotConfig, origin=str(directory))
+        # Both documents are parsed against the model their own ``schema`` names.
+        # Both active hands ship as ``robot/v2``, so a fixed ``robot/v1`` parse
+        # made this path unable to rebuild any bundle they produced.
+        instance.model_config = parse_versioned_document(manifest["model_config"], "model", origin=str(directory))
+        instance.robot_config = parse_versioned_document(
+            manifest["training_robot_config"], "robot", origin=str(directory)
+        )
         builder = get_model_builder(instance.model_config.type)
         instance.module = builder(instance.model_config, instance.robot_config)
         instance.gate_report = None
-        instance.bundle_manifest = load_public_bundle(directory, instance.module, robot_config=instance.robot_config)
+        instance.embodiment_binding = None
+        instance.bundle_manifest = load_public_bundle(
+            directory,
+            instance.module,
+            robot_config=instance.robot_config,
+            model_config=instance.model_config,
+            preprocess=instance.module.preprocess_schema(),
+        )
         return instance
 
 

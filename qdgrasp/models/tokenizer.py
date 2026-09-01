@@ -95,7 +95,9 @@ def pack_grid_coordinates(coordinates: torch.Tensor, grid_size: int) -> torch.Te
     if grid_size > _MAX_GRID:
         raise TokenizerError(f"grid_size {grid_size} exceeds the packable maximum {_MAX_GRID}")
     coordinates = coordinates.to(torch.int64)
-    if torch.any(coordinates < 0) or torch.any(coordinates >= grid_size):
+    if not torch.jit.is_tracing() and (
+        bool(torch.any(coordinates < 0)) or bool(torch.any(coordinates >= grid_size))
+    ):
         raise TokenizerError("grid coordinates must lie within [0, grid_size)")
     return (coordinates[..., 0] * grid_size + coordinates[..., 1]) * grid_size + coordinates[..., 2]
 
@@ -116,10 +118,47 @@ def quantize(points: torch.Tensor, config: TokenizerConfig) -> torch.Tensor:
     config.validate()
     if points.ndim != 3 or points.shape[-1] != 3:
         raise TokenizerError(f"points must have shape [B, N, 3], got {tuple(points.shape)}")
-    if not torch.all(torch.isfinite(points)):
+    if not torch.jit.is_tracing() and not torch.all(torch.isfinite(points)):
         raise TokenizerError("points contain NaN or Inf")
     shifted = (points + config.extent) / config.voxel_size
     return torch.clamp(torch.floor(shifted), 0, config.grid_size - 1).to(torch.int64)
+
+
+def tokenize_points_dense(points: torch.Tensor, config: TokenizerConfig) -> tuple[torch.Tensor, torch.Tensor]:
+    """Tokenise without a Python loop or a data-dependent shape.
+
+    Same tokens as :func:`tokenize_points`, in the same order, but the token
+    axis is padded to the point count instead of to the number of occupied
+    voxels.  That upper bound is what makes the routine traceable: the number of
+    tokens a cloud produces is a property of the data, and a tracer that reads
+    it turns one observation's voxel layout into the exported model's topology.
+
+    Padding slots carry a zero mask, exactly as the sparse form's do, so the
+    encoder sees the same keys and the same masked mean -- only the amount of
+    padding differs.
+
+    Returns:
+        ``(token_positions [B, N, 3], token_mask [B, N])``.
+    """
+
+    config.validate()
+    coordinates = quantize(points, config)
+    keys = pack_grid_coordinates(coordinates, config.grid_size)  # [B, N]
+
+    sorted_keys, order = torch.sort(keys, dim=1)
+    starts = torch.ones_like(sorted_keys, dtype=torch.bool)
+    starts[:, 1:] = sorted_keys[:, 1:] != sorted_keys[:, :-1]
+    token_index = torch.cumsum(starts.to(torch.int64), dim=1) - 1  # [B, N]
+
+    gathered = torch.gather(points, 1, order.unsqueeze(-1).expand(-1, -1, 3))
+    sums = torch.zeros_like(points)
+    sums.scatter_add_(1, token_index.unsqueeze(-1).expand(-1, -1, 3), gathered)
+    counts = torch.zeros(keys.shape, dtype=points.dtype, device=points.device)
+    counts.scatter_add_(1, token_index, torch.ones_like(counts))
+
+    occupied = counts > 0
+    means = sums / counts.clamp(min=1.0).unsqueeze(-1)
+    return means, occupied.to(points.dtype)
 
 
 def tokenize_points(points: torch.Tensor, config: TokenizerConfig) -> TokenizedPoints:

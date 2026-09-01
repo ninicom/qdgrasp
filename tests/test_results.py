@@ -18,7 +18,8 @@ def make_results(count: int = 3, joints: int = 2) -> GraspResults:
         seed_points=torch.randn(count, 3, generator=generator),
         frame="palm",
         model_hash="a" * 64,
-        robot_hash="b" * 64,
+        training_robot_hash="b" * 64,
+        runtime_robot_hash="b" * 64,
     )
 
 
@@ -38,7 +39,8 @@ def test_shape_contract_is_enforced() -> None:
             seed_points=torch.zeros(2, 3),
             frame="palm",
             model_hash="a",
-            robot_hash="b",
+            training_robot_hash="b",
+            runtime_robot_hash="b",
         )
 
 
@@ -53,7 +55,8 @@ def test_invalid_rotation_is_rejected() -> None:
             seed_points=torch.zeros(1, 3),
             frame="palm",
             model_hash="a",
-            robot_hash="b",
+            training_robot_hash="b",
+            runtime_robot_hash="b",
         )
 
 

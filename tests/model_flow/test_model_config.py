@@ -106,7 +106,9 @@ def test_results_name_what_produced_them(leap: RobotSpec) -> None:
     # Built without a document, so provenance falls back to the settings, and
     # says so rather than emitting an empty string.
     assert results.model_hash.startswith("settings:")
-    assert results.robot_hash == "robot-profile:leap_hand"
+    # Nothing was transferred, so both roles name the same profile.
+    assert results.training_robot_hash == "robot-profile:leap_hand"
+    assert results.runtime_robot_hash == results.training_robot_hash
     assert results.joint_names == tuple(leap.actuated_joint_names)
 
 
@@ -116,7 +118,8 @@ def test_a_document_built_model_reports_the_document_hash() -> None:
     module = get_model_builder(MODEL_TYPE)(model_config, robot_config)
     results = module.predict_results(torch.randn(200, 3) * 0.05)
     assert results.model_hash == model_config.content_hash()
-    assert results.robot_hash == robot_config.content_hash()
+    assert results.training_robot_hash == robot_config.content_hash()
+    assert results.runtime_robot_hash == robot_config.content_hash()
 
 
 def test_predict_refuses_a_batched_cloud(leap: RobotSpec) -> None:

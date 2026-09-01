@@ -194,6 +194,7 @@ FINDINGS: tuple[Finding, ...] = (
             "robot/v1, while the exact-robot gate forbids the held-out inference the protocol requires"
         ),
         target="a versioned parser, exact semantic bundle checks and an explicit cross-embodiment binding",
+        status="closed",
     ),
     Finding(
         id="COR-10",
@@ -205,6 +206,7 @@ FINDINGS: tuple[Finding, ...] = (
             "topology, and only the dummy model is exercised"
         ),
         target="a tensor-only deterministic export adapter with explicit noise and dynamic-shape parity",
+        status="closed",
     ),
     Finding(
         id="COR-11",

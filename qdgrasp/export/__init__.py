@@ -11,6 +11,7 @@ from torch import nn
 
 from ..config.schema import ConfigError, ModelConfig, RobotConfig
 from ..engine.checkpoint import sha256_file
+from .flow import FlowExportAdapter
 from .torchscript import export_torchscript, verify_torchscript
 
 SUPPORTED_FORMATS = ("torchscript", "onnx")
@@ -71,4 +72,12 @@ def export_bundle(
     return ExportResult(path=artifact, metadata_path=metadata_path, metadata=metadata)
 
 
-__all__ = ("EXPORT_SCHEMA", "ExportResult", "SUPPORTED_FORMATS", "export_bundle", "export_torchscript", "verify_torchscript")
+__all__ = (
+    "EXPORT_SCHEMA",
+    "SUPPORTED_FORMATS",
+    "ExportResult",
+    "FlowExportAdapter",
+    "export_bundle",
+    "export_torchscript",
+    "verify_torchscript",
+)

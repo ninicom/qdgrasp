@@ -188,6 +188,14 @@ class CandidateQualityHead(nn.Module):
         )
 
     def forward(self, conditioning: torch.Tensor, candidate_state: torch.Tensor) -> torch.Tensor:
+        # Under a tracer every shape is a tensor, so these guards would be
+        # recorded as data flow and warned about.  They protect callers, and a
+        # traced graph has no callers to protect.
+        if not torch.jit.is_tracing():
+            self._check_shapes(conditioning, candidate_state)
+        return self.network(torch.cat([conditioning, candidate_state], dim=-1)).squeeze(-1)
+
+    def _check_shapes(self, conditioning: torch.Tensor, candidate_state: torch.Tensor) -> None:
         if conditioning.ndim != 2 or candidate_state.ndim != 2:
             raise ValueError(
                 "quality expects conditioning [B, C] and candidate_state [B, D], got "
@@ -204,7 +212,6 @@ class CandidateQualityHead(nn.Module):
                 f"C={self.conditioning_channels}, D={self.state_dimension}; got "
                 f"C={conditioning.shape[1]}, D={candidate_state.shape[1]}"
             )
-        return self.network(torch.cat([conditioning, candidate_state], dim=-1)).squeeze(-1)
 
 
 @dataclasses.dataclass
