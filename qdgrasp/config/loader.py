@@ -166,13 +166,13 @@ def load_versioned_document(reference: str | Path, kind: str) -> _Document:
     return parse_document(mapping, model, origin=str(reference))
 
 
-def load_robot_config(reference: str | Path) -> "RobotConfig | RobotConfigV2":
+def load_robot_config(reference: str | Path) -> RobotConfig | RobotConfigV2:
     """Load any registered robot profile document."""
 
     return cast("RobotConfig | RobotConfigV2", load_versioned_document(reference, "robot"))
 
 
-def load_data_config(reference: str | Path) -> "DataConfig | Any":
+def load_data_config(reference: str | Path) -> DataConfig | Any:
     """Load any registered data profile document."""
 
     return load_versioned_document(reference, "data")

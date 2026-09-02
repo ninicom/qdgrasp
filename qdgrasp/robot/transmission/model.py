@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence, Tuple
-import numpy as np
+from collections.abc import Sequence
+
 import mujoco
+import numpy as np
 
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.robot.spec import RobotSpec
-from .contracts import ActuatorCommand, TransmissionModel, TransmissionState
+
+from .contracts import TransmissionModel
 
 
 def extract_moment_matrix(
@@ -111,7 +113,7 @@ def create_transmission_model_from_spec_and_mjcf(
         # Match actuator names in compiled model
         # Check if spec actuator names exist in model or need prefix
         actuator_names_list: list[str] = []
-        for name in spec.actuators.keys():
+        for name in spec.actuators:
             if mujoco.mj_name2id(mjcf_model, mujoco.mjtObj.mjOBJ_ACTUATOR, name) >= 0:
                 actuator_names_list.append(name)
             else:

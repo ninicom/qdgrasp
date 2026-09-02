@@ -9,7 +9,8 @@ explicitly.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
+
 import numpy as np
 
 from ..objects.schema import ObjectManifestSpec
@@ -53,7 +54,7 @@ def create_object_family_splits(
         order = sorted(known_families)
         rng.shuffle(order)
         target = max(1, round(len(objects) * val_fraction))
-        selected: set[str] = set()
+        selected = set()
         selected_count = 0
         # Pick the next whole group when it improves (or initially establishes)
         # the distance to the requested sample count.  At least one group is

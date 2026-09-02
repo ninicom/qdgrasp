@@ -136,21 +136,29 @@ def _micro_checks() -> list[PackageResult]:
         module = QDGraspFlow(FlowModelSettings(), robot)
         joints = len(robot.actuated_joint_names)
         torch.manual_seed(0)
+        lower = torch.tensor([robot.joint_limits[name][0] for name in robot.actuated_joint_names])
+        upper = torch.tensor([robot.joint_limits[name][1] for name in robot.actuated_joint_names])
+        joint_angles = ((lower + upper) / 2).expand(2, joints).contiguous()
+        palm_pos = torch.randn(2, 3) * 0.05
+        palm_rot = torch.eye(3).expand(2, 3, 3).contiguous()
+        target_valid = torch.ones(2, dtype=torch.bool)
         batch = {
             "points": torch.randn(2, 256, 3) * 0.05,
-            "palm_pos": torch.randn(2, 3) * 0.05,
-            "palm_rot": torch.eye(3).expand(2, 3, 3).contiguous(),
-            "joint_angles": torch.zeros(2, joints),
-            "fingertip_positions": torch.zeros(2, len(robot.fingertip_links), 3),
+            "palm_pos": palm_pos,
+            "palm_rot": palm_rot,
+            "joint_angles": joint_angles,
+            "fingertip_positions": robot.fingertip_positions(palm_pos, palm_rot, joint_angles),
             "success": torch.tensor([1.0, 0.0]),
+            "kinematics_valid": target_valid,
+            "pose_target_valid": target_valid,
+            "joint_target_valid": target_valid,
+            "fk_target_valid": target_valid,
         }
         loss = module.training_step(batch)
         loss.backward()
         coverage = gradient_coverage(module)
         covered = sum(coverage.values())
         prediction = module(batch["points"])
-        lower = torch.tensor([robot.joint_limits[name][0] for name in robot.actuated_joint_names])
-        upper = torch.tensor([robot.joint_limits[name][1] for name in robot.actuated_joint_names])
         rotation = prediction.palm_rotation
         orthonormal = torch.allclose(rotation.transpose(-1, -2) @ rotation, torch.eye(3).expand_as(rotation), atol=1e-4)
         determinant = torch.allclose(torch.linalg.det(rotation), torch.ones(rotation.shape[0]), atol=1e-4)

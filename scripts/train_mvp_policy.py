@@ -22,6 +22,7 @@ import numpy as np
 
 from qdgrasp.mvp.bc import BehaviorCloningSpec, train_behavior_cloning
 from qdgrasp.mvp.config import load_mvp_scope
+from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
 from qdgrasp.mvp.env import environment_fingerprint
 from qdgrasp.mvp.evaluate import run_episodes
 from qdgrasp.mvp.expert import DemonstrationSet
@@ -125,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[bc] reload_parity={reload_ok} dev={json.dumps(bc_dev, sort_keys=True)}")
 
     report: dict[str, Any] = {
-        "schema": "qdgrasp/mvp-training-report/v0",
+        "schema": TRAINING_REPORT_SCHEMA,
         "commit": _commit(),
         "fingerprint": fingerprint,
         "demonstrations": demo_summary,
@@ -177,6 +178,12 @@ def main(argv: list[str] | None = None) -> int:
     else:
         report["candidate"] = str(bc_path)
 
+    # A report may only advertise the action contract and lineage that the
+    # candidate itself carries.  Reloading through the current safe loader also
+    # prevents a report from being written around a stale checkpoint schema.
+    candidate_payload = load_checkpoint(report["candidate"])
+    report["action_distribution"] = candidate_payload["architecture"]["action_distribution"]
+    report["lineage"] = candidate_payload["lineage"]
     report["elapsed_s"] = round(time.time() - started, 1)
     (args.out / "training-report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"

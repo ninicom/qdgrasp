@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Sequence, Tuple
-import numpy as np
-import mujoco
+from collections.abc import Sequence
 
+import mujoco
+import numpy as np
+
+from .command import project_joint_delta_to_actuator_command
 from .contracts import ActuatorCommand, TransmissionModel, TransmissionState
 from .model import extract_moment_matrix
-from .command import project_joint_delta_to_actuator_command
 
 
 class DirectJointTransmission(TransmissionModel):
@@ -44,11 +45,11 @@ class DirectJointTransmission(TransmissionModel):
         self._rank = int(np.linalg.matrix_rank(self._M))
 
     @property
-    def joint_names(self) -> Tuple[str, ...]:
+    def joint_names(self) -> tuple[str, ...]:
         return self._joint_names
 
     @property
-    def actuator_names(self) -> Tuple[str, ...]:
+    def actuator_names(self) -> tuple[str, ...]:
         return self._actuator_names
 
     @property

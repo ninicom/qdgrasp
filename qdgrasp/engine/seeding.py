@@ -8,10 +8,11 @@ import random
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
+from numpy.typing import NDArray
 
 
 @dataclass(frozen=True)
@@ -97,7 +98,7 @@ def capture_rng() -> RngSnapshot:
     """Snapshot every RNG stream QDGrasp advances during a run."""
 
     python_state = random.getstate()
-    numpy_state = np.random.get_state()
+    numpy_state = cast(tuple[str, NDArray[np.uint32], int, int, float], np.random.get_state())
     return RngSnapshot(
         python=json.dumps([python_state[0], list(python_state[1]), python_state[2]]),
         numpy=json.dumps([numpy_state[0], [int(value) for value in numpy_state[1]], *numpy_state[2:]]),

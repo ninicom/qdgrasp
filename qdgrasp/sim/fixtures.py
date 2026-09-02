@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import mujoco
 import numpy as np
 
 from ..config.schema import ConfigError
-from .mujoco import MujocoSim
 
 
 @dataclass(frozen=True)
@@ -26,7 +24,7 @@ class FixtureResult:
     metrics: dict[str, float]
 
 
-GEOM_TYPES: dict[str, "mujoco.mjtGeom"] = {
+GEOM_TYPES: dict[str, mujoco.mjtGeom] = {
     "box": mujoco.mjtGeom.mjGEOM_BOX,
     "sphere": mujoco.mjtGeom.mjGEOM_SPHERE,
     "cylinder": mujoco.mjtGeom.mjGEOM_CYLINDER,
@@ -42,7 +40,7 @@ def build_evaluation_model(
     object_mass: float = 0.1,
     timestep: float = 0.002,
     gravity: tuple[float, float, float] = (0.0, 0.0, -9.81),
-) -> "mujoco.MjModel":
+) -> mujoco.MjModel:
     """Compile a scene holding the hand plus a graspable object.
 
     Built through :class:`mujoco.MjSpec` rather than by splicing an ``<include>``
@@ -60,7 +58,7 @@ def build_evaluation_model(
 
     try:
         spec = mujoco.MjSpec.from_file(str(hand_p))
-    except Exception as exc:  # noqa: BLE001 - re-raised with the offending path
+    except Exception as exc:
         raise ConfigError(f"failed to load hand model {hand_p}: {exc}") from exc
 
     spec.option.timestep = float(timestep)
@@ -87,7 +85,7 @@ def build_evaluation_model(
 
     try:
         return spec.compile()
-    except Exception as exc:  # noqa: BLE001 - re-raised with context
+    except Exception as exc:
         raise ConfigError(f"failed to compile grasp fixture scene for {hand_p}: {exc}") from exc
 
 

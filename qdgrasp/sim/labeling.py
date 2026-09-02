@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import mujoco
 import numpy as np
 
+from ..config.schema import ConfigError
 from ..dataset.pipeline.validators.mujoco_rollout import (
     build_rollout_scene_model,
     validate_grasp_rollout,
 )
 from ..objects.schema import SubGeomSpec
-from ..config.schema import ConfigError
 from ..robot.spec import RobotSpec, resolve_robot_asset
 
 

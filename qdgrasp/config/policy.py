@@ -17,7 +17,6 @@ import torch
 from ..runtime import require_cuda
 from .schema import ConfigError, RunConfig
 
-
 LOGGER = logging.getLogger("qdgrasp.config")
 
 

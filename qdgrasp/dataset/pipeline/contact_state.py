@@ -14,7 +14,8 @@ Work package P3.2.1-03 is what points the autodiff path at `"configured"`.
 
 from __future__ import annotations
 
-from typing import Any, Literal, Mapping, Tuple
+from collections.abc import Mapping
+from typing import Any, Literal
 
 import torch
 
@@ -106,7 +107,7 @@ def contact_state(
     q: torch.Tensor,
     *,
     mode: DirectionMode = "configured",
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Contact points [B, K, 3] and contact directions [B, K, 3] at ``q``."""
     transforms = spec.forward_kinematics(palm_pos, palm_rot, q)
     return contact_state_from_transforms(
@@ -120,7 +121,7 @@ def contact_state_from_transforms(
     *,
     fallback_origin: torch.Tensor,
     mode: DirectionMode = "configured",
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Same as `contact_state` for an FK result that has already been computed."""
     positions = torch.stack(
         [contact_position(spec, transforms, tip) for tip in spec.fingertip_links], dim=1

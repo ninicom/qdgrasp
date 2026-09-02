@@ -1,6 +1,8 @@
 import dataclasses
-from typing import Any, Dict, Optional
+from typing import Any
+
 import numpy as np
+
 
 @dataclasses.dataclass(frozen=True)
 class ContactProposal:
@@ -9,13 +11,13 @@ class ContactProposal:
     face_ids: np.ndarray       # [K]
     inward_normals: np.ndarray # [K, 3]
     finger_ids: np.ndarray     # [K]
-    active_fingers: Optional[np.ndarray] = None  # [K] bool task membership
-    opposition_pairs: Optional[np.ndarray] = None  # [P, 2] finger indices
+    active_fingers: np.ndarray | None = None  # [K] bool task membership
+    opposition_pairs: np.ndarray | None = None  # [P, 2] finger indices
     candidate_id: str = ""     # stable content identity
-    region_points: Optional[np.ndarray] = None  # [K, R, 3] exact surface samples
-    region_face_ids: Optional[np.ndarray] = None  # [K, R]
-    region_normals: Optional[np.ndarray] = None  # [K, R, 3]
-    force_hints: Optional[np.ndarray] = None # [K, 3]
+    region_points: np.ndarray | None = None  # [K, R, 3] exact surface samples
+    region_face_ids: np.ndarray | None = None  # [K, R]
+    region_normals: np.ndarray | None = None  # [K, R, 3]
+    force_hints: np.ndarray | None = None # [K, 3]
     provenance: str = ""       # Identity of the strategy
 
 @dataclasses.dataclass(frozen=True)
@@ -30,13 +32,13 @@ class KinematicSolution:
     normal_residuals: np.ndarray   # [B, K] per-finger normal angular error
     converged: np.ndarray       # [B] boolean mask
     reason: np.ndarray          # [B] string or enum for failure reason
-    iterations: Optional[np.ndarray] = None  # [B] solver iterations consumed
-    surface_contacts: Optional[np.ndarray] = None  # nearest object points [B,K,3]
-    surface_normals: Optional[np.ndarray] = None  # inward object normals [B,K,3]
-    surface_distances: Optional[np.ndarray] = None  # tip-to-surface distance [B,K]
-    solver_metrics: Optional[Dict[str, np.ndarray]] = None  # per-candidate solver telemetry
-    palm_hypothesis_id: Optional[str] = None
-    palm_hypothesis_metrics: Optional[Dict[str, float]] = None
+    iterations: np.ndarray | None = None  # [B] solver iterations consumed
+    surface_contacts: np.ndarray | None = None  # nearest object points [B,K,3]
+    surface_normals: np.ndarray | None = None  # inward object normals [B,K,3]
+    surface_distances: np.ndarray | None = None  # tip-to-surface distance [B,K]
+    solver_metrics: dict[str, np.ndarray] | None = None  # per-candidate solver telemetry
+    palm_hypothesis_id: str | None = None
+    palm_hypothesis_metrics: dict[str, float] | None = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -44,7 +46,7 @@ class CollisionAdmission:
     """Exact compiled-scene collision evidence for one contact pose."""
     passed: bool
     reason: str
-    contact_pairs: tuple[Dict[str, Any], ...]
+    contact_pairs: tuple[dict[str, Any], ...]
     max_penetration: float
     min_hand_floor_clearance: float
 
@@ -60,7 +62,7 @@ class StaticCertificate:
 @dataclasses.dataclass(frozen=True)
 class DynamicValidation:
     """Output of a DynamicValidator (e.g. mujoco_rollout)."""
-    trajectory_metrics: Dict[str, Any]
+    trajectory_metrics: dict[str, Any]
     per_finger_loads: np.ndarray # [K, 6] per-finger measured load (force, torque)
     failure_stage: str           # e.g., 'lift', 'perturbation', 'none'
     passed: bool                 # True if survived dynamic disturbance
@@ -77,11 +79,11 @@ class PipelineOutcome:
     failure_reason: str
     recipe_id: str = ""
 
-    proposal: Optional[ContactProposal] = None
-    kinematics: Optional[KinematicSolution] = None
-    collision_admission: Optional[CollisionAdmission] = None
-    static_certificate: Optional[StaticCertificate] = None
-    dynamic_validation: Optional[DynamicValidation] = None
+    proposal: ContactProposal | None = None
+    kinematics: KinematicSolution | None = None
+    collision_admission: CollisionAdmission | None = None
+    static_certificate: StaticCertificate | None = None
+    dynamic_validation: DynamicValidation | None = None
 
 # Allowlist Registry
 ALLOWED_RECIPES = {
@@ -102,7 +104,7 @@ ALLOWED_RECIPES = {
 class RegistryError(Exception):
     pass
 
-def get_recipe(recipe_id: str) -> Dict[str, str]:
+def get_recipe(recipe_id: str) -> dict[str, str]:
     if recipe_id not in ALLOWED_RECIPES:
         raise RegistryError(f"Recipe {recipe_id} is not in the allowlist.")
     return ALLOWED_RECIPES[recipe_id]

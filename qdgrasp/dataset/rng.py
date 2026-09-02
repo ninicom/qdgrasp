@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -14,7 +14,7 @@ def derive_seed(base_seed: int, *path: str | int) -> int:
     Uses cryptographic SHA-256 domain separation to ensure complete statistical
     independence between different splits, object IDs, candidate IDs, and runs.
     """
-    token = f"{base_seed}:{':'.join(str(p) for p in path)}".encode("utf-8")
+    token = f"{base_seed}:{':'.join(str(p) for p in path)}".encode()
     digest = hashlib.sha256(token).digest()
     return int.from_bytes(digest[:8], byteorder="big", signed=False)
 

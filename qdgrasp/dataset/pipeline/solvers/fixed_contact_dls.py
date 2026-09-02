@@ -1,9 +1,8 @@
-from typing import Optional
+
 import numpy as np
 import torch
 from torch.func import jacrev
 
-from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.dataset.pipeline import contact_state as contact_state_module
 from qdgrasp.dataset.pipeline.contracts import KinematicSolution
 from qdgrasp.dataset.pipeline.solvers.normal_equations import masked_normal_equations
@@ -13,6 +12,8 @@ from qdgrasp.dataset.pipeline.solvers.progress import (
     meaningful_cost_decrease,
     solver_metrics_to_numpy,
 )
+from qdgrasp.robot.spec import RobotSpec
+
 
 def solve_dls_ik_batch(
     spec: RobotSpec,
@@ -20,8 +21,8 @@ def solve_dls_ik_batch(
     palm_rot: np.ndarray,
     target_contacts: np.ndarray,
     target_normals: np.ndarray,
-    init_q: Optional[np.ndarray] = None,
-    active_fingers: Optional[np.ndarray | torch.Tensor] = None,
+    init_q: np.ndarray | None = None,
+    active_fingers: np.ndarray | torch.Tensor | None = None,
     damping: float = 0.01,
     step_size: float = 0.5,
     max_iter: int = 50,

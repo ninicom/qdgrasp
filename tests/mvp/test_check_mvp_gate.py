@@ -23,6 +23,17 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
+from qdgrasp.mvp.env import OBSERVATION_DIMENSION, environment_fingerprint
+from qdgrasp.mvp.evaluate import EVAL_REPORT_SCHEMA, wilson_lower_bound, wilson_upper_bound
+from qdgrasp.mvp.policy import (
+    ACTION_DISTRIBUTION,
+    ResidualActorCritic,
+    RunningNormalizer,
+    load_checkpoint,
+    save_checkpoint,
+)
+from qdgrasp.mvp.prior import PinchPriorTable
 from scripts.check_mvp import run_checks
 
 
@@ -32,21 +43,23 @@ def _write(path: Path, payload: object) -> None:
 
 
 def _tier(name: str, episodes: int, successes: int, *, passed: bool = True, **overrides: object) -> dict[str, object]:
+    minimums = {"A": (0.95, None), "B": (0.85, 0.8), "C": (0.7, None)}
+    minimum_rate, minimum_wilson = minimums[name]
     tier = {
         "tier": name,
         "episodes": episodes,
         "successes": successes,
         "success_rate": successes / episodes,
-        "wilson_lower": 0.9,
-        "wilson_upper": 1.0,
+        "wilson_lower": wilson_lower_bound(successes, episodes),
+        "wilson_upper": wilson_upper_bound(successes, episodes),
         "invalid_state": 0,
         "safety_violation": 0,
         "checkpoint_reload_mismatch": 0,
-        "failure_buckets": {},
-        "min_success_rate": 0.7,
-        "min_wilson_lower_bound": None,
+        "failure_buckets": {"timeout": episodes - successes} if successes < episodes else {},
+        "min_success_rate": minimum_rate,
+        "min_wilson_lower_bound": minimum_wilson,
         "passed": passed,
-        "ledger_path": f"runs/mvp/evaluation/candidate/tier-{name.lower()}.jsonl",
+        "ledger_path": f"runs/mvp/evaluation/ppo/tier-{name.lower()}.jsonl",
     }
     tier.update(overrides)
     return tier
@@ -67,12 +80,30 @@ class MvpClosureGateTests(unittest.TestCase):
         scope = load_mvp_scope(self.root / "configs/mvp/dexacquire-mvp-v0.yaml")
         self.scope = scope
 
+        prior = PinchPriorTable.load(self.root / "configs/mvp/leap-pinch-prior-v0.json")
+        fingerprint = environment_fingerprint(scope, prior)
+        normalizer = RunningNormalizer(dimension=OBSERVATION_DIMENSION)
+        bc_checkpoint = self.runs / "policy" / "bc.pt"
         checkpoint = self.runs / "policy" / "ppo.pt"
-        checkpoint.parent.mkdir(parents=True, exist_ok=True)
-        checkpoint.write_bytes(b"weights")
+        save_checkpoint(
+            bc_checkpoint,
+            ResidualActorCritic(hidden=(8,)),
+            normalizer,
+            fingerprint=fingerprint,
+            stage="bc",
+        )
+        save_checkpoint(
+            checkpoint,
+            ResidualActorCritic(hidden=(8,)),
+            normalizer,
+            fingerprint=fingerprint,
+            stage="ppo",
+            metadata={"parent": str(bc_checkpoint)},
+        )
+        candidate_payload = load_checkpoint(checkpoint)
         import hashlib
 
-        digest = hashlib.sha256(b"weights").hexdigest()
+        digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
 
         _write(
             self.runs / "demonstrations/index.json",
@@ -91,31 +122,57 @@ class MvpClosureGateTests(unittest.TestCase):
         _write(
             self.runs / "policy/training-report.json",
             {
-                "fingerprint": {"scope_hash": scope.content_hash()},
+                "schema": TRAINING_REPORT_SCHEMA,
+                "action_distribution": ACTION_DISTRIBUTION,
+                "fingerprint": fingerprint,
+                "lineage": candidate_payload["lineage"],
                 "candidate": str(checkpoint),
                 "bc": {
                     "reload_parity": True,
                     "dev": {"success_rate": 0.93, "safety_violation": 0},
-                    "checkpoint": str(self.runs / "policy" / "bc.pt"),
+                    "checkpoint": str(bc_checkpoint),
                 },
                 "ppo": {
                     "dev": {"success_rate": 0.95, "safety_violation": 0},
                     "promoted": True,
+                    "checkpoint": str(checkpoint),
                 },
             },
         )
         _write(
             self.runs / "evaluation/controller_prior.json",
-            {"tiers": [_tier("A", 100, 100), _tier("B", 300, 270), _tier("C", 200, 180)]},
+            {
+                "schema": EVAL_REPORT_SCHEMA,
+                "fingerprint": fingerprint,
+                "checkpoint_fingerprint": {
+                    "stored": None,
+                    "effective": fingerprint,
+                    "verdict": "not_applicable",
+                },
+                "tiers": [_tier("A", 100, 100), _tier("B", 300, 270), _tier("C", 200, 180)],
+            },
         )
         _write(
             self.runs / "evaluation/ppo.json",
             {
-                "fingerprint": {"eval_manifest_hash": scope.eval_manifest_hash()},
+                "schema": EVAL_REPORT_SCHEMA,
+                "candidate": "ppo",
+                "checkpoint": str(checkpoint),
+                "fingerprint": fingerprint,
+                "checkpoint_fingerprint": {
+                    "stored": fingerprint,
+                    "effective": fingerprint,
+                    "verdict": "match",
+                },
                 "checkpoint_sha256": digest,
                 "tiers": [_tier("A", 100, 100), _tier("B", 300, 280), _tier("C", 200, 180)],
+                "all_tiers_passed": True,
             },
         )
+        for tier, episodes in (("a", 100), ("b", 300), ("c", 200)):
+            ledger = self.runs / "evaluation" / "ppo" / f"tier-{tier}.jsonl"
+            ledger.parent.mkdir(parents=True, exist_ok=True)
+            ledger.write_text("{}\n" * episodes, encoding="utf-8")
         (self.root / "notebooks").mkdir(parents=True, exist_ok=True)
         (self.root / "notebooks/mvp_grasp_policy.ipynb").write_text("{}", encoding="utf-8")
         card = self.root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md"
@@ -127,6 +184,33 @@ class MvpClosureGateTests(unittest.TestCase):
 
     def test_a_complete_artifact_set_passes(self) -> None:
         self.assertEqual(self.failures(), [])
+
+    def test_a_v0_training_report_cannot_reuse_v1_checkpoint_results(self) -> None:
+        report = json.loads((self.runs / "policy/training-report.json").read_text(encoding="utf-8"))
+        report["schema"] = "qdgrasp/mvp-training-report/v0"
+        _write(self.runs / "policy/training-report.json", report)
+        self.assertIn("training_report_schema", self.failures())
+
+    def test_a_checkpoint_outside_the_evidence_root_is_not_replaced_by_its_basename(self) -> None:
+        outside = self.root / "outside" / "ppo.pt"
+        outside.parent.mkdir(parents=True)
+        shutil.copy2(self.runs / "policy/ppo.pt", outside)
+        report = json.loads((self.runs / "policy/training-report.json").read_text(encoding="utf-8"))
+        report["candidate"] = str(outside)
+        _write(self.runs / "policy/training-report.json", report)
+        self.assertIn("candidate_checkpoint_is_contained", self.failures())
+
+    def test_an_evaluation_without_checkpoint_fingerprint_verdict_fails(self) -> None:
+        report = json.loads((self.runs / "evaluation/ppo.json").read_text(encoding="utf-8"))
+        report.pop("checkpoint_fingerprint")
+        _write(self.runs / "evaluation/ppo.json", report)
+        self.assertIn("checkpoint_fingerprint_verdict", self.failures())
+
+    def test_a_doctored_tier_summary_is_recomputed(self) -> None:
+        report = json.loads((self.runs / "evaluation/ppo.json").read_text(encoding="utf-8"))
+        report["tiers"][1]["success_rate"] = 1.0
+        _write(self.runs / "evaluation/ppo.json", report)
+        self.assertIn("tier_b_contract", self.failures())
 
     def test_a_failed_tier_fails_the_gate(self) -> None:
         report = json.loads((self.runs / "evaluation/ppo.json").read_text(encoding="utf-8"))
@@ -181,6 +265,17 @@ class MvpClosureGateTests(unittest.TestCase):
     def test_a_missing_model_card_fails_the_gate(self) -> None:
         (self.root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md").unlink()
         self.assertIn("model_card_present", self.failures())
+
+
+def test_committed_v0_evidence_is_rejected_by_the_current_contract() -> None:
+    failures = {
+        check.name
+        for check in run_checks(PROJECT_ROOT, PROJECT_ROOT / "evidence/mvp/round-3")
+        if not check.passed
+    }
+    assert "training_report_schema" in failures
+    assert "bc_checkpoint_loads" in failures
+    assert "evaluation_report_schema" in failures
 
 
 if __name__ == "__main__":

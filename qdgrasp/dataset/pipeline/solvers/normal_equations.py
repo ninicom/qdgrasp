@@ -9,8 +9,6 @@ Assembling the system here makes the invariant checkable in isolation.
 
 from __future__ import annotations
 
-from typing import Tuple
-
 import torch
 
 
@@ -19,7 +17,7 @@ def masked_normal_equations(
     error: torch.Tensor,
     active_flat_mask: torch.Tensor,
     damping_matrix: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Assemble ``(H, g)`` for the active task rows only.
 
     Args:

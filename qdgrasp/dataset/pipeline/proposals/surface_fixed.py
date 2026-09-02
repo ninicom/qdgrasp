@@ -1,7 +1,9 @@
 import numpy as np
 import trimesh
+
 from qdgrasp.dataset.pipeline.contracts import ContactProposal
 from qdgrasp.dataset.pipeline.proposals.identity import stable_candidate_id
+
 
 def generate_surface_fixed_proposal(
     mesh: trimesh.Trimesh,

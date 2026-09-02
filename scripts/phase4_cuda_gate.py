@@ -100,6 +100,7 @@ def _fixture(robot, samples: int, points: int, seed: int, device):
     palm_pos = torch.randn(samples, 3, generator=generator) * 0.05
     palm_rot = torch.tensor(Rotation.random(samples, random_state=seed).as_matrix(), dtype=torch.float32)
     joints = lower + torch.rand(samples, len(names), generator=generator) * (upper - lower)
+    target_valid = torch.ones(samples, dtype=torch.bool, device=device)
     return {
         "points": (torch.randn(samples, points, 3, generator=generator) * 0.04).to(device),
         "palm_pos": palm_pos.to(device),
@@ -107,6 +108,10 @@ def _fixture(robot, samples: int, points: int, seed: int, device):
         "joint_angles": joints.to(device),
         "fingertip_positions": robot.fingertip_positions(palm_pos, palm_rot, joints).to(device),
         "success": (torch.rand(samples, generator=generator) > 0.5).float().to(device),
+        "kinematics_valid": target_valid,
+        "pose_target_valid": target_valid,
+        "joint_target_valid": target_valid,
+        "fk_target_valid": target_valid,
     }
 
 

@@ -7,7 +7,8 @@ resume artifact restore the exact position inside an epoch, which a shuffling
 
 from __future__ import annotations
 
-from typing import Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import torch
 from torch.utils.data import default_collate

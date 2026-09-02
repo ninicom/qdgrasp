@@ -8,8 +8,6 @@ from typing import Any
 import numpy as np
 import trimesh
 
-from .rng import sample_sphere_surface
-
 
 @dataclass(frozen=True)
 class CameraModel:

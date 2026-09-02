@@ -172,6 +172,8 @@ class DgnOpenDataset(Dataset):
 
 def create_dgn_open_dataset(config: Any, *args: Any, split: str = "train", **kwargs: Any) -> Dataset:
     """Builder callback for registered dataset configuration."""
+    allowed_profiles: Sequence[str] | None
+    protocol_file: str | Path | None
     if isinstance(config, DataConfigV2):
         root = config.dataset_root
         p_count = config.point_count
@@ -194,8 +196,8 @@ def create_dgn_open_dataset(config: Any, *args: Any, split: str = "train", **kwa
         allowed_profiles = getattr(config, "robot_profiles", None)
         protocol_file = getattr(config, "protocol_file", None)
 
-    robot_name = None
-    robot_config = None
+    robot_name: str | None = None
+    robot_config: Any | None = None
     if len(args) > 0 and hasattr(args[0], "name"):
         robot_config = args[0]
         robot_name = robot_config.name

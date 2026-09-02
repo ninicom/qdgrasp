@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+
 from pydantic import ConfigDict, Field, field_validator
 
 from ..config.active_scope import DEFAULT_ROBOT_PROFILES

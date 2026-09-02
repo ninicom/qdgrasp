@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
 
 import torch
 
@@ -38,7 +37,7 @@ class HandGraph:
     def num_edges(self) -> int:
         return int(self.edge_index.shape[1]) if self.edge_index.numel() > 0 else 0
 
-    def to(self, device: torch.device | str) -> "HandGraph":
+    def to(self, device: torch.device | str) -> HandGraph:
         return HandGraph(
             node_names=self.node_names,
             node_features=self.node_features.to(device),

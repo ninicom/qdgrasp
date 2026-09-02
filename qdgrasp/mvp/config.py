@@ -253,7 +253,7 @@ class EvalTierSpec(_Doc):
 class MvpScopeConfig(_Doc):
     """The whole locked scope of ``QDGrasp-DexAcquire-MVP-v0``."""
 
-    schema_version: Literal[MVP_SCOPE_SCHEMA_V0] = Field(alias="schema")
+    schema_version: Literal["qdgrasp/mvp-scope/v0"] = Field(alias="schema")
     mvp_id: str
     environment_id: str
     artifact_id: str

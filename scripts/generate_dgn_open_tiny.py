@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import logging
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from qdgrasp.dataset.manifest import DatasetManifestSpec, ShardMetadata, save_da
 from qdgrasp.dataset.pipeline.contracts import ALLOWED_RECIPES, PipelineOutcome, get_recipe
 from qdgrasp.dataset.pipeline.generated_reachable import build_grasp_bar, generated_reachable_rng
 from qdgrasp.dataset.pipeline.orchestrator import run_pipeline_chunk
+from qdgrasp.dataset.provenance import loaded_qdgrasp_source_hashes
 from qdgrasp.dataset.render import sample_analytic_point_cloud
 from qdgrasp.dataset.rng import get_generator
 from qdgrasp.dataset.shards import write_shard_file
@@ -40,6 +42,9 @@ from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
 from qdgrasp.runtime import environment_info
 
 logger = logging.getLogger("generate_dgn_open_tiny")
+
+ObjectGenerator = Callable[..., Any]
+ObjectDefinition = tuple[str, str, str, ObjectGenerator, dict[str, Any]]
 
 # Candidate budgets of the validated positive-control envelope (P3.1-13).  They
 # are the budgets the recipe selection was measured at and must not be raised
@@ -229,16 +234,18 @@ def generate_tiny_dataset(
     meshes: dict[str, Any] = {}
 
     # 1. Generate 4 primitives
-    prim_defs = [
+    prim_defs: list[ObjectDefinition] = [
         ("prim_box_01", "primitive", "box", generate_box, {}),
         ("prim_sphere_01", "primitive", "sphere", generate_sphere, {}),
         ("prim_cylinder_01", "primitive", "cylinder", generate_cylinder, {}),
         ("prim_capsule_01", "primitive", "capsule", generate_capsule, {}),
     ]
     # 2. Generate 4 superquadrics
-    sq_defs = [(f"sq_{i:02d}", "superquadric", "superquadric", generate_superquadric, {}) for i in range(1, 5)]
+    sq_defs: list[ObjectDefinition] = [
+        (f"sq_{i:02d}", "superquadric", "superquadric", generate_superquadric, {}) for i in range(1, 5)
+    ]
     # 3. Generate 4 compound convex shapes
-    comp_defs = [
+    comp_defs: list[ObjectDefinition] = [
         ("comp_t_shape_01", "compound", "t_shape", generate_compound_convex, {"shape_family": "t_shape"}),
         ("comp_t_shape_02", "compound", "t_shape", generate_compound_convex, {"shape_family": "t_shape"}),
         ("comp_l_shape_01", "compound", "l_shape", generate_compound_convex, {"shape_family": "l_shape"}),
@@ -411,24 +418,7 @@ def generate_tiny_dataset(
         obj.object_id: hashlib.sha256((obj_dir / f"{obj.object_id}.manifest.json").read_bytes()).hexdigest()
         for obj in objects
     }
-    source_names = [
-        "scripts/generate_dgn_open_tiny.py",
-        "qdgrasp/dataset/manifest.py",
-        "qdgrasp/dataset/pipeline/contracts.py",
-        "qdgrasp/dataset/pipeline/generated_reachable.py",
-        "qdgrasp/dataset/pipeline/filter.py",
-        "qdgrasp/dataset/pipeline/orchestrator.py",
-        "qdgrasp/dataset/pipeline/proposals/surface_fixed.py",
-        "qdgrasp/dataset/pipeline/proposals/region_opposition.py",
-        "qdgrasp/dataset/pipeline/proposals/wrench_guided.py",
-        "qdgrasp/dataset/pipeline/solvers/fixed_contact_dls.py",
-        "qdgrasp/dataset/pipeline/solvers/region_dls.py",
-        "qdgrasp/dataset/pipeline/certifiers/contact_force.py",
-        "qdgrasp/dataset/pipeline/certifiers/grasp_wrench.py",
-        "qdgrasp/dataset/pipeline/observers/contact_load.py",
-        "qdgrasp/dataset/pipeline/validators/mujoco_rollout.py",
-    ]
-    source_hashes = {name: hashlib.sha256((repo_root / name).read_bytes()).hexdigest() for name in source_names}
+    source_hashes = loaded_qdgrasp_source_hashes(repo_root)
     release_blocked = any(
         shard.positive_samples == 0 or shard.positive_samples == shard.num_samples for shard in shard_metas
     )

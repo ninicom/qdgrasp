@@ -7,8 +7,8 @@ state mapping so a callback stays usable when new fields are added.
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable, Protocol, runtime_checkable
-
+from collections.abc import Iterable
+from typing import Any, Protocol, runtime_checkable
 
 LOGGER = logging.getLogger("qdgrasp.engine")
 

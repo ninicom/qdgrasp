@@ -4,17 +4,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Sequence, Tuple
-import numpy as np
+
 import mujoco
+import numpy as np
 
 
 @dataclass(frozen=True)
 class TransmissionState:
     """Snapshot of kinematic joint states and corresponding actuator coordinates."""
 
-    joint_names: Tuple[str, ...]
-    actuator_names: Tuple[str, ...]
+    joint_names: tuple[str, ...]
+    actuator_names: tuple[str, ...]
     joint_position: np.ndarray  # [B, J] or [J]
     actuator_coordinate: np.ndarray  # [B, U] or [U] (joint angle or tendon length)
     moment_matrix: np.ndarray  # [B, U, J] or [U, J] (dl/dq in spec named joint order)
@@ -88,13 +88,13 @@ class TransmissionModel(ABC):
 
     @property
     @abstractmethod
-    def joint_names(self) -> Tuple[str, ...]:
+    def joint_names(self) -> tuple[str, ...]:
         """Names of actuated joints in canonical RobotSpec order."""
         ...
 
     @property
     @abstractmethod
-    def actuator_names(self) -> Tuple[str, ...]:
+    def actuator_names(self) -> tuple[str, ...]:
         """Names of actuators in canonical control order."""
         ...
 

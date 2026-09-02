@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Sequence, Tuple
 import numpy as np
 
 from .contracts import ActuatorCommand, GraspCommandPlan, TransmissionState

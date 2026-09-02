@@ -1,15 +1,18 @@
-from typing import Any, Dict, Optional, Sequence, Set
-import numpy as np
+from collections.abc import Sequence
+from typing import Any
+
 import mujoco
+import numpy as np
+
 
 def extract_contact_loads(
     model: mujoco.MjModel,
     data: mujoco.MjData,
-    object_geom_ids: Set[int],
+    object_geom_ids: set[int],
     fingertip_body_names: Sequence[str],
     palm_body_names: Sequence[str] = ("palm", "base_link"),
-    mu: Optional[float] = None,
-) -> Dict[str, Any]:
+    mu: float | None = None,
+) -> dict[str, Any]:
     """
     Extracts physically accurate contact forces from MuJoCo using mj_contactForce.
     Separates normal and tangential forces, tracks per-finger loads, and computes net wrench on the object.
@@ -147,5 +150,5 @@ def extract_contact_loads(
         "net_fingertip_wrench": net_fingertip_wrench, # [6]
         "active_fingers_count": active_fingers_count,
         "has_palm_contact": has_palm_contact,
-        "contacting_links": list(sorted(contacting_links)),
+        "contacting_links": sorted(contacting_links),
     }

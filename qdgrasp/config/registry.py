@@ -7,8 +7,8 @@ content, so a configuration file can never widen the executable surface.
 
 from __future__ import annotations
 
-from typing import Callable, TypeVar
-
+from collections.abc import Callable
+from typing import TypeVar
 
 T = TypeVar("T")
 

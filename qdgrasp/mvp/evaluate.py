@@ -155,7 +155,7 @@ def verify_checkpoint_fingerprint(
     payload = load_checkpoint(checkpoint_path)
     stored = payload.get("fingerprint")
     if not isinstance(stored, dict):
-        raise ValueError(f"checkpoint {checkpoint_path} has no fingerprint mapping")
+        raise TypeError(f"checkpoint {checkpoint_path} has no fingerprint mapping")
     mismatched = {
         key: {"stored": stored.get(key), "effective": value}
         for key, value in expected.items()

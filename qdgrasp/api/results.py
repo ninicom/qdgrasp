@@ -77,7 +77,7 @@ class GraspResults:
 
         return self.translation.device
 
-    def to(self, device: str | torch.device) -> "GraspResults":
+    def to(self, device: str | torch.device) -> GraspResults:
         """Return a copy with every tensor moved to ``device``."""
 
         target = torch.device(device)
@@ -90,7 +90,7 @@ class GraspResults:
             seed_points=self.seed_points.to(target),
         )
 
-    def cpu(self) -> "GraspResults":
+    def cpu(self) -> GraspResults:
         """Return a CPU copy."""
 
         return self.to("cpu")
@@ -144,7 +144,7 @@ class GraspResults:
         return target
 
     @classmethod
-    def load(cls, path: str | Path) -> "GraspResults":
+    def load(cls, path: str | Path) -> GraspResults:
         """Read back an archive written by :meth:`save`."""
 
         with np.load(Path(path), allow_pickle=False) as archive:

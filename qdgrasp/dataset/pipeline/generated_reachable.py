@@ -11,8 +11,8 @@ from dataclasses import dataclass
 
 import trimesh
 
-from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.dataset.rng import get_generator
+from qdgrasp.objects.schema import SubGeomSpec
 
 
 @dataclass(frozen=True)

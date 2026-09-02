@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, Literal
 
+from pydantic import BaseModel, ConfigDict, Field
 
 SubGeomType = Literal["box", "sphere", "cylinder", "capsule", "ellipsoid"]
 

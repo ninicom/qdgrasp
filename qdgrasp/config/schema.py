@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .registry import register_document_schema
-
 
 MODEL_SCHEMA_V1 = "qdgrasp/model/v1"
 ROBOT_SCHEMA_V1 = "qdgrasp/robot/v1"
@@ -57,7 +57,7 @@ class _Document(BaseModel):
 class ModelConfig(_Document):
     """Selects a registered model builder and its declared parameters."""
 
-    schema_version: Literal[MODEL_SCHEMA_V1] = Field(alias="schema")
+    schema_version: Literal["qdgrasp/model/v1"] = Field(alias="schema")
     name: str
     type: str
     params: dict[str, int | float | bool | str] = Field(default_factory=dict)
@@ -71,7 +71,7 @@ class RobotConfig(_Document):
     finite limits plus the palm frame the poses are expressed in.
     """
 
-    schema_version: Literal[ROBOT_SCHEMA_V1] = Field(alias="schema")
+    schema_version: Literal["qdgrasp/robot/v1"] = Field(alias="schema")
     name: str
     palm_link: str
     frame: str = "palm"
@@ -88,7 +88,7 @@ class RobotConfig(_Document):
         return joints
 
     @model_validator(mode="after")
-    def _limits_cover_joints(self) -> "RobotConfig":
+    def _limits_cover_joints(self) -> RobotConfig:
         missing = [name for name in self.joints if name not in self.joint_limits]
         if missing:
             raise ValueError(f"missing finite joint limits for {missing}")
@@ -97,7 +97,7 @@ class RobotConfig(_Document):
             raise ValueError(f"joint_limits declares unknown joints {extra}")
         for name in self.joints:
             lower, upper = self.joint_limits[name]
-            if not (lower == lower and upper == upper) or lower in (float("-inf"),) or upper in (float("inf"),):
+            if not (math.isfinite(lower) and math.isfinite(upper)):
                 raise ValueError(f"joint '{name}' needs finite limits")
             if lower >= upper:
                 raise ValueError(f"joint '{name}' has an empty limit range [{lower}, {upper}]")
@@ -115,7 +115,7 @@ class RobotConfig(_Document):
 class DataConfig(_Document):
     """Selects a registered dataset builder and its declared parameters."""
 
-    schema_version: Literal[DATA_SCHEMA_V1] = Field(alias="schema")
+    schema_version: Literal["qdgrasp/data/v1"] = Field(alias="schema")
     name: str
     type: str
     params: dict[str, int | float | bool | str] = Field(default_factory=dict)
@@ -128,7 +128,7 @@ class RunConfig(_Document):
     produced by :func:`qdgrasp.config.policy.resolve_runtime`.
     """
 
-    schema_version: Literal[RUN_SCHEMA_V1] = Field(alias="schema", default=RUN_SCHEMA_V1)
+    schema_version: Literal["qdgrasp/run/v1"] = Field(alias="schema", default=RUN_SCHEMA_V1)
     device: str = "cpu"
     amp: bool = False
     seed: int = 0
@@ -183,7 +183,7 @@ class RunConfig(_Document):
     @field_validator("project_dir")
     @classmethod
     def _relative_project_dir(cls, value: str) -> str:
-        if value.startswith("/") or value.startswith("~"):
+        if value.startswith(("/", "~")):
             raise ValueError("project_dir must be a relative path from the working directory")
         return value
 

@@ -16,6 +16,12 @@ import pytest
 import torch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+TARGET_VALIDITY_FIELDS = {
+    "kinematics_valid",
+    "pose_target_valid",
+    "joint_target_valid",
+    "fk_target_valid",
+}
 
 
 def _load(name: str):
@@ -51,6 +57,33 @@ def test_every_declared_module_and_preset_is_present(gate) -> None:
     results = {item.package: item for item in gate.run_checks("contract", REPO_ROOT)}
     for package in ("P4-01", "P4-02", "P4-03", "P4-04/05/07", "P4-06/09", "P4-08"):
         assert results[package].status == gate.STATUS_DELIVERED, results[package].detail
+
+
+def test_the_micro_gate_executes_both_hands_under_the_v3_supervision_contract(gate) -> None:
+    """Synthetic measured targets carry validity masks through backward."""
+
+    results = gate._micro_checks()
+    assert len(results) == 2
+    assert all(item.status == gate.STATUS_DELIVERED for item in results), [item.detail for item in results]
+
+
+def test_the_cuda_fixture_executes_a_training_step_under_the_v3_supervision_contract(cuda_gate) -> None:
+    """The GPU fixture must be trainable before scarce CUDA time is booked."""
+
+    from qdgrasp.models.config import FlowModelSettings, QDGraspFlow
+    from qdgrasp.robot.spec import RobotSpec
+
+    robot = RobotSpec.from_config("leap_hand.yaml", sample_anchors=False)
+    batch = cuda_gate._fixture(robot, samples=2, points=64, seed=0, device=torch.device("cpu"))
+    assert TARGET_VALIDITY_FIELDS <= set(batch)
+    for field in TARGET_VALIDITY_FIELDS:
+        assert batch[field].dtype == torch.bool
+        assert batch[field].shape == (2,)
+        assert bool(batch[field].all())
+
+    loss = QDGraspFlow(FlowModelSettings(), robot).training_step(batch)
+    loss.backward()
+    assert torch.isfinite(loss)
 
 
 def test_a_cuda_labelled_file_is_refused_from_the_cpu_evidence_slot(gate, tmp_path: Path) -> None:

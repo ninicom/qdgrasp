@@ -18,6 +18,7 @@ assert _GENERATOR_SPEC is not None and _GENERATOR_SPEC.loader is not None
 _GENERATOR = importlib.util.module_from_spec(_GENERATOR_SPEC)
 _GENERATOR_SPEC.loader.exec_module(_GENERATOR)
 outcome_to_sample = _GENERATOR.outcome_to_sample
+loaded_qdgrasp_source_hashes = _GENERATOR.loaded_qdgrasp_source_hashes
 
 
 def _spec():
@@ -25,6 +26,20 @@ def _spec():
         actuated_joint_names=("j0", "j1"),
         fingertip_links=("tip0", "tip1"),
     )
+
+
+def test_generator_provenance_covers_effective_split_object_and_robot_sources() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    hashes = loaded_qdgrasp_source_hashes(repo_root)
+
+    assert {
+        "scripts/generate_dgn_open_tiny.py",
+        "qdgrasp/dataset/split.py",
+        "qdgrasp/dataset/render.py",
+        "qdgrasp/objects/generate.py",
+        "qdgrasp/robot/spec.py",
+        "qdgrasp/dataset/pipeline/orchestrator.py",
+    } <= set(hashes)
 
 
 def test_static_pass_dynamic_fail_remains_negative_and_points_use_object_frame():

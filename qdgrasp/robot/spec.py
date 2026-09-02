@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import numpy as np
 import torch
@@ -12,8 +12,8 @@ import torch.nn.functional as F
 
 from ..config.loader import load_robot_config
 from ..config.schema import ConfigError
-from .graph import HandGraph
 from .assets import resolve_robot_asset
+from .graph import HandGraph
 from .kinematics import (
     compute_joint_transform,
     invert_rigid_transform,
@@ -33,7 +33,7 @@ def _matrix_to_tuple(matrix: torch.Tensor) -> tuple[tuple[float, float, float], 
     return tuple(tuple(float(value) for value in row) for row in values)
 
 
-def _topological_order(links: dict[str, "LinkSpec"], preferred: Sequence[str]) -> list[str]:
+def _topological_order(links: dict[str, LinkSpec], preferred: Sequence[str]) -> list[str]:
     """Order links so that every parent precedes its children.
 
     The order is derived from ``parent_link`` rather than inherited from the
@@ -147,7 +147,7 @@ class RobotSpec:
         return expanded
 
     @classmethod
-    def from_config(cls, reference: str | Path | RobotConfigV2, *, sample_anchors: bool = True, anchor_count_per_link: int = 16) -> "RobotSpec":
+    def from_config(cls, reference: str | Path | RobotConfigV2, *, sample_anchors: bool = True, anchor_count_per_link: int = 16) -> RobotSpec:
         """Build a RobotSpec from a RobotConfigV2 or YAML preset/file."""
         if isinstance(reference, RobotConfigV2):
             config = reference

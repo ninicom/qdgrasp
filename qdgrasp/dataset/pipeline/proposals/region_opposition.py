@@ -1,5 +1,6 @@
 import numpy as np
 import trimesh
+
 from qdgrasp.dataset.pipeline.contracts import ContactProposal
 from qdgrasp.dataset.pipeline.proposals.identity import stable_candidate_id
 

@@ -1,6 +1,6 @@
 """The corrective findings of the 2026-09-01 cross-component audit, as data.
 
-``PLAN.md`` §9.2 lists twelve failure chains that only appear when several
+``PLAN.md`` §9.2 lists thirteen failure chains that only appear when several
 subsystems are put together, and §9.3 asks for a characterization test per
 chain.  A prose table cannot be asserted against, so the same table lives here
 in a form the test suite reads: every characterization test names the finding it
@@ -108,10 +108,10 @@ FINDINGS: tuple[Finding, ...] = (
         ),
         target="a materialised ProtocolDatasetView keyed on (split, robot, object_id) that fails on leakage",
         blocked_on=(
-            "positive yield: R8 regenerated the corpus, so the view reaches the public path and the "
-            "canonical audit passes, but the G2 gate also asks that each declared train hand clear the "
-            "positive floor and the recipe yields one positive per hand. That is a pipeline question, "
-            "not a plumbing one, and no relabelling closes it"
+            "positive yield: protocol-v2 admits LEAP as its only training hand, and its logical train view "
+            "contains 32 samples with 0 positives against a floor of 25. Allegro's train view is deliberately "
+            "empty because it is the held-out embodiment; the five physical positives are controls or "
+            "validation samples. This is a pipeline/corpus question, not a plumbing or relabelling fix"
         ),
     ),
     Finding(
@@ -231,7 +231,10 @@ FINDINGS: tuple[Finding, ...] = (
             "zero point padding carries no input mask, several config keys are silent no-ops, and the "
             "packaged legacy namespace still holds exec/eval/unsafe loads"
         ),
-        target="masked padding, config keys that either take effect or are refused, and a quarantined legacy surface",
+        target=(
+            "masked padding, config keys that either take effect or are refused, one canonical dataset contract, "
+            "a quarantined legacy surface, and clean active-core static gates"
+        ),
         status="closed",
     ),
 )

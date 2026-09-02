@@ -7,7 +7,6 @@ from pathlib import Path
 
 from ..config.schema import ConfigError
 
-
 ROBOT_ASSET_URI_PREFIX = "asset://"
 ROBOT_ASSET_ROOT_ENV = "QDGRASP_ROBOT_ASSETS_ROOT"
 

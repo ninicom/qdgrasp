@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import math
 import xml.etree.ElementTree as ET
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Sequence
 
 from ..config.schema import ConfigError
 

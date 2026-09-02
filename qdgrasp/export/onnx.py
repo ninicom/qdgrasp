@@ -7,7 +7,6 @@ from pathlib import Path
 import torch
 from torch import nn
 
-
 OUTPUT_NAMES = ("translation", "rotation", "joints", "score")
 
 

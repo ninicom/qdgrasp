@@ -167,6 +167,15 @@ def test_manifest_audit_rejects_stale_release_file(tmp_path):
         audit_dataset_manifest(root)
 
 
+def test_dgn_tiny_manifest_must_cover_split_object_and_robot_generator_sources(tmp_path):
+    root, manifest = _make_release(tmp_path)
+    incomplete = manifest.model_copy(update={"dataset_id": "dgn-open-tiny-v1"})
+    save_dataset_manifest(incomplete, root / "dataset_manifest.json")
+
+    with pytest.raises(ConfigError, match="omits effective generator sources"):
+        audit_dataset_manifest(root)
+
+
 def test_manifest_v2_is_rejected_after_target_validity_became_mandatory(tmp_path):
     root, _ = _make_release(tmp_path)
     path = root / "dataset_manifest.json"

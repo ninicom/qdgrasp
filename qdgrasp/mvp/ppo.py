@@ -93,9 +93,9 @@ def _worker_rollout(job: tuple[int, str, str, int]) -> dict[str, Any]:
     env: DexAcquireMvpEnv = _WORKER["env"]
     if _WORKER.get("version") != version:
         payload = load_checkpoint(checkpoint_path)
-        network, normalizer = build_from_checkpoint(payload)
-        _WORKER["network"] = network.eval()
-        _WORKER["normalizer"] = normalizer
+        loaded_network, loaded_normalizer = build_from_checkpoint(payload)
+        _WORKER["network"] = loaded_network.eval()
+        _WORKER["normalizer"] = loaded_normalizer
         _WORKER["version"] = version
     network: ResidualActorCritic = _WORKER["network"]
     normalizer: RunningNormalizer = _WORKER["normalizer"]

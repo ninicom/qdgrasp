@@ -11,7 +11,6 @@ admission metrics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -129,12 +128,14 @@ def generate_palm_hypotheses(
     active_fingers: np.ndarray,
     opposition_pairs: np.ndarray | None,
     object_centroid: np.ndarray,
-    gravity_axis: np.ndarray = np.array([0.0, 0.0, -1.0]),
+    gravity_axis: np.ndarray | None = None,
     floor_z: float = 0.0,
     min_palm_floor_clearance: float = 0.005,
     hypothesis_prefix: str = "palm",
 ) -> list[PalmHypothesis]:
     """Enumerate admitted frame and Kabsch hypotheses with explicit metrics."""
+    if gravity_axis is None:
+        gravity_axis = np.array([0.0, 0.0, -1.0])
     source = np.asarray(source_tips, dtype=np.float64)
     directions = np.asarray(source_directions, dtype=np.float64)
     target = np.asarray(target_tips, dtype=np.float64)

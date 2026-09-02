@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.spatial import ConvexHull, QhullError
+
 from qdgrasp.dataset.pipeline.contracts import StaticCertificate
+
 
 def compute_grasp_wrench_space_quality(
     target_points: np.ndarray,

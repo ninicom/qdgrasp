@@ -13,6 +13,7 @@ from qdgrasp.config.loader import load_robot_config
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset import DatasetArtifact
 from qdgrasp.dataset.manifest import DATASET_MANIFEST_SCHEMA_V3
+from qdgrasp.dataset.provenance import DGN_OPEN_TINY_REQUIRED_GENERATOR_SOURCES
 from qdgrasp.dataset.shards import read_shard_file
 from qdgrasp.objects.manifest import load_object_asset
 
@@ -30,6 +31,12 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         raise ConfigError("dataset manifest lacks recipe/module provenance")
     if not manifest.generator_source_hashes:
         raise ConfigError("dataset manifest lacks generator source hashes")
+    if manifest.dataset_id == "dgn-open-tiny-v1":
+        missing_sources = sorted(
+            DGN_OPEN_TINY_REQUIRED_GENERATOR_SOURCES - set(manifest.generator_source_hashes)
+        )
+        if missing_sources:
+            raise ConfigError(f"dataset manifest omits effective generator sources: {missing_sources}")
 
     if manifest.license != "CC0-1.0":
         raise ConfigError(f"unauthorized dataset license: expected 'CC0-1.0', got '{manifest.license}'")
@@ -135,9 +142,9 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
                 "joint_target_valid",
                 "fk_target_valid",
             }
-            missing = sorted(required - set(sample))
-            if missing:
-                raise ConfigError(f"sample {sample_index} in {shard.filename} lacks {missing}")
+            missing_fields = sorted(required - set(sample))
+            if missing_fields:
+                raise ConfigError(f"sample {sample_index} in {shard.filename} lacks {missing_fields}")
             success = bool(float(sample["success"]) > 0.5)
             dynamic_valid = bool(sample["dynamic_valid"])
             if success != dynamic_valid:
@@ -279,10 +286,11 @@ def audit_dataset_manifest(dataset_root: str | Path) -> dict[str, object]:
         path.relative_to(root) for pattern in ("*.manifest.json", "*.obj") for path in (root / "objects").glob(pattern)
     )
     stale = actual_release_relative - expected_release_relative
-    missing = expected_release_relative - actual_release_relative
-    if stale or missing:
+    missing_release = expected_release_relative - actual_release_relative
+    if stale or missing_release:
         raise ConfigError(
-            f"release file set mismatch: stale={sorted(map(str, stale))}, missing={sorted(map(str, missing))}"
+            "release file set mismatch: "
+            f"stale={sorted(map(str, stale))}, missing={sorted(map(str, missing_release))}"
         )
 
     # Check ignore and tracking status for every released artifact.

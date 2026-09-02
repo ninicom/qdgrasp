@@ -8,8 +8,6 @@ the candidate/iteration budget.
 
 from __future__ import annotations
 
-from typing import Dict
-
 import numpy as np
 import torch
 
@@ -130,7 +128,7 @@ def classify_failure_reasons(
     return reasons
 
 
-def solver_metrics_to_numpy(**values: torch.Tensor) -> Dict[str, np.ndarray]:
+def solver_metrics_to_numpy(**values: torch.Tensor) -> dict[str, np.ndarray]:
     """Detach a named collection of per-candidate tensors for the contract."""
     return {
         name: tensor.detach().cpu().numpy()

@@ -6,12 +6,12 @@ using canonical open postures and differentiable finger-thumb opposition kinemat
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Sequence, Tuple
+
 import numpy as np
 import torch
 import torch.nn.functional as F
-from scipy.spatial.transform import Rotation
 
 from qdgrasp.robot.spec import RobotSpec
 
@@ -20,14 +20,14 @@ from qdgrasp.robot.spec import RobotSpec
 class RobotCanonicalMeta:
     """Canonical kinematic configuration and opposition metadata for a dexterous robot hand."""
     name: str
-    canonical_qpos: Dict[str, float]
+    canonical_qpos: dict[str, float]
     thumb_link: str
     other_links: Sequence[str]
-    opposition_axis_local: Tuple[float, float, float]  # Opposition line in canonical palm frame
-    wrist_axis_local: Tuple[float, float, float]       # Wrist vector pointing away from palm
+    opposition_axis_local: tuple[float, float, float]  # Opposition line in canonical palm frame
+    wrist_axis_local: tuple[float, float, float]       # Wrist vector pointing away from palm
 
 
-ROBOT_CANONICAL_METAS: Dict[str, RobotCanonicalMeta] = {
+ROBOT_CANONICAL_METAS: dict[str, RobotCanonicalMeta] = {
     "leap_hand": RobotCanonicalMeta(
         name="leap_hand",
         canonical_qpos={
@@ -99,7 +99,7 @@ class WidthMapper:
         target_width: float,
         max_steps: int = 25,
         lr: float = 8.0,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Differentiable squeeze optimization mapping target width to finger joint angles.
         Returns:

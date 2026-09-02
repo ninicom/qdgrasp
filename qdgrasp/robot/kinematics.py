@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Mapping, Sequence
+from collections.abc import Sequence
 
 import torch
 import torch.nn.functional as F

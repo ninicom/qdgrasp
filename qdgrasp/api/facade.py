@@ -156,6 +156,8 @@ class QDGrasp:
         # exists to make the attempt look like a run that merely went badly.
         self.gate_report = assert_public_training_allowed(data_config, purpose=purpose)
         builder_name = getattr(data_config, "type", None) or getattr(data_config, "schema_version", "dgn_open")
+        if not isinstance(builder_name, str) or not builder_name:
+            raise ConfigError("data configuration does not declare a dataset builder")
         builder = get_dataset_builder(builder_name)
         return data_config, {split: builder(data_config, self.robot_config, split=split) for split in splits}
 

@@ -6,13 +6,12 @@ __version__ = "0.1.0a1"
 
 from .api import GraspDataset, GraspModel, GraspResults, QDGrasp, load
 from .config import ConfigError, DataConfig, ModelConfig, RobotConfig, RunConfig
-from .dataset.schema import DataConfigV2  # noqa: F401  (registers the v2 data schema)
 from .dataset.loader import create_dgn_open_dataset  # noqa: F401  (registers the v2 dataset builder)
-from .robot import RobotConfigV2, RobotSpec  # noqa: F401  (registers the v2 robot schema)
+from .dataset.schema import DataConfigV2
+from .robot import RobotConfigV2, RobotSpec
 from .runtime import EnvironmentInfo, environment_info, require_cuda
 
 __all__ = (
-    "__version__",
     "ConfigError",
     "DataConfig",
     "DataConfigV2",
@@ -26,6 +25,7 @@ __all__ = (
     "RobotConfigV2",
     "RobotSpec",
     "RunConfig",
+    "__version__",
     "environment_info",
     "load",
     "require_cuda",

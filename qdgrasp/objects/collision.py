@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
+
 import numpy as np
 import trimesh
 
 from ..config.schema import ConfigError
 from .schema import SubGeomSpec
-
 
 SUPPORTED_CONVEX_TYPES = {"box", "sphere", "cylinder", "capsule", "ellipsoid"}
 

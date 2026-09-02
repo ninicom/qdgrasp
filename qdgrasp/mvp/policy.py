@@ -35,6 +35,7 @@ ACTION_DISTRIBUTION = "tanh-squashed-normal/v1"
 #: exploration from collapsing to a delta; the ceiling keeps a bounded residual
 #: from turning into uniform noise.
 LOG_STD_BOUNDS = (-4.0, 0.5)
+_EMPTY_SAMPLE_SHAPE = torch.Size()
 
 
 @dataclasses.dataclass
@@ -43,13 +44,13 @@ class RunningNormalizer:
 
     dimension: int
     count: float = 1e-4
-    mean: np.ndarray = dataclasses.field(default=None)  # type: ignore[assignment]
-    m2: np.ndarray = dataclasses.field(default=None)  # type: ignore[assignment]
+    mean: np.ndarray = dataclasses.field(default_factory=lambda: np.empty(0, dtype=np.float64))
+    m2: np.ndarray = dataclasses.field(default_factory=lambda: np.empty(0, dtype=np.float64))
 
     def __post_init__(self) -> None:
-        if self.mean is None:
+        if self.mean.size == 0:
             self.mean = np.zeros(self.dimension, dtype=np.float64)
-        if self.m2 is None:
+        if self.m2.size == 0:
             self.m2 = np.ones(self.dimension, dtype=np.float64)
 
     def update(self, batch: np.ndarray) -> None:
@@ -156,10 +157,10 @@ class SquashedNormal:
     def mean(self) -> torch.Tensor:
         return torch.tanh(self.base.mean)
 
-    def sample(self, sample_shape: torch.Size = torch.Size()) -> torch.Tensor:
+    def sample(self, sample_shape: torch.Size = _EMPTY_SAMPLE_SHAPE) -> torch.Tensor:
         return torch.tanh(self.base.sample(sample_shape))
 
-    def rsample(self, sample_shape: torch.Size = torch.Size()) -> torch.Tensor:
+    def rsample(self, sample_shape: torch.Size = _EMPTY_SAMPLE_SHAPE) -> torch.Tensor:
         return torch.tanh(self.base.rsample(sample_shape))
 
     def log_prob(self, action: torch.Tensor) -> torch.Tensor:
@@ -218,7 +219,7 @@ def _state_dict_hash(state_dict: dict[str, Any]) -> str:
     for name in sorted(state_dict):
         tensor = state_dict[name]
         if not isinstance(tensor, torch.Tensor):
-            raise ValueError(f"state_dict entry {name!r} is not a tensor")
+            raise TypeError(f"state_dict entry {name!r} is not a tensor")
         value = tensor.detach().cpu().contiguous()
         digest.update(name.encode("utf-8"))
         digest.update(str(value.dtype).encode("ascii"))
@@ -308,7 +309,7 @@ def save_checkpoint(
 def load_checkpoint(path: str | Path) -> dict[str, Any]:
     payload = torch.load(Path(path), map_location="cpu", weights_only=True)
     if not isinstance(payload, dict):
-        raise ValueError(f"invalid policy checkpoint payload in {path}: expected a mapping")
+        raise TypeError(f"invalid policy checkpoint payload in {path}: expected a mapping")
     if payload.get("schema") != POLICY_SCHEMA:
         raise ValueError(
             f"unsupported policy checkpoint schema: {payload.get('schema')!r}; this build reads "
@@ -322,7 +323,7 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
         )
     lineage = payload.get("lineage")
     if not isinstance(lineage, dict):
-        raise ValueError(f"{path}: checkpoint is missing content lineage")
+        raise TypeError(f"{path}: checkpoint is missing content lineage")
     if lineage.get("fingerprint_hash") != _canonical_hash(payload.get("fingerprint", {})):
         raise ValueError(f"{path}: checkpoint fingerprint lineage mismatch")
     if lineage.get("normalizer_hash") != _canonical_hash(payload.get("normalizer", {})):

@@ -32,6 +32,7 @@ run_project_checks() {
     PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_train_args.py \
       --source .references/ultralytics
   fi
+  PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_static_core.py
   PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs.py --root .
   PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
     -s scripts/tests -p 'test_*.py' -v

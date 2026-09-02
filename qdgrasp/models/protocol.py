@@ -17,7 +17,7 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, overload
 
 import yaml
 
@@ -371,7 +371,13 @@ class ProtocolDatasetView(Sequence[dict[str, Any]]):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, index: int) -> dict[str, Any]:
+    @overload
+    def __getitem__(self, index: int) -> dict[str, Any]: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> Sequence[dict[str, Any]]: ...
+
+    def __getitem__(self, index: int | slice) -> dict[str, Any] | Sequence[dict[str, Any]]:
         return self.samples[index]
 
     @property

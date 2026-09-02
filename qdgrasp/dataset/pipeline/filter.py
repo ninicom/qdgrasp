@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 import numpy as np
 import torch
 import trimesh
@@ -88,8 +89,7 @@ def filter_grasp_candidate(
     for i in range(num_tips):
         for j in range(i + 1, num_tips):
             dist = float(np.linalg.norm(tips[i] - tips[j]))
-            if dist < min_tip_dist:
-                min_tip_dist = dist
+            min_tip_dist = min(min_tip_dist, dist)
 
     if num_tips > 1 and min_tip_dist < min_fingertip_distance:
         return CollisionFilterResult(
