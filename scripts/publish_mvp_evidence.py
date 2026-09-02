@@ -34,6 +34,10 @@ COPY_GLOBS = (
     "policy/ppo.pt",
     "evaluation/*.json",
     "evaluation/*/tier-*.jsonl",
+    # The release contract's own artifacts.  A sealed evidence set that lacked
+    # them would still pass the experimental gate and could never reach a
+    # release verdict, which is the confusion the two gates exist to prevent.
+    "contribution.json",
     "closure.json",
 )
 

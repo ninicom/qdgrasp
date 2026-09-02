@@ -28,6 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from qdgrasp.mvp.challenge import (
     ChallengeDomain,
+    heldout_development_seeds,
     load_challenge_domain,
 )
 from qdgrasp.mvp.challenge import (
@@ -43,6 +44,7 @@ from qdgrasp.mvp.evaluate import evaluate_tier, paired_uplift
 
 SCOPE_V0 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v0.yaml"
 SCOPE_V1 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v1.yaml"
+SCOPE_V2 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v2.yaml"
 
 #: Pinned, not computed.  Everything published under v0 refers to these.
 V0_SCOPE_HASH = "a897e36084c9ab11cbf8046e446ef318c48b7463d8b2db4af4d4ca0593109b8b"
@@ -414,3 +416,72 @@ def test_every_challenge_episode_stays_inside_the_locked_domain() -> None:
         assert setup.variant_id in allowed
         assert domain.axes["friction_slide"][0] <= setup.friction_slide <= domain.axes["friction_slide"][1]
         assert domain.axes["density"][0] <= setup.density <= domain.axes["density"][1]
+
+
+# -- attempt three runs on fresh seeds and unchanged gates ----------------
+
+
+def test_scope_v2_changes_the_seeds_and_nothing_that_judges_the_candidate() -> None:
+    """A second attempt may move the test set.  It may not move the test.
+
+    Every threshold in v2 is copied from v1, and this is the test that says
+    so: if a later attempt ever quietly relaxes the uplift gate, the paired
+    estimator's seed, the ablation bounds or the safety budget, it fails here
+    rather than passing quietly with a number that looks better.
+    """
+
+    v1 = load_mvp_scope(SCOPE_V1)
+    v2 = load_mvp_scope(SCOPE_V2)
+
+    for tier in ("A", "B", "C", "D"):
+        assert v1.tier(tier).model_dump() == v2.tier(tier).model_dump(), tier
+    assert v1.release is not None and v2.release is not None
+    assert v1.release.model_dump() == v2.release.model_dump()
+    assert v1.randomization.model_dump() == v2.randomization.model_dump()
+    assert v1.success.model_dump() == v2.success.model_dump()
+    assert v1.controller.model_dump() == v2.controller.model_dump()
+    assert v1.action.model_dump() == v2.action.model_dump()
+    assert v1.reward.model_dump() == v2.reward.model_dump()
+    assert [variant.model_dump() for variant in v1.objects] == [variant.model_dump() for variant in v2.objects]
+
+    # What may differ: identity and the seed roots derived from it.
+    document_v1, document_v2 = v1.to_document(), v2.to_document()
+    assert sorted(key for key in document_v1 if document_v1[key] != document_v2[key]) == [
+        "artifact_id",
+        "challenge",
+        "environment_id",
+        "mvp_id",
+        "seed_root",
+    ]
+    assert v1.challenge is not None and v2.challenge is not None
+    assert v1.challenge.axes == v2.challenge.axes
+    assert v1.challenge.prior_success_band == v2.challenge.prior_success_band
+    assert v1.challenge.min_prior_failures == v2.challenge.min_prior_failures
+
+
+def test_no_locked_seed_is_reused_between_attempts() -> None:
+    v1 = load_mvp_scope(SCOPE_V1)
+    v2 = load_mvp_scope(SCOPE_V2)
+    for tier in ("A", "B", "C", "D"):
+        assert not set(v1.locked_seeds(tier)) & set(v2.locked_seeds(tier)), tier
+    # And the development roots of one attempt may not reach the other's tiers.
+    development = set(development_seeds(v2, 2000)) | set(heldout_development_seeds(v2, 2000))
+    development |= {v2.episode_seed("train", index) for index in range(3000)}
+    development |= {v2.episode_seed("dev", index) for index in range(3000)}
+    for scope in (v1, v2):
+        for tier in ("A", "B", "C", "D"):
+            assert not development & set(scope.locked_seeds(tier)), (scope.mvp_id, tier)
+
+
+def test_the_v2_challenge_domain_is_the_v1_domain_rebound() -> None:
+    v2 = load_mvp_scope(SCOPE_V2)
+    domain_v1 = json.loads((PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v1.challenge.json").read_text("utf-8"))
+    domain_v2 = load_challenge_domain(PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v2.challenge.json", v2)
+    assert domain_v2.scope_hash == v2.content_hash()
+    assert domain_v2.axes == {key: tuple(value) for key, value in domain_v1["axes"].items()}
+    assert domain_v2.configuration_id == domain_v1["configuration_id"]
+
+
+def test_the_committed_v2_eval_manifest_matches_its_scope() -> None:
+    stored = json.loads((PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v2.eval-manifest.json").read_text("utf-8"))
+    assert stored == load_mvp_scope(SCOPE_V2).eval_manifest()

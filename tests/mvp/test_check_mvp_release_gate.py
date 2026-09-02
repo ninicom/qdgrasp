@@ -90,7 +90,7 @@ class MvpReleaseGateTests(unittest.TestCase):
         self.root.mkdir(parents=True)
         shutil.copytree(PROJECT_ROOT / "configs" / "mvp", self.root / "configs" / "mvp")
 
-        scope = load_mvp_scope(self.root / "configs/mvp/dexacquire-mvp-v1.yaml")
+        scope = load_mvp_scope(self.root / "configs/mvp/dexacquire-mvp-v2.yaml")
         self.scope = scope
         self.criteria = scope.release
         assert self.criteria is not None and scope.challenge is not None
@@ -222,7 +222,7 @@ class MvpReleaseGateTests(unittest.TestCase):
 
         (self.root / "notebooks").mkdir(parents=True, exist_ok=True)
         (self.root / "notebooks/mvp_grasp_policy.ipynb").write_text("{}", encoding="utf-8")
-        card = self.root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-V1.md"
+        card = self.root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-RELEASE.md"
         card.parent.mkdir(parents=True, exist_ok=True)
         card.write_text("release_class: release_candidate\n## Giới hạn\n", encoding="utf-8")
 
@@ -531,7 +531,7 @@ class MvpReleaseGateTests(unittest.TestCase):
         self.assertIn("tier_d_paired_comparison_recomputes", failures)
 
     def test_a_release_model_card_that_still_says_experimental_fails(self) -> None:
-        card = self.root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-V1.md"
+        card = self.root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-RELEASE.md"
         card.write_text(
             "release_class: release_candidate\nrelease_class: experimental_non_release\n## Giới hạn\n",
             encoding="utf-8",

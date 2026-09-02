@@ -222,6 +222,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--demos", type=Path, default=DEFAULT_DEMOS)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--bc-epochs", type=int, default=60)
+    parser.add_argument(
+        "--bc-corrective-balance",
+        type=float,
+        default=1.0,
+        help="weight of the corrective regime against the do-nothing regime; 0 disables the weighting",
+    )
     parser.add_argument("--ppo-iterations", type=int, default=40)
     parser.add_argument("--ppo-episodes", type=int, default=64)
     parser.add_argument("--dev-episodes", type=int, default=150)
@@ -254,7 +260,11 @@ def main(argv: list[str] | None = None) -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     started = time.time()
 
-    bc_spec = BehaviorCloningSpec(epochs=args.bc_epochs, seed=args.seed)
+    bc_spec = BehaviorCloningSpec(
+        epochs=args.bc_epochs,
+        seed=args.seed,
+        corrective_balance=args.bc_corrective_balance if args.bc_corrective_balance > 0.0 else None,
+    )
     bc_training_config = {"schema": BC_TRAINING_CONFIG_SCHEMA, "spec": bc_spec.to_document()}
     network, normalizer, bc_metrics = train_behavior_cloning(demonstrations, bc_spec)
     bc_path = args.out / "bc.pt"

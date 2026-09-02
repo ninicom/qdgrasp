@@ -65,7 +65,10 @@ GateMode = Literal["experimental", "release"]
 
 SCOPE_DOCUMENT: dict[str, Path] = {
     "experimental": Path("configs/mvp/dexacquire-mvp-v0.yaml"),
-    "release": Path("configs/mvp/dexacquire-mvp-v1.yaml"),
+    # The current release contract.  v1 stays in the tree because the attempt
+    # it judged is kept as evidence, but its locked seeds are spent and it is
+    # no longer what a release is measured against.
+    "release": Path("configs/mvp/dexacquire-mvp-v2.yaml"),
 }
 REQUIRED_RELEASE_CLASS: dict[str, str] = {
     "experimental": EXPERIMENTAL_RELEASE_CLASS,
@@ -996,7 +999,7 @@ def run_checks(root: Path, runs: Path, *, mode: GateMode = "experimental") -> li
     card = (
         root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md"
         if mode == "experimental"
-        else root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-V1.md"
+        else root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-RELEASE.md"
     )
     record("MVP-07", "model_card_present", card.is_file(), str(card))
     if card.is_file():

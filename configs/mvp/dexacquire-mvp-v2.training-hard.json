@@ -1,0 +1,15 @@
+{
+  "axes": {
+    "density": [
+      1000.0,
+      2400.0
+    ],
+    "friction_slide": [
+      0.1,
+      0.55
+    ]
+  },
+  "configuration_id": "training-hard-all-widths",
+  "schema": "qdgrasp/mvp-challenge-domain/v1",
+  "scope_hash": "2419b70cb82fc94dc5841ea77356c7c2a1f32802650a707e5a51c77c0b5a3485"
+}
