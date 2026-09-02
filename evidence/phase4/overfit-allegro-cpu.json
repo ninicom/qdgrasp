@@ -2,7 +2,7 @@
   "converged": true,
   "cuda": false,
   "device": "cpu",
-  "elapsed_s": 273.3738406379998,
+  "elapsed_s": 345.593004587,
   "first": {
     "fingertip_m": 1.9147000312805176,
     "fk_consistency": 1.3722865581512451,
@@ -215,7 +215,7 @@
       "python": "3.11.16",
       "torch": "2.11.0+cpu"
     },
-    "git_commit": "f45ca6527a540d633877a2000653af2668522304",
+    "git_commit": "ba8843937e974eaed8576a697c963cd7d46b70fe",
     "model_semantics": {
       "joint_parameterization": "atanh-normalized-limits/v1",
       "quality_conditioning": "observation-and-candidate/v1"
