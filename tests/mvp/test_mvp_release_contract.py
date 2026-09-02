@@ -26,7 +26,13 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from qdgrasp.mvp.challenge import ChallengeDomain, load_challenge_domain
+from qdgrasp.mvp.challenge import (
+    ChallengeDomain,
+    load_challenge_domain,
+)
+from qdgrasp.mvp.challenge import (
+    challenge_development_seeds as development_seeds,
+)
 from qdgrasp.mvp.config import (
     EXPERIMENTAL_RELEASE_CLASS,
     RELEASE_CANDIDATE_CLASS,
@@ -34,7 +40,6 @@ from qdgrasp.mvp.config import (
     load_mvp_scope,
 )
 from qdgrasp.mvp.evaluate import evaluate_tier, paired_uplift
-from scripts.calibrate_mvp_challenge import development_seeds
 
 SCOPE_V0 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v0.yaml"
 SCOPE_V1 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v1.yaml"

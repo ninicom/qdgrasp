@@ -103,6 +103,9 @@ class EpisodeSetup:
     friction_slide: float
     drop_height: float
     mass: float
+    #: Whether the parameters above were drawn from the challenge domain
+    #: rather than from the scope's own randomization.
+    challenged: bool = False
 
     def to_document(self) -> dict[str, Any]:
         return dataclasses.asdict(self)
@@ -210,10 +213,20 @@ class DexAcquireMvpEnv:
         *,
         randomized: bool | None = None,
         variant_id: str | None = None,
+        challenged: bool | None = None,
     ) -> EpisodeSetup:
-        """Draw one episode's parameters from the locked ranges."""
+        """Draw one episode's parameters from the locked ranges.
 
-        challenged = self.challenge is not None and self._is_challenge_split(split)
+        ``challenged`` overrides the split-based rule.  Demonstrations are
+        collected on train and dev seeds but have to cover the region where the
+        prior fails, or the expert has nothing to teach; the locked tiers never
+        pass this, so the default remains "only the challenge split".
+        """
+
+        if challenged is None:
+            challenged = self.challenge is not None and self._is_challenge_split(split)
+        elif challenged and self.challenge is None:
+            raise ValueError("challenge sampling was requested but this environment has no challenge domain")
         if challenged:
             assert self.challenge is not None
             variants = self.challenge.variants(self.scope)
@@ -261,6 +274,7 @@ class DexAcquireMvpEnv:
             friction_slide=friction,
             drop_height=drop,
             mass=float(density * volume),
+            challenged=bool(challenged),
         )
 
     # -- lifecycle --------------------------------------------------------

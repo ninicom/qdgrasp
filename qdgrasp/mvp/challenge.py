@@ -111,6 +111,30 @@ class ChallengeDomain(BaseModel):
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def challenge_development_seeds(scope: MvpScopeConfig, count: int) -> list[int]:
+    """Seeds for calibrating and selecting on the challenge domain.
+
+    Derived from the scope's ``challenge.development_seed_root``, which is
+    deliberately not the root Tier D draws from: nothing explored during
+    calibration, and nothing a candidate was selected on, may appear in the
+    tier that later judges that candidate.
+    """
+
+    if scope.challenge is None:
+        raise ValueError("this scope declares no challenge contract")
+    if count < 0:
+        raise ValueError("episode count must be non-negative")
+    root = scope.challenge.development_seed_root
+    return [
+        int.from_bytes(
+            hashlib.sha256(f"{root}|{scope.mvp_id}|challenge_dev|{index}".encode()).digest()[:8],
+            "big",
+        )
+        >> 1
+        for index in range(count)
+    ]
+
+
 def load_challenge_domain(path: str | Path, scope: MvpScopeConfig | None = None) -> ChallengeDomain:
     """Load a challenge domain, and check it narrows ``scope`` when given."""
 

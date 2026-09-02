@@ -1,0 +1,21 @@
+{
+  "acceptance_rate": 0.88125,
+  "content_hash": "943e2eb225c43840726bbe80d3419fa056d9942774219903d47fdbd91a4f7c65",
+  "episodes_accepted": 705,
+  "episodes_attempted": 800,
+  "noisy_rollouts_accepted": 1400,
+  "noisy_rollouts_attempted": 2115,
+  "non_zero_residual_fraction": 0.035629453681710214,
+  "prior_alone_succeeded": 644,
+  "schema": "qdgrasp/mvp-demonstrations/v1",
+  "search_rescued": 61,
+  "transitions": 221025,
+  "variants": {
+    "cuboid_w090_d12": 66,
+    "cuboid_w120_d15": 61,
+    "cuboid_w150_d18": 63,
+    "cuboid_w180_d12": 202,
+    "cuboid_w210_d15": 178,
+    "cuboid_w240_d18": 135
+  }
+}

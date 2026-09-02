@@ -150,6 +150,8 @@ def search_expert_episode(
     seed: int,
     split: EpisodeSplit,
     spec: ExpertSearchSpec,
+    *,
+    challenged: bool | None = None,
 ) -> tuple[ExpertEpisode | None, dict[str, Any]]:
     """Search residual candidates on one episode and return the best success.
 
@@ -161,7 +163,7 @@ def search_expert_episode(
     action_dim = scope.action.dimension
     rng = np.random.default_rng(seed ^ 0x5EED)
     candidates = spec.sample(rng, action_dim)
-    setup = env.sample_setup(seed, split)
+    setup = env.sample_setup(seed, split, challenged=challenged)
 
     best: ExpertEpisode | None = None
     best_score: tuple[float, ...] | None = None
@@ -236,6 +238,10 @@ def search_expert_episode(
     row = {
         "seed": int(seed),
         "split": split,
+        # Whether this episode was drawn from the challenge domain.  A
+        # demonstration set that mixes the two has to say which is which, or
+        # its acceptance rate cannot be read.
+        "challenged": bool(setup.challenged),
         "variant_id": setup.variant_id,
         "mass": setup.mass,
         "friction_slide": setup.friction_slide,

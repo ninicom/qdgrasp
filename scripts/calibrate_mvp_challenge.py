@@ -27,24 +27,18 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from qdgrasp.mvp.challenge import ChallengeDomain, load_challenge_domain
+from qdgrasp.mvp.challenge import (
+    ChallengeDomain,
+    load_challenge_domain,
+)
+from qdgrasp.mvp.challenge import (
+    challenge_development_seeds as development_seeds,
+)
 from qdgrasp.mvp.config import load_mvp_scope
 from qdgrasp.mvp.evaluate import run_episodes, wilson_lower_bound, wilson_upper_bound
 from qdgrasp.mvp.prior import DEFAULT_PRIOR_PATH
 
 CALIBRATION_SCHEMA = "qdgrasp/mvp-challenge-calibration/v1"
-
-
-def development_seeds(scope: Any, count: int) -> list[int]:
-    """Seeds from the challenge development root, disjoint from every tier."""
-
-    import hashlib
-
-    root = scope.challenge.development_seed_root
-    return [
-        int.from_bytes(hashlib.sha256(f"{root}|{scope.mvp_id}|challenge_dev|{index}".encode()).digest()[:8], "big") >> 1
-        for index in range(count)
-    ]
 
 
 def survey(

@@ -1,0 +1,74 @@
+{
+  "challenge_domain_hash": "aabec53df8291d3e434cf526da57ced54cd8b6439083f329343488027ed9a971",
+  "commit": "7ef959ebc082669f8e5f28f7f37956fa2c992fad",
+  "elapsed_s": 496.2,
+  "fingerprint": {
+    "environment_id": "QDGrasp-DexAcquire-MVP-v1",
+    "eval_manifest_hash": "733ef3a04073337b82e586b60e442cdc7bdf386e38578a4d389decfa78f8dc12",
+    "observation_schema": "qdgrasp/mvp-observation/v0",
+    "observation_schema_hash": "07bf6f5cce1852533ffbe32760742315002eb8801a1ce4c6394807c9c005dbfd",
+    "prior_hash": "ab96a87a275ec574568458f14a28c929828fcfada01ca8d6cf06f8c6a647be43",
+    "scope_hash": "47fbf8f0bb786473993f9196d442a8e0fe08f8e7bdcdec4117a12cfd70aff11d"
+  },
+  "generator_config": {
+    "challenge_dev_episodes": 120,
+    "challenge_seed_offset": 1000000,
+    "challenge_train_episodes": 400,
+    "dev_episodes": 120,
+    "expert_search": {
+      "candidates": 12,
+      "noise_rollouts": 3,
+      "noise_sigma": 0.15,
+      "rotation_scale": 0.3,
+      "sigma": 0.35
+    },
+    "train_episodes": 400
+  },
+  "prior_hash": "ab96a87a275ec574568458f14a28c929828fcfada01ca8d6cf06f8c6a647be43",
+  "schema": "qdgrasp/mvp-demonstration-index/v1",
+  "scope_hash": "47fbf8f0bb786473993f9196d442a8e0fe08f8e7bdcdec4117a12cfd70aff11d",
+  "splits": {
+    "dev": {
+      "acceptance_rate": 0.875,
+      "content_hash": "9273d306b76bc35030cec7bf1d463d58d4c7c65deee3092409480c4543c039a5",
+      "episodes_accepted": 210,
+      "episodes_attempted": 240,
+      "noisy_rollouts_accepted": 427,
+      "noisy_rollouts_attempted": 630,
+      "non_zero_residual_fraction": 0.03610675039246468,
+      "prior_alone_succeeded": 191,
+      "schema": "qdgrasp/mvp-demonstrations/v1",
+      "search_rescued": 19,
+      "transitions": 66885,
+      "variants": {
+        "cuboid_w090_d12": 13,
+        "cuboid_w120_d15": 24,
+        "cuboid_w150_d18": 32,
+        "cuboid_w180_d12": 57,
+        "cuboid_w210_d15": 43,
+        "cuboid_w240_d18": 41
+      }
+    },
+    "train": {
+      "acceptance_rate": 0.88125,
+      "content_hash": "943e2eb225c43840726bbe80d3419fa056d9942774219903d47fdbd91a4f7c65",
+      "episodes_accepted": 705,
+      "episodes_attempted": 800,
+      "noisy_rollouts_accepted": 1400,
+      "noisy_rollouts_attempted": 2115,
+      "non_zero_residual_fraction": 0.035629453681710214,
+      "prior_alone_succeeded": 644,
+      "schema": "qdgrasp/mvp-demonstrations/v1",
+      "search_rescued": 61,
+      "transitions": 221025,
+      "variants": {
+        "cuboid_w090_d12": 66,
+        "cuboid_w120_d15": 61,
+        "cuboid_w150_d18": 63,
+        "cuboid_w180_d12": 202,
+        "cuboid_w210_d15": 178,
+        "cuboid_w240_d18": 135
+      }
+    }
+  }
+}
