@@ -1,0 +1,39 @@
+{
+  "accepted_identity": {
+    "episodes": 262,
+    "seeds_sha256": "64a523828f0f5c2a50b118fb0ebec9d0e332566661c185653f56462d288d5b46",
+    "variant_ids_sha256": "025f834cf7af6f8858f0538d34a07196a03dcdd3ae29068883426b543dbf913b"
+  },
+  "arrays": {
+    "actions": {
+      "dtype": "<f4",
+      "sha256": "c837c45e5c72d2144a7438cf8c6f6aa8a9c62406f7f056641b5adba085faa559",
+      "shape": [
+        76755,
+        8
+      ]
+    },
+    "episode_index": {
+      "dtype": "<i8",
+      "sha256": "981ca61a611951f02c4fb16fc5073ea18d0b750df705a61eba5d96a5fe095599",
+      "shape": [
+        76755
+      ]
+    },
+    "observations": {
+      "dtype": "<f4",
+      "sha256": "2373a3794143b3e7f33f5f733aa15c3fe0aa5299de94f3fa3d7aa3d2f06aee09",
+      "shape": [
+        76755,
+        99
+      ]
+    }
+  },
+  "content_hash": "a77a1d9b421689cfe70227271437587031d3996d87969cb82263c4a045b86fb8",
+  "dataset_schema": "qdgrasp/mvp-demonstrations/v1",
+  "ledger": {
+    "rows": 300,
+    "sha256": "933b736a5989f78ceeb3ff2f971d4bafdd1edfe37578b02000d9338dbc388826"
+  },
+  "schema": "qdgrasp/mvp-demonstration-content/v1"
+}

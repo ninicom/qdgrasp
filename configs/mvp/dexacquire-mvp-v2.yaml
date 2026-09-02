@@ -1,0 +1,164 @@
+# Locked release scope of the Grasp Policy MVP, second attempt
+# (``ROADMAP-MVP-RELEASE-001`` §5 MR-02, reopened by ``REV-20260902-003``).
+#
+# Every threshold, tier size, gate and range below is copied from v1 unchanged
+# and deliberately: the first attempt's candidate was refused on Tier C, and
+# moving a gate after seeing that would be the one thing this plan forbids
+# outright.  What changes is the seed root, and only the seed root.  The v1
+# locked seeds have been spent on a candidate that failed, so a second
+# candidate judged on those same seeds would be a second draw on one test set;
+# fresh seeds are what keeps the second evaluation an honest estimate rather
+# than a search.
+#
+# This document is a *release* contract, which is the only thing that makes it
+# different from `dexacquire-mvp-v0.yaml`.  The physics, the object family, the
+# randomization ranges, the success predicate, the controller prior and the
+# action bounds are carried over unchanged and deliberately: the fitted prior
+# artifact and the MR-00 supported-scope statement are both stated against them,
+# and moving a number here would invalidate both while proving nothing.
+#
+# What is new is everything a release verdict needs and v0 did not have: a
+# challenge tier the controller prior has not saturated, a written-down rule for
+# choosing a candidate and comparing it against that prior, an ablation that
+# makes the residual prove it is doing the work, and a safety budget expressed
+# as bounds rather than as a habit.
+#
+# Every number below is frozen before any release training run exists.  That is
+# the point of MR-02: a threshold written after seeing a result is not a
+# threshold.  Changing one changes `scope_hash`, which invalidates the locked
+# evaluation manifest and requires a new MVP version and a revision record.
+schema: qdgrasp/mvp-scope/v1
+mvp_id: QDGrasp-DexAcquire-MVP-v2
+environment_id: QDGrasp-DexAcquire-MVP-v2
+artifact_id: QDGrasp-Leap-Grasp-MVP-v2
+# Machine-readable, and not `experimental_non_release`: the release-mode gate
+# refuses to run against any scope that does not say this.
+release_class: release_candidate
+robot_profile: leap_hand.yaml
+
+# Identical to v0.  `half_width` runs along the pinch axis and is the only
+# extent the controller prior is fitted over; `half_depth` varies independently
+# so a held-out variant is not merely an interpolation of a fitted curve.
+objects:
+  - {variant_id: cuboid_w090_d12, half_width: 0.0090, half_depth: 0.012, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w120_d15, half_width: 0.0120, half_depth: 0.015, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w150_d18, half_width: 0.0150, half_depth: 0.018, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w180_d12, half_width: 0.0180, half_depth: 0.012, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w210_d15, half_width: 0.0210, half_depth: 0.015, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w240_d18, half_width: 0.0240, half_depth: 0.018, half_height: 0.020, membership: train}
+  - {variant_id: cuboid_w075_d13, half_width: 0.0075, half_depth: 0.013, half_height: 0.020, membership: heldout}
+  - {variant_id: cuboid_w135_d16, half_width: 0.0135, half_depth: 0.016, half_height: 0.020, membership: heldout}
+  - {variant_id: cuboid_w195_d14, half_width: 0.0195, half_depth: 0.014, half_height: 0.020, membership: heldout}
+  - {variant_id: cuboid_w255_d17, half_width: 0.0255, half_depth: 0.017, half_height: 0.020, membership: heldout}
+
+randomization:
+  position_x: [-0.020, 0.020]
+  position_y: [-0.020, 0.020]
+  yaw: [-0.350, 0.350]
+  density: [300.0, 2400.0]
+  friction_slide: [0.10, 1.30]
+  drop_height: [0.002, 0.008]
+
+episode:
+  control_hz: 50.0
+  physics_substeps: 10
+  settle_steps: 20
+  approach_steps: 25
+  enclose_steps: 30
+  lift_steps: 20
+  retain_steps: 30
+
+success:
+  lift_height_m: 0.050
+  retain_duration_s: 0.50
+  min_finger_groups: 2
+  max_penetration_m: 0.002
+  max_contact_force_n: 20.0
+  max_contact_impulse_ns: 0.500
+  support_clearance_m: 0.001
+  max_pose_jump_m: 0.050
+
+controller:
+  pregrasp_height_m: 0.080
+  lift_travel_m: 0.070
+  approach_closure: -0.80
+  grip_force_target_n: 4.0
+  grip_gain: 0.25
+  closure_min: 0.20
+  closure_rate_limit: 0.05
+
+action:
+  delta_xyz_m: 0.008
+  delta_rot_rad: 0.100
+  synergy_rad: 0.200
+  workspace_radius_m: 0.020
+  residual_low_pass: 0.20
+
+reward:
+  approach_progress: 1.0
+  target_contact: 0.5
+  enclosure: 0.5
+  lift_progress: 4.0
+  retain_bonus: 2.0
+  penetration_penalty: 5.0
+  excess_force_penalty: 1.0
+  action_rate_penalty: 0.02
+  drop_penalty: 2.0
+  timeout_penalty: 1.0
+
+# A, B and C are the regression tiers, carried over from v0 with the same
+# sample sizes and the same floors.  D is the contribution tier: it is gated on
+# beating the controller prior on the same seeds, not on reaching a level,
+# because on a domain the prior has not saturated there is no absolute floor
+# that could honestly be chosen in advance.
+#
+# D draws from `train` variants on purpose.  Tier C already measures
+# generalization to held-out sizes; making D held-out as well would confound
+# "harder domain" with "unseen object", and a confounded tier cannot carry a
+# contribution claim.
+eval_tiers:
+  - {tier: A, episodes: 100, membership: train, randomized: false, min_success_rate: 0.95}
+  - {tier: B, episodes: 300, membership: train, randomized: true, min_success_rate: 0.85, min_wilson_lower_bound: 0.80}
+  - {tier: C, episodes: 200, membership: heldout, randomized: true, min_success_rate: 0.70}
+  - {tier: D, episodes: 300, membership: train, randomized: true, min_uplift_pp: 5.0, min_paired_ci_lower: 0.0,
+     challenge_domain: true}
+
+# The Tier D domain itself is calibrated in MR-03 and written to
+# `domain_document`, because this scope is frozen before that calibration
+# starts.  What is frozen here is the rule the calibration must satisfy.
+challenge:
+  axes: [half_width, half_depth, half_height, yaw, friction_slide, density, position_x, position_y]
+  # Below 40% the domain is broken rather than hard; above 85% the prior is
+  # saturated and a residual has no headroom left to occupy.
+  prior_success_band: [0.40, 0.85]
+  min_prior_failures: 50
+  max_development_configurations: 3
+  development_seed_root: QDGrasp-DexAcquire-MVP-v2/challenge-development/2026-09-02
+  domain_document: configs/mvp/dexacquire-mvp-v2.challenge.json
+
+release:
+  candidate_evidence: development_only
+  ppo_promotion: at_least_bc_on_every_regression_tier
+  regression_tiers: [A, B, C]
+  contribution_tier: D
+  paired_confidence: 0.95
+  paired_method: paired_bootstrap_percentile
+  paired_resamples: 20000
+  paired_seed: 20260902
+  ablation:
+    require_disabled_residual_run: true
+    # With the residual switched off the candidate is the prior wrapped in the
+    # candidate's own trajectory contract.  Anything more than a point of
+    # remaining uplift means the improvement came from the wrapper, not the
+    # model, and the contribution claim does not hold.
+    max_disabled_uplift_pp: 1.0
+    # A residual that has collapsed toward zero passes every "no regression"
+    # test and has learned nothing, so its magnitude is a gate, not a note.
+    min_residual_magnitude: 0.01
+    max_saturation_rate: 0.20
+  safety:
+    max_safety_violation: 0
+    max_invalid_state: 0
+    max_checkpoint_reload_mismatch: 0
+
+seed_root: QDGrasp-DexAcquire-MVP-v2/seeds/2026-09-02-attempt-3

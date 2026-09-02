@@ -1,0 +1,31 @@
+{
+  "candidate_sha256": "47e5b4a4d797320662b106b5119ec4b6fbbcaecfce0c7451ffe0433b9f8eded5",
+  "challenge_domain_sha256": "0ac2beae8f33180c8b6b0b738debc9c376951890dbd831fb62dfbb6903fd1c18",
+  "disabled_successes": 187,
+  "episodes": 300,
+  "invalid_state": 0,
+  "live_successes": 205,
+  "paired_vs_prior": {
+    "candidate_only_successes": 0,
+    "candidate_successes": 187,
+    "ci_lower_pp": 0.0,
+    "ci_upper_pp": 0.0,
+    "confidence": 0.95,
+    "episodes": 300,
+    "method": "paired_bootstrap_percentile",
+    "prior_only_successes": 0,
+    "prior_successes": 187,
+    "resamples": 20000,
+    "schema": "qdgrasp/mvp-paired-comparison/v1",
+    "seed": 20260902,
+    "uplift_pp": 0.0
+  },
+  "residual_disabled": true,
+  "residual_statistics": {
+    "mean_magnitude": 0.04400677836862151,
+    "saturation_rate": 0.0
+  },
+  "safety_violation": 0,
+  "schema": "qdgrasp/mvp-ablation-report/v1",
+  "tier": "D"
+}

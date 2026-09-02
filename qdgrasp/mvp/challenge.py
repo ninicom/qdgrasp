@@ -135,6 +135,29 @@ def challenge_development_seeds(scope: MvpScopeConfig, count: int) -> list[int]:
     ]
 
 
+def heldout_development_seeds(scope: MvpScopeConfig, count: int) -> list[int]:
+    """Seeds for a development check on the held-out object sizes.
+
+    Tier C is the only place generalization to unseen sizes is judged, and its
+    seeds are locked, so without this there is no way to notice a candidate
+    that trades held-out reliability for challenge-domain uplift until the one
+    locked evaluation has already been spent.  These seeds come from their own
+    root and are disjoint from every tier.
+    """
+
+    if count < 0:
+        raise ValueError("episode count must be non-negative")
+    root = f"{scope.seed_root}/heldout-development"
+    return [
+        int.from_bytes(
+            hashlib.sha256(f"{root}|{scope.mvp_id}|heldout_dev|{index}".encode()).digest()[:8],
+            "big",
+        )
+        >> 1
+        for index in range(count)
+    ]
+
+
 def load_challenge_domain(path: str | Path, scope: MvpScopeConfig | None = None) -> ChallengeDomain:
     """Load a challenge domain, and check it narrows ``scope`` when given."""
 

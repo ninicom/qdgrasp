@@ -428,9 +428,14 @@ def format_report(report: dict[str, Any]) -> str:
 
     lines = [f"candidate: {report['candidate']}"]
     for tier in report["tiers"]:
-        gate = f">={tier['min_success_rate']:.0%}"
-        if tier["min_wilson_lower_bound"] is not None:
-            gate += f", wilson>={tier['min_wilson_lower_bound']:.0%}"
+        # A challenge tier has no level to clear; its gate is a paired uplift
+        # that this function cannot see, because it holds one arm.
+        if tier["min_success_rate"] is None:
+            gate = "paired uplift"
+        else:
+            gate = f">={tier['min_success_rate']:.0%}"
+            if tier["min_wilson_lower_bound"] is not None:
+                gate += f", wilson>={tier['min_wilson_lower_bound']:.0%}"
         lines.append(
             f"  tier {tier['tier']}: {tier['successes']}/{tier['episodes']} = {tier['success_rate']:.1%} "
             f"[{tier['wilson_lower']:.1%}, {tier['wilson_upper']:.1%}]  gate {gate}  "

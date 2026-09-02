@@ -21,7 +21,11 @@ from typing import Any
 import numpy as np
 
 from qdgrasp.mvp.bc import BehaviorCloningSpec, train_behavior_cloning
-from qdgrasp.mvp.challenge import challenge_development_seeds, load_challenge_domain
+from qdgrasp.mvp.challenge import (
+    challenge_development_seeds,
+    heldout_development_seeds,
+    load_challenge_domain,
+)
 from qdgrasp.mvp.config import load_mvp_scope
 from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
 from qdgrasp.mvp.env import environment_fingerprint
@@ -127,6 +131,47 @@ def measure_challenge_success(
     }
 
 
+def measure_heldout_success(
+    checkpoint: Path | None,
+    scope_path: str | None,
+    prior_path: str,
+    episodes: int,
+    workers: int | None,
+) -> dict[str, Any]:
+    """Measure on held-out object sizes, on development seeds.
+
+    ``eval_c`` is the split that draws the held-out variants; the seeds are
+    ours, not the tier's.  This is the check that would have caught the first
+    attempt's regression -- a candidate that gained on the challenge domain and
+    quietly dropped more of the unseen sizes -- before the locked evaluation
+    was spent on it.
+    """
+
+    scope = load_mvp_scope(scope_path)
+    jobs = [(seed, "eval_c", True, None) for seed in heldout_development_seeds(scope, episodes)]
+    results = run_episodes(
+        jobs,
+        scope_path=scope_path,
+        prior_path=prior_path,
+        checkpoint_path=None if checkpoint is None else str(checkpoint),
+        workers=workers,
+    )
+    successes = sum(1 for result in results if result.success)
+    buckets: dict[str, int] = {}
+    for result in results:
+        if not result.success:
+            buckets[result.failure_bucket] = buckets.get(result.failure_bucket, 0) + 1
+    return {
+        "episodes": len(results),
+        "successes": successes,
+        "success_rate": successes / len(results) if results else 0.0,
+        "safety_violation": sum(1 for result in results if result.safety_violation),
+        "invalid_state": sum(1 for result in results if result.invalid_state),
+        "failure_buckets": dict(sorted(buckets.items())),
+        "outcomes": [bool(result.success) for result in results],
+    }
+
+
 def load_verified_demonstrations(
     directory: Path,
     *,
@@ -182,6 +227,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dev-episodes", type=int, default=150)
     parser.add_argument("--challenge", type=Path, default=None, help="locked challenge domain document")
     parser.add_argument("--challenge-dev-episodes", type=int, default=300)
+    parser.add_argument("--heldout-dev-episodes", type=int, default=200)
     parser.add_argument(
         "--ppo-challenge-fraction",
         type=float,
@@ -250,6 +296,18 @@ def main(argv: list[str] | None = None) -> int:
             f"[challenge-dev] prior={prior_challenge['success_rate']:.3f} "
             f"bc={bc_challenge['success_rate']:.3f}"
         )
+    heldout: dict[str, Any] = {
+        "controller_prior": measure_heldout_success(
+            None, scope_path, str(args.prior), args.heldout_dev_episodes, args.workers
+        ),
+        "bc": measure_heldout_success(
+            bc_path, scope_path, str(args.prior), args.heldout_dev_episodes, args.workers
+        ),
+    }
+    print(
+        f"[heldout-dev] prior={heldout['controller_prior']['success_rate']:.3f} "
+        f"bc={heldout['bc']['success_rate']:.3f}"
+    )
     print(f"[bc] reload_parity={reload_ok} dev={json.dumps(bc_dev, sort_keys=True)}")
 
     report: dict[str, Any] = {
@@ -322,6 +380,10 @@ def main(argv: list[str] | None = None) -> int:
             )
             challenge["ppo"] = ppo_challenge
             print(f"[challenge-dev] ppo={ppo_challenge['success_rate']:.3f}")
+            heldout["ppo"] = measure_heldout_success(
+                ppo_path, scope_path, str(args.prior), args.heldout_dev_episodes, args.workers
+            )
+            print(f"[heldout-dev] ppo={heldout['ppo']['success_rate']:.3f}")
             # Promotion may not trade challenge-domain contribution away either.
             promoted = promoted and ppo_challenge["success_rate"] >= challenge["bc"]["success_rate"]
         print(f"[ppo] dev={json.dumps(ppo_dev, sort_keys=True)} promoted={promoted}")
@@ -361,6 +423,17 @@ def main(argv: list[str] | None = None) -> int:
                 confidence=scope.release.paired_confidence,
             )
         report["challenge_development"] = challenge
+        for name, measurement in heldout.items():
+            if name == "controller_prior":
+                continue
+            measurement["paired_vs_prior"] = paired_uplift(
+                heldout["controller_prior"]["outcomes"],
+                measurement["outcomes"],
+                resamples=scope.release.paired_resamples,
+                seed=scope.release.paired_seed,
+                confidence=scope.release.paired_confidence,
+            )
+        report["heldout_development"] = heldout
         report["candidate_selection"] = {
             "evidence": scope.release.candidate_evidence,
             "ppo_promotion": scope.release.ppo_promotion,
@@ -368,6 +441,10 @@ def main(argv: list[str] | None = None) -> int:
             "selected": selected,
             "challenge_uplift_pp": challenge[selected]["paired_vs_prior"]["uplift_pp"],
             "challenge_ci_lower_pp": challenge[selected]["paired_vs_prior"]["ci_lower_pp"],
+            # The regression Tier C judges, measured before the locked
+            # evaluation rather than discovered by it.
+            "heldout_uplift_pp": heldout[selected]["paired_vs_prior"]["uplift_pp"],
+            "heldout_prior_only_successes": heldout[selected]["paired_vs_prior"]["prior_only_successes"],
         }
     report["elapsed_s"] = round(time.time() - started, 1)
     (args.out / "training-report.json").write_text(
