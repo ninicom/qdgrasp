@@ -27,6 +27,7 @@ DEFAULT_OUT = Path("evidence/mvp")
 COPY_GLOBS = (
     "demonstrations/index.json",
     "demonstrations/*/ledger.jsonl",
+    "demonstrations/*/manifest.json",
     "demonstrations/*/summary.json",
     "policy/training-report.json",
     "policy/bc.pt",
@@ -74,20 +75,21 @@ def main(argv: list[str] | None = None) -> int:
             shutil.copy2(source, destination)
             copied.append(destination)
 
+    artifacts = [
+        {
+            "path": str(path.relative_to(args.out)),
+            "bytes": path.stat().st_size,
+            "sha256": _sha256(path),
+        }
+        for path in sorted(copied)
+    ]
     manifest = {
         "schema": "qdgrasp/mvp-evidence-manifest/v0",
         "source": str(args.runs),
-        "artifacts": [
-            {
-                "path": str(path.relative_to(args.out)),
-                "bytes": path.stat().st_size,
-                "sha256": _sha256(path),
-            }
-            for path in sorted(copied)
-        ],
+        "artifacts": artifacts,
     }
     (args.out / "MANIFEST.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    total = sum(entry["bytes"] for entry in manifest["artifacts"])
+    total = sum(int(entry["bytes"]) for entry in artifacts)
     print(f"copied {len(copied)} artifacts ({total / 1e6:.2f} MB) into {args.out}")
     return 0
 

@@ -26,6 +26,12 @@ from qdgrasp.mvp.config import load_mvp_scope
 from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
 from qdgrasp.mvp.env import environment_fingerprint
 from qdgrasp.mvp.evaluate import EVAL_REPORT_SCHEMA, wilson_lower_bound
+from qdgrasp.mvp.expert import (
+    DEMONSTRATION_INDEX_SCHEMA,
+    DEMONSTRATION_MANIFEST_SCHEMA,
+    DEMONSTRATION_SCHEMA,
+    DemonstrationSet,
+)
 from qdgrasp.mvp.policy import ACTION_DISTRIBUTION, load_checkpoint
 from qdgrasp.mvp.prior import PinchPriorTable
 
@@ -51,6 +57,20 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1 << 20), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _canonical_sha256(document: Any) -> str:
+    encoded = json.dumps(
+        document,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -233,12 +253,31 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
     demos = runs / "demonstrations"
     index = _load_json(demos / "index.json")
     record("MVP-02", "demonstration_index_present", index is not None, str(demos / "index.json"))
+    train_content_hash: str | None = None
     if index is not None:
+        record(
+            "MVP-02",
+            "demonstration_index_schema",
+            index.get("schema") == DEMONSTRATION_INDEX_SCHEMA,
+            f"stored={index.get('schema')!r}, current={DEMONSTRATION_INDEX_SCHEMA!r}",
+        )
         record(
             "MVP-02",
             "demonstrations_match_locked_scope",
             index.get("scope_hash") == scope.content_hash(),
             f"index scope_hash={index.get('scope_hash')}",
+        )
+        record(
+            "MVP-02",
+            "demonstrations_match_prior",
+            prior is not None and index.get("prior_hash") == prior.content_hash(),
+            f"index prior_hash={index.get('prior_hash')}",
+        )
+        record(
+            "MVP-02",
+            "demonstrations_match_environment_fingerprint",
+            expected_fingerprint is not None and index.get("fingerprint") == expected_fingerprint,
+            f"stored={index.get('fingerprint')}",
         )
         for split in ("train", "dev"):
             summary = index.get("splits", {}).get(split, {})
@@ -246,6 +285,57 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
             record("MVP-02", f"{split}_demonstrations_accepted", accepted > 0, f"{accepted} episodes")
             ledger = demos / split / "ledger.jsonl"
             record("MVP-02", f"{split}_generator_ledger_present", ledger.is_file(), str(ledger))
+            summary_file = _load_json(demos / split / "summary.json")
+            manifest = _load_json(demos / split / "manifest.json")
+            content_hash = summary.get("content_hash")
+            if split == "train" and _is_sha256(content_hash):
+                train_content_hash = str(content_hash)
+            record(
+                "MVP-02",
+                f"{split}_summary_matches_index",
+                isinstance(summary, dict) and summary_file == summary,
+                f"content_hash={content_hash!r}",
+            )
+            manifest_contract = (
+                manifest is not None
+                and manifest.get("schema") == DEMONSTRATION_MANIFEST_SCHEMA
+                and manifest.get("dataset_schema") == DEMONSTRATION_SCHEMA
+                and _is_sha256(manifest.get("content_hash"))
+                and manifest.get("content_hash") == content_hash
+                and isinstance(manifest.get("arrays"), dict)
+                and set(manifest["arrays"]) == {"actions", "episode_index", "observations"}
+            )
+            record(
+                "MVP-02",
+                f"{split}_content_manifest",
+                manifest_contract,
+                f"stored={manifest.get('content_hash') if manifest else None!r}",
+            )
+            ledger_contract = False
+            if ledger.is_file() and manifest is not None and isinstance(manifest.get("ledger"), dict):
+                try:
+                    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
+                    ledger_contract = (
+                        manifest["ledger"].get("rows") == len(rows)
+                        and manifest["ledger"].get("sha256") == _canonical_sha256(rows)
+                    )
+                except (OSError, UnicodeError, json.JSONDecodeError):
+                    ledger_contract = False
+            record(
+                "MVP-02",
+                f"{split}_ledger_content_hash",
+                ledger_contract,
+                f"rows={manifest.get('ledger') if manifest else None}",
+            )
+            if runs == (root / "runs/mvp").resolve():
+                try:
+                    raw_dataset = DemonstrationSet.load(demos / split)
+                    raw_content_ok = raw_dataset.content_hash() == content_hash
+                    raw_detail = f"content_hash={raw_dataset.content_hash()}"
+                except Exception as error:  # noqa: BLE001 - this is a fail-closed artifact gate
+                    raw_content_ok = False
+                    raw_detail = f"{type(error).__name__}: {error}"
+                record("MVP-02", f"{split}_raw_arrays_match_manifest", raw_content_ok, raw_detail)
         # A minimum-intervention expert labels most episodes with the zero
         # residual, so a large non-zero fraction is not the property to demand.
         # What must be true is that the search actually rescued episodes the
@@ -290,6 +380,23 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
         )
         bc_path, bc_payload = validate_checkpoint("MVP-03", "bc", bc.get("checkpoint"))
         record(
+            "MVP-03",
+            "bc_dataset_lineage_matches_demonstrations",
+            bc_payload is not None
+            and train_content_hash is not None
+            and bc_payload.get("lineage", {}).get("dataset_content_hash") == train_content_hash
+            and training.get("demonstrations", {}).get("content_hash") == train_content_hash,
+            f"demo={train_content_hash}, checkpoint={bc_payload.get('lineage') if bc_payload else None}",
+        )
+        record(
+            "MVP-03",
+            "bc_training_config_matches_checkpoint",
+            bc_payload is not None
+            and isinstance(bc.get("training_config"), dict)
+            and bc.get("training_config") == bc_payload.get("metadata", {}).get("training_config"),
+            f"report={bc.get('training_config')}",
+        )
+        record(
             "MVP-04",
             "bc_rollback_retained",
             bc_path is not None and bc_payload is not None and bc_path.name == "bc.pt",
@@ -316,7 +423,41 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
                 int(ppo.get("dev", {}).get("safety_violation", 1)) == 0,
                 f"safety_violation={ppo.get('dev', {}).get('safety_violation')}",
             )
-            ppo_path, _ = validate_checkpoint("MVP-04", "ppo", ppo.get("checkpoint"))
+            ppo_path, ppo_payload = validate_checkpoint("MVP-04", "ppo", ppo.get("checkpoint"))
+            record(
+                "MVP-04",
+                "ppo_dataset_lineage_matches_demonstrations",
+                ppo_payload is not None
+                and train_content_hash is not None
+                and ppo_payload.get("lineage", {}).get("dataset_content_hash") == train_content_hash,
+                f"demo={train_content_hash}, checkpoint={ppo_payload.get('lineage') if ppo_payload else None}",
+            )
+            record(
+                "MVP-04",
+                "ppo_training_config_matches_checkpoint",
+                ppo_payload is not None
+                and isinstance(ppo.get("training_config"), dict)
+                and ppo.get("training_config") == ppo_payload.get("metadata", {}).get("training_config"),
+                f"report={ppo.get('training_config')}",
+            )
+            parent_ok = False
+            parent_detail = "ppo checkpoint did not load"
+            if ppo_payload is not None and bc_path is not None:
+                try:
+                    parent_path = _resolve_checkpoint(
+                        ppo_payload.get("lineage", {}).get("parent"),
+                        repository_root=root,
+                        evidence_root=runs,
+                    )
+                    stored_parent_hash = ppo_payload.get("lineage", {}).get("parent_checkpoint_hash")
+                    parent_ok = parent_path == bc_path and stored_parent_hash == _sha256(bc_path)
+                    parent_detail = (
+                        f"parent={parent_path}, bc={bc_path}, stored_hash={stored_parent_hash}, "
+                        f"actual_hash={_sha256(bc_path)}"
+                    )
+                except (OSError, ValueError) as error:
+                    parent_detail = f"{type(error).__name__}: {error}"
+            record("MVP-04", "ppo_parent_checkpoint_lineage", parent_ok, parent_detail)
 
         candidate_path, candidate_payload = validate_checkpoint("MVP-04", "candidate", training.get("candidate"))
         record(

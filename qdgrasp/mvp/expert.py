@@ -48,6 +48,7 @@ demonstration set nobody can calibrate.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 from collections import Counter
 from collections.abc import Sequence
@@ -60,6 +61,10 @@ from qdgrasp.mvp.config import EpisodeSplit, MvpScopeConfig
 from qdgrasp.mvp.env import DexAcquireMvpEnv, EpisodeResult
 
 DEMONSTRATION_SCHEMA_V0 = "qdgrasp/mvp-demonstrations/v0"
+DEMONSTRATION_SCHEMA_V1 = "qdgrasp/mvp-demonstrations/v1"
+DEMONSTRATION_SCHEMA = DEMONSTRATION_SCHEMA_V1
+DEMONSTRATION_MANIFEST_SCHEMA = "qdgrasp/mvp-demonstration-content/v1"
+DEMONSTRATION_INDEX_SCHEMA = "qdgrasp/mvp-demonstration-index/v1"
 
 #: The two segments the searched residual is constant over: everything up to
 #: and including the closing schedule, then the lift and the hold.
@@ -82,6 +87,11 @@ class ExpertSearchSpec:
     #: comparable to the errors a cloned policy actually makes, or the tube it
     #: covers is too thin to catch them.
     noise_sigma: float = 0.15
+
+    def to_document(self) -> dict[str, Any]:
+        """Return the exact generator configuration carried by the index."""
+
+        return dataclasses.asdict(self)
 
     def sample(self, rng: np.random.Generator, action_dim: int) -> np.ndarray:
         """Draw the candidate set, with the zero (prior) candidate first."""
@@ -255,13 +265,67 @@ class DemonstrationSet:
     def episodes(self) -> int:
         return len(self.seeds)
 
+    @staticmethod
+    def _array_record(array: np.ndarray) -> dict[str, Any]:
+        value = np.ascontiguousarray(array)
+        return {
+            "dtype": value.dtype.str,
+            "shape": list(value.shape),
+            "sha256": hashlib.sha256(value.tobytes(order="C")).hexdigest(),
+        }
+
+    @staticmethod
+    def _canonical_hash(document: Any) -> str:
+        encoded = json.dumps(
+            document,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def content_manifest(self) -> dict[str, Any]:
+        """Describe and hash every training-relevant demonstration field.
+
+        The compressed ``.npz`` bytes are deliberately not the identity: zip
+        metadata can change while the arrays do not.  Dtype, shape and raw
+        contiguous bytes are hashed instead, together with the ordered ledger
+        and the accepted episode identities reconstructed from it.
+        """
+
+        body = {
+            "schema": DEMONSTRATION_MANIFEST_SCHEMA,
+            "dataset_schema": DEMONSTRATION_SCHEMA,
+            "arrays": {
+                "actions": self._array_record(self.actions),
+                "episode_index": self._array_record(self.episode_index),
+                "observations": self._array_record(self.observations),
+            },
+            "ledger": {
+                "rows": len(self.ledger),
+                "sha256": self._canonical_hash(self.ledger),
+            },
+            "accepted_identity": {
+                "episodes": self.episodes,
+                "seeds_sha256": self._canonical_hash(list(self.seeds)),
+                "variant_ids_sha256": self._canonical_hash(list(self.variant_ids)),
+            },
+        }
+        return {**body, "content_hash": self._canonical_hash(body)}
+
+    def content_hash(self) -> str:
+        """Return the digest that binds arrays, ledger and episode identity."""
+
+        return str(self.content_manifest()["content_hash"])
+
     def summary(self) -> dict[str, Any]:
         attempted = len(self.ledger)
         accepted = sum(1 for row in self.ledger if row["accepted"])
         prior_only = sum(1 for row in self.ledger if row.get("prior_candidate_succeeded"))
         improved = sum(1 for row in self.ledger if row["accepted"] and not row.get("prior_candidate_succeeded"))
         return {
-            "schema": DEMONSTRATION_SCHEMA_V0,
+            "schema": DEMONSTRATION_SCHEMA,
+            "content_hash": self.content_hash(),
             "episodes_attempted": attempted,
             "episodes_accepted": accepted,
             "acceptance_rate": accepted / attempted if attempted else 0.0,
@@ -292,26 +356,58 @@ class DemonstrationSet:
         (target / "summary.json").write_text(
             json.dumps(self.summary(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
+        (target / "manifest.json").write_text(
+            json.dumps(self.content_manifest(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
         return target
 
     @classmethod
     def load(cls, directory: str | Path) -> DemonstrationSet:
         source = Path(directory)
-        arrays = np.load(source / "demonstrations.npz")
+        with np.load(source / "demonstrations.npz", allow_pickle=False) as archive:
+            expected_arrays = {"observations", "actions", "episode_index"}
+            if set(archive.files) != expected_arrays:
+                raise ValueError(
+                    f"{source}: demonstration array set mismatch: "
+                    f"stored={sorted(archive.files)}, expected={sorted(expected_arrays)}"
+                )
+            observations = np.asarray(archive["observations"])
+            actions = np.asarray(archive["actions"])
+            episode_index = np.asarray(archive["episode_index"])
         ledger = [
             json.loads(line)
             for line in (source / "ledger.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         accepted = [row for row in ledger if row["accepted"]]
-        return cls(
-            observations=arrays["observations"],
-            actions=arrays["actions"],
-            episode_index=arrays["episode_index"],
+        dataset = cls(
+            observations=observations,
+            actions=actions,
+            episode_index=episode_index,
             variant_ids=tuple(row["variant_id"] for row in accepted),
             seeds=tuple(int(row["seed"]) for row in accepted),
             ledger=ledger,
         )
+        manifest_path = source / "manifest.json"
+        try:
+            stored_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raise ValueError(f"{source}: missing or invalid demonstration content manifest") from error
+        expected_manifest = dataset.content_manifest()
+        if stored_manifest != expected_manifest:
+            raise ValueError(
+                f"{source}: demonstration content manifest mismatch: "
+                f"stored={stored_manifest.get('content_hash')!r}, "
+                f"actual={expected_manifest['content_hash']!r}"
+            )
+        summary_path = source / "summary.json"
+        try:
+            stored_summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raise ValueError(f"{source}: missing or invalid demonstration summary") from error
+        if stored_summary != dataset.summary():
+            raise ValueError(f"{source}: demonstration summary does not match its content")
+        return dataset
 
 
 def collect_demonstrations(

@@ -28,6 +28,13 @@ from qdgrasp.mvp.policy import (
 from qdgrasp.mvp.prior import DEFAULT_PRIOR_PATH, PinchPriorTable
 
 
+def _checkpoint_metadata() -> dict[str, object]:
+    return {
+        "dataset_content_hash": "d" * 64,
+        "training_config": {"schema": "test/mvp-training-config/v1", "steps": 1},
+    }
+
+
 @pytest.fixture(scope="module")
 def scope() -> MvpScopeConfig:
     return load_mvp_scope()
@@ -144,7 +151,14 @@ def test_checkpoint_round_trips_and_refuses_a_foreign_world(tmp_path, scope, pri
     normalizer = RunningNormalizer(dimension=8)
     normalizer.update(np.random.default_rng(0).normal(size=(64, 8)))
     fingerprint = environment_fingerprint(scope, prior)
-    path = save_checkpoint(tmp_path / "candidate.pt", network, normalizer, fingerprint=fingerprint, stage="bc")
+    path = save_checkpoint(
+        tmp_path / "candidate.pt",
+        network,
+        normalizer,
+        fingerprint=fingerprint,
+        stage="bc",
+        metadata=_checkpoint_metadata(),
+    )
 
     observations = np.random.default_rng(2).normal(size=(16, 8))
     in_memory = MvpPolicy(network, normalizer)
@@ -160,10 +174,46 @@ def test_reload_mismatch_is_detectable(tmp_path, scope, prior) -> None:
     network = ResidualActorCritic(observation_dim=8, action_dim=2, hidden=(16,))
     normalizer = RunningNormalizer(dimension=8)
     path = save_checkpoint(
-        tmp_path / "candidate.pt", network, normalizer, fingerprint=environment_fingerprint(scope, prior), stage="bc"
+        tmp_path / "candidate.pt",
+        network,
+        normalizer,
+        fingerprint=environment_fingerprint(scope, prior),
+        stage="bc",
+        metadata=_checkpoint_metadata(),
     )
     observations = np.zeros((4, 8))
     assert not checkpoint_reload_matches(path, observations, np.full((4, 2), 0.9))
+
+
+def test_ppo_refuses_a_parent_checkpoint_whose_bytes_changed(tmp_path, scope, prior) -> None:
+    """PPO lineage must bind the BC parent when the PPO artifact is loaded."""
+
+    from qdgrasp.mvp.policy import load_checkpoint
+
+    fingerprint = environment_fingerprint(scope, prior)
+    normalizer = RunningNormalizer(dimension=8)
+    bc_path = save_checkpoint(
+        tmp_path / "bc.pt",
+        ResidualActorCritic(observation_dim=8, action_dim=2, hidden=(16,)),
+        normalizer,
+        fingerprint=fingerprint,
+        stage="bc",
+        metadata=_checkpoint_metadata(),
+    )
+    ppo_path = save_checkpoint(
+        tmp_path / "ppo.pt",
+        ResidualActorCritic(observation_dim=8, action_dim=2, hidden=(16,)),
+        normalizer,
+        fingerprint=fingerprint,
+        stage="ppo",
+        metadata={**_checkpoint_metadata(), "parent": str(bc_path)},
+    )
+    assert load_checkpoint(ppo_path)["stage"] == "ppo"
+
+    with bc_path.open("ab") as handle:
+        handle.write(b"tampered")
+    with pytest.raises(ValueError, match="parent checkpoint content changed"):
+        load_checkpoint(ppo_path)
 
 
 # -- MVP-05 ---------------------------------------------------------------
@@ -250,7 +300,12 @@ def test_reload_probe_survives_the_save_load_boundary(tmp_path, scope, prior) ->
     normalizer = RunningNormalizer(dimension=8)
     normalizer.update(np.random.default_rng(4).normal(size=(64, 8)))
     path = save_checkpoint(
-        tmp_path / "probe.pt", network, normalizer, fingerprint=environment_fingerprint(scope, prior), stage="bc"
+        tmp_path / "probe.pt",
+        network,
+        normalizer,
+        fingerprint=environment_fingerprint(scope, prior),
+        stage="bc",
+        metadata=_checkpoint_metadata(),
     )
     assert verify_reload_probe(path)
 

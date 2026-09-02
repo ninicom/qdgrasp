@@ -25,7 +25,7 @@ from qdgrasp.mvp.config import load_mvp_scope
 from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
 from qdgrasp.mvp.env import environment_fingerprint
 from qdgrasp.mvp.evaluate import run_episodes
-from qdgrasp.mvp.expert import DemonstrationSet
+from qdgrasp.mvp.expert import DEMONSTRATION_INDEX_SCHEMA, DemonstrationSet
 from qdgrasp.mvp.policy import (
     MvpPolicy,
     build_from_checkpoint,
@@ -43,6 +43,8 @@ DEFAULT_OUTPUT = Path("runs/mvp/policy")
 #: ``ROADMAP-MVP-001`` MVP-04: PPO may not be promoted if it costs more than two
 #: percentage points of locked-eval-style success against the BC baseline.
 PPO_PROMOTION_TOLERANCE = 0.02
+BC_TRAINING_CONFIG_SCHEMA = "qdgrasp/mvp-bc-config/v1"
+PPO_TRAINING_CONFIG_SCHEMA = "qdgrasp/mvp-ppo-config/v1"
 
 
 def _commit() -> str:
@@ -77,6 +79,49 @@ def measure_dev_success(
     }
 
 
+def load_verified_demonstrations(
+    directory: Path,
+    *,
+    scope_hash: str,
+    prior_hash: str,
+    fingerprint: dict[str, str],
+) -> DemonstrationSet:
+    """Verify the generator index and both split manifests before training."""
+
+    index_path = directory / "index.json"
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"missing or invalid demonstration index at {index_path}") from error
+    if not isinstance(index, dict) or index.get("schema") != DEMONSTRATION_INDEX_SCHEMA:
+        raise ValueError(
+            f"unsupported demonstration index schema {index.get('schema') if isinstance(index, dict) else None!r}"
+        )
+    expected_identity = {
+        "scope_hash": scope_hash,
+        "prior_hash": prior_hash,
+        "fingerprint": fingerprint,
+    }
+    mismatched = {
+        key: {"stored": index.get(key), "expected": value}
+        for key, value in expected_identity.items()
+        if index.get(key) != value
+    }
+    if mismatched:
+        raise ValueError(f"demonstration index identity mismatch: {mismatched}")
+    split_summaries = index.get("splits")
+    if not isinstance(split_summaries, dict):
+        raise TypeError("demonstration index split summaries must be a mapping")
+    loaded: dict[str, DemonstrationSet] = {}
+    for split in ("train", "dev"):
+        dataset = DemonstrationSet.load(directory / split)
+        expected_summary = dataset.summary()
+        if split_summaries.get(split) != expected_summary:
+            raise ValueError(f"demonstration index summary mismatch for split {split!r}")
+        loaded[split] = dataset
+    return loaded["train"]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scope", type=Path, default=None)
@@ -96,13 +141,19 @@ def main(argv: list[str] | None = None) -> int:
     prior = PinchPriorTable.load(args.prior)
     fingerprint = environment_fingerprint(scope, prior)
     scope_path = str(args.scope) if args.scope is not None else None
-    args.out.mkdir(parents=True, exist_ok=True)
-
-    demonstrations = DemonstrationSet.load(args.demos / "train")
+    demonstrations = load_verified_demonstrations(
+        args.demos,
+        scope_hash=scope.content_hash(),
+        prior_hash=prior.content_hash(),
+        fingerprint=fingerprint,
+    )
     demo_summary = demonstrations.summary()
+    demo_content_hash = demonstrations.content_hash()
+    args.out.mkdir(parents=True, exist_ok=True)
     started = time.time()
 
     bc_spec = BehaviorCloningSpec(epochs=args.bc_epochs, seed=args.seed)
+    bc_training_config = {"schema": BC_TRAINING_CONFIG_SCHEMA, "spec": bc_spec.to_document()}
     network, normalizer, bc_metrics = train_behavior_cloning(demonstrations, bc_spec)
     bc_path = args.out / "bc.pt"
     save_checkpoint(
@@ -113,7 +164,9 @@ def main(argv: list[str] | None = None) -> int:
         stage="bc",
         metadata={
             "commit": _commit(),
+            "dataset_content_hash": demo_content_hash,
             "dataset_summary": demo_summary,
+            "training_config": bc_training_config,
             "bc_metrics": {key: value for key, value in bc_metrics.items() if key != "curve"},
         },
     )
@@ -130,11 +183,22 @@ def main(argv: list[str] | None = None) -> int:
         "commit": _commit(),
         "fingerprint": fingerprint,
         "demonstrations": demo_summary,
-        "bc": {"metrics": bc_metrics, "reload_parity": reload_ok, "dev": bc_dev, "checkpoint": str(bc_path)},
+        "bc": {
+            "metrics": bc_metrics,
+            "training_config": bc_training_config,
+            "reload_parity": reload_ok,
+            "dev": bc_dev,
+            "checkpoint": str(bc_path),
+        },
     }
 
     if not args.skip_ppo:
         ppo_spec = PpoSpec(iterations=args.ppo_iterations, episodes_per_iteration=args.ppo_episodes, seed=args.seed)
+        ppo_training_config = {
+            "schema": PPO_TRAINING_CONFIG_SCHEMA,
+            "spec": ppo_spec.to_document(),
+            "seed_offset": 10_000,
+        }
         payload = load_checkpoint(bc_path)
         ppo_network, ppo_normalizer = build_from_checkpoint(payload)
         ppo_network, ppo_metrics = train_residual_ppo(
@@ -161,6 +225,8 @@ def main(argv: list[str] | None = None) -> int:
             metadata={
                 "commit": _commit(),
                 "parent": str(bc_path),
+                "dataset_content_hash": demo_content_hash,
+                "training_config": ppo_training_config,
                 "ppo_metrics": {key: value for key, value in ppo_metrics.items() if key != "curve"},
             },
         )
@@ -169,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[ppo] dev={json.dumps(ppo_dev, sort_keys=True)} promoted={promoted}")
         report["ppo"] = {
             "metrics": ppo_metrics,
+            "training_config": ppo_training_config,
             "dev": ppo_dev,
             "checkpoint": str(ppo_path),
             "promoted": promoted,

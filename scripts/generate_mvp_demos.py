@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -21,13 +22,30 @@ from typing import Any
 import numpy as np
 
 from qdgrasp.mvp.config import load_mvp_scope
-from qdgrasp.mvp.env import DexAcquireMvpEnv
-from qdgrasp.mvp.expert import DemonstrationSet, ExpertSearchSpec, search_expert_episode
+from qdgrasp.mvp.env import DexAcquireMvpEnv, environment_fingerprint
+from qdgrasp.mvp.expert import (
+    DEMONSTRATION_INDEX_SCHEMA,
+    DemonstrationSet,
+    ExpertSearchSpec,
+    search_expert_episode,
+)
 from qdgrasp.mvp.prior import DEFAULT_PRIOR_PATH, PinchPriorTable
 
 DEFAULT_OUTPUT = Path("runs/mvp/demonstrations")
 
 _WORKER: dict[str, Any] = {}
+
+
+def _commit() -> str:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):  # pragma: no cover - git-less checkout
+        return "unknown"
 
 
 def _init(scope_path: str | None, prior_path: str, candidates: int, sigma: float) -> None:
@@ -100,6 +118,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     scope = load_mvp_scope(args.scope)
+    prior = PinchPriorTable.load(args.prior)
+    search_spec = ExpertSearchSpec(candidates=args.candidates, sigma=args.sigma)
     started = time.time()
     summaries: dict[str, Any] = {}
     for split, count in (("train", args.train_episodes), ("dev", args.dev_episodes)):
@@ -109,10 +129,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[{split}] {json.dumps(summaries[split], sort_keys=True)}")
 
     index = {
+        "schema": DEMONSTRATION_INDEX_SCHEMA,
+        "commit": _commit(),
+        "fingerprint": environment_fingerprint(scope, prior),
         "scope_hash": scope.content_hash(),
-        "prior_hash": PinchPriorTable.load(args.prior).content_hash(),
-        "candidates": args.candidates,
-        "sigma": args.sigma,
+        "prior_hash": prior.content_hash(),
+        "generator_config": {
+            "train_episodes": args.train_episodes,
+            "dev_episodes": args.dev_episodes,
+            "expert_search": search_spec.to_document(),
+        },
         "elapsed_s": round(time.time() - started, 1),
         "splits": summaries,
     }

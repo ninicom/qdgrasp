@@ -212,6 +212,20 @@ def _canonical_hash(document: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def file_sha256(path: str | Path) -> str:
+    """Hash one checkpoint file without loading or executing its payload."""
+
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+
+
 def _state_dict_hash(state_dict: dict[str, Any]) -> str:
     """Content digest over tensor names, shapes, dtypes and bytes."""
 
@@ -274,6 +288,39 @@ def save_checkpoint(
     normalizer_document = normalizer.to_document()
     state_dict = network.state_dict()
     metadata_document = dict(metadata or {})
+    training_config = metadata_document.get("training_config")
+    dataset_content_hash = metadata_document.get("dataset_content_hash")
+    parent = metadata_document.get("parent")
+    parent_checkpoint_hash: str | None = None
+    if stage in {"bc", "ppo"}:
+        if not _is_sha256(dataset_content_hash):
+            raise ValueError(f"{stage} checkpoint requires a SHA-256 dataset_content_hash")
+        if not isinstance(training_config, dict) or not training_config:
+            raise ValueError(f"{stage} checkpoint requires a non-empty training_config mapping")
+    if stage == "bc" and parent is not None:
+        raise ValueError("bc checkpoint cannot declare a parent checkpoint")
+    if stage == "ppo":
+        if not isinstance(parent, str) or not parent:
+            raise ValueError("ppo checkpoint requires a parent checkpoint path")
+        try:
+            parent_checkpoint_hash = file_sha256(parent)
+        except OSError as error:
+            raise ValueError(f"ppo parent checkpoint is unreadable: {parent!r}") from error
+        declared_parent_hash = metadata_document.get("parent_checkpoint_hash")
+        if declared_parent_hash is not None and declared_parent_hash != parent_checkpoint_hash:
+            raise ValueError(
+                "ppo parent checkpoint hash does not match the declared parent_checkpoint_hash"
+            )
+        metadata_document["parent_checkpoint_hash"] = parent_checkpoint_hash
+    lineage_body = {
+        "parent": parent,
+        "parent_checkpoint_hash": parent_checkpoint_hash,
+        "fingerprint_hash": _canonical_hash(dict(fingerprint)),
+        "normalizer_hash": _canonical_hash(normalizer_document),
+        "weights_hash": _state_dict_hash(state_dict),
+        "dataset_content_hash": dataset_content_hash,
+        "training_config_hash": _canonical_hash(training_config) if isinstance(training_config, dict) else None,
+    }
     payload = {
         "schema": POLICY_SCHEMA,
         "stage": stage,
@@ -286,13 +333,7 @@ def save_checkpoint(
         },
         "normalizer": normalizer_document,
         "metadata": metadata_document,
-        "lineage": {
-            "parent": metadata_document.get("parent"),
-            "fingerprint_hash": _canonical_hash(dict(fingerprint)),
-            "normalizer_hash": _canonical_hash(normalizer_document),
-            "weights_hash": _state_dict_hash(state_dict),
-            "dataset_content_hash": metadata_document.get("dataset_content_hash"),
-        },
+        "lineage": {**lineage_body, "lineage_hash": _canonical_hash(lineage_body)},
         "state_dict": state_dict,
         "optimizer_state": optimizer_state,
         "reload_probe": _reload_probe(network, normalizer),
@@ -330,6 +371,52 @@ def load_checkpoint(path: str | Path) -> dict[str, Any]:
         raise ValueError(f"{path}: checkpoint normalizer lineage mismatch")
     if lineage.get("weights_hash") != _state_dict_hash(payload.get("state_dict", {})):
         raise ValueError(f"{path}: checkpoint weight lineage mismatch")
+    metadata = payload.get("metadata")
+    if not isinstance(metadata, dict):
+        raise TypeError(f"{path}: checkpoint metadata must be a mapping")
+    training_config = metadata.get("training_config")
+    expected_config_hash = _canonical_hash(training_config) if isinstance(training_config, dict) else None
+    if lineage.get("training_config_hash") != expected_config_hash:
+        raise ValueError(f"{path}: checkpoint training-config lineage mismatch")
+    if lineage.get("dataset_content_hash") != metadata.get("dataset_content_hash"):
+        raise ValueError(f"{path}: checkpoint dataset lineage mismatch")
+    if lineage.get("parent") != metadata.get("parent"):
+        raise ValueError(f"{path}: checkpoint parent lineage mismatch")
+    if lineage.get("parent_checkpoint_hash") != metadata.get("parent_checkpoint_hash"):
+        raise ValueError(f"{path}: checkpoint parent-hash lineage mismatch")
+    lineage_body = {
+        key: lineage.get(key)
+        for key in (
+            "parent",
+            "parent_checkpoint_hash",
+            "fingerprint_hash",
+            "normalizer_hash",
+            "weights_hash",
+            "dataset_content_hash",
+            "training_config_hash",
+        )
+    }
+    if lineage.get("lineage_hash") != _canonical_hash(lineage_body):
+        raise ValueError(f"{path}: checkpoint aggregate lineage mismatch")
+    stage = payload.get("stage")
+    if stage in {"bc", "ppo"}:
+        if not _is_sha256(lineage.get("dataset_content_hash")):
+            raise ValueError(f"{path}: {stage} checkpoint has no demonstration content lineage")
+        if not _is_sha256(lineage.get("training_config_hash")):
+            raise ValueError(f"{path}: {stage} checkpoint has no training-config lineage")
+    if stage == "bc" and (lineage.get("parent") is not None or lineage.get("parent_checkpoint_hash") is not None):
+        raise ValueError(f"{path}: bc checkpoint unexpectedly declares a parent")
+    if stage == "ppo":
+        if not isinstance(lineage.get("parent"), str) or not lineage["parent"]:
+            raise ValueError(f"{path}: ppo checkpoint has no parent path")
+        if not _is_sha256(lineage.get("parent_checkpoint_hash")):
+            raise ValueError(f"{path}: ppo checkpoint has no parent content hash")
+        try:
+            actual_parent_hash = file_sha256(lineage["parent"])
+        except OSError as error:
+            raise ValueError(f"{path}: ppo parent checkpoint is unreadable: {lineage['parent']!r}") from error
+        if actual_parent_hash != lineage["parent_checkpoint_hash"]:
+            raise ValueError(f"{path}: ppo parent checkpoint content changed")
     return payload
 
 
