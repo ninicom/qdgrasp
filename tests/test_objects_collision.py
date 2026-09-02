@@ -6,7 +6,7 @@ import trimesh
 from qdgrasp.config.schema import ConfigError
 from qdgrasp.dataset.rng import get_generator
 from qdgrasp.objects.collision import validate_collision_representation
-from qdgrasp.objects.generate import generate_box, generate_compound_convex
+from qdgrasp.objects.generate import generate_compound_convex
 from qdgrasp.objects.schema import SubGeomSpec
 
 

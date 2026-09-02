@@ -1,20 +1,15 @@
 """Unit tests for robot transmission layer: direct-drive and fixed-tendon underactuated hands."""
 
-from pathlib import Path
+import mujoco
 import numpy as np
 import pytest
-import mujoco
 
 from qdgrasp.robot.assets import resolve_robot_asset
 from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.robot.transmission import (
-    ActuatorCommand,
     DirectJointTransmission,
     FixedTendonTransmission,
-    TransmissionState,
-    compute_finite_difference_moment_matrix,
     create_transmission_model_from_spec_and_mjcf,
-    project_joint_delta_to_actuator_command,
 )
 
 
@@ -89,7 +84,6 @@ def test_shadow_fixed_tendon_transmission(shadow_hand):
 def test_command_projection_direct_vs_nullspace(shadow_hand):
     spec, model = shadow_hand
     tm = create_transmission_model_from_spec_and_mjcf(spec, model)
-    M = tm.moment_matrix  # [20, 24]
 
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)

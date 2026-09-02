@@ -14,7 +14,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 HARNESS_PATH = REPO_ROOT / "scripts" / "characterize_pipeline_failures.py"
 BASELINE_PATH = REPO_ROOT / "evidence" / "phase3_2_1" / "baseline" / "corpus.json"
@@ -88,15 +87,15 @@ def test_every_candidate_records_stage_and_residual_telemetry(baseline: dict) ->
 
 def test_a_cell_is_reproducible_from_the_same_seed(harness) -> None:
     """Same seed and budget must give byte-identical stage evidence."""
-    kwargs = dict(
-        hand="leap_hand",
-        recipe_id="surface_fixed_v1",
-        object_name="box_50mm",
-        object_spec=harness.OBJECT_BUILDERS["box_50mm"](),
-        seed=42,
-        candidates=2,
-        run_dynamic=False,
-    )
+    kwargs = {
+        "hand": "leap_hand",
+        "recipe_id": "surface_fixed_v1",
+        "object_name": "box_50mm",
+        "object_spec": harness.OBJECT_BUILDERS["box_50mm"](),
+        "seed": 42,
+        "candidates": 2,
+        "run_dynamic": False,
+    }
     first = harness.run_cell(**kwargs)
     second = harness.run_cell(**kwargs)
     assert first["failure_signature"] == second["failure_signature"]

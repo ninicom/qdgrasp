@@ -16,9 +16,11 @@ def test_environment_info_is_serializable() -> None:
 
 
 def test_require_cuda_fails_without_physical_device() -> None:
-    with mock.patch("torch.cuda.is_available", return_value=False):
-        with pytest.raises(RuntimeError, match="CPU fallback is forbidden"):
-            require_cuda()
+    with (
+        mock.patch("torch.cuda.is_available", return_value=False),
+        pytest.raises(RuntimeError, match="CPU fallback is forbidden"),
+    ):
+        require_cuda()
 
 
 def test_require_cuda_rejects_wrong_runtime() -> None:
@@ -26,7 +28,6 @@ def test_require_cuda_rejects_wrong_runtime() -> None:
         mock.patch("torch.cuda.is_available", return_value=True),
         mock.patch("torch.cuda.device_count", return_value=1),
         mock.patch("torch.cuda.get_device_name", return_value="Mock GPU"),
-        mock.patch.object(torch.version, "cuda", "12.7"),
+        mock.patch.object(torch.version, "cuda", "12.7"),pytest.raises(RuntimeError, match="requires CUDA runtime 12.8")
     ):
-        with pytest.raises(RuntimeError, match="requires CUDA runtime 12.8"):
-            require_cuda()
+        require_cuda()

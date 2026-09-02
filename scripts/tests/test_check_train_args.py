@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CHECKER = PROJECT_ROOT / "scripts" / "check_train_args.py"
 DOCS_CHECKER = PROJECT_ROOT / "scripts" / "check_docs.py"
@@ -422,8 +421,8 @@ class TrainArgumentRegistryTests(unittest.TestCase):
             (pointer + "\n", "", "latest_revision_record"),
             (
                 pointer,
-                "latest_revision_record: "
-                "docs/revisions/REV-20260822-002-source-metadata-hardening.md",
+                ("latest_revision_record: "
+                "docs/revisions/REV-20260822-002-source-metadata-hardening.md"),
                 "latest_revision_record",
             ),
             ("date: 2026-08-22", "date: never", "Markdown metadata 'date'"),

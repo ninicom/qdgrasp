@@ -106,9 +106,11 @@ def test_cpu_forces_amp_off_and_records_the_adjustment() -> None:
 
 
 def test_cuda_request_never_falls_back_to_cpu() -> None:
-    with mock.patch("torch.cuda.is_available", return_value=False):
-        with pytest.raises(RuntimeError, match="CPU fallback is forbidden"):
-            resolve_runtime(RunConfig(device="cuda:0"))
+    with (
+        mock.patch("torch.cuda.is_available", return_value=False),
+        pytest.raises(RuntimeError, match="CPU fallback is forbidden"),
+    ):
+        resolve_runtime(RunConfig(device="cuda:0"))
 
 
 def test_cuda_index_beyond_device_count_is_rejected() -> None:
@@ -116,10 +118,9 @@ def test_cuda_index_beyond_device_count_is_rejected() -> None:
         mock.patch("torch.cuda.is_available", return_value=True),
         mock.patch("torch.cuda.device_count", return_value=1),
         mock.patch("torch.cuda.get_device_name", return_value="Mock GPU"),
-        mock.patch.object(torch.version, "cuda", "12.8"),
+        mock.patch.object(torch.version, "cuda", "12.8"),pytest.raises(ConfigError, match="only 1 CUDA device")
     ):
-        with pytest.raises(ConfigError, match="only 1 CUDA device"):
-            resolve_runtime(RunConfig(device="cuda:3"))
+        resolve_runtime(RunConfig(device="cuda:3"))
 
 
 def test_data_config_loads_and_hashes_stably() -> None:

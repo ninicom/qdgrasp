@@ -9,10 +9,8 @@ import importlib
 import json
 import math
 import platform
-import sys
 from importlib import metadata
 from pathlib import Path
-
 
 REQUIRED = {
     "torch": "2.11.0",
@@ -34,7 +32,7 @@ def check_lock_manifest(problems: list[str]) -> None:
     try:
         yaml = importlib.import_module("yaml")
         manifest = yaml.safe_load(Path("environments/environment.lock.yaml").read_text())
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - any failure here is the finding this check reports
         problems.append(f"không đọc được environment lock manifest: {exc}")
         return
     for name, profile in manifest.get("profiles", {}).items():
@@ -61,8 +59,6 @@ def main() -> int:
     problems: list[str] = []
     versions: dict[str, str | None] = {}
     check_lock_manifest(problems)
-    if sys.version_info < (3, 11):
-        problems.append(f"Python phải >=3.11, hiện tại là {platform.python_version()}")
 
     for package, expected in REQUIRED.items():
         try:
@@ -97,13 +93,13 @@ def main() -> int:
             value = (torch.eye(3, device=device) @ torch.ones(3, device=device)).sum().item()
             if not math.isclose(value, 3.0):
                 problems.append(f"Torch smoke test trả về {value}, cần 3.0")
-        except Exception as exc:  # pragma: no cover - depends on runtime/driver
+        except Exception as exc:  # noqa: BLE001 - a smoke test reports whatever it hit  # pragma: no cover - depends on runtime/driver
             problems.append(f"Torch smoke test lỗi: {exc}")
 
     if versions["lightning"] is not None:
         try:
             importlib.import_module("lightning.fabric")
-        except Exception as exc:  # pragma: no cover - dependency/runtime specific
+        except Exception as exc:  # noqa: BLE001 - a smoke test reports whatever it hit  # pragma: no cover - dependency/runtime specific
             problems.append(f"Lightning Fabric import lỗi: {exc}")
 
     if versions["mujoco"] is not None:
@@ -114,7 +110,7 @@ def main() -> int:
             )
             data = mujoco.MjData(model)
             mujoco.mj_forward(model, data)
-        except Exception as exc:  # pragma: no cover - native runtime specific
+        except Exception as exc:  # noqa: BLE001 - a smoke test reports whatever it hit  # pragma: no cover - native runtime specific
             problems.append(f"MuJoCo smoke test lỗi: {exc}")
 
     report = {

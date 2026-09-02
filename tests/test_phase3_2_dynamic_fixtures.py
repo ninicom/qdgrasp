@@ -5,11 +5,11 @@ import pytest
 import torch
 from scipy.spatial.transform import Rotation
 
+from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
+from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
 from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.robot.assets import resolve_robot_asset
 from qdgrasp.robot.spec import RobotSpec
-from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
-from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
 
 
 @pytest.fixture

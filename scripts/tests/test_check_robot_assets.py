@@ -7,7 +7,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CHECKER = PROJECT_ROOT / "scripts" / "check_robot_assets.py"
 LOCK = PROJECT_ROOT / "robot_assets.lock.yaml"

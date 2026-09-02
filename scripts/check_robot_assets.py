@@ -6,11 +6,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import subprocess
-import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
-
 
 LOCK_SHA256 = "19b4011eec37c2324eb7d9132babff03611946608462bb9f800592646f4b49f9"
 

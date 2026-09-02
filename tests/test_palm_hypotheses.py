@@ -45,18 +45,18 @@ def test_grasp_frame_is_a_proper_rotation() -> None:
 
 def test_hypotheses_include_exact_rigid_recovery_and_are_deterministic() -> None:
     source, directions, target, normals, active, pairs, rotation, translation = _fixture()
-    kwargs = dict(
-        source_tips=source,
-        source_directions=directions,
-        target_tips=target,
-        target_normals=normals,
-        active_fingers=active,
-        opposition_pairs=pairs,
-        object_centroid=np.zeros(3),
-        floor_z=0.0,
-        min_palm_floor_clearance=0.0,
-        hypothesis_prefix="fixture",
-    )
+    kwargs = {
+        "source_tips": source,
+        "source_directions": directions,
+        "target_tips": target,
+        "target_normals": normals,
+        "active_fingers": active,
+        "opposition_pairs": pairs,
+        "object_centroid": np.zeros(3),
+        "floor_z": 0.0,
+        "min_palm_floor_clearance": 0.0,
+        "hypothesis_prefix": "fixture",
+    }
     first = generate_palm_hypotheses(**kwargs)
     second = generate_palm_hypotheses(**kwargs)
     assert [item.hypothesis_id for item in first] == [item.hypothesis_id for item in second]
@@ -105,18 +105,18 @@ def test_hypotheses_are_equivariant_to_a_world_rigid_transform() -> None:
     # mode names at floating-point tolerance.
     target = target.copy()
     target[1] += np.array([0.004, -0.002, 0.001])
-    kwargs = dict(
-        source_tips=source,
-        source_directions=directions,
-        target_tips=target,
-        target_normals=normals,
-        active_fingers=active,
-        opposition_pairs=pairs,
-        object_centroid=np.zeros(3),
-        floor_z=-10.0,
-        min_palm_floor_clearance=0.0,
-        hypothesis_prefix="equivariance",
-    )
+    kwargs = {
+        "source_tips": source,
+        "source_directions": directions,
+        "target_tips": target,
+        "target_normals": normals,
+        "active_fingers": active,
+        "opposition_pairs": pairs,
+        "object_centroid": np.zeros(3),
+        "floor_z": -10.0,
+        "min_palm_floor_clearance": 0.0,
+        "hypothesis_prefix": "equivariance",
+    }
     base = generate_palm_hypotheses(**kwargs)
 
     world_rotation = Rotation.from_euler("xyz", [17.0, -11.0, 23.0], degrees=True).as_matrix()

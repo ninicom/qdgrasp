@@ -11,7 +11,6 @@ from qdgrasp.dataset.pipeline.validators.collision_admission import (
 )
 from qdgrasp.objects.schema import SubGeomSpec
 
-
 HAND_XML = """
 <mujoco model="collision_admission_fixture">
   <option gravity="0 0 0"/>

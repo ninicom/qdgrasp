@@ -1,6 +1,7 @@
-import pytest
 import numpy as np
+
 from qdgrasp.dataset.pipeline.certifiers.grasp_wrench import compute_grasp_wrench_space_quality
+
 
 def test_gws_balanced_cube():
     """Test that opposing contacts with friction form a positive GWS epsilon."""

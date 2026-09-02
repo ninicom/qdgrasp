@@ -16,7 +16,6 @@ from torch.func import jacrev
 from qdgrasp.dataset.pipeline import contact_state as cs
 from qdgrasp.robot.spec import RobotSpec
 
-
 HANDS = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
 
 

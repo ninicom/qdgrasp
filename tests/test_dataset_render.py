@@ -16,7 +16,7 @@ def test_analytic_point_cloud_sampling_reproducibility() -> None:
     pcd1, meta1 = sample_analytic_point_cloud(mesh, cam_pos, cam_rot, num_points=256, rng=rng1)
 
     rng2 = get_generator(42, "render_test")
-    pcd2, meta2 = sample_analytic_point_cloud(mesh, cam_pos, cam_rot, num_points=256, rng=rng2)
+    pcd2, _meta2 = sample_analytic_point_cloud(mesh, cam_pos, cam_rot, num_points=256, rng=rng2)
 
     np.testing.assert_array_equal(pcd1, pcd2)
     assert pcd1.shape == (256, 3)

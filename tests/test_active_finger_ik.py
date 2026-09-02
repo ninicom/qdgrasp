@@ -1,12 +1,11 @@
 """Tests for active-finger mask in fixed and region DLS IK solvers."""
 
 import numpy as np
-import torch
 import pytest
+import torch
 
-from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
-from qdgrasp.dataset.pipeline.solvers.region_dls import solve_region_dls_ik_batch
+from qdgrasp.robot.spec import RobotSpec
 
 
 @pytest.fixture

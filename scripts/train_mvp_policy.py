@@ -21,7 +21,7 @@ from typing import Any
 import numpy as np
 
 from qdgrasp.mvp.bc import BehaviorCloningSpec, train_behavior_cloning
-from qdgrasp.mvp.challenge import challenge_development_seeds
+from qdgrasp.mvp.challenge import challenge_development_seeds, load_challenge_domain
 from qdgrasp.mvp.config import load_mvp_scope
 from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
 from qdgrasp.mvp.env import environment_fingerprint
@@ -182,6 +182,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dev-episodes", type=int, default=150)
     parser.add_argument("--challenge", type=Path, default=None, help="locked challenge domain document")
     parser.add_argument("--challenge-dev-episodes", type=int, default=300)
+    parser.add_argument(
+        "--ppo-challenge-fraction",
+        type=float,
+        default=0.5,
+        help="share of each PPO iteration rolled out on the challenge domain",
+    )
     parser.add_argument("--skip-ppo", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
@@ -266,6 +272,10 @@ def main(argv: list[str] | None = None) -> int:
             "schema": PPO_TRAINING_CONFIG_SCHEMA,
             "spec": ppo_spec.to_document(),
             "seed_offset": 10_000,
+            "challenge_fraction": args.ppo_challenge_fraction if challenge_path is not None else 0.0,
+            "challenge_domain_hash": (
+                load_challenge_domain(args.challenge, scope).content_hash() if challenge_path is not None else None
+            ),
         }
         payload = load_checkpoint(bc_path)
         ppo_network, ppo_normalizer = build_from_checkpoint(payload)
@@ -276,6 +286,8 @@ def main(argv: list[str] | None = None) -> int:
             spec=ppo_spec,
             scope_path=scope_path,
             prior_path=str(args.prior),
+            challenge_path=challenge_path,
+            challenge_fraction=args.ppo_challenge_fraction if challenge_path is not None else 0.0,
             fingerprint=fingerprint,
             workers=args.workers,
             output_dir=args.out / "ppo-staging",

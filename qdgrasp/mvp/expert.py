@@ -50,6 +50,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import math
 from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
@@ -70,17 +71,68 @@ DEMONSTRATION_INDEX_SCHEMA = "qdgrasp/mvp-demonstration-index/v1"
 #: and including the closing schedule, then the lift and the hold.
 SEGMENT_NAMES: tuple[str, ...] = ("pregrasp", "carry")
 
+#: Where the two synergy (finger closure) entries sit in the action vector.
+#: The layout is fixed by ``ActionSpec.scale_vector``: three translation, three
+#: rotation, two synergy.
+SYNERGY_ACTION_SLICE = slice(6, 8)
+
 
 @dataclasses.dataclass(frozen=True)
 class ExpertSearchSpec:
-    """How hard the expert is allowed to look for a better residual."""
+    """How hard the expert is allowed to look for a better residual.
+
+    The search is part random and part directed, and the directed part exists
+    because the random part could not find the answer.  Sampling isotropic
+    noise in a sixteen-dimensional space almost never produces "hold the grip
+    harder once the hand has closed", and that is the correction the measured
+    failures call for: on the challenge domain the prior loses targets to
+    ``contact_loss`` and ``drop`` under low friction and high mass, and
+    ``scripts/probe_mvp_residual.py`` shows a constant closing residual
+    recovering a quarter of them with no safety violation and peak forces
+    around half the budget.
+
+    So the grip candidates are tried first, the random draws keep the search
+    able to find what the structure did not anticipate, and the zero candidate
+    stays first of all so a working grasp is still left alone.  Nothing here
+    changes what counts as a success: candidates are still admitted only by
+    the measured predicate, and still ranked by a score that negates force so
+    a candidate cannot buy hold time by crushing the target.
+    """
 
     candidates: int = 12
-    #: Standard deviation of the candidate residual, in unit-action space.
+    #: Standard deviation of the random candidate residual, in unit-action space.
     sigma: float = 0.35
     #: Candidates are drawn per dimension; the palm-rotation entries are kept
     #: small because a large rotation residual mostly just misses the target.
     rotation_scale: float = 0.3
+    #: Closing residuals applied to the carry segment only, as (first group,
+    #: second group) on the prior's own open-to-squeeze direction.  The approach
+    #: is left alone on purpose: it spreads the fingers wider than the grasp
+    #: needs so a descending fingertip clears the target's side, and closing
+    #: during it is the jam the controller prior was shaped to avoid.
+    grip_candidates: tuple[tuple[float, float], ...] = (
+        (0.0, 0.75),
+        (0.25, 0.75),
+        (0.5, 0.5),
+        (1.0, 0.0),
+        (0.0, 0.40),
+        (0.40, 0.0),
+    )
+    #: How many of the best-scoring successes are re-run under noise before
+    #: one is kept, when no earlier candidate has already been accepted.
+    robustness_finalists: int = 3
+    #: Noisy rollouts an earlier candidate must survive to be taken without
+    #: looking at the later ones.
+    #:
+    #: This is what makes the expert *consistent*, and consistency is the
+    #: property a clone actually needs.  Ranking every success by margin makes
+    #: the expert an oracle that picks a different residual per episode --
+    #: measured, half the rescued episodes were carried by scattered random
+    #: draws -- and cloning inconsistent labels for similar states returns
+    #: their mean, which is small and points nowhere.  Taking the earliest
+    #: candidate that robustly works means the structured closing correction
+    #: is used wherever it works, so the same state maps to the same answer.
+    accept_first_robust: bool = True
     #: Extra rollouts of the accepted residual under injected action noise.
     noise_rollouts: int = 3
     #: Standard deviation of that noise, in unit-action space.  It has to be
@@ -94,11 +146,19 @@ class ExpertSearchSpec:
         return dataclasses.asdict(self)
 
     def sample(self, rng: np.random.Generator, action_dim: int) -> np.ndarray:
-        """Draw the candidate set, with the zero (prior) candidate first."""
+        """Draw the candidate set: zero first, then grip, then random."""
 
-        draws = rng.normal(0.0, self.sigma, size=(self.candidates - 1, len(SEGMENT_NAMES), action_dim))
+        # ``candidates`` is the whole search budget, zero candidate included:
+        # the grip set is drawn from it rather than added on top, so a spec
+        # that asks for four rollouts pays for four.
+        used = self.grip_candidates[: max(0, self.candidates - 1)]
+        grip = np.zeros((len(used), len(SEGMENT_NAMES), action_dim))
+        for index, pair in enumerate(used):
+            grip[index, 1, SYNERGY_ACTION_SLICE] = pair
+        random_count = max(0, self.candidates - 1 - len(used))
+        draws = rng.normal(0.0, self.sigma, size=(random_count, len(SEGMENT_NAMES), action_dim))
         draws[:, :, 3:6] *= self.rotation_scale
-        candidates = np.concatenate([np.zeros((1, len(SEGMENT_NAMES), action_dim)), draws], axis=0)
+        candidates = np.concatenate([np.zeros((1, len(SEGMENT_NAMES), action_dim)), grip, draws], axis=0)
         return np.clip(candidates, -1.0, 1.0)
 
 
@@ -165,8 +225,7 @@ def search_expert_episode(
     candidates = spec.sample(rng, action_dim)
     setup = env.sample_setup(seed, split, challenged=challenged)
 
-    best: ExpertEpisode | None = None
-    best_score: tuple[float, ...] | None = None
+    successes: list[ExpertEpisode] = []
     prior_succeeded = False
     outcomes: Counter[str] = Counter()
     for index, candidate in enumerate(candidates):
@@ -192,26 +251,40 @@ def search_expert_episode(
             prior_succeeded = bool(result.success)
         if not result.success:
             continue
-        score = _score(result, scope)
-        if best_score is None or score > best_score:
-            best_score = score
-            best = ExpertEpisode(
+        successes.append(
+            ExpertEpisode(
                 observations=np.stack(observations).astype(np.float32),
                 actions=np.stack(actions).astype(np.float32),
                 result=result,
                 candidate_index=index,
-                score=score,
+                score=_score(result, scope),
             )
+        )
 
+    if prior_succeeded:
+        # The prior needs no run-off: "do nothing" is the demonstration, and
+        # there is nothing to be robust about.
+        finalists = successes[:1]
+    elif spec.accept_first_robust:
+        # Candidate order is the preference order: zero, then the structured
+        # closing corrections, then the random draws.
+        finalists = successes
+    else:
+        successes.sort(key=lambda episode: episode.score, reverse=True)
+        finalists = successes[: max(1, spec.robustness_finalists)]
+
+    required = math.ceil(spec.noise_rollouts / 2) if spec.accept_first_robust else spec.noise_rollouts + 1
+    best: ExpertEpisode | None = None
+    best_rank: tuple[int, tuple[float, ...]] | None = None
     noisy_attempted = 0
     noisy_accepted = 0
-    if best is not None and spec.noise_rollouts > 0:
-        extra_observations: list[np.ndarray] = [best.observations]
-        extra_actions: list[np.ndarray] = [best.actions]
-        candidate = candidates[best.candidate_index]
+    winning_rollouts: list[tuple[np.ndarray, np.ndarray]] = []
+    for finalist in finalists:
+        candidate = candidates[finalist.candidate_index]
+        survived: list[tuple[np.ndarray, np.ndarray]] = []
         for trial in range(spec.noise_rollouts):
             noisy_attempted += 1
-            noise_rng = np.random.default_rng((seed ^ 0xDA27) + trial)
+            noise_rng = np.random.default_rng((seed ^ 0xDA27) + trial + 0x100 * finalist.candidate_index)
             observations = []
             actions = []
             observation = env.reset(seed, split, setup=setup)
@@ -224,15 +297,28 @@ def search_expert_episode(
             result = env.result
             assert result is not None
             outcomes[f"noisy_{result.failure_bucket}"] += 1
-            if not result.success:
-                continue
-            noisy_accepted += 1
-            extra_observations.append(np.stack(observations).astype(np.float32))
-            extra_actions.append(np.stack(actions).astype(np.float32))
+            if result.success:
+                survived.append(
+                    (np.stack(observations).astype(np.float32), np.stack(actions).astype(np.float32))
+                )
+        # Robustness first, margin only to break ties: the demonstration kept
+        # is the one that still works when the action is wrong, because a
+        # cloned policy's action is always a little wrong.
+        rank = (len(survived), finalist.score)
+        if best_rank is None or rank > best_rank:
+            best_rank = rank
+            best = finalist
+            winning_rollouts = survived
+        if len(survived) >= required:
+            # Good enough, and earlier in the preference order than anything
+            # left: stop rather than shop for a prettier label.
+            break
+    if best is not None:
+        noisy_accepted = len(winning_rollouts)
         best = dataclasses.replace(
             best,
-            observations=np.concatenate(extra_observations),
-            actions=np.concatenate(extra_actions),
+            observations=np.concatenate([best.observations, *(item[0] for item in winning_rollouts)]),
+            actions=np.concatenate([best.actions, *(item[1] for item in winning_rollouts)]),
         )
 
     row = {
@@ -249,6 +335,8 @@ def search_expert_episode(
         "candidate_outcomes": dict(sorted(outcomes.items())),
         "accepted": best is not None,
         "accepted_candidate": None if best is None else int(best.candidate_index),
+        "finalists": len(finalists),
+        "noisy_survivals": noisy_accepted,
         "prior_candidate_succeeded": prior_succeeded,
         "noisy_rollouts_attempted": noisy_attempted,
         "noisy_rollouts_accepted": noisy_accepted,

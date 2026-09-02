@@ -24,7 +24,6 @@ from qdgrasp.dataset.pipeline.solvers.normal_equations import masked_normal_equa
 from qdgrasp.dataset.pipeline.solvers.region_dls import solve_region_dls_ik_batch
 from qdgrasp.robot.spec import RobotSpec
 
-
 HANDS = ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml")
 
 

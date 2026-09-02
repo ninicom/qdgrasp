@@ -28,6 +28,7 @@ from qdgrasp.objects.generate import (
 )
 from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.robot.spec import RobotSpec
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -42,7 +43,7 @@ def verify_procedural_generators() -> None:
         rng1 = get_generator(42, "gate_test")
         m1, g1, _, mass1, in1 = gen(rng1)
         rng2 = get_generator(42, "gate_test")
-        m2, g2, _, mass2, in2 = gen(rng2)
+        m2, _g2, _, _mass2, _in2 = gen(rng2)
 
         if mass1 <= 0 or not all(i > 0 for i in in1):
             raise AssertionError(f"invalid mass/inertia from {gen.__name__}")
@@ -53,7 +54,7 @@ def verify_procedural_generators() -> None:
     # Compound
     for f in ("t_shape", "l_shape", "dumbbell"):
         rng = get_generator(99, f)
-        m, g, _, mass, in_t = generate_compound_convex(rng, shape_family=f)
+        m, g, _, _mass, _in_t = generate_compound_convex(rng, shape_family=f)
         if len(g) < 2:
             raise AssertionError(f"compound shape {f} has fewer than 2 collision geoms")
         validate_collision_representation(m, g)
@@ -116,7 +117,7 @@ def verify_recipes_and_contracts() -> None:
     from qdgrasp.dataset.pipeline.orchestrator import run_pipeline_chunk
     from qdgrasp.robot.spec import resolve_robot_asset
 
-    for recipe_id in ALLOWED_RECIPES.keys():
+    for recipe_id in ALLOWED_RECIPES:
         for preset in ("leap_hand.yaml", "wonik_allegro.yaml", "shadow_hand.yaml"):
             spec = RobotSpec.from_config(preset, sample_anchors=False)
             xml_path = resolve_robot_asset(spec.config.source_asset)

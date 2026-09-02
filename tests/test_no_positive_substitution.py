@@ -20,7 +20,6 @@ import trimesh
 
 from qdgrasp.dataset.pipeline.contracts import PipelineOutcome
 
-
 GENERATOR_PATH = Path(__file__).resolve().parents[1] / "scripts" / "generate_dgn_open_tiny.py"
 GENERATOR_SOURCE = GENERATOR_PATH.read_text(encoding="utf-8")
 GENERATOR_TREE = ast.parse(GENERATOR_SOURCE)
@@ -142,12 +141,11 @@ def test_generator_defines_no_hardcoded_joint_state_vectors() -> None:
         return isinstance(node, ast.Constant) and isinstance(node.value, (int, float))
 
     for node in ast.walk(GENERATOR_TREE):
-        if isinstance(node, ast.List) and len(node.elts) >= 8:
-            if all(_is_number(elt) for elt in node.elts):
-                raise AssertionError(
-                    f"generator contains a hardcoded numeric vector of length "
-                    f"{len(node.elts)} at line {node.lineno}"
-                )
+        if isinstance(node, ast.List) and len(node.elts) >= 8 and all(_is_number(elt) for elt in node.elts):
+            raise AssertionError(
+                f"generator contains a hardcoded numeric vector of length "
+                f"{len(node.elts)} at line {node.lineno}"
+            )
 
 
 def test_positive_count_tracks_measured_dynamic_validity() -> None:

@@ -1,0 +1,272 @@
+{
+  "best_constant": {
+    "base_dev_net_pp": 1.5,
+    "challenge_net_pp": 7.0,
+    "challenge_wilson_lower": 0.6875519770721528,
+    "label": "carry_synergy_0.0_0.75"
+  },
+  "challenge_domain_hash": "aabec53df8291d3e434cf526da57ced54cd8b6439083f329343488027ed9a971",
+  "constant_residuals": {
+    "carry_synergy_0.0_0.75": {
+      "base_dev": {
+        "baseline_successes": 186,
+        "episodes": 200,
+        "failure_buckets": {
+          "contact_loss": 8,
+          "drop": 3
+        },
+        "gained": 3,
+        "invalid_state": 0,
+        "lost": 0,
+        "max_contact_force_n": 10.960445674287849,
+        "net_pp": 1.5,
+        "safety_violation": 0,
+        "success_rate": 0.945,
+        "successes": 189
+      },
+      "challenge": {
+        "baseline_successes": 201,
+        "episodes": 300,
+        "failure_buckets": {
+          "contact_loss": 58,
+          "drop": 20
+        },
+        "gained": 24,
+        "invalid_state": 0,
+        "lost": 3,
+        "max_contact_force_n": 10.03386177541021,
+        "net_pp": 7.0,
+        "safety_violation": 0,
+        "success_rate": 0.74,
+        "successes": 222
+      },
+      "residual": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.75
+        ]
+      ]
+    },
+    "carry_synergy_0.25_0.75": {
+      "base_dev": {
+        "baseline_successes": 186,
+        "episodes": 200,
+        "failure_buckets": {
+          "contact_loss": 9,
+          "drop": 5
+        },
+        "gained": 2,
+        "invalid_state": 0,
+        "lost": 2,
+        "max_contact_force_n": 10.954302607988247,
+        "net_pp": 0.0,
+        "safety_violation": 0,
+        "success_rate": 0.93,
+        "successes": 186
+      },
+      "challenge": {
+        "baseline_successes": 201,
+        "episodes": 300,
+        "failure_buckets": {
+          "contact_loss": 58,
+          "drop": 20
+        },
+        "gained": 26,
+        "invalid_state": 0,
+        "lost": 5,
+        "max_contact_force_n": 11.069361788073403,
+        "net_pp": 7.0,
+        "safety_violation": 0,
+        "success_rate": 0.74,
+        "successes": 222
+      },
+      "residual": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.25,
+          0.75
+        ]
+      ]
+    },
+    "carry_synergy_0.5_0.5": {
+      "base_dev": {
+        "baseline_successes": 186,
+        "episodes": 200,
+        "failure_buckets": {
+          "contact_loss": 10,
+          "drop": 4
+        },
+        "gained": 3,
+        "invalid_state": 0,
+        "lost": 3,
+        "max_contact_force_n": 11.3528666759189,
+        "net_pp": 0.0,
+        "safety_violation": 0,
+        "success_rate": 0.93,
+        "successes": 186
+      },
+      "challenge": {
+        "baseline_successes": 201,
+        "episodes": 300,
+        "failure_buckets": {
+          "contact_loss": 60,
+          "drop": 21
+        },
+        "gained": 25,
+        "invalid_state": 0,
+        "lost": 7,
+        "max_contact_force_n": 10.999943375766321,
+        "net_pp": 6.0,
+        "safety_violation": 0,
+        "success_rate": 0.73,
+        "successes": 219
+      },
+      "residual": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.5
+        ]
+      ]
+    },
+    "carry_synergy_1.0_0.0": {
+      "base_dev": {
+        "baseline_successes": 186,
+        "episodes": 200,
+        "failure_buckets": {
+          "contact_loss": 9,
+          "drop": 2
+        },
+        "gained": 4,
+        "invalid_state": 0,
+        "lost": 1,
+        "max_contact_force_n": 11.882722561717502,
+        "net_pp": 1.5,
+        "safety_violation": 0,
+        "success_rate": 0.945,
+        "successes": 189
+      },
+      "challenge": {
+        "baseline_successes": 201,
+        "episodes": 300,
+        "failure_buckets": {
+          "contact_loss": 57,
+          "drop": 27
+        },
+        "gained": 25,
+        "invalid_state": 0,
+        "lost": 10,
+        "max_contact_force_n": 11.719534580708949,
+        "net_pp": 5.0,
+        "safety_violation": 0,
+        "success_rate": 0.72,
+        "successes": 216
+      },
+      "residual": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ]
+    }
+  },
+  "controller_prior": {
+    "base_dev": {
+      "baseline_successes": 186,
+      "episodes": 200,
+      "failure_buckets": {
+        "contact_loss": 11,
+        "drop": 3
+      },
+      "gained": 0,
+      "invalid_state": 0,
+      "lost": 0,
+      "max_contact_force_n": 8.845703981867139,
+      "net_pp": 0.0,
+      "safety_violation": 0,
+      "success_rate": 0.93,
+      "successes": 186
+    },
+    "challenge": {
+      "baseline_successes": 201,
+      "episodes": 300,
+      "failure_buckets": {
+        "contact_loss": 66,
+        "drop": 33
+      },
+      "gained": 0,
+      "invalid_state": 0,
+      "lost": 0,
+      "max_contact_force_n": 7.867109035923891,
+      "net_pp": 0.0,
+      "safety_violation": 0,
+      "success_rate": 0.67,
+      "successes": 201
+    }
+  },
+  "locked_action_space_can_recover_failures": true,
+  "schema": "qdgrasp/mvp-residual-probe/v1",
+  "scope_hash": "47fbf8f0bb786473993f9196d442a8e0fe08f8e7bdcdec4117a12cfd70aff11d"
+}

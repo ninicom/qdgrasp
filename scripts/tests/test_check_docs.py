@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CHECKER = PROJECT_ROOT / "scripts" / "check_docs.py"
 SESSION_TEMPLATE = PROJECT_ROOT / "docs" / "templates" / "SESSION_REPORT.md"

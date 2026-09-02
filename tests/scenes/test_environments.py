@@ -1,5 +1,7 @@
 import pytest
+
 from qdgrasp.scenes.environments import get_environment
+
 
 def test_table_environment():
     supports = get_environment("table")

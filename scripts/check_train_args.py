@@ -17,10 +17,9 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Sequence
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PINNED_REPOSITORY = "https://github.com/ultralytics/ultralytics.git"

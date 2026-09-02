@@ -15,7 +15,6 @@ from qdgrasp.dataset.pipeline.solvers.progress import (
 from qdgrasp.dataset.pipeline.solvers.region_dls import solve_region_dls_ik_batch
 from qdgrasp.robot.spec import RobotSpec
 
-
 SOLVERS = (solve_dls_ik_batch, solve_region_dls_ik_batch)
 
 

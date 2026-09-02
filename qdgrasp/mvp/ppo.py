@@ -29,6 +29,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from qdgrasp.mvp.challenge import load_challenge_domain
 from qdgrasp.mvp.config import MvpScopeConfig, load_mvp_scope
 from qdgrasp.mvp.env import DexAcquireMvpEnv
 from qdgrasp.mvp.policy import (
@@ -75,21 +76,27 @@ class PpoSpec:
 # Spawned rather than forked: by the time PPO starts the parent has already
 # trained a torch model, and a forked child inherits its OpenMP and allocator
 # locks in a locked state, then hangs on its first allocation.
+#: Seed index base for PPO's challenge-domain rollouts.  Far past the indices
+#: the demonstrations consumed, so the two never draw the same episode, and
+#: derived from the train root, so nothing here can reach a locked tier.
+PPO_CHALLENGE_SEED_OFFSET = 2_000_000
+
 _SPAWN = multiprocessing.get_context("spawn")
 
 _WORKER: dict[str, Any] = {}
 
 
-def _worker_init(scope_path: str | None, prior_path: str) -> None:
+def _worker_init(scope_path: str | None, prior_path: str, challenge_path: str | None = None) -> None:
     torch.set_num_threads(1)
     scope = load_mvp_scope(scope_path)
     prior = PinchPriorTable.load(prior_path)
-    _WORKER["env"] = DexAcquireMvpEnv(scope, prior)
+    challenge = load_challenge_domain(challenge_path, scope) if challenge_path is not None else None
+    _WORKER["env"] = DexAcquireMvpEnv(scope, prior, challenge=challenge)
     _WORKER["version"] = None
 
 
-def _worker_rollout(job: tuple[int, str, str, int]) -> dict[str, Any]:
-    seed, split, checkpoint_path, version = job
+def _worker_rollout(job: tuple[int, str, str, int, bool]) -> dict[str, Any]:
+    seed, split, checkpoint_path, version, challenged = job
     env: DexAcquireMvpEnv = _WORKER["env"]
     if _WORKER.get("version") != version:
         payload = load_checkpoint(checkpoint_path)
@@ -105,7 +112,7 @@ def _worker_rollout(job: tuple[int, str, str, int]) -> dict[str, Any]:
     observations: list[np.ndarray] = []
     executed_actions: list[np.ndarray] = []
     rewards: list[float] = []
-    observation = env.reset(seed, split)  # type: ignore[arg-type]
+    observation = env.reset(seed, split, challenged=challenged)  # type: ignore[arg-type]
     while not env.done:
         normalised = torch.as_tensor(normalizer(observation), dtype=torch.float32).unsqueeze(0)
         with torch.no_grad():
@@ -132,7 +139,7 @@ def _worker_rollout(job: tuple[int, str, str, int]) -> dict[str, Any]:
     }
 
 
-def _collect(jobs: Sequence[tuple[int, str, str, int]], pool: ProcessPoolExecutor | None) -> list[dict[str, Any]]:
+def _collect(jobs: Sequence[tuple[int, str, str, int, bool]], pool: ProcessPoolExecutor | None) -> list[dict[str, Any]]:
     """Roll out a batch of episodes, reusing one pool for the whole run.
 
     The pool outlives the iteration on purpose: a worker holds compiled MuJoCo
@@ -166,12 +173,26 @@ def train_residual_ppo(
     spec: PpoSpec | None = None,
     scope_path: str | None = None,
     prior_path: str = str(DEFAULT_PRIOR_PATH),
+    challenge_path: str | None = None,
+    challenge_fraction: float = 0.0,
     fingerprint: dict[str, str] | None = None,
     workers: int | None = None,
     output_dir: str | Path | None = None,
     seed_offset: int = 0,
 ) -> tuple[ResidualActorCritic, dict[str, Any]]:
-    """Fine-tune the actor in simulation and return it with its learning curve."""
+    """Fine-tune the actor in simulation and return it with its learning curve.
+
+    ``challenge_fraction`` of every iteration is rolled out on the locked
+    challenge domain.  A policy that never visits the domain its contribution
+    is measured on has no way to learn that contribution, and the first release
+    attempt failed exactly there: PPO trained only on the base split, where the
+    controller prior is already near its ceiling.
+    """
+
+    if not 0.0 <= challenge_fraction <= 1.0:
+        raise ValueError(f"challenge fraction must lie in [0, 1]: {challenge_fraction}")
+    if challenge_fraction > 0.0 and challenge_path is None:
+        raise ValueError("a challenge fraction was requested without a challenge domain")
 
     settings = spec or PpoSpec()
     torch.manual_seed(settings.seed)
@@ -181,7 +202,7 @@ def train_residual_ppo(
     _WORKER["scope_path"] = scope_path
     _WORKER["prior_path"] = prior_path
     if worker_count <= 1:
-        _worker_init(scope_path, prior_path)
+        _worker_init(scope_path, prior_path, challenge_path)
 
     pool = (
         None
@@ -190,7 +211,7 @@ def train_residual_ppo(
             max_workers=worker_count,
             mp_context=_SPAWN,
             initializer=_worker_init,
-            initargs=(scope_path, prior_path),
+            initargs=(scope_path, prior_path, challenge_path),
         )
     )
     optimizer = torch.optim.Adam(network.parameters(), lr=settings.learning_rate)
@@ -213,9 +234,21 @@ def train_residual_ppo(
                 stage="ppo_live",
                 metadata={"iteration": iteration},
             )
+            challenge_episodes = round(settings.episodes_per_iteration * challenge_fraction)
+            base_episodes = settings.episodes_per_iteration - challenge_episodes
             jobs = [
-                (scope.episode_seed("train", episode_cursor + index), "train", str(live_path), iteration + 1)
-                for index in range(settings.episodes_per_iteration)
+                (scope.episode_seed("train", episode_cursor + index), "train", str(live_path), iteration + 1, False)
+                for index in range(base_episodes)
+            ]
+            jobs += [
+                (
+                    scope.episode_seed("train", PPO_CHALLENGE_SEED_OFFSET + episode_cursor + index),
+                    "train",
+                    str(live_path),
+                    iteration + 1,
+                    True,
+                )
+                for index in range(challenge_episodes)
             ]
             episode_cursor += settings.episodes_per_iteration
             episodes = _collect(jobs, pool)

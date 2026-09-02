@@ -1,5 +1,7 @@
 import numpy as np
+
 from qdgrasp.dataset.pipeline.certifiers.contact_force import certify_force_closure
+
 
 def test_contact_force_balanced():
     """

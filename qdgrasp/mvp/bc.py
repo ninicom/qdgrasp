@@ -56,12 +56,52 @@ class BehaviorCloningSpec:
     hidden: tuple[int, ...] = (256, 256)
     #: Fraction of training samples whose ``previous_action`` block is zeroed.
     previous_action_dropout: float = 0.5
+    #: How much total weight the corrective regime carries relative to the
+    #: do-nothing regime.  ``None`` leaves every sample weighted equally.
+    #:
+    #: A minimum-intervention expert labels most episodes with the zero
+    #: residual, because on most episodes the controller prior already
+    #: succeeds.  Fitting that unweighted makes the clone a mean regressor over
+    #: a set that is ~90% zeros, and it duly learns roughly a tenth of the
+    #: correction the expert actually applied where it mattered -- measured at
+    #: 0.088 against the 0.75 that recovers the failures.  The target policy is
+    #: not "a small residual everywhere"; it is "nothing here, a real
+    #: correction there", and the two regimes have to reach the loss on
+    #: comparable terms for that to be learnable.
+    corrective_balance: float | None = 1.0
     seed: int = 0
 
     def to_document(self) -> dict[str, Any]:
         document = dataclasses.asdict(self)
         document["hidden"] = list(self.hidden)
         return document
+
+
+def regime_weights(demonstrations: DemonstrationSet, balance: float | None) -> np.ndarray:
+    """Per-transition weights that put the two expert regimes on equal terms.
+
+    An episode is *corrective* when the expert applied a non-zero residual
+    anywhere in it, and *do-nothing* otherwise.  The weights are normalised to
+    average one, so the loss stays on its usual scale and only its balance
+    changes.
+    """
+
+    magnitude = np.abs(demonstrations.actions).max(axis=1)
+    episodes = demonstrations.episode_index
+    corrective_episodes = {
+        int(episode) for episode in np.unique(episodes) if magnitude[episodes == episode].max() > 1e-6
+    }
+    corrective = np.array([int(episode) in corrective_episodes for episode in episodes], dtype=bool)
+    weights = np.ones(len(episodes), dtype=np.float64)
+    if balance is None:
+        return weights
+    corrective_count = int(corrective.sum())
+    plain_count = int(len(corrective) - corrective_count)
+    if corrective_count == 0 or plain_count == 0:
+        return weights
+    weights[corrective] = balance / corrective_count
+    weights[~corrective] = 1.0 / plain_count
+    return weights * (len(weights) / weights.sum())
 
 
 def _episode_split(demonstrations: DemonstrationSet, fraction: float, seed: int) -> tuple[np.ndarray, np.ndarray]:
@@ -93,7 +133,10 @@ def train_behavior_cloning(
 
     features = torch.as_tensor(normalizer(observations), dtype=torch.float32)
     targets = torch.as_tensor(actions, dtype=torch.float32)
+    sample_weights = regime_weights(demonstrations, settings.corrective_balance)
+    weights = torch.as_tensor(sample_weights, dtype=torch.float32).unsqueeze(1)
     train_features, train_targets = features[train_mask], targets[train_mask]
+    train_weights = weights[train_mask]
     validation_features, validation_targets = features[validation_mask], targets[validation_mask]
 
     network = ResidualActorCritic(
@@ -104,7 +147,11 @@ def train_behavior_cloning(
     optimizer = torch.optim.AdamW(
         network.actor.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay
     )
-    loss_fn = nn.MSELoss()
+    loss_fn = nn.MSELoss(reduction="none")
+
+    def weighted(prediction: torch.Tensor, target: torch.Tensor, batch_weights: torch.Tensor) -> torch.Tensor:
+        return (loss_fn(prediction, target) * batch_weights).mean()
+
     generator = torch.Generator().manual_seed(settings.seed)
     copy_block = previous_action_slice()
     curve: list[dict[str, float]] = []
@@ -123,7 +170,7 @@ def train_behavior_cloning(
                     dropped, torch.zeros_like(features_batch[:, copy_block]), features_batch[:, copy_block]
                 )
             optimizer.zero_grad()
-            loss = loss_fn(network.mean_action(features_batch), train_targets[batch])
+            loss = weighted(network.mean_action(features_batch), train_targets[batch], train_weights[batch])
             loss.backward()
             optimizer.step()
             total += float(loss.item())
@@ -131,7 +178,7 @@ def train_behavior_cloning(
         network.eval()
         with torch.no_grad():
             validation_loss = (
-                float(loss_fn(network.mean_action(validation_features), validation_targets).item())
+                float(loss_fn(network.mean_action(validation_features), validation_targets).mean().item())
                 if validation_features.shape[0]
                 else float("nan")
             )
@@ -158,6 +205,18 @@ def train_behavior_cloning(
         # and no behaviour; report the magnitude so that failure is visible.
         "mean_predicted_action_magnitude": float(np.mean(np.abs(predicted))),
         "mean_expert_action_magnitude": float(np.mean(np.abs(actions))),
+        # The two regimes, reported separately: a clone that matches the
+        # average while missing the corrective regime is the failure this
+        # weighting exists to prevent, and one number cannot show it.
+        "corrective_transitions": int((sample_weights > sample_weights.min()).sum())
+        if settings.corrective_balance is not None
+        else 0,
+        "mean_expert_magnitude_corrective": float(
+            np.mean(np.abs(actions[sample_weights > sample_weights.min()])) if actions.size else 0.0
+        ),
+        "mean_predicted_magnitude_corrective": float(
+            np.mean(np.abs(predicted[sample_weights > sample_weights.min()])) if predicted.size else 0.0
+        ),
         "curve": curve,
     }
     return network, normalizer, metrics

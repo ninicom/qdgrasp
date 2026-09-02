@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-
 PACKAGE_ROOT = Path(__file__).resolve().parents[1] / "qdgrasp"
 PHASE1_MODULES = (
     PACKAGE_ROOT / "__init__.py",
@@ -30,7 +29,7 @@ FORBIDDEN_BASE_IMPORTS = ("ultralytics", "cv2", "MinkowskiEngine", "spconv", "op
 
 def test_import_does_not_change_the_working_directory() -> None:
     script = "import os; before = os.getcwd(); import qdgrasp; print(before == os.getcwd())"
-    output = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, cwd=os.getcwd())
+    output = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, cwd=os.getcwd(), check=False)
     assert output.returncode == 0, output.stderr
     assert output.stdout.strip() == "True"
 
@@ -40,7 +39,7 @@ def test_base_import_pulls_no_unapproved_dependency() -> None:
         "import sys, json; import qdgrasp; "
         f"print(json.dumps([name for name in {FORBIDDEN_BASE_IMPORTS!r} if name in sys.modules]))"
     )
-    output = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True)
+    output = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, check=False)
     assert output.returncode == 0, output.stderr
     assert output.stdout.strip() == "[]"
 

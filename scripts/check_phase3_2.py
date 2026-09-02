@@ -8,8 +8,8 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
 import mujoco
+import numpy as np
 import torch
 from scipy.spatial.transform import Rotation
 
@@ -17,15 +17,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
+from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
 from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.robot.assets import resolve_robot_asset
 from qdgrasp.robot.spec import RobotSpec
 from qdgrasp.robot.transmission import (
-    create_transmission_model_from_spec_and_mjcf,
     compute_finite_difference_moment_matrix,
+    create_transmission_model_from_spec_and_mjcf,
 )
-from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
-from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("check_phase3_2")

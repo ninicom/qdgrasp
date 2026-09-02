@@ -1,15 +1,17 @@
-import pytest
 import dataclasses
+
 import numpy as np
+import pytest
+
 from qdgrasp.dataset.pipeline.contracts import (
     ContactProposal,
-    KinematicSolution,
-    StaticCertificate,
     DynamicValidation,
     PipelineOutcome,
+    RegistryError,
+    StaticCertificate,
     get_recipe,
-    RegistryError
 )
+
 
 def test_registry_allows_valid_recipes():
     """Test that the registry correctly returns valid recipes."""
@@ -47,7 +49,6 @@ def test_pipeline_outcome_retains_rejection_reason():
     assert outcome.failure_stage == "ik"
     assert not outcome.ik_valid
 
-from qdgrasp.dataset.pipeline.contracts import StaticCertificate, DynamicValidation
 
 def test_static_certifier_contract():
     """Verify StaticCertificate data contract."""

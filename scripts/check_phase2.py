@@ -35,6 +35,7 @@ def check_robot_assets_lock(problems: list[str], root: Path) -> None:
         cwd=root,
         capture_output=True,
         text=True,
+        check=False,
     )
     if res.returncode != 0:
         problems.append(f"check_robot_assets.py failed: {res.stderr.strip() or res.stdout.strip()}")
@@ -201,7 +202,7 @@ def check_normalization_reproducibility(problems: list[str], root: Path) -> None
         try:
             sim = MujocoSim(out1)
             sim.forward()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - any failure here is the finding this check reports
             problems.append(f"normalized Allegro URDF failed MuJoCo forward: {exc}")
 
 
@@ -436,7 +437,7 @@ def check_mujoco_and_fixtures(problems: list[str], root: Path) -> None:
         try:
             sim = MujocoSim(xml_path)
             sim.forward()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - any loader failure is the finding this probe reports
             problems.append(f"{name} MuJoCo forward pass failed: {exc}")
 
     # 2. evaluate_grasp_fixture repeatability test
@@ -454,7 +455,7 @@ def check_provenance_and_release_enforcement(problems: list[str]) -> None:
         cfg = load_robot_config(name)
         try:
             validate_profile_for_release(cfg)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - any failure here is the finding this check reports
             problems.append(f"published profile {name} failed release validation: {exc}")
 
     # Blocked profile must be rejected

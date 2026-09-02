@@ -28,10 +28,9 @@ from __future__ import annotations
 import argparse
 import ast
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Sequence
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PACKAGE_ROOT = PROJECT_ROOT / "qdgrasp"

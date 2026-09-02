@@ -1,7 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 import trimesh
+
 from qdgrasp.dataset.pipeline.proposals.surface_fixed import generate_surface_fixed_proposal
+
 
 @pytest.fixture
 def dummy_mesh():

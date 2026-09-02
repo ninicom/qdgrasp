@@ -25,7 +25,7 @@ def analyze_dataset(dataset_dir: str | Path) -> dict[str, Any]:
         raise FileNotFoundError(f"Dataset manifest not found at {manifest_path}")
 
     manifest = load_dataset_manifest(manifest_path)
-    shards_dir = dataset_path / "shards"
+    dataset_path / "shards"
 
     total_samples = 0
     positive_samples = 0

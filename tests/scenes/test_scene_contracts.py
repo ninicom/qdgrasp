@@ -1,8 +1,9 @@
 import numpy as np
+
 from qdgrasp.scenes.contracts import (
-    SceneSpec,
-    SceneObjectSpec,
     CameraSpec,
+    SceneObjectSpec,
+    SceneSpec,
     SupportGeometrySpec,
 )
 

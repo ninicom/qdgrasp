@@ -17,7 +17,7 @@ import json
 import logging
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import torch
@@ -121,7 +121,7 @@ def main() -> int:
 
     payload = {
         "schema": "qdgrasp/evidence/phase1-cuda/v1",
-        "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "qdgrasp_version": __version__,
         "environment": environment_info().to_dict(),
         "checks": evidence,

@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FILES = {
     "LICENSE": "GNU AFFERO GENERAL PUBLIC LICENSE",
@@ -63,14 +62,14 @@ def main() -> int:
         problems.append(f"installed qdgrasp version {installed} does not match the declared version {declared}")
 
     wheel_gate = ROOT / "scripts" / "check_wheel.py"
-    wheel_result = subprocess.run([sys.executable, str(wheel_gate)], cwd=ROOT, capture_output=True, text=True)
+    wheel_result = subprocess.run([sys.executable, str(wheel_gate)], cwd=ROOT, capture_output=True, text=True, check=False)
     if wheel_result.returncode:
         detail = (wheel_result.stderr or wheel_result.stdout).strip()
         problems.append(f"clean wheel gate failed: {detail}")
 
     for relative in tracked_files():
         lowered = str(relative).lower()
-        if lowered.endswith("kaggle.json") or lowered.endswith(".env"):
+        if lowered.endswith(("kaggle.json", ".env")):
             problems.append(f"credential file is publishable: {relative}")
         if "rh56e2" in lowered or "rh56-e2" in lowered:
             problems.append(f"RH56E2 artifact path is forbidden: {relative}")
@@ -84,9 +83,12 @@ def main() -> int:
         for label, pattern in SECRET_PATTERNS.items():
             if pattern.search(text):
                 problems.append(f"possible {label} in {relative}")
-        if relative not in RH_ALLOWLIST and not lowered.startswith("docs/archive/"):
-            if re.search(r"rh56[\s_-]*e2", text, re.IGNORECASE):
-                problems.append(f"active RH56E2 reference in {relative}")
+        if (
+            relative not in RH_ALLOWLIST
+            and not lowered.startswith("docs/archive/")
+            and re.search(r"rh56[\s_-]*e2", text, re.IGNORECASE)
+        ):
+            problems.append(f"active RH56E2 reference in {relative}")
 
     plan_hash = hashlib.sha256((ROOT / "PLAN.md").read_bytes()).hexdigest()
     print(f"Phase 0 foundation: {'PASS' if not problems else 'FAIL'}")

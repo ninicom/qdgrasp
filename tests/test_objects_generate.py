@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import numpy as np
-import pytest
-
 from qdgrasp.dataset.rng import get_generator
 from qdgrasp.objects.generate import (
     generate_box,
@@ -37,10 +34,10 @@ def test_primitive_generators_bit_exact_reproducibility() -> None:
 
 def test_superquadric_generator_reproducibility() -> None:
     rng1 = get_generator(101, "sq_test")
-    m1, g1, p1, mass1, in1 = generate_superquadric(rng1)
+    m1, _g1, _p1, mass1, in1 = generate_superquadric(rng1)
 
     rng2 = get_generator(101, "sq_test")
-    m2, g2, p2, mass2, in2 = generate_superquadric(rng2)
+    m2, _g2, _p2, mass2, in2 = generate_superquadric(rng2)
 
     obj1 = export_mesh_deterministic_obj(m1)
     obj2 = export_mesh_deterministic_obj(m2)
@@ -55,10 +52,10 @@ def test_superquadric_generator_reproducibility() -> None:
 def test_compound_convex_generators_reproducibility() -> None:
     for family in ("t_shape", "l_shape", "dumbbell"):
         rng1 = get_generator(202, family)
-        m1, g1, p1, mass1, in1 = generate_compound_convex(rng1, shape_family=family)
+        m1, g1, _p1, mass1, in1 = generate_compound_convex(rng1, shape_family=family)
 
         rng2 = get_generator(202, family)
-        m2, g2, p2, mass2, in2 = generate_compound_convex(rng2, shape_family=family)
+        m2, _g2, _p2, _mass2, _in2 = generate_compound_convex(rng2, shape_family=family)
 
         obj1 = export_mesh_deterministic_obj(m1)
         obj2 = export_mesh_deterministic_obj(m2)

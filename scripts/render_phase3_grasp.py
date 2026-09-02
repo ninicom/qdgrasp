@@ -10,22 +10,21 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from pathlib import Path
 import struct
 import zlib
+from pathlib import Path
 
 os.environ.setdefault("MUJOCO_GL", "egl")
 
 import mujoco
 import numpy as np
-from scipy.spatial.transform import Rotation
 import torch
+from scipy.spatial.transform import Rotation
 
 from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
 from qdgrasp.dataset.pipeline.validators.mujoco_rollout import validate_grasp_rollout
 from qdgrasp.objects.schema import SubGeomSpec
 from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
-
 
 Q_CONTACT = np.array(
     [
@@ -67,9 +66,9 @@ def _write_rgb_png(path: Path, image: np.ndarray) -> None:
 
     scanlines = b"".join(b"\x00" + row.tobytes() for row in rgb)
     png = b"\x89PNG\r\n\x1a\n"
-    png += chunk("IHDR".encode(), struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
-    png += chunk("IDAT".encode(), zlib.compress(scanlines, level=6))
-    png += chunk("IEND".encode(), b"")
+    png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress(scanlines, level=6))
+    png += chunk(b"IEND", b"")
     path.write_bytes(png)
 
 

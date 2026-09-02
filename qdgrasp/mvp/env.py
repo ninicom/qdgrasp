@@ -287,10 +287,13 @@ class DexAcquireMvpEnv:
         randomized: bool | None = None,
         variant_id: str | None = None,
         setup: EpisodeSetup | None = None,
+        challenged: bool | None = None,
     ) -> np.ndarray:
         """Place the scene, settle the target, and return the first observation."""
 
-        self.setup = setup or self.sample_setup(seed, split, randomized=randomized, variant_id=variant_id)
+        self.setup = setup or self.sample_setup(
+            seed, split, randomized=randomized, variant_id=variant_id, challenged=challenged
+        )
         variant = self.scope.variant(self.setup.variant_id)
         model, indices = self._model_for(variant)
         self._model, self._index = model, indices

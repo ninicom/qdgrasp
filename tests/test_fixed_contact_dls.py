@@ -1,8 +1,12 @@
-import pytest
+from typing import ClassVar
+
 import numpy as np
+import pytest
 import torch
-from qdgrasp.robot.spec import RobotSpec
+
 from qdgrasp.dataset.pipeline.solvers.fixed_contact_dls import solve_dls_ik_batch
+from qdgrasp.robot.spec import RobotSpec
+
 
 @pytest.fixture
 def mock_spec():
@@ -11,11 +15,11 @@ def mock_spec():
         palm_link = "palm"
         base_link = "palm"
         wrist_link = "wrist"
-        fingertip_links = ["tip_0", "tip_1"]
-        contact_links = []
+        fingertip_links: ClassVar[list[str]] = ["tip_0", "tip_1"]
+        contact_links: ClassVar[list[str]] = []
         joints = ("j_0", "j_1")
-        joint_limits = {"j_0": (-1.0, 1.0), "j_1": (-1.0, 1.0)}
-        mimic_joints = {}
+        joint_limits: ClassVar[dict[str, tuple[float, float]]] = {"j_0": (-1.0, 1.0), "j_1": (-1.0, 1.0)}
+        mimic_joints: ClassVar[dict[str, str]] = {}
 
     class MockSpec(RobotSpec):
         def __init__(self):

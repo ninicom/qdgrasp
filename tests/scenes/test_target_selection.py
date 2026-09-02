@@ -1,13 +1,13 @@
-import pytest
 import numpy as np
+import pytest
 
 from qdgrasp.scenes.contracts import SceneObservation
 from qdgrasp.scenes.target_selection import (
-    select_target_uniform_visible,
-    select_target_difficulty_weighted,
     select_target_declutter_ordered,
-    get_target_selector
+    select_target_difficulty_weighted,
+    select_target_uniform_visible,
 )
+
 
 @pytest.fixture
 def mock_obs():

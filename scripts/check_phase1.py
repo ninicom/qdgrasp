@@ -19,8 +19,15 @@ import torch
 import yaml
 
 from qdgrasp import QDGrasp, __version__
-from qdgrasp.config import ConfigError, RunConfig, dump_document, load_model_config, parse_document, resolve_runtime
-from qdgrasp.config import load_data_config
+from qdgrasp.config import (
+    ConfigError,
+    RunConfig,
+    dump_document,
+    load_data_config,
+    load_model_config,
+    parse_document,
+    resolve_runtime,
+)
 from qdgrasp.dummy.data import build_dummy_points
 from qdgrasp.engine.callbacks import LossHistory
 from qdgrasp.engine.sampling import collate_indices
@@ -116,7 +123,7 @@ def check_import_purity(problems: list[str], project_root: Path) -> None:
         "forbidden = [n for n in ('ultralytics','cv2','MinkowskiEngine','spconv','open3d') if n in sys.modules]; "
         "print(json.dumps({'cwd_stable': before == os.getcwd(), 'forbidden': forbidden}))"
     )
-    output = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, cwd=project_root)
+    output = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, cwd=project_root, check=False)
     if output.returncode != 0:
         problems.append(f"importing qdgrasp failed: {output.stderr.strip().splitlines()[-1:]}")
         return

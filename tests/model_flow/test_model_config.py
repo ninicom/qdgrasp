@@ -80,7 +80,7 @@ def test_widths_cannot_be_set_from_a_preset() -> None:
 def test_an_impossible_override_is_refused_by_the_config_it_feeds() -> None:
     with pytest.raises(Exception, match="exceeds"):
         FlowModelSettings.from_params({"scale": "n", "voxel_size": 1e-7})
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match="flow_steps"):
         FlowModelSettings.from_params({"scale": "n", "flow_steps": 0})
 
 

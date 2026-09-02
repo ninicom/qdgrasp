@@ -24,13 +24,13 @@ def test_active_set_fails_closed_on_shape_or_cardinality() -> None:
 def test_candidate_identity_changes_with_task_membership() -> None:
     points = np.arange(12, dtype=np.float64).reshape(4, 3)
     normals = np.tile([1.0, 0.0, 0.0], (4, 1))
-    kwargs = dict(
-        provenance="fixture",
-        target_points=points,
-        inward_normals=normals,
-        face_ids=np.arange(4),
-        finger_ids=np.arange(4),
-    )
+    kwargs = {
+        "provenance": "fixture",
+        "target_points": points,
+        "inward_normals": normals,
+        "face_ids": np.arange(4),
+        "finger_ids": np.arange(4),
+    }
     first = stable_candidate_id(
         **kwargs, active_fingers=np.array([True, True, True, False])
     )

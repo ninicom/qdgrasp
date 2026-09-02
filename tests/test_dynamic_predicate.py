@@ -12,7 +12,6 @@ from qdgrasp.dataset.pipeline.validators.dynamic_predicate import (
     evaluate_dynamic_success,
 )
 
-
 BASELINE = DynamicPredicateEvidence(
     stable=True,
     actuator_tracking_pass=True,
