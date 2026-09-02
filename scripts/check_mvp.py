@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
-"""MVP-07: the closure gate for the temporary Grasp Policy MVP.
+"""The closure gate for the Grasp Policy MVP, in two distinct modes.
 
-Returns ``0`` only when every work package in ``ROADMAP-MVP-001`` §6 has a real
-artifact and §7 passes after a checkpoint reload.  It is deliberately willing to
-fail: an MVP that does not reach the gate is ``blocked_with_evidence``, which is
-a state this checker can report and a state the plan explicitly allows.
+``--experimental`` (the default) is ``MVP-07``: it returns ``0`` only when every
+work package in ``ROADMAP-MVP-001`` §6 has a real artifact and §7 passes after a
+checkpoint reload.  It is deliberately willing to fail: an MVP that does not
+reach the gate is ``blocked_with_evidence``, which is a state this checker can
+report and a state the plan explicitly allows.  What it is *not* is a release
+gate, and it says so in its verdict -- ``ROADMAP-MVP-RELEASE-001`` §5 MR-02
+requires the two to be separable by a machine, not by a reader's good faith.
+
+``--release`` is that release gate.  It runs against scope v1, whose
+``release_class`` is ``release_candidate``, and it adds everything the
+experimental gate has no opinion about: the challenge tier, the paired
+comparison against the controller prior recomputed from the raw ledgers, the
+ablation that makes the learned residual prove it is the thing doing the work,
+and the safety budget as a bound rather than a habit.  A v0 artifact set cannot
+reach it, and passing the experimental gate does not imply passing this one.
 
 Nothing here recomputes physics.  It reads the artifacts the pipeline wrote,
 checks they agree with each other and with the locked scope, and applies the
@@ -18,14 +29,26 @@ import hashlib
 import json
 import math
 import sys
+from collections import Counter
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from qdgrasp.mvp.config import load_mvp_scope
-from qdgrasp.mvp.contracts import TRAINING_REPORT_SCHEMA
+from qdgrasp.mvp.config import (
+    EXPERIMENTAL_RELEASE_CLASS,
+    RELEASE_CANDIDATE_CLASS,
+    MvpScopeConfig,
+    load_mvp_scope,
+)
+from qdgrasp.mvp.contracts import (
+    ABLATION_REPORT_SCHEMA,
+    CHALLENGE_DOMAIN_SCHEMA,
+    CONTRIBUTION_REPORT_SCHEMA,
+    TRAINING_REPORT_SCHEMA,
+)
 from qdgrasp.mvp.env import environment_fingerprint
-from qdgrasp.mvp.evaluate import EVAL_REPORT_SCHEMA, wilson_lower_bound
+from qdgrasp.mvp.evaluate import EVAL_REPORT_SCHEMA, paired_uplift, wilson_lower_bound
 from qdgrasp.mvp.expert import (
     DEMONSTRATION_INDEX_SCHEMA,
     DEMONSTRATION_MANIFEST_SCHEMA,
@@ -35,10 +58,33 @@ from qdgrasp.mvp.expert import (
 from qdgrasp.mvp.policy import ACTION_DISTRIBUTION, load_checkpoint
 from qdgrasp.mvp.prior import PinchPriorTable
 
+#: The two gates this script can be.  They read different scope documents on
+#: purpose: an experimental artifact set must not be able to reach the release
+#: verdict by being handed a flag.
+GateMode = Literal["experimental", "release"]
+
+SCOPE_DOCUMENT: dict[str, Path] = {
+    "experimental": Path("configs/mvp/dexacquire-mvp-v0.yaml"),
+    "release": Path("configs/mvp/dexacquire-mvp-v1.yaml"),
+}
+REQUIRED_RELEASE_CLASS: dict[str, str] = {
+    "experimental": EXPERIMENTAL_RELEASE_CLASS,
+    "release": RELEASE_CANDIDATE_CLASS,
+}
+
+#: Release-mode artifacts, relative to the evidence root.
+CONTRIBUTION_REPORT = Path("contribution.json")
+ABLATION_REPORT = Path("evaluation/ablation.json")
+BC_EVALUATION_REPORT = Path("evaluation/bc.json")
+PRIOR_EVALUATION_REPORT = Path("evaluation/controller_prior.json")
+
 #: MVP-03's own gate.
 BC_DEV_SUCCESS_FLOOR = 0.75
 #: MVP-04: PPO may not cost more than two points against the BC baseline.
+#: The release contract does not inherit that tolerance -- ``MR-02`` states it
+#: plainly -- so under the release gate the allowance is zero.
 PPO_REGRESSION_TOLERANCE = 0.02
+PPO_REGRESSION_TOLERANCE_BY_MODE: dict[str, float] = {"experimental": PPO_REGRESSION_TOLERANCE, "release": 0.0}
 #: MVP-02: the controller prior must clear this on the canonical fixture set.
 CONTROLLER_CANONICAL_FLOOR = 0.90
 
@@ -71,6 +117,39 @@ def _canonical_sha256(document: Any) -> str:
 
 def _is_sha256(value: object) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+
+
+def _read_ledger(path: Path) -> list[dict[str, Any]]:
+    """Every raw episode row, in the order the evaluator wrote them."""
+
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def _recompute_tier(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """Rebuild a tier's aggregate from raw episodes, ignoring any summary.
+
+    The summary is the thing under suspicion.  A report that says a tier passed
+    is a claim; this is the measurement, taken from the rows the evaluator could
+    not edit after the checker read them.
+    """
+
+    successes = sum(1 for row in rows if row.get("success") is True)
+    buckets: Counter[str] = Counter(
+        str(row.get("failure_bucket")) for row in rows if row.get("success") is not True
+    )
+    return {
+        "episodes": len(rows),
+        "successes": successes,
+        "invalid_state": sum(1 for row in rows if row.get("invalid_state") is True),
+        "safety_violation": sum(1 for row in rows if row.get("safety_violation") is True),
+        "failure_buckets": dict(sorted(buckets.items())),
+        "seeds": [row.get("setup", {}).get("seed") for row in rows],
+        "outcomes": [row.get("success") is True for row in rows],
+    }
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -161,7 +240,268 @@ def _validate_evidence_manifest(runs: Path) -> tuple[bool, str]:
     return not errors, "; ".join(errors) if errors else f"{len(declared)} artifacts verified"
 
 
-def run_checks(root: Path, runs: Path) -> list[Check]:
+def _release_checks(
+    record: Callable[[str, str, bool, str], None],
+    *,
+    root: Path,
+    runs: Path,
+    scope: MvpScopeConfig,
+    candidate_path: Path | None,
+    candidate_payload: dict[str, Any] | None,
+    evaluation: dict[str, Any] | None,
+    prior_report: dict[str, Any] | None,
+    promoted: bool,
+) -> None:
+    """MVP-08: everything the experimental gate has no opinion about.
+
+    ``ROADMAP-MVP-RELEASE-001`` §2.2 and §2.3 are the whole content of this
+    function: the challenge tier, the paired comparison against the controller
+    prior, the ablation, and the safety budget read as a bound out of the
+    frozen scope rather than assumed.  Every number is recomputed from the raw
+    ledgers -- a tier summary that says a tier passed is the claim under test,
+    not evidence for it.
+    """
+
+    criteria = scope.release
+    challenge = scope.challenge
+    if criteria is None or challenge is None:
+        record("MVP-08", "release_contract_present", False, "the scope carries no release contract")
+        return
+    record(
+        "MVP-08",
+        "release_contract_present",
+        True,
+        f"contribution_tier={criteria.contribution_tier}, regression_tiers={list(criteria.regression_tiers)}",
+    )
+
+    # -- the challenge domain Tier D is drawn from -------------------------
+    domain_path = root / challenge.domain_document
+    domain = _load_json(domain_path)
+    domain_hash = _sha256(domain_path) if domain_path.is_file() else None
+    record("MVP-08", "challenge_domain_present", domain is not None, str(domain_path))
+    declared_axes = domain.get("axes") if isinstance(domain, dict) else None
+    record(
+        "MVP-08",
+        "challenge_domain_contract",
+        isinstance(domain, dict)
+        and domain.get("schema") == CHALLENGE_DOMAIN_SCHEMA
+        and domain.get("scope_hash") == scope.content_hash()
+        and isinstance(declared_axes, dict)
+        and bool(declared_axes)
+        # A domain that moves an axis the frozen scope never authorised is a
+        # scope change wearing a calibration's clothes.
+        and set(declared_axes) <= set(challenge.axes),
+        f"axes={sorted(declared_axes) if isinstance(declared_axes, dict) else None}, "
+        f"allowed={sorted(challenge.axes)}",
+    )
+
+    # -- the contribution report and what it must be bound to --------------
+    contribution = _load_json(runs / CONTRIBUTION_REPORT)
+    record("MVP-08", "contribution_report_present", contribution is not None, str(runs / CONTRIBUTION_REPORT))
+    candidate_hash = _sha256(candidate_path) if candidate_path is not None else None
+    record(
+        "MVP-08",
+        "contribution_report_contract",
+        isinstance(contribution, dict)
+        and contribution.get("schema") == CONTRIBUTION_REPORT_SCHEMA
+        and contribution.get("scope_hash") == scope.content_hash()
+        and contribution.get("eval_manifest_hash") == scope.eval_manifest_hash()
+        and contribution.get("challenge_domain_sha256") == domain_hash
+        and candidate_hash is not None
+        and contribution.get("candidate_sha256") == candidate_hash,
+        f"candidate_sha256={contribution.get('candidate_sha256') if isinstance(contribution, dict) else None}",
+    )
+    paired_documents = contribution.get("paired") if isinstance(contribution, dict) else None
+    paired_documents = paired_documents if isinstance(paired_documents, dict) else {}
+
+    def measured(report: dict[str, Any] | None, tier: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """The stored tier summary and the aggregate recomputed from its ledger."""
+
+        if not isinstance(report, dict):
+            return None, None
+        for entry in report.get("tiers") if isinstance(report.get("tiers"), list) else []:
+            if not isinstance(entry, dict) or entry.get("tier") != tier:
+                continue
+            try:
+                ledger = _resolve_checkpoint(entry.get("ledger_path"), repository_root=root, evidence_root=runs)
+                return entry, _recompute_tier(_read_ledger(ledger))
+            except (OSError, UnicodeError, ValueError, TypeError, json.JSONDecodeError):
+                return entry, None
+        return None, None
+
+    # -- every tier, recomputed and then compared arm to arm ---------------
+    for spec in sorted(scope.eval_tiers, key=lambda item: item.tier):
+        name = spec.tier
+        lowered = name.lower()
+        stored_tier, candidate_rows = measured(evaluation, name)
+        _, prior_rows = measured(prior_report, name)
+
+        recomputed_ok = (
+            isinstance(stored_tier, dict)
+            and candidate_rows is not None
+            and candidate_rows["episodes"] == spec.episodes
+            and candidate_rows["successes"] == stored_tier.get("successes")
+            and candidate_rows["invalid_state"] == stored_tier.get("invalid_state")
+            and candidate_rows["safety_violation"] == stored_tier.get("safety_violation")
+            and candidate_rows["failure_buckets"] == stored_tier.get("failure_buckets")
+        )
+        record(
+            "MVP-08",
+            f"tier_{lowered}_recomputed_from_raw_ledger",
+            recomputed_ok,
+            f"ledger={candidate_rows if candidate_rows is None else {k: candidate_rows[k] for k in ('episodes', 'successes', 'invalid_state', 'safety_violation')}}, "
+            f"summary_successes={stored_tier.get('successes') if isinstance(stored_tier, dict) else None}",
+        )
+        record(
+            "MVP-08",
+            f"tier_{lowered}_within_safety_budget",
+            candidate_rows is not None
+            and isinstance(stored_tier, dict)
+            and candidate_rows["safety_violation"] <= criteria.safety.max_safety_violation
+            and candidate_rows["invalid_state"] <= criteria.safety.max_invalid_state
+            and int(stored_tier.get("checkpoint_reload_mismatch", 1))
+            <= criteria.safety.max_checkpoint_reload_mismatch,
+            f"safety={None if candidate_rows is None else candidate_rows['safety_violation']}, "
+            f"invalid={None if candidate_rows is None else candidate_rows['invalid_state']}",
+        )
+
+        seeds_paired = (
+            prior_rows is not None
+            and candidate_rows is not None
+            and prior_rows["seeds"] == candidate_rows["seeds"]
+            and len(candidate_rows["seeds"]) == spec.episodes
+            and all(isinstance(seed, int) for seed in candidate_rows["seeds"])
+        )
+        record(
+            "MVP-08",
+            f"tier_{lowered}_arms_share_the_locked_seeds",
+            seeds_paired,
+            "prior and candidate ledgers agree seed for seed"
+            if seeds_paired
+            else "the two arms did not run the same seeds in the same order",
+        )
+        if not seeds_paired or prior_rows is None or candidate_rows is None:
+            continue
+
+        comparison = paired_uplift(
+            prior_rows["outcomes"],
+            candidate_rows["outcomes"],
+            resamples=criteria.paired_resamples,
+            seed=criteria.paired_seed,
+            confidence=criteria.paired_confidence,
+        )
+        record(
+            "MVP-08",
+            f"tier_{lowered}_paired_comparison_recomputes",
+            paired_documents.get(name) == comparison,
+            f"uplift={comparison['uplift_pp']:.3f}pp ci=[{comparison['ci_lower_pp']:.3f}, "
+            f"{comparison['ci_upper_pp']:.3f}] seed={comparison['seed']}",
+        )
+        if name == criteria.contribution_tier:
+            record(
+                "MVP-08",
+                f"tier_{lowered}_uplift_gate",
+                spec.min_uplift_pp is not None
+                and spec.min_paired_ci_lower is not None
+                and comparison["uplift_pp"] >= spec.min_uplift_pp
+                and comparison["ci_lower_pp"] > spec.min_paired_ci_lower,
+                f"uplift={comparison['uplift_pp']:.3f}pp >= {spec.min_uplift_pp}pp, "
+                f"ci_lower={comparison['ci_lower_pp']:.3f}pp > {spec.min_paired_ci_lower}",
+            )
+        else:
+            record(
+                "MVP-08",
+                f"tier_{lowered}_no_paired_regression",
+                comparison["candidate_successes"] >= comparison["prior_successes"],
+                f"candidate={comparison['candidate_successes']} prior={comparison['prior_successes']} "
+                f"(prior_only_successes={comparison['prior_only_successes']})",
+            )
+
+    # -- the ablation: the residual has to be the thing doing the work -----
+    ablation = _load_json(runs / ABLATION_REPORT)
+    record("MVP-08", "ablation_report_present", ablation is not None, str(runs / ABLATION_REPORT))
+    statistics = ablation.get("residual_statistics") if isinstance(ablation, dict) else None
+    disabled = ablation.get("paired_vs_prior") if isinstance(ablation, dict) else None
+    record(
+        "MVP-08",
+        "ablation_report_contract",
+        isinstance(ablation, dict)
+        and ablation.get("schema") == ABLATION_REPORT_SCHEMA
+        and ablation.get("tier") == criteria.contribution_tier
+        and candidate_hash is not None
+        and ablation.get("candidate_sha256") == candidate_hash
+        and ablation.get("residual_disabled") is True
+        and criteria.ablation.require_disabled_residual_run,
+        f"tier={ablation.get('tier') if isinstance(ablation, dict) else None}, "
+        f"candidate_sha256={ablation.get('candidate_sha256') if isinstance(ablation, dict) else None}",
+    )
+    record(
+        "MVP-08",
+        "disabling_the_residual_removes_the_uplift",
+        isinstance(disabled, dict)
+        and isinstance(disabled.get("uplift_pp"), (int, float))
+        and float(disabled["uplift_pp"]) <= criteria.ablation.max_disabled_uplift_pp,
+        f"uplift_with_residual_off={disabled.get('uplift_pp') if isinstance(disabled, dict) else None}pp "
+        f"<= {criteria.ablation.max_disabled_uplift_pp}pp",
+    )
+    record(
+        "MVP-08",
+        "residual_has_not_degenerated",
+        isinstance(statistics, dict)
+        and isinstance(statistics.get("mean_magnitude"), (int, float))
+        and isinstance(statistics.get("saturation_rate"), (int, float))
+        and float(statistics["mean_magnitude"]) >= criteria.ablation.min_residual_magnitude
+        and float(statistics["saturation_rate"]) <= criteria.ablation.max_saturation_rate,
+        f"magnitude={statistics.get('mean_magnitude') if isinstance(statistics, dict) else None} "
+        f">= {criteria.ablation.min_residual_magnitude}, "
+        f"saturation={statistics.get('saturation_rate') if isinstance(statistics, dict) else None} "
+        f"<= {criteria.ablation.max_saturation_rate}",
+    )
+
+    # -- promotion may not trade a regression tier for the challenge tier --
+    bc_evaluation = _load_json(runs / BC_EVALUATION_REPORT)
+    record("MVP-08", "bc_rollback_evaluated_on_the_locked_tiers", bc_evaluation is not None, str(BC_EVALUATION_REPORT))
+    if promoted:
+        losses: list[str] = []
+        for tier_name in criteria.regression_tiers:
+            _, bc_rows = measured(bc_evaluation, tier_name)
+            _, candidate_rows = measured(evaluation, tier_name)
+            if bc_rows is None or candidate_rows is None:
+                losses.append(f"{tier_name}: missing arm")
+            elif candidate_rows["successes"] < bc_rows["successes"]:
+                losses.append(f"{tier_name}: {candidate_rows['successes']} < {bc_rows['successes']}")
+        record(
+            "MVP-08",
+            "ppo_is_at_least_bc_on_every_regression_tier",
+            not losses,
+            "; ".join(losses) if losses else "PPO matches or beats BC on every regression tier",
+        )
+
+    # -- the candidate was chosen without ever reading the locked seeds ----
+    training = _load_json(runs / "policy/training-report.json")
+    selection = training.get("candidate_selection") if isinstance(training, dict) else None
+    record(
+        "MVP-08",
+        "candidate_selected_on_development_evidence_only",
+        isinstance(selection, dict)
+        and selection.get("evidence") == criteria.candidate_evidence
+        and selection.get("ppo_promotion") == criteria.ppo_promotion
+        and selection.get("locked_seeds_read") is False,
+        f"selection={selection}",
+    )
+    record(
+        "MVP-08",
+        "candidate_carries_release_scope_identity",
+        candidate_payload is not None
+        and candidate_payload.get("fingerprint", {}).get("scope_hash") == scope.content_hash()
+        and candidate_payload.get("fingerprint", {}).get("environment_id") == scope.environment_id,
+        f"fingerprint={candidate_payload.get('fingerprint') if candidate_payload else None}",
+    )
+
+
+def run_checks(root: Path, runs: Path, *, mode: GateMode = "experimental") -> list[Check]:
+    if mode not in SCOPE_DOCUMENT:
+        raise ValueError(f"unknown gate mode: {mode!r}")
     root = root.resolve()
     runs = (runs if runs.is_absolute() else root / runs).resolve()
     checks: list[Check] = []
@@ -178,19 +518,22 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
         record("MVP-07", "evidence_manifest_integrity", manifest_ok, manifest_detail)
 
     # -- MVP-00: locked scope and immutable eval manifest ------------------
-    scope_path = root / "configs/mvp/dexacquire-mvp-v0.yaml"
-    manifest_path = root / "configs/mvp/dexacquire-mvp-v0.eval-manifest.json"
+    scope_path = root / SCOPE_DOCUMENT[mode]
+    manifest_path = scope_path.with_suffix("").with_suffix(".eval-manifest.json")
     try:
         scope = load_mvp_scope(scope_path)
     except Exception as error:  # noqa: BLE001 - any failure here is the finding
         record("MVP-00", "scope_loads", False, f"{error}")
         return checks
     record("MVP-00", "scope_loads", True, f"scope_hash={scope.content_hash()}")
+    # The gate's own identity check.  Handing ``--release`` an experimental
+    # scope, or running the experimental gate against the release contract,
+    # fails here rather than producing a verdict about the wrong document.
     record(
         "MVP-00",
-        "release_class_is_experimental",
-        scope.release_class == "experimental_non_release",
-        scope.release_class,
+        f"scope_release_class_is_{REQUIRED_RELEASE_CLASS[mode]}",
+        scope.release_class == REQUIRED_RELEASE_CLASS[mode],
+        f"mode={mode}, release_class={scope.release_class}, document={SCOPE_DOCUMENT[mode]}",
     )
     stored_manifest = _load_json(manifest_path)
     record(
@@ -355,6 +698,7 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
     record("MVP-03", "training_report_present", training is not None, str(runs / "policy/training-report.json"))
     candidate_path: Path | None = None
     candidate_payload: dict[str, Any] | None = None
+    promoted = False
     if training is not None:
         record(
             "MVP-03",
@@ -404,18 +748,18 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
         )
 
         ppo = training.get("ppo") if isinstance(training.get("ppo"), dict) else None
-        promoted = False
         ppo_path: Path | None = None
         if ppo is None:
             record("MVP-04", "ppo_confirmation_run", False, "no PPO stage in the training report")
         else:
             ppo_rate = float(ppo.get("dev", {}).get("success_rate", 0.0))
             promoted = bool(ppo.get("promoted"))
+            tolerance = PPO_REGRESSION_TOLERANCE_BY_MODE[mode]
             record(
                 "MVP-04",
                 "ppo_promotion_rule_respected",
-                (ppo_rate >= bc_rate - PPO_REGRESSION_TOLERANCE) == promoted,
-                f"ppo_dev={ppo_rate:.3f} bc_dev={bc_rate:.3f} promoted={promoted}",
+                (ppo_rate >= bc_rate - tolerance) == promoted,
+                f"ppo_dev={ppo_rate:.3f} bc_dev={bc_rate:.3f} promoted={promoted} tolerance={tolerance}",
             )
             record(
                 "MVP-04",
@@ -559,11 +903,12 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
         )
         tiers = evaluation.get("tiers") if isinstance(evaluation.get("tiers"), list) else []
         tier_names = [tier.get("tier") for tier in tiers if isinstance(tier, dict)]
+        expected_tiers = {spec.tier for spec in scope.eval_tiers}
         record(
             "MVP-05",
             "evaluation_tiers_complete",
-            len(tiers) == 3 and set(tier_names) == {"A", "B", "C"},
-            f"tiers={tier_names}",
+            len(tiers) == len(expected_tiers) and set(tier_names) == expected_tiers,
+            f"tiers={tier_names}, expected={sorted(expected_tiers)}",
         )
         derived_passes: list[bool] = []
         for tier in tiers:
@@ -579,10 +924,12 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
                 reload_mismatch = int(tier["checkpoint_reload_mismatch"])
                 rate = successes / episodes if episodes else 0.0
                 lower = wilson_lower_bound(successes, episodes)
+                # A challenge tier has no absolute floor: its gate is the
+                # paired uplift, applied in release mode once both arms exist.
                 derived_pass = (
                     episodes == spec.episodes
                     and 0 <= successes <= episodes
-                    and rate >= spec.min_success_rate
+                    and (spec.min_success_rate is None or rate >= spec.min_success_rate)
                     and (spec.min_wilson_lower_bound is None or lower >= spec.min_wilson_lower_bound)
                     and invalid == 0
                     and safety == 0
@@ -635,7 +982,7 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
         record(
             "MVP-05",
             "evaluation_all_tiers_verdict",
-            len(derived_passes) == 3
+            len(derived_passes) == len(expected_tiers)
             and all(derived_passes)
             and evaluation.get("all_tiers_passed") is True,
             f"stored={evaluation.get('all_tiers_passed')!r}, derived={derived_passes}",
@@ -644,21 +991,42 @@ def run_checks(root: Path, runs: Path) -> list[Check]:
     # -- MVP-06/07: cloud handoff and the model card -----------------------
     runner = root / "notebooks/mvp_grasp_policy.ipynb"
     record("MVP-06", "cloud_runner_present", runner.is_file(), str(runner))
-    card = root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md"
+    card = (
+        root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD.md"
+        if mode == "experimental"
+        else root / "docs/reports/MVP-GRASP-POLICY-MODEL-CARD-V1.md"
+    )
     record("MVP-07", "model_card_present", card.is_file(), str(card))
     if card.is_file():
-        text = card.read_text(encoding="utf-8")
+        card_text = card.read_text(encoding="utf-8")
+        required_class = REQUIRED_RELEASE_CLASS[mode]
         record(
             "MVP-07",
-            "model_card_declares_experimental",
-            "experimental_non_release" in text,
-            "release_class stated in the card",
+            f"model_card_declares_{required_class}",
+            required_class in card_text
+            # A release card that also carries the experimental class is
+            # ambiguous about what it is describing, so it is refused.
+            and (mode == "experimental" or EXPERIMENTAL_RELEASE_CLASS not in card_text),
+            f"release_class stated in {card.name}",
         )
         record(
             "MVP-07",
             "model_card_states_limitations",
-            any(marker in text.casefold() for marker in ("giới hạn", "limitations")),
+            any(marker in card_text.casefold() for marker in ("giới hạn", "limitations")),
             "limitations section",
+        )
+
+    if mode == "release":
+        _release_checks(
+            record,
+            root=root,
+            runs=runs,
+            scope=scope,
+            candidate_path=candidate_path,
+            candidate_payload=candidate_payload,
+            evaluation=evaluation,
+            prior_report=prior_report,
+            promoted=promoted,
         )
     return checks
 
@@ -668,9 +1036,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--runs", type=Path, default=Path("runs/mvp"))
     parser.add_argument("--json", type=Path, default=None, help="also write the result as JSON")
+    parser.add_argument(
+        "--release",
+        dest="mode",
+        action="store_const",
+        const="release",
+        default="experimental",
+        help="run the release gate against scope v1 instead of the experimental gate against scope v0",
+    )
     args = parser.parse_args(argv)
 
-    checks = run_checks(args.root, args.runs)
+    mode: GateMode = args.mode
+    checks = run_checks(args.root, args.runs, mode=mode)
     failed = [check for check in checks if not check.passed]
     for check in checks:
         print(f"{'PASS' if check.passed else 'FAIL'}  [{check.package}] {check.name}: {check.detail}")
@@ -680,7 +1057,12 @@ def main(argv: list[str] | None = None) -> int:
         args.json.write_text(
             json.dumps(
                 {
-                    "schema": "qdgrasp/mvp-closure/v0",
+                    "schema": "qdgrasp/mvp-closure/v1",
+                    "mode": mode,
+                    # Machine-readable, so that "the gate passed" cannot be
+                    # quoted out of an experimental run as a release verdict.
+                    "is_release_gate": mode == "release",
+                    "scope_document": str(SCOPE_DOCUMENT[mode]),
                     "passed": not failed,
                     "checks": [
                         {"package": c.package, "name": c.name, "passed": c.passed, "detail": c.detail} for c in checks
@@ -693,9 +1075,12 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
     if failed:
-        print("MVP status: blocked_with_evidence")
+        print(f"MVP status: blocked_with_evidence ({mode} gate)")
         return 1
-    print("MVP status: complete")
+    if mode == "release":
+        print("MVP status: release_gate_passed")
+        return 0
+    print("MVP status: complete (experimental gate; this is not a release verdict)")
     return 0
 
 

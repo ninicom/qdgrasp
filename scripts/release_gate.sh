@@ -22,8 +22,12 @@ require_clean_worktree
 require_branch main
 require_branch develop
 
-if [[ ! -f VERSION || "$(tr -d '[:space:]' < VERSION)" != "$version" ]]; then
-  printf '%s\n' "VERSION phải chứa chính xác: $version" >&2
+# VERSION holds the PEP 440 distribution version and "$version" is the SemVer
+# release string; they are the same release in two notations that cannot be
+# string-equal.  The checker verifies the mapping between them, and that the
+# tree has exactly one place that declares it.
+if ! PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_version_identity.py --release "$version"; then
+  printf '%s\n' "Version identity không khớp release $version" >&2
   exit 1
 fi
 

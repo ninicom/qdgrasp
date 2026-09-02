@@ -759,7 +759,10 @@ def environment_fingerprint(scope: MvpScopeConfig, prior: PinchPriorTable) -> di
     """Hashes a checkpoint must carry to be replayed against the same world."""
 
     return {
-        "environment_id": DexAcquireMvpEnv.environment_id,
+        # The scope names the world, not the class: a v1 scope run through the
+        # same environment class is not the v0 environment, and a fingerprint
+        # that said otherwise would let an artifact claim the wrong identity.
+        "environment_id": scope.environment_id,
         "scope_hash": scope.content_hash(),
         "eval_manifest_hash": scope.eval_manifest_hash(),
         "prior_hash": prior.content_hash(),

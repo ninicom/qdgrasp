@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal
 
@@ -24,16 +25,37 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 MVP_SCOPE_SCHEMA_V0 = "qdgrasp/mvp-scope/v0"
+MVP_SCOPE_SCHEMA_V1 = "qdgrasp/mvp-scope/v1"
 
-#: Tiers of the acceptance gate (``ROADMAP-MVP-001`` §7).
-EvalTier = Literal["A", "B", "C"]
+#: Release class of the artifacts a scope produces, as a value a checker can
+#: read rather than a sentence in a report.  ``experimental_non_release`` is the
+#: v0 class and may never open a release gate; ``release_candidate`` is the only
+#: class that may.  The distinction is the whole point of
+#: ``ROADMAP-MVP-RELEASE-001`` §5 MR-02: an experimental gate that happens to
+#: pass is not a release gate that passed.
+EXPERIMENTAL_RELEASE_CLASS = "experimental_non_release"
+RELEASE_CANDIDATE_CLASS = "release_candidate"
+RELEASE_CLASSES: tuple[str, ...] = (EXPERIMENTAL_RELEASE_CLASS, RELEASE_CANDIDATE_CLASS)
+
+#: Tiers of the acceptance gate (``ROADMAP-MVP-001`` §7).  ``D`` is the
+#: challenge tier added by the release contract: the domain where the
+#: controller prior is not saturated, and therefore the only tier on which a
+#: learned residual can be shown to contribute anything.
+EvalTier = Literal["A", "B", "C", "D"]
 
 #: Splits an episode sampler can be asked for.  ``dev`` drives hyperparameter
 #: choice, ``train`` feeds the expert recorder and the PPO rollouts, and the
-#: three locked tiers are only ever run on a finished candidate.
-EpisodeSplit = Literal["train", "dev", "eval_a", "eval_b", "eval_c"]
+#: locked tiers are only ever run on a finished candidate.
+EpisodeSplit = Literal["train", "dev", "eval_a", "eval_b", "eval_c", "eval_d"]
 
-_TIER_OF_SPLIT: dict[str, str] = {"eval_a": "A", "eval_b": "B", "eval_c": "C"}
+_TIER_OF_SPLIT: dict[str, str] = {"eval_a": "A", "eval_b": "B", "eval_c": "C", "eval_d": "D"}
+
+#: Fields scope v1 introduces.  A v0 document has to keep hashing exactly as it
+#: did before those fields existed -- the committed evaluation manifest and
+#: three rounds of published evidence are pinned to that hash -- so they are
+#: omitted from a v0 document rather than serialized as nulls.
+_V1_SCOPE_FIELDS = ("challenge", "release")
+_V1_TIER_FIELDS = ("min_uplift_pp", "min_paired_ci_lower", "challenge_domain")
 
 
 class _Doc(BaseModel):
@@ -239,25 +261,196 @@ class RewardSpec(_Doc):
 
 
 class EvalTierSpec(_Doc):
-    """One acceptance tier: its domain, its sample size and its gate."""
+    """One acceptance tier: its domain, its sample size and its gate.
+
+    A tier is gated either on a *level* -- an absolute success rate the
+    candidate must reach -- or on an *uplift* over the controller prior.  The
+    challenge tier is the second kind: on a domain where the prior is not
+    saturated there is no meaningful absolute floor to set in advance, and
+    setting one anyway would be a threshold invented to be cleared.
+    """
 
     tier: EvalTier
     episodes: int = Field(gt=0)
     membership: Literal["train", "heldout"]
     randomized: bool
-    min_success_rate: float = Field(ge=0.0, le=1.0)
+    #: Absolute floor.  ``None`` only on a tier gated on uplift instead.
+    min_success_rate: float | None = Field(default=None, ge=0.0, le=1.0)
     #: Wilson 95% lower bound the tier must also clear, when the plan sets one.
     min_wilson_lower_bound: float | None = Field(default=None, ge=0.0, le=1.0)
+    #: Percentage points the candidate must beat the controller prior by, on
+    #: the same seeds, and the paired 95% CI lower bound that must exceed it.
+    min_uplift_pp: float | None = Field(default=None, ge=0.0)
+    min_paired_ci_lower: float | None = Field(default=None)
+    #: A challenge tier draws its domain from a separately locked challenge
+    #: document rather than from the scope's own randomization block, because
+    #: that domain is calibrated after this scope is frozen.
+    challenge_domain: bool = False
+
+    @model_validator(mode="after")
+    def _gated(self) -> EvalTierSpec:
+        if self.min_success_rate is None and self.min_uplift_pp is None:
+            raise ValueError(f"eval tier {self.tier} declares no gate at all")
+        if (self.min_uplift_pp is None) != (self.min_paired_ci_lower is None):
+            raise ValueError(
+                f"eval tier {self.tier} must declare an uplift gate and its paired CI floor together"
+            )
+        if self.min_wilson_lower_bound is not None and self.min_success_rate is None:
+            raise ValueError(f"eval tier {self.tier} sets a Wilson floor without a success floor")
+        if self.challenge_domain and self.min_uplift_pp is None:
+            raise ValueError(f"eval tier {self.tier} is a challenge tier without an uplift gate")
+        return self
+
+
+#: Axes a challenge domain may vary.  ``ROADMAP-MVP-RELEASE-001`` §5 MR-03
+#: names these and forbids widening the search to raw meshes, clutter, another
+#: hand or another observation, so the permitted set is a closed literal rather
+#: than free text a later session could quietly extend.
+ChallengeAxis = Literal[
+    "half_width",
+    "half_depth",
+    "half_height",
+    "yaw",
+    "friction_slide",
+    "density",
+    "position_x",
+    "position_y",
+]
+
+
+class ChallengeSpec(_Doc):
+    """What a valid Tier D domain must be, written down before one is chosen.
+
+    The domain itself is calibrated in MR-03 and lives in its own locked
+    document, because this scope is frozen before that calibration starts.
+    What is frozen *here* is the rule the calibration has to satisfy: which
+    axes may move, how unsaturated the prior has to be for the tier to be able
+    to show anything, how many failures must be available to measure, and how
+    many development configurations may be tried before the answer is `NO-GO`.
+    """
+
+    axes: tuple[ChallengeAxis, ...]
+    #: The controller prior must land inside this band on the challenge domain.
+    #: Below it the domain is broken rather than hard; above it the prior is
+    #: saturated and there is no headroom left for a residual to occupy.
+    prior_success_band: tuple[float, float]
+    #: Measurable failures the prior must produce, so an uplift has something
+    #: to be an uplift over.
+    min_prior_failures: int = Field(gt=0)
+    #: Development configurations allowed before the attempt is abandoned.
+    max_development_configurations: int = Field(gt=0)
+    #: Seed root of the development-only exploration.  It is deliberately not
+    #: the scope's ``seed_root``: nothing explored during calibration may share
+    #: a seed with the tier that later judges the candidate.
+    development_seed_root: str
+    #: Repository path the locked challenge domain will be written to.
+    domain_document: str
+
+    @model_validator(mode="after")
+    def _ordered(self) -> ChallengeSpec:
+        if not self.axes:
+            raise ValueError("a challenge domain must be allowed to vary at least one axis")
+        if len(set(self.axes)) != len(self.axes):
+            raise ValueError("challenge axes must be unique")
+        low, high = self.prior_success_band
+        if not 0.0 <= low < high <= 1.0:
+            raise ValueError(f"prior success band is not an ordered interval in [0, 1]: {self.prior_success_band}")
+        return self
+
+
+class AblationSpec(_Doc):
+    """How the residual proves it is the thing doing the work.
+
+    A candidate can beat the prior for reasons that have nothing to do with
+    what it learned -- a different clamp, a different filter state, luck on a
+    seed set.  The ablation is the control: run the exact candidate trajectory
+    contract with the learned residual switched off, and the improvement has to
+    disappear.  A residual that has collapsed to zero also passes "no
+    regression" tests, so its magnitude and saturation are reported rather than
+    assumed.
+    """
+
+    #: The disabled-residual run is mandatory, not an option a session may skip.
+    require_disabled_residual_run: bool
+    #: With the residual off, the uplift that remains must be no larger than
+    #: this.  Anything more means the improvement was not the model's.
+    max_disabled_uplift_pp: float = Field(ge=0.0)
+    #: A residual whose typical magnitude is below this has degenerated to the
+    #: prior and is not a learned contribution.
+    min_residual_magnitude: float = Field(gt=0.0)
+    #: Fraction of commanded residual components allowed to sit on their bound.
+    max_saturation_rate: float = Field(ge=0.0, le=1.0)
+
+
+class SafetySpec(_Doc):
+    """Counters that must be exactly zero, on every tier, in the locked run.
+
+    They are written as bounds rather than assumed, so that "we did not widen
+    the safety budget to rescue a success rate" is a checkable statement about
+    a frozen document.
+    """
+
+    max_safety_violation: Literal[0]
+    max_invalid_state: Literal[0]
+    max_checkpoint_reload_mismatch: Literal[0]
+
+
+class ReleaseCriteria(_Doc):
+    """Selection, comparison, ablation and safety, locked before any training.
+
+    Every number here has to exist before the run that it judges, otherwise it
+    is a threshold chosen after seeing the result.  The paired comparison is
+    specified down to the resample count and the seed for the same reason: a
+    confidence interval is only evidence if it could not have been re-rolled.
+    """
+
+    #: Candidates may only be selected on train/dev/challenge-development
+    #: evidence.  The locked tiers are read once, afterwards, by MR-05.
+    candidate_evidence: Literal["development_only"]
+    #: The v0 tolerance -- PPO promoted while up to two points below BC -- is
+    #: not a release rule.  PPO is promoted only if it is at least as good as
+    #: BC on every regression tier.
+    ppo_promotion: Literal["at_least_bc_on_every_regression_tier"]
+    #: Tiers on which the candidate may not lose paired successes to the prior.
+    regression_tiers: tuple[EvalTier, ...]
+    #: The tier the contribution claim rests on.
+    contribution_tier: EvalTier
+    paired_confidence: float = Field(gt=0.5, lt=1.0)
+    paired_method: Literal["paired_bootstrap_percentile"]
+    paired_resamples: int = Field(gt=0)
+    paired_seed: int = Field(ge=0)
+    ablation: AblationSpec
+    safety: SafetySpec
+
+    @model_validator(mode="after")
+    def _disjoint(self) -> ReleaseCriteria:
+        if not self.regression_tiers:
+            raise ValueError("at least one regression tier is required")
+        if len(set(self.regression_tiers)) != len(self.regression_tiers):
+            raise ValueError("regression tiers must be unique")
+        if self.contribution_tier in self.regression_tiers:
+            raise ValueError(
+                f"tier {self.contribution_tier} cannot be both the contribution tier and a regression tier"
+            )
+        return self
 
 
 class MvpScopeConfig(_Doc):
-    """The whole locked scope of ``QDGrasp-DexAcquire-MVP-v0``."""
+    """The whole locked scope of one MVP version.
 
-    schema_version: Literal["qdgrasp/mvp-scope/v0"] = Field(alias="schema")
+    Two schemas are readable.  ``v0`` is the experimental scope the first three
+    evidence rounds were produced under, and it is frozen: it is loaded so that
+    old artifacts can still be checked, never extended.  ``v1`` is the release
+    contract -- a challenge tier, a written-down selection and comparison rule,
+    an ablation and a safety budget -- and it is the only schema whose
+    ``release_class`` may open a release gate.
+    """
+
+    schema_version: Literal["qdgrasp/mvp-scope/v0", "qdgrasp/mvp-scope/v1"] = Field(alias="schema")
     mvp_id: str
     environment_id: str
     artifact_id: str
-    release_class: Literal["experimental_non_release"]
+    release_class: Literal["experimental_non_release", "release_candidate"]
     robot_profile: str
     objects: tuple[ObjectVariant, ...]
     randomization: RandomizationRanges
@@ -270,6 +463,9 @@ class MvpScopeConfig(_Doc):
     #: Root of the deterministic seed derivation.  Changing it invalidates every
     #: locked seed list, which is exactly why it lives under the content hash.
     seed_root: str
+    #: Release contract.  Absent on v0, required on v1.
+    challenge: ChallengeSpec | None = None
+    release: ReleaseCriteria | None = None
 
     @model_validator(mode="after")
     def _consistent(self) -> MvpScopeConfig:
@@ -281,8 +477,12 @@ class MvpScopeConfig(_Doc):
         if not self.heldout_variants:
             raise ValueError("at least one held-out object variant is required")
         tiers = [tier.tier for tier in self.eval_tiers]
-        if sorted(tiers) != ["A", "B", "C"]:
-            raise ValueError("eval_tiers must define exactly tiers A, B and C")
+        if len(tiers) != len(set(tiers)):
+            raise ValueError("eval tiers must be unique")
+        if self.schema_version == MVP_SCOPE_SCHEMA_V0:
+            self._validate_v0(tiers)
+        else:
+            self._validate_v1(tiers)
         retain_steps_required = self.success.retain_duration_s * self.episode.control_hz
         if self.episode.retain_steps < retain_steps_required:
             raise ValueError(
@@ -291,7 +491,52 @@ class MvpScopeConfig(_Doc):
             )
         return self
 
+    def _validate_v0(self, tiers: Sequence[str]) -> None:
+        """v0 is closed: the release fields did not exist when it was frozen."""
+
+        if self.release_class != EXPERIMENTAL_RELEASE_CLASS:
+            raise ValueError(f"scope v0 must declare release_class '{EXPERIMENTAL_RELEASE_CLASS}'")
+        if self.challenge is not None or self.release is not None:
+            raise ValueError("scope v0 cannot carry a challenge or release contract; use scope v1")
+        if sorted(tiers) != ["A", "B", "C"]:
+            raise ValueError("scope v0 eval_tiers must define exactly tiers A, B and C")
+        for spec in self.eval_tiers:
+            if spec.min_success_rate is None:
+                raise ValueError(f"scope v0 tier {spec.tier} must declare an absolute min_success_rate")
+            if spec.min_uplift_pp is not None or spec.challenge_domain:
+                raise ValueError(f"scope v0 tier {spec.tier} cannot declare a challenge or uplift gate")
+
+    def _validate_v1(self, tiers: Sequence[str]) -> None:
+        """v1 must carry the whole release contract, or it is not one."""
+
+        if self.release_class != RELEASE_CANDIDATE_CLASS:
+            raise ValueError(f"scope v1 must declare release_class '{RELEASE_CANDIDATE_CLASS}'")
+        if self.challenge is None or self.release is None:
+            raise ValueError("scope v1 requires both a challenge and a release contract")
+        if sorted(tiers) != ["A", "B", "C", "D"]:
+            raise ValueError("scope v1 eval_tiers must define exactly tiers A, B, C and D")
+        challenge_tiers = [spec.tier for spec in self.eval_tiers if spec.challenge_domain]
+        if challenge_tiers != [self.release.contribution_tier]:
+            raise ValueError(
+                "exactly one tier may draw the challenge domain, and it must be the declared "
+                f"contribution tier: challenge={challenge_tiers}, contribution={self.release.contribution_tier}"
+            )
+        declared = set(self.release.regression_tiers) | {self.release.contribution_tier}
+        if declared != set(tiers):
+            raise ValueError(
+                f"release criteria must classify every tier: tiers={sorted(tiers)}, classified={sorted(declared)}"
+            )
+        for spec in self.eval_tiers:
+            if spec.tier in self.release.regression_tiers and spec.min_success_rate is None:
+                raise ValueError(f"regression tier {spec.tier} must declare an absolute min_success_rate")
+
     # -- derived views ----------------------------------------------------
+
+    @property
+    def is_release_candidate(self) -> bool:
+        """Whether artifacts produced under this scope may open a release gate."""
+
+        return self.release_class == RELEASE_CANDIDATE_CLASS
 
     @property
     def train_variants(self) -> tuple[ObjectVariant, ...]:
@@ -321,16 +566,26 @@ class MvpScopeConfig(_Doc):
         once, here, and asserted by test.
         """
 
-        if split in ("train", "dev", "eval_a", "eval_b"):
+        if split in ("train", "dev"):
             return self.train_variants
-        if split == "eval_c":
-            return self.heldout_variants
-        raise KeyError(f"unknown split: {split}")
+        tier = tier_of_split(split)
+        if tier is None:
+            raise KeyError(f"unknown split: {split}")
+        membership = self.tier(tier).membership
+        return self.train_variants if membership == "train" else self.heldout_variants
 
     # -- hashing and seeds ------------------------------------------------
 
     def to_document(self) -> dict[str, Any]:
-        return self.model_dump(by_alias=True, mode="json")
+        document = self.model_dump(by_alias=True, mode="json")
+        if self.schema_version != MVP_SCOPE_SCHEMA_V0:
+            return document
+        for field in _V1_SCOPE_FIELDS:
+            document.pop(field, None)
+        for tier in document["eval_tiers"]:
+            for field in _V1_TIER_FIELDS:
+                tier.pop(field, None)
+        return document
 
     def content_hash(self) -> str:
         payload = json.dumps(self.to_document(), sort_keys=True, separators=(",", ":"))
@@ -356,33 +611,53 @@ class MvpScopeConfig(_Doc):
     def eval_manifest(self) -> dict[str, Any]:
         """The immutable evaluation manifest: tiers, domains and exact seeds."""
 
-        return {
-            "schema": "qdgrasp/mvp-eval-manifest/v0",
+        ordered = sorted(self.eval_tiers, key=lambda item: item.tier)
+        entries: list[dict[str, Any]] = [
+            {
+                "tier": spec.tier,
+                "episodes": spec.episodes,
+                "membership": spec.membership,
+                "randomized": spec.randomized,
+                "min_success_rate": spec.min_success_rate,
+                "min_wilson_lower_bound": spec.min_wilson_lower_bound,
+                "variant_ids": [
+                    v.variant_id
+                    for v in self.variants_for_split(f"eval_{spec.tier.lower()}")  # type: ignore[arg-type]
+                ],
+                "seeds": list(self.locked_seeds(spec.tier)),
+            }
+            for spec in ordered
+        ]
+        document: dict[str, Any] = {
+            "schema": EVAL_MANIFEST_SCHEMA[self.schema_version],
             "mvp_id": self.mvp_id,
             "environment_id": self.environment_id,
             "scope_hash": self.content_hash(),
-            "tiers": [
-                {
-                    "tier": spec.tier,
-                    "episodes": spec.episodes,
-                    "membership": spec.membership,
-                    "randomized": spec.randomized,
-                    "min_success_rate": spec.min_success_rate,
-                    "min_wilson_lower_bound": spec.min_wilson_lower_bound,
-                    "variant_ids": [
-                        v.variant_id
-                        for v in self.variants_for_split(f"eval_{spec.tier.lower()}")  # type: ignore[arg-type]
-                    ],
-                    "seeds": list(self.locked_seeds(spec.tier)),
-                }
-                for spec in sorted(self.eval_tiers, key=lambda item: item.tier)
-            ],
+            "tiers": entries,
         }
+        if self.schema_version == MVP_SCOPE_SCHEMA_V0:
+            return document
+        # A v1 manifest carries the uplift gate beside the level gate, so a
+        # reader cannot mistake a challenge tier for one with no threshold.
+        for entry, spec in zip(entries, ordered, strict=True):
+            entry["min_uplift_pp"] = spec.min_uplift_pp
+            entry["min_paired_ci_lower"] = spec.min_paired_ci_lower
+            entry["challenge_domain"] = spec.challenge_domain
+        document["release_class"] = self.release_class
+        return document
 
     def eval_manifest_hash(self) -> str:
         payload = json.dumps(self.eval_manifest(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
+
+#: The eval manifest schema each scope schema emits.  A v1 manifest is not a
+#: v0 manifest with extra keys: the tier rows carry the uplift gate, so a
+#: consumer that only understands v0 must refuse it rather than ignore them.
+EVAL_MANIFEST_SCHEMA = {
+    MVP_SCOPE_SCHEMA_V0: "qdgrasp/mvp-eval-manifest/v0",
+    MVP_SCOPE_SCHEMA_V1: "qdgrasp/mvp-eval-manifest/v1",
+}
 
 #: Repository-relative home of the locked scope documents.
 MVP_CONFIG_DIR = Path("configs/mvp")

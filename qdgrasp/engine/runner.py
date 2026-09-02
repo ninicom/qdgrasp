@@ -14,9 +14,9 @@ import torch
 from lightning.fabric import Fabric
 from torch import nn
 
-from .. import __version__
 from ..config.policy import EffectiveRuntime
 from ..config.schema import ConfigError, ModelConfig, RobotConfig, RunConfig
+from ..version import __version__
 from .callbacks import CallbackList, ProgressLogger
 from .checkpoint import RESUME_FILE, BundleInfo, ResumeState, canonical_hash, save_public_bundle
 from .ema import ModelEma

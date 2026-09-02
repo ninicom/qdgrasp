@@ -60,6 +60,71 @@ def wilson_upper_bound(successes: int, trials: int, z: float = 1.959963984540054
     return float(min(1.0, (centre + spread) / denominator))
 
 
+PAIRED_COMPARISON_SCHEMA = "qdgrasp/mvp-paired-comparison/v1"
+
+
+def paired_uplift(
+    prior: Sequence[bool],
+    candidate: Sequence[bool],
+    *,
+    resamples: int,
+    seed: int,
+    confidence: float = 0.95,
+) -> dict[str, Any]:
+    """Paired bootstrap of the candidate's uplift over the prior, in points.
+
+    Paired, because the two arms ran the same seeds: comparing two independent
+    Wilson intervals on matched data throws away the pairing and widens the
+    interval for nothing.  Percentile bootstrap, because the statistic is a
+    difference of proportions on a few hundred correlated Bernoulli pairs,
+    where a normal approximation is exactly the assumption in doubt.
+
+    Deterministic by construction -- the resample count and the seed are inputs
+    and come back out in the result -- so the interval can be recomputed from
+    the ledgers and cannot be quietly re-rolled until it clears zero.
+    """
+
+    if len(prior) != len(candidate):
+        raise ValueError(f"paired comparison needs matched arms: prior={len(prior)}, candidate={len(candidate)}")
+    if not prior:
+        raise ValueError("paired comparison needs at least one episode")
+    if resamples <= 0:
+        raise ValueError("paired comparison needs a positive resample count")
+    if not 0.5 < confidence < 1.0:
+        raise ValueError(f"confidence must lie in (0.5, 1.0): {confidence}")
+
+    prior_outcomes = np.asarray(prior, dtype=bool)
+    candidate_outcomes = np.asarray(candidate, dtype=bool)
+    difference = candidate_outcomes.astype(np.float64) - prior_outcomes.astype(np.float64)
+    episodes = difference.size
+
+    generator = np.random.default_rng(seed)
+    indices = generator.integers(0, episodes, size=(resamples, episodes))
+    resampled = difference[indices].mean(axis=1)
+    alpha = 1.0 - confidence
+    lower, upper = np.quantile(resampled, [alpha / 2.0, 1.0 - alpha / 2.0])
+
+    discordant_candidate = int(np.sum(candidate_outcomes & ~prior_outcomes))
+    discordant_prior = int(np.sum(prior_outcomes & ~candidate_outcomes))
+    return {
+        "schema": PAIRED_COMPARISON_SCHEMA,
+        "method": "paired_bootstrap_percentile",
+        "episodes": episodes,
+        "prior_successes": int(prior_outcomes.sum()),
+        "candidate_successes": int(candidate_outcomes.sum()),
+        # Percentage points, which is the unit the release gate is written in.
+        "uplift_pp": float(difference.mean() * 100.0),
+        "ci_lower_pp": float(lower * 100.0),
+        "ci_upper_pp": float(upper * 100.0),
+        "confidence": float(confidence),
+        "resamples": int(resamples),
+        "seed": int(seed),
+        # The pairs that carry the whole signal: everything else cancels.
+        "candidate_only_successes": discordant_candidate,
+        "prior_only_successes": discordant_prior,
+    }
+
+
 @dataclasses.dataclass(frozen=True)
 class TierReport:
     """Aggregate outcome of one acceptance tier."""
@@ -74,7 +139,8 @@ class TierReport:
     safety_violation: int
     checkpoint_reload_mismatch: int
     failure_buckets: dict[str, int]
-    min_success_rate: float
+    #: ``None`` on a tier gated on uplift over the prior rather than on a level.
+    min_success_rate: float | None
     min_wilson_lower_bound: float | None
     passed: bool
     ledger_path: str | None = None
@@ -99,9 +165,13 @@ def _aggregate(
     invalid = sum(1 for result in results if result.invalid_state)
     violations = sum(1 for result in results if result.safety_violation)
     buckets = Counter(result.failure_bucket for result in results if not result.success)
+    # A challenge tier's verdict is a paired comparison against the prior, which
+    # this function cannot see: it holds one arm.  What is settled here is that
+    # the tier ran cleanly, at its declared size, and cleared whatever absolute
+    # floor it has.  The uplift gate is applied by the release checker.
     passed = (
         episodes == spec.episodes
-        and rate >= spec.min_success_rate
+        and (spec.min_success_rate is None or rate >= spec.min_success_rate)
         and (spec.min_wilson_lower_bound is None or lower >= spec.min_wilson_lower_bound)
         and invalid == 0
         and violations == 0
@@ -258,6 +328,16 @@ def evaluate_tier(
     """Run one acceptance tier on its locked seeds and aggregate the verdict."""
 
     spec = scope.tier(tier)
+    if spec.challenge_domain:
+        # The challenge domain is calibrated after the scope is frozen and
+        # lives in its own locked document.  Running this tier under the base
+        # randomization would produce a report that looks like Tier D and is
+        # not, so it fails closed rather than silently measuring the wrong
+        # thing (``ROADMAP-MVP-RELEASE-001`` §5 MR-03).
+        raise NotImplementedError(
+            f"tier {tier} draws a locked challenge domain that this evaluator has not been given; "
+            "it cannot be run from the scope's base randomization"
+        )
     split = f"eval_{tier.lower()}"
     seeds = scope.locked_seeds(tier)
     jobs = [(seed, split, spec.randomized, None) for seed in seeds]
@@ -300,7 +380,7 @@ def evaluate_candidate(
             workers=workers,
             ledger_dir=ledger_dir,
         )
-        for tier in ("A", "B", "C")
+        for tier in sorted(spec.tier for spec in scope.eval_tiers)
     ]
     if reload_mismatch:
         reports = [

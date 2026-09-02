@@ -14,18 +14,31 @@ import json
 import sys
 from pathlib import Path
 
-from qdgrasp.mvp.config import load_mvp_scope
+from qdgrasp.mvp.config import DEFAULT_SCOPE_PATH, load_mvp_scope
 
-DEFAULT_MANIFEST_PATH = Path("configs/mvp/dexacquire-mvp-v0.eval-manifest.json")
+
+def manifest_path_for(scope_path: Path | None) -> Path:
+    """Where a scope document's manifest belongs.
+
+    Derived from the scope path rather than defaulted to one file, because a
+    locker whose output default belongs to a *different* scope will happily
+    overwrite that scope's frozen manifest when someone passes ``--scope`` and
+    forgets ``--out``.
+    """
+
+    resolved = scope_path if scope_path is not None else DEFAULT_SCOPE_PATH
+    return resolved.with_suffix("").with_suffix(".eval-manifest.json")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scope", type=Path, default=None)
-    parser.add_argument("--out", type=Path, default=DEFAULT_MANIFEST_PATH)
+    parser.add_argument("--out", type=Path, default=None, help="default: derived from the scope path")
     parser.add_argument("--check", action="store_true", help="verify the artifact matches the scope, write nothing")
     args = parser.parse_args(argv)
 
+    if args.out is None:
+        args.out = manifest_path_for(args.scope)
     scope = load_mvp_scope(args.scope)
     rendered = json.dumps(scope.eval_manifest(), indent=2, sort_keys=True) + "\n"
     if args.check:

@@ -20,8 +20,8 @@ from safetensors.torch import load_file as load_safetensors
 from safetensors.torch import save_file as save_safetensors
 from torch import nn
 
-from .. import __version__
 from ..config.schema import ConfigError, ModelConfig, RobotConfig
+from ..version import __version__
 from .compatibility import EmbodimentBinding
 
 BUNDLE_SCHEMA_V1 = "qdgrasp/bundle/v1"

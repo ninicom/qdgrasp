@@ -57,8 +57,10 @@ def main() -> int:
         elif marker not in path.read_text(encoding="utf-8"):
             problems.append(f"{name} missing marker {marker!r}")
 
-    if importlib.metadata.version("qdgrasp") != "0.1.0a1":
-        problems.append("installed qdgrasp version is not 0.1.0a1")
+    declared = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    installed = importlib.metadata.version("qdgrasp")
+    if installed != declared:
+        problems.append(f"installed qdgrasp version {installed} does not match the declared version {declared}")
 
     wheel_gate = ROOT / "scripts" / "check_wheel.py"
     wheel_result = subprocess.run([sys.executable, str(wheel_gate)], cwd=ROOT, capture_output=True, text=True)
