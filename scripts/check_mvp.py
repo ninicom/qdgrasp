@@ -35,6 +35,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from qdgrasp.mvp.challenge import load_challenge_domain
 from qdgrasp.mvp.config import (
     EXPERIMENTAL_RELEASE_CLASS,
     RELEASE_CANDIDATE_CLASS,
@@ -43,7 +44,6 @@ from qdgrasp.mvp.config import (
 )
 from qdgrasp.mvp.contracts import (
     ABLATION_REPORT_SCHEMA,
-    CHALLENGE_DOMAIN_SCHEMA,
     CONTRIBUTION_REPORT_SCHEMA,
     TRAINING_REPORT_SCHEMA,
 )
@@ -276,24 +276,26 @@ def _release_checks(
 
     # -- the challenge domain Tier D is drawn from -------------------------
     domain_path = root / challenge.domain_document
-    domain = _load_json(domain_path)
     domain_hash = _sha256(domain_path) if domain_path.is_file() else None
-    record("MVP-08", "challenge_domain_present", domain is not None, str(domain_path))
-    declared_axes = domain.get("axes") if isinstance(domain, dict) else None
-    record(
-        "MVP-08",
-        "challenge_domain_contract",
-        isinstance(domain, dict)
-        and domain.get("schema") == CHALLENGE_DOMAIN_SCHEMA
-        and domain.get("scope_hash") == scope.content_hash()
-        and isinstance(declared_axes, dict)
-        and bool(declared_axes)
-        # A domain that moves an axis the frozen scope never authorised is a
-        # scope change wearing a calibration's clothes.
-        and set(declared_axes) <= set(challenge.axes),
-        f"axes={sorted(declared_axes) if isinstance(declared_axes, dict) else None}, "
-        f"allowed={sorted(challenge.axes)}",
-    )
+    record("MVP-08", "challenge_domain_present", domain_path.is_file(), str(domain_path))
+    # Parsed through the model rather than pattern-matched as a dict: the model
+    # is what knows that a challenge domain must *narrow* the scope.  A domain
+    # declaring only authorised axis names, but reaching outside their locked
+    # ranges, is a different world, and a Tier D measured in it could not be
+    # compared with the tiers it is supposed to be read beside.
+    domain_ok = False
+    domain_detail = f"missing: {domain_path}"
+    if domain_path.is_file():
+        try:
+            loaded = load_challenge_domain(domain_path, scope)
+            domain_ok = True
+            domain_detail = (
+                f"{loaded.configuration_id}: axes={sorted(loaded.axes)}, "
+                f"variants={[v.variant_id for v in loaded.variants(scope)]}"
+            )
+        except Exception as error:  # noqa: BLE001 - every refusal is the finding
+            domain_detail = f"{type(error).__name__}: {error}"
+    record("MVP-08", "challenge_domain_contract", domain_ok, domain_detail)
 
     # -- the contribution report and what it must be bound to --------------
     contribution = _load_json(runs / CONTRIBUTION_REPORT)

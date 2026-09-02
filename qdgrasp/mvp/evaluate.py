@@ -24,6 +24,7 @@ from typing import Any
 
 import numpy as np
 
+from qdgrasp.mvp.challenge import load_challenge_domain
 from qdgrasp.mvp.config import EvalTier, MvpScopeConfig, load_mvp_scope
 from qdgrasp.mvp.env import DexAcquireMvpEnv, EpisodeResult, environment_fingerprint, write_episode_ledger
 from qdgrasp.mvp.prior import DEFAULT_PRIOR_PATH, PinchPriorTable
@@ -247,11 +248,17 @@ def _limit_worker_threads() -> None:
     torch.set_num_threads(1)
 
 
-def _worker_init(scope_path: str | None, prior_path: str, checkpoint_path: str | None) -> None:
+def _worker_init(
+    scope_path: str | None,
+    prior_path: str,
+    checkpoint_path: str | None,
+    challenge_path: str | None = None,
+) -> None:
     _limit_worker_threads()
     _WORKER.clear()
     scope = load_mvp_scope(scope_path)
     prior = PinchPriorTable.load(prior_path)
+    challenge = load_challenge_domain(challenge_path, scope) if challenge_path is not None else None
     expected = environment_fingerprint(scope, prior)
     verification = verify_checkpoint_fingerprint(checkpoint_path, expected)
     policy = None
@@ -261,7 +268,7 @@ def _worker_init(scope_path: str | None, prior_path: str, checkpoint_path: str |
         policy = load_policy(checkpoint_path, fingerprint=expected)
     # Construct the simulator only after the artifact has been admitted.  A
     # foreign checkpoint must not be able to produce even an empty ledger row.
-    env = DexAcquireMvpEnv(scope, prior)
+    env = DexAcquireMvpEnv(scope, prior, challenge=challenge)
     _WORKER.update({"env": env, "policy": policy, "fingerprint_verification": verification})
 
 
@@ -292,25 +299,30 @@ def run_episodes(
     scope_path: str | None = None,
     prior_path: str = str(DEFAULT_PRIOR_PATH),
     checkpoint_path: str | None = None,
+    challenge_path: str | None = None,
     workers: int | None = None,
 ) -> list[EpisodeResult]:
     """Run a batch of episodes, in parallel when more than one worker is asked."""
 
     # Parent-side preflight makes failure synchronous and guarantees no worker
-    # has constructed an environment before identity is known.
+    # has constructed an environment before identity is known.  A challenge
+    # domain is validated here too, so a domain bound to another scope fails in
+    # the caller rather than eight times inside a pool.
     scope = load_mvp_scope(scope_path)
     prior = PinchPriorTable.load(prior_path)
+    if challenge_path is not None:
+        load_challenge_domain(challenge_path, scope)
     verify_checkpoint_fingerprint(checkpoint_path, environment_fingerprint(scope, prior))
 
     count = workers if workers is not None else max(1, (os.cpu_count() or 2) - 1)
     if count <= 1:
-        _worker_init(scope_path, prior_path, checkpoint_path)
+        _worker_init(scope_path, prior_path, checkpoint_path, challenge_path)
         return [_rehydrate(_worker_episode(job)) for job in jobs]
     with ProcessPoolExecutor(
         max_workers=count,
         mp_context=_SPAWN,
         initializer=_worker_init,
-        initargs=(scope_path, prior_path, checkpoint_path),
+        initargs=(scope_path, prior_path, checkpoint_path, challenge_path),
     ) as pool:
         return [_rehydrate(document) for document in pool.map(_worker_episode, jobs, chunksize=4)]
 
@@ -322,13 +334,14 @@ def evaluate_tier(
     scope_path: str | None = None,
     prior_path: str = str(DEFAULT_PRIOR_PATH),
     checkpoint_path: str | None = None,
+    challenge_path: str | None = None,
     workers: int | None = None,
     ledger_dir: str | Path | None = None,
 ) -> TierReport:
     """Run one acceptance tier on its locked seeds and aggregate the verdict."""
 
     spec = scope.tier(tier)
-    if spec.challenge_domain:
+    if spec.challenge_domain and challenge_path is None:
         # The challenge domain is calibrated after the scope is frozen and
         # lives in its own locked document.  Running this tier under the base
         # randomization would produce a report that looks like Tier D and is
@@ -346,6 +359,7 @@ def evaluate_tier(
         scope_path=scope_path,
         prior_path=prior_path,
         checkpoint_path=checkpoint_path,
+        challenge_path=challenge_path if spec.challenge_domain else None,
         workers=workers,
     )
     ledger_path: str | None = None
@@ -361,6 +375,7 @@ def evaluate_candidate(
     scope_path: str | None = None,
     prior_path: str = str(DEFAULT_PRIOR_PATH),
     checkpoint_path: str | None = None,
+    challenge_path: str | None = None,
     workers: int | None = None,
     ledger_dir: str | Path | None = None,
     reload_mismatch: int = 0,
@@ -377,6 +392,7 @@ def evaluate_candidate(
             scope_path=scope_path,
             prior_path=prior_path,
             checkpoint_path=checkpoint_path,
+            challenge_path=challenge_path,
             workers=workers,
             ledger_dir=ledger_dir,
         )

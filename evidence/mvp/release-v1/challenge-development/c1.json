@@ -1,0 +1,55 @@
+{
+  "admissible": {
+    "enough_measurable_failures": true,
+    "prior_inside_band": true,
+    "zero_invalid_state": true,
+    "zero_safety_violation": true
+  },
+  "configuration_id": "challenge-c1-low-friction-heavy-wide",
+  "domain": {
+    "axes": {
+      "density": [
+        1000.0,
+        2400.0
+      ],
+      "friction_slide": [
+        0.1,
+        0.55
+      ],
+      "half_width": [
+        0.018,
+        0.024
+      ]
+    },
+    "configuration_id": "challenge-c1-low-friction-heavy-wide",
+    "schema": "qdgrasp/mvp-challenge-domain/v1",
+    "scope_hash": "47fbf8f0bb786473993f9196d442a8e0fe08f8e7bdcdec4117a12cfd70aff11d"
+  },
+  "domain_hash": "aabec53df8291d3e434cf526da57ced54cd8b6439083f329343488027ed9a971",
+  "elapsed_s": 33.0,
+  "episodes": 300,
+  "failure_buckets": {
+    "contact_loss": 66,
+    "drop": 33
+  },
+  "failures": 99,
+  "invalid_state": 0,
+  "min_prior_failures": 50,
+  "prior_success_rate": 0.67,
+  "required_band": [
+    0.4,
+    0.85
+  ],
+  "safety_violation": 0,
+  "schema": "qdgrasp/mvp-challenge-calibration/v1",
+  "scope_hash": "47fbf8f0bb786473993f9196d442a8e0fe08f8e7bdcdec4117a12cfd70aff11d",
+  "successes": 201,
+  "variant_ids": [
+    "cuboid_w180_d12",
+    "cuboid_w210_d15",
+    "cuboid_w240_d18"
+  ],
+  "verdict": "admissible",
+  "wilson_lower": 0.61493585339915,
+  "wilson_upper": 0.7207655363845044
+}

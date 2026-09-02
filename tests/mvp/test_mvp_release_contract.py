@@ -26,6 +26,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from qdgrasp.mvp.challenge import ChallengeDomain, load_challenge_domain
 from qdgrasp.mvp.config import (
     EXPERIMENTAL_RELEASE_CLASS,
     RELEASE_CANDIDATE_CLASS,
@@ -33,6 +34,7 @@ from qdgrasp.mvp.config import (
     load_mvp_scope,
 )
 from qdgrasp.mvp.evaluate import evaluate_tier, paired_uplift
+from scripts.calibrate_mvp_challenge import development_seeds
 
 SCOPE_V0 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v0.yaml"
 SCOPE_V1 = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v1.yaml"
@@ -121,6 +123,21 @@ def test_every_locked_tier_is_disjoint_from_every_other_and_from_development() -
     for tier, seeds in locked.items():
         assert not seeds & development, f"tier {tier} shares seeds with train/dev"
     assert len(locked["D"]) == 300
+
+
+def test_the_challenge_calibration_seeds_never_reach_the_tier_they_calibrated() -> None:
+    """MR-03's whole point: nothing explored may judge what the exploration chose."""
+
+    scope = load_mvp_scope(SCOPE_V1)
+    development = set(development_seeds(scope, 3000))
+    assert len(development) == 3000, "the development root must not collide with itself"
+    for spec in scope.eval_tiers:
+        assert not development & set(scope.locked_seeds(spec.tier)), f"tier {spec.tier} saw calibration seeds"
+    training = {scope.episode_seed("train", index) for index in range(3000)}
+    training |= {scope.episode_seed("dev", index) for index in range(3000)}
+    assert not development & training
+    assert scope.challenge is not None
+    assert scope.challenge.development_seed_root != scope.seed_root
 
 
 def test_the_v1_seed_root_does_not_reuse_the_v0_seeds() -> None:
@@ -276,3 +293,119 @@ def test_the_paired_estimator_refuses_unmatched_arms() -> None:
         paired_uplift([True], [True], resamples=0, seed=0)
     with pytest.raises(ValueError, match=r"confidence must lie"):
         paired_uplift([True], [True], resamples=10, seed=0, confidence=0.5)
+
+
+# -- the locked challenge domain ------------------------------------------
+
+CHALLENGE_DOMAIN = PROJECT_ROOT / "configs/mvp/dexacquire-mvp-v1.challenge.json"
+
+
+def _domain_document() -> dict:
+    return json.loads(CHALLENGE_DOMAIN.read_text(encoding="utf-8"))
+
+
+def test_the_locked_challenge_domain_narrows_the_locked_scope() -> None:
+    scope = load_mvp_scope(SCOPE_V1)
+    domain = load_challenge_domain(CHALLENGE_DOMAIN, scope)
+    assert domain.scope_hash == scope.content_hash()
+    assert set(domain.axes) <= set(scope.challenge.axes)
+    for axis, (low, high) in domain.axes.items():
+        if axis in ("density", "friction_slide"):
+            base_low, base_high = getattr(scope.randomization, axis)
+            assert base_low <= low <= high <= base_high
+    assert [variant.variant_id for variant in domain.variants(scope)] == [
+        "cuboid_w180_d12",
+        "cuboid_w210_d15",
+        "cuboid_w240_d18",
+    ]
+
+
+def test_the_locked_domain_is_the_one_that_was_calibrated() -> None:
+    """The document's hash is what binds a Tier D result to a measured domain."""
+
+    report = json.loads((PROJECT_ROOT / "evidence/mvp/release-v1/challenge-development/c1.json").read_text("utf-8"))
+    domain = load_challenge_domain(CHALLENGE_DOMAIN, load_mvp_scope(SCOPE_V1))
+    assert report["domain_hash"] == domain.content_hash()
+    assert report["verdict"] == "admissible"
+    assert report["safety_violation"] == 0 and report["invalid_state"] == 0
+    assert report["failures"] >= report["min_prior_failures"]
+    low, high = report["required_band"]
+    assert low <= report["prior_success_rate"] <= high
+    # Only real grasp failures may be counted: a domain whose difficulty came
+    # from simulator errors or a violated safety budget is not a hard domain.
+    assert set(report["failure_buckets"]) <= {"drop", "contact_loss", "approach_miss", "timeout"}
+
+
+def test_a_challenge_domain_may_not_widen_any_axis() -> None:
+    scope = load_mvp_scope(SCOPE_V1)
+    document = _domain_document()
+    document["axes"]["friction_slide"] = [0.01, 0.55]
+    with pytest.raises(ValueError, match="reaches outside the locked scope"):
+        ChallengeDomain.model_validate(document).validate_against(scope)
+
+
+def test_a_challenge_domain_may_not_move_an_unauthorised_axis() -> None:
+    scope = load_mvp_scope(SCOPE_V1)
+    document = _domain_document()
+    document["axes"]["drop_height"] = [0.002, 0.008]
+    # Refused by the axis type before the scope is even consulted: the permitted
+    # set is a closed literal, so an unlisted axis is not a value at all.
+    with pytest.raises(ValueError, match="literal_error"):
+        ChallengeDomain.model_validate(document).validate_against(scope)
+
+
+def test_a_challenge_domain_bound_to_another_scope_is_refused() -> None:
+    scope = load_mvp_scope(SCOPE_V1)
+    document = _domain_document()
+    document["scope_hash"] = "0" * 64
+    with pytest.raises(ValueError, match="bound to another scope"):
+        ChallengeDomain.model_validate(document).validate_against(scope)
+
+
+def test_a_challenge_domain_that_selects_no_variant_is_refused() -> None:
+    scope = load_mvp_scope(SCOPE_V1)
+    document = _domain_document()
+    document["axes"]["half_width"] = [0.0001, 0.0002]
+    with pytest.raises(ValueError, match="select no object variant"):
+        ChallengeDomain.model_validate(document).validate_against(scope)
+
+
+def test_an_empty_challenge_domain_is_refused() -> None:
+    document = _domain_document()
+    document["axes"] = {}
+    with pytest.raises(ValueError, match="must narrow at least one axis"):
+        ChallengeDomain.model_validate(document)
+
+
+def test_the_challenge_domain_only_moves_the_challenge_split() -> None:
+    """Supplying a domain must not move the ground under tiers A, B and C."""
+
+    from qdgrasp.mvp.env import DexAcquireMvpEnv
+    from qdgrasp.mvp.prior import PinchPriorTable
+
+    scope = load_mvp_scope(SCOPE_V1)
+    prior = PinchPriorTable.load(PROJECT_ROOT / "configs/mvp/leap-pinch-prior-v0.json")
+    domain = load_challenge_domain(CHALLENGE_DOMAIN, scope)
+    plain = DexAcquireMvpEnv(scope, prior)
+    challenged = DexAcquireMvpEnv(scope, prior, challenge=domain)
+    for split in ("train", "dev", "eval_a", "eval_b", "eval_c"):
+        seed = scope.episode_seed(split, 3)
+        assert plain.sample_setup(seed, split) == challenged.sample_setup(seed, split)
+    seed = scope.episode_seed("eval_d", 3)
+    assert plain.sample_setup(seed, "eval_d") != challenged.sample_setup(seed, "eval_d")
+
+
+def test_every_challenge_episode_stays_inside_the_locked_domain() -> None:
+    from qdgrasp.mvp.env import DexAcquireMvpEnv
+    from qdgrasp.mvp.prior import PinchPriorTable
+
+    scope = load_mvp_scope(SCOPE_V1)
+    prior = PinchPriorTable.load(PROJECT_ROOT / "configs/mvp/leap-pinch-prior-v0.json")
+    domain = load_challenge_domain(CHALLENGE_DOMAIN, scope)
+    env = DexAcquireMvpEnv(scope, prior, challenge=domain)
+    allowed = {variant.variant_id for variant in domain.variants(scope)}
+    for seed in scope.locked_seeds("D"):
+        setup = env.sample_setup(seed, "eval_d")
+        assert setup.variant_id in allowed
+        assert domain.axes["friction_slide"][0] <= setup.friction_slide <= domain.axes["friction_slide"][1]
+        assert domain.axes["density"][0] <= setup.density <= domain.axes["density"][1]

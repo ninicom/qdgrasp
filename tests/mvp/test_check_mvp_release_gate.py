@@ -103,7 +103,8 @@ class MvpReleaseGateTests(unittest.TestCase):
             {
                 "schema": CHALLENGE_DOMAIN_SCHEMA,
                 "scope_hash": scope.content_hash(),
-                "axes": {"friction_slide": [0.05, 0.35], "density": [1800.0, 2400.0]},
+                "configuration_id": "fixture-challenge",
+                "axes": {"friction_slide": [0.10, 0.35], "density": [1800.0, 2400.0]},
             },
         )
         self.domain_path = self.root / scope.challenge.domain_document
@@ -490,6 +491,27 @@ class MvpReleaseGateTests(unittest.TestCase):
         _write(self.domain_path, domain)
         self.assertIn("challenge_domain_contract", self.failures())
 
+    def test_a_challenge_domain_that_widens_the_scope_fails(self) -> None:
+        # Every axis name is authorised, and the domain is still not a
+        # narrowing: friction below the locked floor is a different world, and
+        # a Tier D measured there cannot be read beside tiers A, B and C.
+        domain = json.loads(self.domain_path.read_text(encoding="utf-8"))
+        domain["axes"]["friction_slide"] = [0.01, 0.35]
+        _write(self.domain_path, domain)
+        self.assertIn("challenge_domain_contract", self.failures())
+
+    def test_a_challenge_domain_bound_to_another_scope_fails(self) -> None:
+        domain = json.loads(self.domain_path.read_text(encoding="utf-8"))
+        domain["scope_hash"] = "0" * 64
+        _write(self.domain_path, domain)
+        self.assertIn("challenge_domain_contract", self.failures())
+
+    def test_a_challenge_domain_selecting_no_variant_fails(self) -> None:
+        domain = json.loads(self.domain_path.read_text(encoding="utf-8"))
+        domain["axes"]["half_width"] = [0.0001, 0.0002]
+        _write(self.domain_path, domain)
+        self.assertIn("challenge_domain_contract", self.failures())
+
     def test_a_missing_challenge_domain_fails(self) -> None:
         self.domain_path.unlink()
         failures = self.failures()
@@ -526,9 +548,13 @@ def test_the_release_gate_refuses_the_published_v0_evidence() -> None:
         if not check.passed
     }
     assert "release_contract_present" not in failures, "the release contract itself must load"
+    # The locked challenge domain is a repository file and does load; what the
+    # published v0 rounds do not have is any of the evidence a contribution
+    # claim rests on, and that is what keeps them out of a release verdict.
     assert "contribution_report_present" in failures
     assert "ablation_report_present" in failures
-    assert "challenge_domain_present" in failures
+    assert "tier_d_arms_share_the_locked_seeds" in failures
+    assert "candidate_selected_on_development_evidence_only" in failures
 
 
 if __name__ == "__main__":

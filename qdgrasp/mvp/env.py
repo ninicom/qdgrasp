@@ -28,7 +28,8 @@ import mujoco
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from qdgrasp.mvp.config import EpisodeSplit, MvpScopeConfig, ObjectVariant
+from qdgrasp.mvp.challenge import ChallengeDomain
+from qdgrasp.mvp.config import EpisodeSplit, MvpScopeConfig, ObjectVariant, tier_of_split
 from qdgrasp.mvp.prior import PinchPriorTable
 from qdgrasp.mvp.scene import SceneIndices, build_mvp_scene, resolve_indices
 from qdgrasp.robot.spec import RobotSpec, resolve_robot_asset
@@ -148,9 +149,16 @@ class DexAcquireMvpEnv:
         prior: PinchPriorTable,
         *,
         robot_spec: RobotSpec | None = None,
+        challenge: ChallengeDomain | None = None,
     ) -> None:
         self.scope = scope
         self.prior = prior
+        # Only the challenge split draws from this.  Every other split keeps the
+        # scope's own ranges, so supplying a domain cannot silently move the
+        # ground under tiers A, B and C.
+        if challenge is not None:
+            challenge.validate_against(scope)
+        self.challenge = challenge
         self.spec = robot_spec or RobotSpec.from_config(scope.robot_profile, sample_anchors=False)
         self.joint_names = tuple(self.spec.actuated_joint_names)
         self.hand_xml_path = str(resolve_robot_asset(self.spec.config.source_asset))
@@ -189,6 +197,12 @@ class DexAcquireMvpEnv:
 
     # -- episode sampling -------------------------------------------------
 
+    def _is_challenge_split(self, split: EpisodeSplit) -> bool:
+        """Whether this split is the tier the scope marked as the challenge."""
+
+        tier = tier_of_split(split)
+        return tier is not None and self.scope.tier(tier).challenge_domain
+
     def sample_setup(
         self,
         seed: int,
@@ -199,7 +213,12 @@ class DexAcquireMvpEnv:
     ) -> EpisodeSetup:
         """Draw one episode's parameters from the locked ranges."""
 
-        variants = self.scope.variants_for_split(split)
+        challenged = self.challenge is not None and self._is_challenge_split(split)
+        if challenged:
+            assert self.challenge is not None
+            variants = self.challenge.variants(self.scope)
+        else:
+            variants = self.scope.variants_for_split(split)
         if variant_id is not None:
             variant = self.scope.variant(variant_id)
             if variant not in variants:
@@ -209,11 +228,20 @@ class DexAcquireMvpEnv:
         if variant_id is None:
             variant = variants[int(rng.integers(len(variants)))]
         ranges = self.scope.randomization
+
+        def interval(axis: str) -> tuple[float, float]:
+            if challenged:
+                assert self.challenge is not None
+                return self.challenge.range_for(axis, self.scope)
+            return tuple(getattr(ranges, axis))  # type: ignore[return-value]
+
         if randomize:
-            position = (float(rng.uniform(*ranges.position_x)), float(rng.uniform(*ranges.position_y)))
-            yaw = float(rng.uniform(*ranges.yaw))
-            density = float(rng.uniform(*ranges.density))
-            friction = float(rng.uniform(*ranges.friction_slide))
+            position = (float(rng.uniform(*interval("position_x"))), float(rng.uniform(*interval("position_y"))))
+            yaw = float(rng.uniform(*interval("yaw")))
+            density = float(rng.uniform(*interval("density")))
+            friction = float(rng.uniform(*interval("friction_slide")))
+            # Drop height is not a challenge axis, so it always keeps the
+            # scope's range.
             drop = float(rng.uniform(*ranges.drop_height))
         else:
             position = (0.0, 0.0)
